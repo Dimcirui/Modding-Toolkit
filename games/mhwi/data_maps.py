@@ -384,3 +384,55 @@ ELBOW_AUX_BONES = [
     "MhBone_103",
     "MhBone_104",
 ]
+
+# VRChat (Unity Humanoid) -> MHWI 映射表
+VRC_TO_MHWI_MAP = {
+    # === 躯干 ===
+    "Hips": "MhBone_013",
+    "Spine": "MhBone_001",
+    "Chest": "MhBone_002",
+    "Neck": "MhBone_003",
+    "Head": "MhBone_004",
+    
+    # === 左臂 ===
+    "Shoulder_L": "MhBone_005", "Left shoulder": "MhBone_005", "Shoulder.L": "MhBone_005",
+    "UpperArm_L": "MhBone_006", "Left arm": "MhBone_006", "LeftUpperArm": "MhBone_006", "UpperArm.L": "MhBone_006",
+    "LowerArm_L": "MhBone_007", "Left elbow": "MhBone_007", "LeftLowerArm": "MhBone_007", "LowerArm.L": "MhBone_007",
+    "Hand_L": "MhBone_008", "Left wrist": "MhBone_008", "Hand.L": "MhBone_008",
+    
+    # === 右臂 ===
+    "Shoulder_R": "MhBone_009", "Right shoulder": "MhBone_009", "Shoulder.R": "MhBone_009",
+    "UpperArm_R": "MhBone_010", "Right arm": "MhBone_010", "RightUpperArm": "MhBone_010", "UpperArm.R": "MhBone_010",
+    "LowerArm_R": "MhBone_011", "Right elbow": "MhBone_011", "RightLowerArm": "MhBone_011", "LowerArm.R": "MhBone_011",
+    "Hand_R": "MhBone_012", "Right wrist": "MhBone_012", "Hand.R": "MhBone_012",
+    
+    # === 腿部 ===
+    "UpperLeg_L": "MhBone_014", "Left leg": "MhBone_014", "UpperLeg.L": "MhBone_014",
+    "LowerLeg_L": "MhBone_015", "Left knee": "MhBone_015", "LowerLeg.L": "MhBone_015",
+    "Foot_L": "MhBone_016", "Left ankle": "MhBone_016", "Foot.L": "MhBone_016",
+    "Toe_L": "MhBone_017", "Left toe": "MhBone_017", "Toe.L": "MhBone_017",
+    
+    "UpperLeg_R": "MhBone_018", "Right leg": "MhBone_018", "UpperLeg.R": "MhBone_018",
+    "LowerLeg_R": "MhBone_019", "Right knee": "MhBone_019", "LowerLeg.R": "MhBone_019",
+    "Foot_R": "MhBone_020", "Right ankle": "MhBone_020", "Foot.R": "MhBone_020",
+    "Toe_R": "MhBone_021", "Right toe": "MhBone_021", "Toe.R": "MhBone_021",
+    
+    # === 手指 (左) ===
+    "ThumbProximal_L": "MhBone_031", "ThumbIntermediate_L": "MhBone_032", "ThumbDistal_L": "MhBone_033",
+    "IndexProximal_L": "MhBone_034", "IndexIntermediate_L": "MhBone_035", "IndexDistal_L": "MhBone_036",
+    "MiddleProximal_L": "MhBone_037", "MiddleIntermediate_L": "MhBone_038", "MiddleDistal_L": "MhBone_039",
+    "RingProximal_L": "MhBone_041", "RingIntermediate_L": "MhBone_042", "RingDistal_L": "MhBone_043",
+    "LittleProximal_L": "MhBone_044", "LittleIntermediate_L": "MhBone_045", "LittleDistal_L": "MhBone_046",
+    
+    # === 手指 (右) ===
+    "ThumbProximal_R": "MhBone_048", "ThumbIntermediate_R": "MhBone_049", "ThumbDistal_R": "MhBone_050",
+    "IndexProximal_R": "MhBone_051", "IndexIntermediate_R": "MhBone_052", "IndexDistal_R": "MhBone_053",
+    "MiddleProximal_R": "MhBone_054", "MiddleIntermediate_R": "MhBone_055", "MiddleDistal_R": "MhBone_056",
+    "RingProximal_R": "MhBone_058", "RingIntermediate_R": "MhBone_059", "RingDistal_R": "MhBone_060",
+    "LittleProximal_R": "MhBone_061", "LittleIntermediate_R": "MhBone_062", "LittleDistal_R": "MhBone_063",
+    
+    # === 辅助 ===
+    "LowerArm_twist_L": "MhBone_081", "LowerArm_Twist_L": "MhBone_081",
+    "LowerArm_twist_R": "MhBone_083", "LowerArm_Twist_R": "MhBone_083",
+    "Hips_L": "MhBone_074", "Hips_R": "MhBone_076",
+}

@@ -167,7 +167,29 @@ class MHW_PT_MainPanel(bpy.types.Panel):
         
         # 3. 游戏专用栏 (动态显示)
         if settings.show_mhwi:
-            self.draw_mhwi_tools(layout)
+            box = layout.box()
+            box.label(text="MHWI Tools", icon='ARMATURE_DATA')
+            
+            # 1. 基础对齐
+            col = box.column(align=True)
+            col.operator("mhwi.align_non_physics", text="对齐非物理骨骼", icon='BONE_DATA')
+            
+            # 2. VRC 转换
+            col.separator()
+            col.label(text="VRChat 转换:")
+            row = col.row(align=True)
+            row.operator("mhwi.vrc_rename", text="重命名", icon='GROUP_VERTEX')
+            row.operator("mhwi.vrc_snap", text="骨骼吸附", icon='SNAP_ON')
+            
+            # 3. Endfield 转换
+            col.separator()
+            col.label(text="Endfield 转换:")
+            col.operator("mhwi.endfield_merge", text="一键转 MHWI", icon='MOD_VERTEX_WEIGHT')
+            
+            # 4. MMD 转换
+            col.separator()
+            col.label(text="MMD 转换:")
+            col.operator("mhwi.mmd_snap", text="MMD 吸附 (日/英)", icon='IMPORT')
             
         if settings.show_mhws:
             box = layout.box()
@@ -179,13 +201,31 @@ class MHW_PT_MainPanel(bpy.types.Panel):
              
         if settings.show_re4:
             box = layout.box()
-            box.label(text="RE4 Tools", icon='GHOST_ENABLED') # 选个符合生化危机的图标
+            box.label(text="RE4 Tools", icon='GHOST_ENABLED')
             
             col = box.column(align=True)
-            col.operator("re4.mhwi_rename", text="MHWI -> RE4 骨架重命名")
+            col.label(text="转换工具:", icon='MOD_VERTEX_WEIGHT')
+            col.operator("re4.mhwi_rename", text="MHWI -> RE4 重命名")
             col.operator("re4.endfield_convert", text="Endfield -> RE4 权重转换")
-            col.label(text="* 权重转换需选中网格物体", icon='INFO')
             
-    def draw_mhwi_tools(self, layout):
-        # ... 绘制 MHWI 按钮 ...
-        pass
+            layout.separator()
+            
+            # 假骨工具 UI
+            box_fake = layout.box()
+            box_fake.label(text="假骨工具 (FakeBone)", icon='BONE_DATA')
+            
+            row = box_fake.row(align=True)
+            row.label(text="1. 创建")
+            row.operator("re4.fake_body_process", text="身体 End", icon='BODY_DATA')
+            row.operator("re4.fake_fingers_process", text="手指 End", icon='HAND')
+            
+            row = box_fake.row(align=True)
+            row.label(text="2. 合并")
+            row.operator("re4.fake_body_merge", text="合并身体", icon='LINKED')
+            row.operator("re4.fake_fingers_merge", text="合并手指", icon='LINKED')
+            
+            box_align = layout.box()
+            box_align.label(text="骨骼对齐 (带子级跟随)", icon='SNAP_ON')
+            row = box_align.row(align=True)
+            row.operator("re4.align_bones_full", text="完全对齐")
+            row.operator("re4.align_bones_pos", text="仅对齐位置")
