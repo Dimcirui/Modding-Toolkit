@@ -71,6 +71,34 @@ def propagate_movement(bone, offset_vec):
             child.tail += offset_vec
         propagate_movement(child, offset_vec)
 
-def find_bone_fuzzy(bones, name):
-    """模糊查找骨骼的通用逻辑"""
-    return bones.get(name)
+def find_bone_smart(bones, name):
+    """
+    智能查找骨骼：
+    1. 精确查找
+    2. 尝试互换 'MhBone_' 和 'bonefunction_' 前缀
+    3. 忽略大小写查找 (兼容 3.x)
+    """
+    # 1. 精确匹配
+    if name in bones:
+        return bones[name]
+    
+    # 2. 前缀互换
+    alt_name = None
+    if "MhBone_" in name:
+        alt_name = name.replace("MhBone_", "bonefunction_")
+    elif "bonefunction_" in name:
+        alt_name = name.replace("bonefunction_", "MhBone_")
+    
+    if alt_name and alt_name in bones:
+        return bones[alt_name]
+    
+    # 3. 最后的手段：忽略大小写遍历 (较慢，仅作兜底)
+    target_lower = name.lower()
+    alt_lower = alt_name.lower() if alt_name else ""
+    
+    for b in bones:
+        b_lower = b.name.lower()
+        if b_lower == target_lower or (alt_lower and b_lower == alt_lower):
+            return b
+            
+    return None
