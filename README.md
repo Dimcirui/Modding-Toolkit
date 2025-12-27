@@ -1,4 +1,4 @@
-# MHW Modding Toolkit (Blender Addon)
+# Modding Toolkit (Blender Addon)
 
 A comprehensive Blender toolkit designed specifically for modding Monster Hunter World: Iceborne (MHWI), Monster Hunter Wilds (MHWs), and Resident Evil 4 Remake (RE4).
 
