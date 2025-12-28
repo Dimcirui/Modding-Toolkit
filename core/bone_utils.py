@@ -16,21 +16,30 @@ def set_roll_to_zero_recursive(root_bones):
     return count
 
 def add_vertical_tail_bone(edit_bones, selected_bones):
-    """为选中的末端骨骼添加垂直子骨骼"""
+    """
+    为选中的末端骨骼添加垂直子骨骼
+    """
     count = 0
     for bone in selected_bones:
-        # 只处理没有子级或者明确选中的末端
-        # (原脚本逻辑：选中且 use_connect=False，这里泛化一下)
-        if bone in edit_bones:
-            tail_pos = bone.tail.copy()
+        
+        tail_pos = bone.tail.copy()
+        
+        # 创建新骨骼
+        try:
             new_bone = edit_bones.new(bone.name + "_tail")
             new_bone.head = tail_pos
-            # 默认长度为父骨骼长度，方向 Z+
+            # 默认长度为父骨骼长度，若父骨骼长度为0则设为0.1
             length = bone.length if bone.length > 0 else 0.1
+            # 垂直向上 (Z轴)
             new_bone.tail = tail_pos + mathutils.Vector((0, 0, length))
+            
             new_bone.parent = bone
             new_bone.use_connect = False
+            
             count += 1
+        except Exception as e:
+            print(f"Error adding tail for {bone.name}: {e}")
+            
     return count
 
 def mirror_bone_transform(edit_bones, bone_names):
@@ -44,7 +53,7 @@ def mirror_bone_transform(edit_bones, bone_names):
     if not b1 or not b2:
         return False, "骨骼未找到"
         
-    # 判定基准
+    # 判定基准 (X > 0 为基准)
     if b1.head.x > 0:
         ref, mirror = b1, b2
     else:
@@ -59,10 +68,13 @@ def mirror_bone_transform(edit_bones, bone_names):
     mirror.tail.y = ref.tail.y
     mirror.tail.z = ref.tail.z
     
+    # 同步 Roll (通常镜像需要取反或保持，视骨骼轴向而定，这里简单复制处理，视情况可调整)
+    mirror.roll = -ref.roll 
+    
     return True, f"已将 {mirror.name} 对齐到 {ref.name}"
 
 def propagate_movement(bone, offset_vec):
-    """递归移动子骨骼，被所有游戏模块共享"""
+    """递归移动子骨骼"""
     for child in bone.children:
         if child.use_connect:
             child.tail += offset_vec
