@@ -397,13 +397,76 @@ class RE4_OT_VRC_Snap(bpy.types.Operator):
         else:
             self.report({'WARNING'}, "未找到匹配骨骼，请检查 VRC 骨架命名是否标准")
             return {'CANCELLED'}
+        
+class RE4_OT_VRC_VG_Convert(bpy.types.Operator):
+    """将 VRChat 网格的顶点组重命名为 RE4 标准 (含自动合并)"""
+    bl_idname = "re4.vrc_vg_convert"
+    bl_label = "VRC -> RE4 权重转换"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        selected_meshes = [obj for obj in context.selected_objects if obj.type == 'MESH']
+        if not selected_meshes:
+            self.report({'ERROR'}, "请至少选中一个网格物体 (Mesh)")
+            return {'CANCELLED'}
+
+        count_total = 0
+        
+        # 使用上一轮生成的 VRC -> RE4 映射表
+        mapping = data_maps.VRC_TO_RE4_MAP
+        
+        for obj in selected_meshes:
+            # 1. 预处理：记录需要处理的组
+            # 我们需要处理两种情况：
+            # A. 目标组不存在 -> 直接重命名
+            # B. 目标组已存在 -> 权重合并 (使用 Modifier)
+            
+            ops_queue = [] # 存储待执行的操作 (src, dst, mode)
+            
+            for vrc_name, re4_name in mapping.items():
+                if vrc_name in obj.vertex_groups:
+                    if re4_name in obj.vertex_groups:
+                        # 目标已存在，需要合并
+                        if vrc_name != re4_name:
+                            ops_queue.append((vrc_name, re4_name, 'MERGE'))
+                    else:
+                        # 目标不存在，直接重命名
+                        ops_queue.append((vrc_name, re4_name, 'RENAME'))
+            
+            # 2. 执行操作
+            for src, dst, mode in ops_queue:
+                # 再次检查源是否存在 (因为可能之前的循环已经处理过了)
+                if src not in obj.vertex_groups: continue
+                
+                if mode == 'RENAME':
+                    obj.vertex_groups[src].name = dst
+                    count_total += 1
+                    
+                elif mode == 'MERGE':
+                    # 使用修改器高效合并
+                    mod = obj.modifiers.new(name="TempMerge", type='VERTEX_WEIGHT_MIX')
+                    mod.vertex_group_a = dst
+                    mod.vertex_group_b = src
+                    mod.mix_mode = 'ADD'
+                    mod.mix_set = 'ALL'
+                    
+                    context.view_layer.objects.active = obj
+                    bpy.ops.object.modifier_apply(modifier=mod.name)
+                    
+                    # 删除旧组
+                    obj.vertex_groups.remove(obj.vertex_groups[src])
+                    count_total += 1
+
+        self.report({'INFO'}, f"转换完成：处理了 {len(selected_meshes)} 个物体，{count_total} 个顶点组")
+        return {'FINISHED'}
 
 classes = [
     RE4_OT_MHWI_Rename, RE4_OT_Endfield_Convert,
     RE4_OT_FakeBody_Process, RE4_OT_FakeFingers_Process,
     RE4_OT_FakeBody_Merge, RE4_OT_FakeFingers_Merge,
     RE4_OT_AlignBones, RE4_OT_AlignBones_Pos,
-    RE4_OT_VRC_Snap
+    RE4_OT_VRC_Snap,
+    RE4_OT_VRC_VG_Convert
 ]
 
 def register():

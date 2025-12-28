@@ -174,13 +174,16 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             box.label(text="选法: 参考骨架 -> Shift+目标骨架", icon='INFO')
              
         if settings.show_re4:
-            box = layout.box()
-            box.label(text="RE4 Tools", icon='GHOST_ENABLED')
-            
             col = box.column(align=True)
-            col.label(text="转换工具:", icon='MOD_VERTEX_WEIGHT')
-            col.operator("re4.vrc_snap", text="RE4 吸附到 VRC", icon='SNAP_ON') 
+            col.label(text="VRC -> RE4:", icon='IMPORT')
+            row = col.row(align=True)
+            row.operator("re4.vrc_snap", text="1. 骨架吸附", icon='SNAP_ON') 
+            row.operator("re4.vrc_vg_convert", text="2. 权重重命名", icon='GROUP_VERTEX')
+            
             col.separator()
+            
+            # --- 其他转换 ---
+            col.label(text="其他转换:", icon='MOD_VERTEX_WEIGHT')
             col.operator("re4.mhwi_rename", text="MHWI -> RE4 重命名", icon='FONT_DATA')
             col.operator("re4.endfield_convert", text="Endfield -> RE4 权重转换", icon='MOD_VERTEX_WEIGHT')
             
