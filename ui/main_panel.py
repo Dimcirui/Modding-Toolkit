@@ -136,11 +136,11 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
         return {'FINISHED'}
 
 class MHW_PT_MainPanel(bpy.types.Panel):
-    bl_label = "MHW Suite"
+    bl_label = "MOD Toolkit"
     bl_idname = "MHW_PT_main"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = 'MHW Suite'
+    bl_category = 'MOD Toolkit'
 
     def draw(self, context):
         layout = self.layout
