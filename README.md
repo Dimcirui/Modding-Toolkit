@@ -2,35 +2,50 @@
 
 A comprehensive Blender toolkit designed specifically for modding Monster Hunter World: Iceborne (MHWI), Monster Hunter Wilds (MHWs), and Resident Evil 4 Remake (RE4).
 
-**Supported Versions**: Blender 3.0+ / 4.0+ (Universal Compatibility)
+**Supported Versions**:
+# Requirements
+* [Blender 4.x (4.3)](https://www.blender.org/download/)
+* Blender 3.x are still pending testing.
 
-## Key Features
 
-### General Tools
-Quick operations for any humanoid skeleton:
-* **Roll Zero**: Recursively resets the Roll values of selected bones and their children to 0.
-* **Add Tail**: Adds a vertically upward-pointing child bone to the selected terminal bone (for physics chain construction).
-* **Mirror X**: Perfectly mirrors the corresponding X-axis bone relative to the X+ axis bone.
-* **Bone Chain Simplification**: Deletes every other bone and automatically merges weights (optimizes physical bone count).
+## Core Features
 
-### MHWI (Monster Hunter World: Iceborne)
-* **Non-Physical Bone Alignment**: Aligns mod skeletons to the base game skeleton, intelligently skipping physical bones like skirts to prevent clipping.
-* **MMD Snap**: One-click snaps Japanese/English MMD skeletons to MHWI standard positions (includes toe/elbow corrections).
-* **Endfield to MHWI**: One-stop conversion including bone renaming, weight merging, and hierarchy repair.
+### 1. Universal Skeleton Converter
+Convert any source model to any target game format using customizable JSON presets.
 
-### MHWs (Monster Hunter: World)
-* **T-Pose Conversion**: Forcibly converts MHWs skeleton poses to MHWI standard T-Pose and automatically bakes mesh modifiers.
-* **Endfield -> MHWs**: Precisely snaps Endfield skeleton positions to MHWs standards.
+* **X -> Y Architecture**: Define your source (X) and target (Y) freely.
+    * **Source (X)**: VRChat, MMD, Endfield, or your custom ripped models.
+    * **Target (Y)**: MHWI, MHW: Wilds, RE4 Remake.
+* **Intelligent Mapping**:
+    * **Weight Merging**: Automatically merges auxiliary bones (Twist, Corrective, Helpers) into the main bone.
+    * **One-Click Snap**: Aligns your model's skeleton to the target game's instantly.
+    * **Direct Convert**: Renames vertex groups directly on the mesh without needing to touch the armature.
 
-### RE4 (Resident Evil 4 Remake)
-* **MHWI -> RE4**: Renames MHWI skeletons to RE4 standards.
-* **Endfield -> RE4**: Intelligent weight conversion, automatically processing and merging duplicate vertex groups (e.g., split lip weights).
+### 2. Visual Preset Editor
+A built-in GUI editor to create your own mappings without writing a single line of code.
+* **Pick & Click**: Select a bone in the 3D view and click to assign it.
+* **Batch Aux Adding**: Select multiple twist bones and add them as weight sources in one click.
+* **Smart Mirror**: Automatically generates Right-side mappings from the Left side.
 
-## Installation Method
+### 3. Game-Specific Modules
+Specialized tools for tasks that cannot be handled by simple mapping.
 
-1. Download the ZIP archive from this repository (do not unzip).
-2. Open Blender.
-3. From the menu bar, select `Edit` -> `Preferences` -> `Add-ons`.
-4. Click `Install...` and select the downloaded ZIP file.
-5. Check `Object: MHW Modding Toolkit` to enable the add-on.
-6. Press **N** in the 3D viewport to open the **MOD Toolkit** panel in the right sidebar.
+* **MHWI (Iceborne)**:
+    * **Non-Physics Align**: Aligns mod skeletons to the game skeleton while intelligently preserving the physics bones (150~245).
+* **RE4 (Remake)**:
+    * **FakeBone System**: A complete toolset to generate, align, and merge the complex "FakeBone" (End bone) that resolve CG character distortion issues.
+
+### 4. General Utilities
+* **Roll Zero**: Recursively resets bone rolls to 0 for cleaner rigging. Non-zero roll causes performance issues in the RE engine's physical bones.
+* **Add Tail**: Add end bones to the selected bones.
+* **Mirror X**: Symmetrizes bone transforms from selected +X bone to -X bone.
+* **Chain Simplification**: Optimizes physics chains by removing every other bone and merging weights.
+
+---
+
+## Installation & Update
+
+1.  Download the **ZIP** file from the Releases page.
+2.  In Blender, go to `Edit > Preferences > Add-ons`.
+3.  Click **Install**, select the ZIP, and enable **Modding Toolkit**.
+4.  **Update Check**: You can check for new versions directly within the addon panel.
