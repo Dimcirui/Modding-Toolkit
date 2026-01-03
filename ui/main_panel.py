@@ -1,29 +1,35 @@
 import bpy
 from ..core import bone_utils, weight_utils, ui_config
+from ..core.bone_utils import get_import_presets_callback, get_target_presets_callback
 from ..core.bone_mapper import BoneMapManager
 
+mapper = BoneMapManager()
 class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
+    # 顶部开关
     show_mhwi: bpy.props.BoolProperty(name="MHWI", default=True)
     show_mhws: bpy.props.BoolProperty(name="Wilds", default=False)
     show_re4: bpy.props.BoolProperty(name="RE4", default=False)
     
-    # --- 预设选择 ---
+    # 通用转换器开关
+    show_std_converter: bpy.props.BoolProperty(name="通用骨架转换", default=True)
+
+    # 预设选择 (X/Y)
     import_preset_enum: bpy.props.EnumProperty(
         name="来源预设 (X)",
-        description="从 assets/import_presets 动态加载",
-        items=get_import_presets_callback # 绑定回调
+        description="选择导入模型的骨架结构",
+        items=get_import_presets_callback
     )
     
     target_preset_enum: bpy.props.EnumProperty(
         name="目标游戏 (Y)",
-        description="从 assets/bone_presets 动态加载",
-        items=get_target_presets_callback # 绑定回调
+        description="选择要导出的目标游戏",
+        items=get_target_presets_callback
     )
     
     show_mapping_details: bpy.props.BoolProperty(name="显示映射细节", default=False)
 
 class MHW_OT_GeneralTools(bpy.types.Operator):
-    """通用工具集合 Operator"""
+    """通用工具集合"""
     bl_idname = "mhw.general_tools"
     bl_label = "通用工具"
     bl_options = {'REGISTER', 'UNDO'}
@@ -151,8 +157,6 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
             self.report({'INFO'}, f"骨链简化完成，合并了 {len(pairs)} 对骨骼")
 
         return {'FINISHED'}
-
-mapper = BoneMapManager()
 class MHW_PT_MainPanel(bpy.types.Panel):
     bl_label = "MOD Toolkit"
     bl_idname = "MHW_PT_main"
@@ -163,37 +167,130 @@ class MHW_PT_MainPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         settings = context.scene.mhw_suite_settings
+        arm_obj = context.active_object
         
-        # 1. 顶部开关
+        # =========================================
+        # 1. 顶部开关区域
+        # =========================================
         row = layout.row(align=True)
         row.prop(settings, "show_mhwi", toggle=True, text="MHWI")
         row.prop(settings, "show_mhws", toggle=True, text="Wilds")
         row.prop(settings, "show_re4", toggle=True, text="RE4")
         
-        # 2. 通用工具栏
+        layout.separator()
+
+        # =========================================
+        # 2. 通用基础工具 (General Tools)
+        # =========================================
         box = layout.box()
-        box.label(text="通用工具", icon='TOOL_SETTINGS')
+        box.label(text="基础工具 (Basic)", icon='TOOL_SETTINGS')
         col = box.column(align=True)
         col.operator("mhw.general_tools", text="扭转归零 (Roll=0)").action = 'ROLL_ZERO'
+        
         row = col.row(align=True)
         row.operator("mhw.general_tools", text="添加尾骨").action = 'ADD_TAIL'
         row.operator("mhw.general_tools", text="镜像对齐 X").action = 'MIRROR_X'
         col.operator("mhw.general_tools", text="骨链简化 (隔1删1)").action = 'SIMPLIFY_CHAIN'
-        
-        # 3. 游戏专用栏
-        if settings.show_mhwi:
-            self.draw_mhwi_standard_suite(layout, context, settings)
+
+        layout.separator()
+
+        # =========================================
+        # 3. 通用骨架转换系统 (Standard Converter)
+        # =========================================
+        main_box = layout.box()
+        row = main_box.row()
+        row.prop(settings, "show_std_converter", 
+                 icon="TRIA_DOWN" if settings.show_std_converter else "TRIA_RIGHT", 
+                 icon_only=True, emboss=False)
+        row.label(text="通用标准转换 (Standard Converter)", icon='ARMATURE_DATA')
+
+        if settings.show_std_converter:
+            col = main_box.column(align=True)
+            col.prop(settings, "import_preset_enum", icon='IMPORT')
+            col.prop(settings, "target_preset_enum", icon='EXPORT')
             
+            col.separator()
+            # col.label(text="核心流程 (按顺序):")
+            
+            row = col.row(align=True)
+            row.operator("modder.universal_snap", text="对齐骨骼", icon='SNAP_ON')
+            
+            row = col.row(align=True)
+            row.scale_y = 1.2
+            row.operator("modder.direct_convert", text="重命名顶点组", icon='MOD_VERTEX_WEIGHT')
+            # row.operator("modder.apply_standard_x", text="1. 标准化 (X)", icon='MOD_VERTEX_WEIGHT')
+            # row.operator("modder.apply_standard_y", text="2. 游戏化 (Y)", icon='SORTALPHA')
+            
+            # 映射详情预览
+            col.separator()
+            row = col.row()
+            row.prop(settings, "show_mapping_details", 
+                     icon='TRIA_DOWN' if settings.show_mapping_details else 'TRIA_RIGHT', 
+                     emboss=False)
+            
+            if settings.show_mapping_details:
+                if arm_obj and arm_obj.type == 'ARMATURE':
+                    # 加载预设进行 UI 反馈
+                    mapper.load_preset(settings.import_preset_enum, is_import_x=True)
+                    
+                    # 绘制三级结构
+                    preview_box = col.box()
+                    for group_name, group_data in ui_config.UI_HIERARCHY.items():
+                        g_box = preview_box.box()
+                        g_box.label(text=group_name, icon=group_data['icon'])
+                        
+                        for sub_name, bones in group_data['subsections'].items():
+                            sub_col = g_box.column(align=True)
+                            sub_col.label(text=sub_name)
+                            
+                            for std_key in bones:
+                                main_bone, aux_list = mapper.get_matches_for_standard(arm_obj, std_key)
+                                m_row = sub_col.row(align=True)
+                                m_row.label(text=f"  {std_key}")
+                                
+                                if main_bone:
+                                    status = f"{main_bone}"
+                                    if aux_list: status += f" (+{len(aux_list)})"
+                                    m_row.label(text=status, icon='CHECKMARK')
+                                else:
+                                    m_row.label(text="缺失", icon='CANCEL')
+                else:
+                    col.label(text="请选中骨架以预览", icon='INFO')
+
+        layout.separator()
+
+        # =========================================
+        # 4. 游戏专用工具栏 (Game Specific)
+        # =========================================
+        
+        # --- MHWI ---
+        if settings.show_mhwi:
+            box = layout.box()
+            box.label(text="MHWI Tools", icon='ARMATURE_DATA')
+            col = box.column(align=True)
+            col.operator("mhwi.align_non_physics", text="对齐非物理骨骼", icon='BONE_DATA')
+            
+            col.separator()
+            col.label(text="Legacy Tools:")
+            row = col.row(align=True)
+            row.operator("mhwi.vrc_rename", text="VRC重命名", icon='GROUP_VERTEX')
+            row.operator("mhwi.vrc_snap", text="VRC吸附", icon='SNAP_ON')
+            
+            col.separator()
+            col.operator("mhwi.endfield_merge", text="Endfield 一键转换", icon='MOD_VERTEX_WEIGHT')
+            col.operator("mhwi.mmd_snap", text="MMD 吸附", icon='IMPORT')
+
+        # --- MHW Wilds ---
         if settings.show_mhws:
             box = layout.box()
             box.label(text="MHWilds Tools", icon='WORLD')
             box.operator("mhwilds.tpose_convert", text="转为 MHWI T-Pose", icon='ARMATURE_DATA')
             box.operator("mhwilds.endfield_snap", text="Endfield -> MHWs 对齐", icon='SNAP_ON')
-            box.label(text="选法: 参考骨架 -> Shift+目标骨架", icon='INFO')
              
+        # --- RE4 ---
         if settings.show_re4:
             box = layout.box()
-            box.label(text="RE4 Tools", icon='GHOST_ENABLED') # 加上标题
+            box.label(text="RE4 Tools", icon='GHOST_ENABLED')
             
             col = box.column(align=True)
             col.label(text="VRC -> RE4:", icon='IMPORT')
@@ -202,19 +299,15 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row.operator("re4.vrc_vg_convert", text="2. 权重重命名", icon='GROUP_VERTEX')
             
             col.separator()
-            
             col.label(text="其他转换:", icon='MOD_VERTEX_WEIGHT')
             col.operator("re4.mhwi_rename", text="MHWI -> RE4 重命名", icon='FONT_DATA')
             col.operator("re4.endfield_convert", text="Endfield -> RE4 权重转换", icon='MOD_VERTEX_WEIGHT')
             
             layout.separator()
             
-            # --- 假骨与对齐 ---
             box_fake = layout.box()
             box_fake.label(text="假骨与对齐 (FakeBone)", icon='BONE_DATA')
-            
             col_fake = box_fake.column(align=True)
-            
             col_fake.label(text="1. 创建 End 骨骼:")
             row1 = col_fake.row(align=True)
             row1.operator("re4.fake_body_process", text="身体", icon='ARMATURE_DATA')
@@ -229,68 +322,6 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row3 = col_fake.row(align=True)
             row3.operator("re4.align_bones_full", text="完全对齐", icon='SNAP_ON')
             row3.operator("re4.align_bones_pos", text="仅对齐位置", icon='SNAP_VERTEX')
-
-    def draw_mhwi_standard_suite(self, layout, context, settings):
-        """MHWI 工具栏"""
-        arm_obj = context.active_object
-        
-        box = layout.box()
-        box.label(text="MHWI 标准转换套件", icon='ARMATURE_DATA')
-        
-        # --- 预设选择区 ---
-        col = box.column(align=True)
-        col.prop(settings, "import_preset_enum", icon='IMPORT')
-        col.prop(settings, "target_preset_enum", icon='EXPORT')
-        
-        # --- 核心执行按钮 ---
-        row = col.row(align=True)
-        row.scale_y = 1.2
-        # 这两个 Operator 我们之后实现
-        row.operator("mhwi.apply_standard_x", text="1. 合并权重并标准化", icon='MOD_VERTEX_WEIGHT')
-        row.operator("mhwi.apply_standard_y", text="2. 转换为游戏骨名", icon='SORT_ALPHA')
-
-        # --- 三级映射预览列表 ---
-        col.separator()
-        row = col.row()
-        row.prop(settings, "show_mapping_details", 
-                 icon='TRIA_DOWN' if settings.show_mapping_details else 'TRIA_RIGHT', 
-                 emboss=False)
-        
-        if settings.show_mapping_details:
-            if not arm_obj or arm_obj.type != 'ARMATURE':
-                col.label(text="未选中骨架", icon='ERROR')
-                return
-
-            # 加载当前选中的 X 预设用于预览
-            mapper.load_preset(settings.import_preset_enum, is_import_x=True)
-            
-            # 开始渲染三级结构
-            main_box = col.box()
-            for group_name, group_data in UI_HIERARCHY.items():
-                # Level 1: 大组
-                g_box = main_box.box()
-                g_row = g_box.row()
-                g_row.label(text=group_name, icon=group_data['icon'])
-                
-                # Level 2: 子类
-                for sub_name, bones in group_data['subsections'].items():
-                    sub_col = g_box.column(align=True)
-                    sub_col.label(text=sub_name)
-                    
-                    # Level 3: 映射行 (Mapping Row)
-                    for std_key in bones:
-                        main_bone, aux_list = mapper.get_matches_for_standard(arm_obj, std_key)
-                        
-                        m_row = sub_col.row(align=True)
-                        m_row.label(text=f"  {std_key}") # 缩进显示
-                        
-                        if main_bone:
-                            status_text = f"{main_bone}"
-                            if aux_list:
-                                status_text += f" (+{len(aux_list)})"
-                            m_row.label(text=status_text, icon='CHECKMARK')
-                        else:
-                            m_row.label(text="缺失", icon='CANCEL')
 
 # ==========================================
 # 注册/注销

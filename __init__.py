@@ -4,15 +4,20 @@ bl_info = {
     "version": (2, 0),
     "blender": (3, 0, 0),
     "location": "View3D > Sidebar > MOD Toolkit",
-    "description": "Modular Toolkit for MHWI, MHWs, and RE4... maybe more games in the future",
+    "description": "Modular Toolkit for MHWI, MHWs, and RE4...",
     "category": "Object",
 }
 
 import bpy
+from .core import standard_ops 
+from .core import editor_props
+from .core import editor_ops
 from . import ui, games
 
-# 注册顺序：先核心，再游戏逻辑，最后UI
 modules = [
+    editor_props,
+    editor_ops,
+    standard_ops, 
     games,
     ui,
 ]

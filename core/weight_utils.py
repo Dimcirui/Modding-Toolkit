@@ -69,13 +69,12 @@ def merge_vgroups_to_main(obj, main_name, aux_names):
     for aux_name in aux_names:
         if aux_name in obj.vertex_groups:
             # 使用 Blender 内置的 Mix 修饰符逻辑或简单通过顶点遍历
-            # 这里采用最稳妥的顶点遍历合并
             source_vg = obj.vertex_groups[aux_name]
             
             for v in obj.data.vertices:
                 try:
                     # 获取辅助组的权重
-                    weight = source_vg.get_weight(v.index)
+                    weight = source_vg.weight(v.index)
                     if weight > 0:
                         # 叠加到主组
                         target_vg.add([v.index], weight, 'ADD')
