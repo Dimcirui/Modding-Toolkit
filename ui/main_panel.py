@@ -274,7 +274,6 @@ class MHW_PT_MainPanel(bpy.types.Panel):
         if settings.show_mhws:
             box = layout.box()
             box.label(text="MHWilds Tools", icon='WORLD')
-            box.operator("mhwilds.tpose_convert", text="转为 MHWI T-Pose", icon='ARMATURE_DATA')
              
         # --- RE4 ---
         if settings.show_re4:
