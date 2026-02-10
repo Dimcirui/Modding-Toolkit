@@ -1,0 +1,367 @@
+{
+  "preset_info": {
+    "name": "Valve",
+    "type": "X_PRESET",
+    "version": "2.0",
+    "description": "Created with MHW Modding Toolkit Editor"
+  },
+  "mappings": {
+    "pelvis": {
+      "main": [
+        "ValveBiped.Bip01_Pelvis"
+      ],
+      "aux": []
+    },
+    "spine_01": {
+      "main": [
+        "ValveBiped.Bip01_Spine1"
+      ],
+      "aux": [
+        "ValveBiped.Bip01_Spine"
+      ]
+    },
+    "spine_02": {
+      "main": [
+        "ValveBiped.Bip01_Spine2"
+      ],
+      "aux": [
+        "ValveBiped.Bip01_Spine4"
+      ]
+    },
+    "neck": {
+      "main": [
+        "ValveBiped.Bip01_Neck1"
+      ],
+      "aux": []
+    },
+    "head": {
+      "main": [
+        "ValveBiped.Bip01_Head1"
+      ],
+      "aux": []
+    },
+    "clavicle_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Clavicle"
+      ],
+      "aux": [
+        "Armor.006",
+        "Armor.006_end"
+      ]
+    },
+    "upperarm_L": {
+      "main": [
+        "ValveBiped.Bip01_L_UpperArm"
+      ],
+      "aux": [
+        "Bone.081",
+        "Bone.081_end"
+      ]
+    },
+    "forearm_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Forearm"
+      ],
+      "aux": [
+        "Bone.062"
+      ]
+    },
+    "hand_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Hand"
+      ],
+      "aux": [
+        "Bone.080",
+        "Bone.080_end"
+      ]
+    },
+    "clavicle_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Clavicle"
+      ],
+      "aux": [
+        "Armor.007",
+        "Armor.007_end"
+      ]
+    },
+    "upperarm_R": {
+      "main": [
+        "ValveBiped.Bip01_R_UpperArm"
+      ],
+      "aux": [
+        "Bone.111",
+        "Bone.111_end"
+      ]
+    },
+    "forearm_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Forearm"
+      ],
+      "aux": [
+        "Bone.092",
+        "Bone.092_end"
+      ]
+    },
+    "hand_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Hand"
+      ],
+      "aux": [
+        "Bone.110",
+        "Bone.110_end"
+      ]
+    },
+    "thigh_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Thigh"
+      ],
+      "aux": []
+    },
+    "shin_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Calf"
+      ],
+      "aux": []
+    },
+    "foot_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Foot"
+      ],
+      "aux": []
+    },
+    "toe_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Toe0"
+      ],
+      "aux": [
+        "ValveBiped.Bip01_L_Toe0_end"
+      ]
+    },
+    "thigh_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Thigh"
+      ],
+      "aux": []
+    },
+    "shin_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Calf"
+      ],
+      "aux": []
+    },
+    "foot_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Foot"
+      ],
+      "aux": []
+    },
+    "toe_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Toe0"
+      ],
+      "aux": [
+        "ValveBiped.Bip01_R_Toe0_end"
+      ]
+    },
+    "thumb_01_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Finger0"
+      ],
+      "aux": []
+    },
+    "thumb_02_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Finger01"
+      ],
+      "aux": []
+    },
+    "thumb_03_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Finger02"
+      ],
+      "aux": [
+        "ValveBiped.Bip01_L_Finger02_end"
+      ]
+    },
+    "index_01_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Finger1"
+      ],
+      "aux": []
+    },
+    "index_02_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Finger11"
+      ],
+      "aux": []
+    },
+    "index_03_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Finger12"
+      ],
+      "aux": [
+        "ValveBiped.Bip01_L_Finger12_end"
+      ]
+    },
+    "middle_01_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Finger2"
+      ],
+      "aux": []
+    },
+    "middle_02_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Finger21"
+      ],
+      "aux": []
+    },
+    "middle_03_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Finger22"
+      ],
+      "aux": [
+        "ValveBiped.Bip01_L_Finger22_end"
+      ]
+    },
+    "ring_01_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Finger3"
+      ],
+      "aux": []
+    },
+    "ring_02_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Finger31"
+      ],
+      "aux": []
+    },
+    "ring_03_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Finger32"
+      ],
+      "aux": [
+        "ValveBiped.Bip01_L_Finger32_end"
+      ]
+    },
+    "pinky_01_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Finger4"
+      ],
+      "aux": []
+    },
+    "pinky_02_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Finger41"
+      ],
+      "aux": []
+    },
+    "pinky_03_L": {
+      "main": [
+        "ValveBiped.Bip01_L_Finger42"
+      ],
+      "aux": [
+        "ValveBiped.Bip01_L_Finger42_end"
+      ]
+    },
+    "thumb_01_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Finger0"
+      ],
+      "aux": []
+    },
+    "thumb_02_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Finger01"
+      ],
+      "aux": []
+    },
+    "thumb_03_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Finger02"
+      ],
+      "aux": [
+        "ValveBiped.Bip01_R_Finger02_end"
+      ]
+    },
+    "index_01_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Finger1"
+      ],
+      "aux": []
+    },
+    "index_02_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Finger11"
+      ],
+      "aux": []
+    },
+    "index_03_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Finger12"
+      ],
+      "aux": [
+        "ValveBiped.Bip01_R_Finger12_end"
+      ]
+    },
+    "middle_01_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Finger2"
+      ],
+      "aux": []
+    },
+    "middle_02_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Finger21"
+      ],
+      "aux": []
+    },
+    "middle_03_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Finger22"
+      ],
+      "aux": [
+        "ValveBiped.Bip01_R_Finger22_end"
+      ]
+    },
+    "ring_01_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Finger3"
+      ],
+      "aux": []
+    },
+    "ring_02_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Finger31"
+      ],
+      "aux": []
+    },
+    "ring_03_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Finger32"
+      ],
+      "aux": [
+        "ValveBiped.Bip01_R_Finger32_end"
+      ]
+    },
+    "pinky_01_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Finger4"
+      ],
+      "aux": []
+    },
+    "pinky_02_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Finger41"
+      ],
+      "aux": []
+    },
+    "pinky_03_R": {
+      "main": [
+        "ValveBiped.Bip01_R_Finger42"
+      ],
+      "aux": [
+        "ValveBiped.Bip01_R_Finger42_end"
+      ]
+    }
+  }
+}
