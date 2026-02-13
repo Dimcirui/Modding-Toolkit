@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Modding Toolkit",
     "author": "Dimcirui",
-    "version": (2, 1, 5),
+    "version": (2, 1, 6),
     "blender": (3, 0, 0),
     "location": "View3D > Sidebar > MOD Toolkit",
     "description": "Modular Toolkit for MHWI, MHRS, MHWs, and RE4...",
