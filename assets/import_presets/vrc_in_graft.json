@@ -25,12 +25,12 @@
     "thigh_L": { "main": ["UpperLeg_L", "Left leg", "UpperLeg.L", "Upper_leg.L", "Upper_leg_L"], "aux": ["Hips_L"] },
     "shin_L": { "main": ["LowerLeg_L", "Left knee", "LowerLeg.L", "Lower_leg.L", "Lower_leg_L", "lower_leg_L"], "aux": [] },
     "foot_L": { "main": ["Foot_L", "Left ankle", "Foot.L"], "aux": [] },
-    "toe_L": { "main": ["Toe_L", "Left toe", "Toe.L"], "aux": ["Toe.L_end"] },
+    "toe_L": { "main": ["Toe_L", "Left toe", "Toe.L", "Left Toe"], "aux": ["Toe.L_end", "Toe_Little_Proximal_L", "Toe_Little_Intermediate_L", "Toe_Little_Distal_L", "Toe_Little_Distal_L_end", "Toe_Ring_Proximal_L", "Toe_Ring_Intermediate_L", "Toe_Ring_Distal_L", "Toe_Ring_Distal_L_end", "Toe_Middle_Proximal_L", "Toe_Middle_Intermediate_L", "Toe_Middle_Distal_L", "Toe_Middle_Distal_L_end", "Toe_Index_Proximal_L", "Toe_Index_Intermediate_L", "Toe_Index_Distal_L", "Toe_Index_Distal_L_end", "Toe_Thumb_Proximal_L", "Toe_Thumb_Intermediate_L", "Toe_Thumb_Distal_L", "Toe_Thumb_Distal_L_end"] },
 
     "thigh_R": { "main": ["UpperLeg_R", "Right leg", "UpperLeg.R", "Upper_leg.R", "Upper_leg_R"], "aux": ["Hips_R"] },
     "shin_R": { "main": ["LowerLeg_R", "Right knee", "LowerLeg.R", "Lower_leg.R", "Lower_leg_R", "lower_leg_R"], "aux": [] },
     "foot_R": { "main": ["Foot_R", "Right ankle", "Foot.R"], "aux": [] },
-    "toe_R": { "main": ["Toe_R", "Right toe", "Toe.R"], "aux": ["Toe.R_end"] },
+    "toe_R": { "main": ["Toe_R", "Right toe", "Toe.R", "Right Toe"], "aux": ["Toe.R_end", "Toe_Little_Proximal_R", "Toe_Little_Intermediate_R", "Toe_Little_Distal_R", "Toe_Little_Distal_R_end", "Toe_Ring_Proximal_R", "Toe_Ring_Intermediate_R", "Toe_Ring_Distal_R", "Toe_Ring_Distal_R_end", "Toe_Middle_Proximal_R", "Toe_Middle_Intermediate_R", "Toe_Middle_Distal_R", "Toe_Middle_Distal_R_end", "Toe_Index_Proximal_R", "Toe_Index_Intermediate_R", "Toe_Index_Distal_R", "Toe_Index_Distal_R_end", "Toe_Thumb_Proximal_R", "Toe_Thumb_Intermediate_R", "Toe_Thumb_Distal_R", "Toe_Thumb_Distal_R_end"] },
 
     "thumb_01_L": { "main": ["ThumbProximal_L", "Thumb0_L", "Thumb Proximal.L", "Thumb_Proximal_L", "Thumb Proximal_L"], "aux": [] },
     "thumb_02_L": { "main": ["ThumbIntermediate_L", "Thumb1_L", "Thumb Intermediate.L", "Thumb_Intermediate_L", "Thumb Intermediate_L"], "aux": [] },
