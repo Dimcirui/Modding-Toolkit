@@ -203,7 +203,7 @@ class MODDER_OT_UniversalSnap(bpy.types.Operator):
         
         # 1. 检查选中项
         if len(selected_objs) != 2 or not context.active_object:
-            self.report({'ERROR'}, "操作对象错误: 请先选中源骨架(X)，再按住Shift选中目标骨架(Y)")
+            self.report({'ERROR'}, "操作对象错误: 请先选中源骨架(X)，再按住Ctrl选中目标骨架(Y)")
             return {'CANCELLED'}
             
         target_arm = context.active_object  # 活动的是目标 (Y, 如 MHWI)
@@ -300,7 +300,7 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
         target_arm = context.active_object # Out (目标)
 
         if not target_arm or target_arm.type != 'ARMATURE':
-            self.report({'ERROR'}, "操作失败：请先选择 In 骨架，再 Shift 加选 Out 骨架(Out需为黄色激活状态)")
+            self.report({'ERROR'}, "操作失败：请先选择 In 骨架，再 Ctrl 加选 Out 骨架(Out需为黄色激活状态)")
             return {'CANCELLED'}
         
         source_arm = None # In (来源)
@@ -471,6 +471,7 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='OBJECT')
         self.report({'INFO'}, f"移植完成: 处理 {created_count} 根骨骼 (含自动生成的末端骨)")
         return {'FINISHED'}
+
 
 classes = [
     MODDER_OT_ApplyStandardX,

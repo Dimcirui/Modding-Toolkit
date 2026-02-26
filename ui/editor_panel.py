@@ -1,5 +1,6 @@
 import bpy
 from ..core import ui_config
+from ..core.ui_config import get_display_name
 
 class MHW_PT_PresetEditor(bpy.types.Panel):
     bl_label = "预设编辑器 (X Preset)"
@@ -101,8 +102,8 @@ class MHW_PT_PresetEditor(bpy.types.Panel):
                     # === 单行布局 ===
                     row = col.row(align=True)
                     
-                    # 1. 标准名
-                    row.label(text=f"{std_key}:")
+                    # 1. 标准名（含中文 + 可选标记）
+                    row.label(text=f"{get_display_name(std_key)}:")
                     
                     # 2. 主骨显示框
                     if slot.source_bone_name:

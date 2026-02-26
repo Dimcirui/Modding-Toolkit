@@ -1,45 +1,102 @@
 # core/ui_config.py
 
+# 可选骨骼：这些骨骼不是所有游戏都支持，当 Y 预设中不包含时不显示为"缺失"
+OPTIONAL_BONES = {
+    "spine_03": "可选 | 上胸",
+}
+
+# 骨骼显示名：中文名 (英文标准名)
+# 未在此表中的骨骼会直接显示英文标准名
+BONE_DISPLAY_NAMES = {
+    # 躯干
+    "pelvis":    "胯部 (pelvis)",
+    "spine_01":  "腰腹部 (spine_01)",
+    "spine_02":  "胸腔 (spine_02)",
+    "spine_03":  "上胸 (spine_03)",
+    "neck":      "颈部 (neck)",
+    "head":      "头部 (head)",
+    # 左臂
+    "clavicle_L":  "左肩 (clavicle_L)",
+    "upperarm_L":  "左上臂 (upperarm_L)",
+    "forearm_L":   "左前臂 (forearm_L)",
+    "hand_L":      "左手掌 (hand_L)",
+    # 右臂
+    "clavicle_R":  "右肩 (clavicle_R)",
+    "upperarm_R":  "右上臂 (upperarm_R)",
+    "forearm_R":   "右前臂 (forearm_R)",
+    "hand_R":      "右手掌 (hand_R)",
+    # 左腿
+    "thigh_L":  "左大腿 (thigh_L)",
+    "shin_L":   "左小腿 (shin_L)",
+    "foot_L":   "左脚掌 (foot_L)",
+    "toe_L":    "左脚趾 (toe_L)",
+    # 右腿
+    "thigh_R":  "右大腿 (thigh_R)",
+    "shin_R":   "右小腿 (shin_R)",
+    "foot_R":   "右脚掌 (foot_R)",
+    "toe_R":    "右脚趾 (toe_R)",
+    # 左手指
+    "thumb_01_L":  "左拇指1", "thumb_02_L":  "左拇指2", "thumb_03_L":  "左拇指3",
+    "index_01_L":  "左食指1", "index_02_L":  "左食指2", "index_03_L":  "左食指3",
+    "middle_01_L": "左中指1", "middle_02_L": "左中指2", "middle_03_L": "左中指3",
+    "ring_01_L":   "左无名指1", "ring_02_L":   "左无名指2", "ring_03_L":   "左无名指3",
+    "pinky_01_L":  "左小指1", "pinky_02_L":  "左小指2", "pinky_03_L":  "左小指3",
+    # 右手指
+    "thumb_01_R":  "右拇指1", "thumb_02_R":  "右拇指2", "thumb_03_R":  "右拇指3",
+    "index_01_R":  "右食指1", "index_02_R":  "右食指2", "index_03_R":  "右食指3",
+    "middle_01_R": "右中指1", "middle_02_R": "右中指2", "middle_03_R": "右中指3",
+    "ring_01_R":   "右无名指1", "ring_02_R":   "右无名指2", "ring_03_R":   "右无名指3",
+    "pinky_01_R":  "右小指1", "pinky_02_R":  "右小指2", "pinky_03_R":  "右小指3",
+}
+
+def get_display_name(std_key):
+    """获取骨骼的显示名，带可选标记"""
+    name = BONE_DISPLAY_NAMES.get(std_key, std_key)
+    if std_key in OPTIONAL_BONES:
+        name += f"  [{OPTIONAL_BONES[std_key]}]"
+    return name
+
+# 分组显示名
 UI_HIERARCHY = {
-    "Torso & Head": {
+    "躯干和头部": {
         "icon": 'USER',
         "subsections": {
-            "Spine": ["pelvis", "spine_01", "spine_02"],
-            "Upper": ["neck", "head"]
+            "脊椎": ["pelvis", "spine_01", "spine_02", "spine_03"],
+            "上半身": ["neck", "head"]
         }
     },
-    "Arms": {
+    "手臂": {
         "icon": 'ARMATURE_DATA',
         "subsections": {
-            "Left Arm": ["clavicle_L", "upperarm_L", "forearm_L", "hand_L"],
-            "Right Arm": ["clavicle_R", "upperarm_R", "forearm_R", "hand_R"]
+            "左臂": ["clavicle_L", "upperarm_L", "forearm_L", "hand_L"],
+            "右臂": ["clavicle_R", "upperarm_R", "forearm_R", "hand_R"]
         }
     },
-    "Legs": {
+    "腿部": {
         "icon": 'MOD_DYNAMICPAINT',
         "subsections": {
-            "Left Leg": ["thigh_L", "shin_L", "foot_L", "toe_L"],
-            "Right Leg": ["thigh_R", "shin_R", "foot_R", "toe_R"]
+            "左腿": ["thigh_L", "shin_L", "foot_L", "toe_L"],
+            "右腿": ["thigh_R", "shin_R", "foot_R", "toe_R"]
         }
     },
-    "Fingers (Left)": {
+    "手指 (左)": {
         "icon": 'HAND',
         "subsections": {
-            "Thumb": ["thumb_01_L", "thumb_02_L", "thumb_03_L"],
-            "Index": ["index_01_L", "index_02_L", "index_03_L"],
-            "Middle": ["middle_01_L", "middle_02_L", "middle_03_L"],
-            "Ring": ["ring_01_L", "ring_02_L", "ring_03_L"],
-            "Pinky": ["pinky_01_L", "pinky_02_L", "pinky_03_L"],
+            "拇指": ["thumb_01_L", "thumb_02_L", "thumb_03_L"],
+            "食指": ["index_01_L", "index_02_L", "index_03_L"],
+            "中指": ["middle_01_L", "middle_02_L", "middle_03_L"],
+            "无名指": ["ring_01_L", "ring_02_L", "ring_03_L"],
+            "小指": ["pinky_01_L", "pinky_02_L", "pinky_03_L"],
         }
     },
-    "Fingers (Right)": {
+    "手指 (右)": {
         "icon": 'HAND',
         "subsections": {
-            "Thumb": ["thumb_01_R", "thumb_02_R", "thumb_03_R"],
-            "Index": ["index_01_R", "index_02_R", "index_03_R"],
-            "Middle": ["middle_01_R", "middle_02_R", "middle_03_R"],
-            "Ring": ["ring_01_R", "ring_02_R", "ring_03_R"],
-            "Pinky": ["pinky_01_R", "pinky_02_R", "pinky_03_R"],
+            "拇指": ["thumb_01_R", "thumb_02_R", "thumb_03_R"],
+            "食指": ["index_01_R", "index_02_R", "index_03_R"],
+            "中指": ["middle_01_R", "middle_02_R", "middle_03_R"],
+            "无名指": ["ring_01_R", "ring_02_R", "ring_03_R"],
+            "小指": ["pinky_01_R", "pinky_02_R", "pinky_03_R"],
         }
     }
 }
