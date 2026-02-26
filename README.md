@@ -2,11 +2,19 @@
 
 [中文说明见下方](#中文说明)
 
-A comprehensive Blender toolkit for game modding. Supports Monster Hunter World: Iceborne (MHWI), Monster Hunter Wilds (MHWs), Resident Evil 4 Remake (RE4), and more through a universal preset system.
+A comprehensive Blender toolkit for game modding. Supports Capcom's games and more.
 
 **Supported Blender Versions**: 4.x (recommended 4.3+)
 
 ---
+
+## Supported Games
+* Monster Hunter World: Iceborne
+* Monster Hunter Rise: Sunbreak
+* Monster Hunter Wilds
+* Resident Evil 4: Remake
+* Street Fighter 6
+* Devil May Cry 5
 
 ## Core Features
 
@@ -59,11 +67,19 @@ A built-in GUI editor to create custom bone mappings without writing code.
 <a id="中文说明"></a>
 # 中文说明
 
-一款综合性的 Blender 游戏 Mod 制作工具包。支持怪物猎人世界：冰原 (MHWI)、怪物猎人：荒野 (MHWs)、生化危机4重制版 (RE4) 等游戏，并通过通用预设系统支持更多游戏。
+一款综合性的 Blender 游戏 Mod 制作工具包。支持部分卡普空游戏以及其他游戏。
 
 **支持的 Blender 版本**: 4.x（推荐 4.3+）
 
 ---
+
+## 支持游戏
+* 怪物猎人世界：冰原 (MHWI)
+* 怪物猎人崛起：曙光 (MHRS)
+* 怪物猎人：荒野 (MHWs)
+* 生化危机4重制版 (RE4)
+* 街霸6 (SF6)
+* 鬼泣5 (DMC5)
 
 ## 核心功能
 
