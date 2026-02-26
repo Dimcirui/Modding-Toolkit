@@ -1,3 +1,5 @@
+from fileinput import filename
+
 import bpy
 import json
 import os
@@ -283,15 +285,17 @@ class MODDER_OT_LoadXPreset(bpy.types.Operator):
         settings = context.scene.mhw_suite_settings # 获取主设置里的文件名
         editor = context.scene.mhw_preset_editor
         
-        filename = settings.import_preset_enum
-        if not filename:
-            self.report({'ERROR'}, "请先在上方选择一个来源预设")
+        raw_id = settings.import_preset_enum
+        if not raw_id or raw_id == "NONE":
+            self.report({'WARNING'}, "未选择任何预设")
             return {'CANCELLED'}
+        
+        real_filename = os.path.basename(raw_id)
 
         # 1. 使用 BoneMapManager 读取 JSON
         mapper = BoneMapManager()
-        if not mapper.load_preset(filename, is_import_x=True):
-            self.report({'ERROR'}, f"无法加载文件: {filename}")
+        if not mapper.load_preset(real_filename, is_import_x=True):
+            self.report({'ERROR'}, f"无法加载文件: {real_filename}")
             return {'CANCELLED'}
         
         # 2. 填充编辑器
@@ -323,7 +327,7 @@ class MODDER_OT_LoadXPreset(bpy.types.Operator):
         
         # 3. 同步文件名到“新建名称”框，方便覆盖保存
         # 去掉 .json 后缀
-        clean_name = filename.rsplit('.', 1)[0]
+        clean_name = real_filename.rsplit('.', 1)[0]
         editor.new_preset_name = clean_name
         
         self.report({'INFO'}, f"成功加载预设: {clean_name} (包含 {loaded_count} 个映射)")
@@ -342,22 +346,22 @@ class MODDER_OT_DeleteXPreset(bpy.types.Operator):
 
     def execute(self, context):
         settings = context.scene.mhw_suite_settings
-        filename = settings.import_preset_enum
         
-        if not filename:
+        raw_id = settings.import_preset_enum
+        if not raw_id or raw_id == "NONE":
             return {'CANCELLED'}
+        
+        real_filename = os.path.basename(raw_id)
             
         # 获取真实路径
         mapper = BoneMapManager()
-        filepath = mapper.get_preset_path(filename, is_import_x=True)
+        filepath = mapper.get_preset_path(real_filename, is_import_x=True)
         
         if os.path.exists(filepath):
             try:
                 os.remove(filepath)
-                # 强制刷新 UI 列表 (Blender EnumProperty 有缓存，可能需要鼠标晃一下才能刷具体)
-                # 这里我们重置一下变量名来触发更新
-                settings.import_preset_enum = "" 
-                self.report({'INFO'}, f"已删除文件: {filename}")
+                settings.import_preset_enum = "NONE"
+                self.report({'INFO'}, f"已删除文件: {real_filename}")
             except Exception as e:
                 self.report({'ERROR'}, f"删除失败: {e}")
         else:

@@ -1,6 +1,7 @@
 import bpy
 import json
 import os
+from urllib.parse import unquote
 
 # --- 1. 标准骨骼定义 (The Standard) ---
 STANDARD_BONE_NAMES = [
@@ -44,7 +45,6 @@ class BoneMapManager:
         # 根目录是 core 的上一级
         root_dir = os.path.dirname(current_dir)
         
-        # 对应你截图中的文件夹名
         sub_folder = "import_presets" if is_import_x else "bone_presets"
         return os.path.join(root_dir, "assets", sub_folder, filename)
 
@@ -52,7 +52,11 @@ class BoneMapManager:
         """
         加载预设
         """
-        filepath = self.get_preset_path(filename, is_import_x)
+        if not filename or filename == "NONE":
+            return False
+        
+        real_filename = os.path.basename(unquote(filename))
+        filepath = self.get_preset_path(real_filename, is_import_x)
         
         if not os.path.exists(filepath):
             print(f"[Error] Preset file not found: {filepath}")

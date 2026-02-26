@@ -116,13 +116,17 @@ def find_bone_smart(bones, name):
             
     return None
 
+# 【关键】：全局缓存列表，防止 Blender C 层持有的字符串指针因 Python GC 变成野指针
+# 这是 Blender EnumProperty 动态回调的已知陷阱：回调返回的列表必须有持久引用
+_import_preset_cache = []
+_target_preset_cache = []
+
 def get_preset_items(subdir):
     """
     通用函数：扫描指定子目录下的所有 .json 文件
     subdir: "import_presets" 或 "bone_presets"
     """
     # 获取插件根目录
-    # 假设当前脚本位于 core/ 或 ui/ 目录下
     current_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.dirname(current_dir)
     preset_dir = os.path.join(root_dir, "assets", subdir)
@@ -135,9 +139,7 @@ def get_preset_items(subdir):
     files = [f for f in os.listdir(preset_dir) if f.endswith('.json')]
     
     for i, f in enumerate(files):
-        # identifier, name, description
-        # identifier 用文件名，name 去掉后缀
-        display_name = f.replace("_preset.json", "").replace(".json", "").upper()
+        display_name = f.replace("_preset.json", "").replace(".json", "")
         items.append((f, display_name, f"加载 {f} 预设"))
         
     if not items:
@@ -148,7 +150,11 @@ def get_preset_items(subdir):
 # --- 回调函数接口 ---
 
 def get_import_presets_callback(self, context):
-    return get_preset_items("import_presets")
+    global _import_preset_cache
+    _import_preset_cache = get_preset_items("import_presets")
+    return _import_preset_cache
 
 def get_target_presets_callback(self, context):
-    return get_preset_items("bone_presets")
+    global _target_preset_cache
+    _target_preset_cache = get_preset_items("bone_presets")
+    return _target_preset_cache
