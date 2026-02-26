@@ -1,9 +1,10 @@
 {
   "preset_info": {
-    "name": "Monster Hunter Rise",
+    "name": "Devil May Cry 5",
+    "game_code": "DMC5",
     "type": "X_PRESET",
-    "version": "1.0",
-    "description": "Source preset for MHR. Merges twists (T) and helpers (W)."
+    "version": "1.1",
+    "description": "Source preset for DMC5. Maps DMC5 bone names to standardized bone names. Supports primary bone renaming and auxiliary weight merging for original DMC5 models."
   },
   "mappings": {
     "pelvis": { "main": ["Waist_00"], "aux": [] },

@@ -7,8 +7,8 @@
     "description": "Target preset for RE4. Renames standard bones to RE4 format."
   },
   "mappings": {
-    "pelvis": { "main": ["Hip"], "aux": [] },
-    "spine_01": { "main": ["Spine_0"], "aux": [] },
+    "pelvis": { "main": ["Hip"], "aux": ["Spine_0"] },
+    "spine_01": { "main": ["Spine_1"], "aux": [] },
     "spine_02": { "main": ["Spine_2"], "aux": [] },
     "neck": { "main": ["Neck_1"], "aux": [] },
     "head": { "main": ["Head"], "aux": [] },
