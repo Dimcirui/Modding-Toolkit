@@ -123,9 +123,18 @@ class MODDER_OT_DirectConvert(bpy.types.Operator):
             
             # B. 从 Y 表获取目标信息
             tgt_entry = mapper_y.mapping_data.get(std_key)
-            if not tgt_entry: continue
-            tgt_mains = tgt_entry.get("main", [])
+            tgt_mains = tgt_entry.get("main", []) if tgt_entry else []
             
+            # 降级拦截器 
+            if std_key == "spine_03" and not tgt_mains:
+                # 目标游戏不支持 spine_03，寻找 Y 预设中的 spine_02 作为降级替代
+                fallback_entry = mapper_y.mapping_data.get("spine_02")
+                if fallback_entry and fallback_entry.get("main"):
+                    fallback_target = fallback_entry["main"][0]
+                    # 强行将 spine_03 的源骨骼分配给 spine_02 的目标名
+                    conversion_rules.append((src_mains, src_auxs, fallback_target))
+                continue
+
             if src_mains and tgt_mains:
                 # 规则：(源主名列表, 源辅助名列表, 目标主名)
                 # 取第一个目标主名作为最终名字

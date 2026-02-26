@@ -5,7 +5,7 @@ import os
 # --- 1. 标准骨骼定义 (The Standard) ---
 STANDARD_BONE_NAMES = [
     # 躯干 (Center)
-    "pelvis", "spine_01", "spine_02", "neck", "head",
+    "pelvis", "spine_01", "spine_02", "spine_03", "neck", "head",
     
     # 手臂 (Arm) - 左/右
     "clavicle_L", "upperarm_L", "forearm_L", "hand_L",
