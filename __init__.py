@@ -1,10 +1,10 @@
 bl_info = {
     "name": "Modding Toolkit",
     "author": "Dimcirui",
-    "version": (2, 1, 6),
+    "version": (2, 2, 0),
     "blender": (3, 0, 0),
     "location": "View3D > Sidebar > MOD Toolkit",
-    "description": "Modular Toolkit for MHWI, MHRS, MHWs, and RE4...",
+    "description": "Modding Toolkit for Capcom's games",
     "category": "Object",
 }
 
@@ -58,6 +58,10 @@ modules = [
 ]
 
 def register():
+    # 在注册任何模块之前，先执行一次性预设迁移（英文名 → 中文名）
+    from .core.preset_migration import run_migration
+    run_migration()
+    
     addon_updater_ops.register(bl_info)
     
     bpy.utils.register_class(MT_Preferences)
