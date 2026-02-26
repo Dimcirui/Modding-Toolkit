@@ -6,28 +6,10 @@
     "description": "Created with MHW Modding Toolkit Editor"
   },
   "mappings": {
-    "pelvis": {
-      "main": [
-        "ValveBiped.Bip01_Pelvis"
-      ],
-      "aux": []
-    },
-    "spine_01": {
-      "main": [
-        "ValveBiped.Bip01_Spine1"
-      ],
-      "aux": [
-        "ValveBiped.Bip01_Spine"
-      ]
-    },
-    "spine_02": {
-      "main": [
-        "ValveBiped.Bip01_Spine2"
-      ],
-      "aux": [
-        "ValveBiped.Bip01_Spine4"
-      ]
-    },
+    "pelvis": { "main": ["ValveBiped.Bip01_Pelvis"], "aux": ["ValveBiped.Bip01_Spine"] },
+    "spine_01": { "main": ["ValveBiped.Bip01_Spine1"], "aux": [] },
+    "spine_02": { "main": ["ValveBiped.Bip01_Spine2"], "aux": [] },
+    "spine_03": { "main": ["ValveBiped.Bip01_Spine4"], "aux": [] },
     "neck": {
       "main": [
         "ValveBiped.Bip01_Neck1"
