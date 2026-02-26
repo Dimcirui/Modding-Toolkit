@@ -7,8 +7,9 @@
   },
   "mappings": {
     "pelvis": { "main": ["Bip001_Pelvis"], "aux": ["Bip001", "Bip_L_Thigh_ty_minus", "Bip_L_Thigh_ty_plus", "Bip_L_Thigh_tz_minus", "Bip_R_Thigh_ty_minus", "Bip_R_Thigh_ty_plus", "Bip_R_Thigh_tz_minus"] },
-    "spine_01": { "main": ["Bip001_Spine"], "aux": ["Bip001_Spine1"] },
-    "spine_02": { "main": ["Bip001_Spine2"], "aux": [] },
+    "spine_01": { "main": ["Bip001_Spine"], "aux": [] },
+    "spine_02": { "main": ["Bip001_Spine1"], "aux": [] },
+    "spine_03": { "main": ["Bip001_Spine2"], "aux": [] },
     "neck": { "main": ["Bip001_Neck"], "aux": [] },
     "head": { "main": ["Bip001_Head"], "aux": ["head_dn_jnt", "head_mid_jnt", "head_up_jnt"] },
 

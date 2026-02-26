@@ -7,8 +7,8 @@
     "description": "Auto-mapped from MHWI->RE4 table. Merges twists, helpers, and facial bones into standard hierarchy."
   },
   "mappings": {
-    "pelvis": { "main": ["Hip"], "aux": [] },
-    "spine_01": { "main": ["Spine_0"], "aux": [] },
+    "pelvis": { "main": ["Hip"], "aux": ["Spine_0"] },
+    "spine_01": { "main": ["Spine_1"], "aux": [] },
     "spine_02": { "main": ["Spine_2"], "aux": [] },
     "neck": { "main": ["Neck_1"], "aux": [] },
     "head": { 
