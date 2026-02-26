@@ -6,18 +6,9 @@
     "description": "Merges HJ helpers, split spines, and muscle bones."
   },
   "mappings": {
-    "pelvis": {
-      "main": ["Hip"],
-      "aux": ["Hip_HJ_00"]
-    },
-    "spine_01": {
-      "main": ["Spine_0"],
-      "aux": ["Spine_0_HJ_00"]
-    },
-    "spine_02": {
-      "main": ["Spine_2"],
-      "aux": ["Spine_1", "Spine_1_HJ_00", "Spine_2_HJ_00"]
-    },
+    "pelvis": { "main": ["Hip"], "aux": ["Spine_0", "Hip_HJ_00", "Spine_0_HJ_00"] },
+    "spine_01": { "main": ["Spine_1"], "aux": ["Spine_1_HJ_00"] },
+    "spine_02": { "main": ["Spine_2"], "aux": ["Spine_2_HJ_00"] },
     "neck": {
       "main": ["Neck_0"],
       "aux": ["Neck_0_HJ_00"]

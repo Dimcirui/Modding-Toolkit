@@ -8,7 +8,8 @@
   "mappings": {
     "pelvis": { "main": ["Hips"], "aux": ["Skirt_root"] },
     "spine_01": { "main": ["Spine"], "aux": [] },
-    "spine_02": { "main": ["Chest", "UpperChest"], "aux": [] },
+    "spine_02": { "main": ["Chest"], "aux": [] },
+    "spine_03": { "main": ["UpperChest"], "aux": [] },
     "neck": { "main": ["Neck"], "aux": [] },
     "head": { "main": ["Head"], "aux": ["Head_Adj", "Jaw", "Hair_root", "LeftEye", "RightEye", "LeftEye_end", "RightEye_end"] },
 

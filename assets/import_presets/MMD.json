@@ -7,7 +7,7 @@
   },
   "mappings": {
     "pelvis": { "main": ["Hips", "下半身"], "aux": [] },
-    "spine_01": { "main": ["Spine", "上半身"], "aux": [] },
+    "spine_01": { "main": ["Spine", "上半身"], "aux": ["上半身1"] },
     "spine_02": { "main": ["Chest", "上半身2"], "aux": [] },
     "neck": { "main": ["Neck", "首"], "aux": [] },
     "head": { "main": ["Head", "頭"], "aux": [] },
