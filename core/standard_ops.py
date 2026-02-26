@@ -473,12 +473,102 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
         return {'FINISHED'}
 
 
+
+class MODDER_OT_MergePhysicsWeights(bpy.types.Operator):
+    """将物理骨骼的顶点组权重合并到其最近的基础骨骼上 (通过 X 预设判断)。\n用于不需要物理效果或目标游戏不支持物理的降级场景"""
+    bl_idname = "modder.merge_physics_weights"
+    bl_label = "物理权重降级"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        settings = context.scene.mhw_suite_settings
+        
+        # 获取选中的网格
+        selected_meshes = [o for o in context.selected_objects if o.type == 'MESH']
+        if not selected_meshes:
+            self.report({'ERROR'}, "请至少选中一个网格")
+            return {'CANCELLED'}
+        
+        # 需要一个骨架来分析骨骼层级
+        arm_obj = None
+        for mesh_obj in selected_meshes:
+            arm = mesh_obj.find_armature()
+            if arm:
+                arm_obj = arm
+                break
+        
+        if not arm_obj:
+            self.report({'ERROR'}, "选中的网格没有绑定骨架")
+            return {'CANCELLED'}
+        
+        # 加载 X 预设，判断哪些是基础骨骼
+        mapper = BoneMapManager()
+        if not mapper.load_preset(settings.import_preset_enum, is_import_x=True):
+            self.report({'ERROR'}, "无法加载 X 预设")
+            return {'CANCELLED'}
+        
+        # 构建预设骨骼集合 (所有在预设中出现的骨骼 = 基础骨骼)
+        preset_bones = set()
+        for std_key, entry in mapper.mapping_data.items():
+            for name in entry.get('main', []):
+                preset_bones.add(name)
+            for name in entry.get('aux', []):
+                preset_bones.add(name)
+        
+        # 为每根物理骨找到其归属的基础骨骼 (沿父级链向上找)
+        # physics_to_base: {physics_bone_name: base_bone_name}
+        physics_to_base = {}
+        
+        for bone in arm_obj.data.bones:
+            if bone.name in preset_bones:
+                continue  # 是基础骨骼，跳过
+            
+            # 沿父级链向上找第一个基础骨骼
+            parent = bone.parent
+            while parent:
+                if parent.name in preset_bones:
+                    physics_to_base[bone.name] = parent.name
+                    break
+                parent = parent.parent
+            # 如果找不到基础父级 (孤儿物理骨)，跳过
+        
+        if not physics_to_base:
+            self.report({'INFO'}, "未检测到物理骨骼的顶点组")
+            return {'FINISHED'}
+        
+        # 对每个网格执行权重合并
+        bpy.ops.object.mode_set(mode='OBJECT')
+        total_merged = 0
+        
+        for mesh_obj in selected_meshes:
+            vgs = mesh_obj.vertex_groups
+            merged_in_mesh = 0
+            
+            for phys_name, base_name in physics_to_base.items():
+                if phys_name not in vgs:
+                    continue  # 这个网格没有这根物理骨的权重
+                
+                # 确保基础骨骼的顶点组存在
+                if base_name not in vgs:
+                    vgs.new(name=base_name)
+                
+                # 合并权重
+                weight_utils.merge_vgroups_to_main(mesh_obj, base_name, [phys_name])
+                merged_in_mesh += 1
+            
+            total_merged += merged_in_mesh
+        
+        self.report({'INFO'}, f"物理权重降级完成: 在 {len(selected_meshes)} 个网格上合并了 {total_merged} 个物理顶点组")
+        return {'FINISHED'}
+
+
 classes = [
     MODDER_OT_ApplyStandardX,
     MODDER_OT_ApplyStandardY,
     MODDER_OT_DirectConvert,
     MODDER_OT_UniversalSnap,
     MODDER_OT_SmartGraftBones,
+    MODDER_OT_MergePhysicsWeights,
 ]
 
 def register():

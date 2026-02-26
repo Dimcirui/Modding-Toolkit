@@ -15,6 +15,7 @@ A comprehensive Blender toolkit for game modding. Supports Capcom's games and mo
 * Resident Evil 4: Remake
 * Street Fighter 6
 * Devil May Cry 5
+* Helldivers 2
 
 ## Core Features
 
@@ -26,7 +27,8 @@ Convert any source model to any target game format using customizable JSON prese
     * **Target (Y)**: MHWI, MHW: Wilds, RE4 Remake, Street Fighter 6, etc.
 * **Bone Snap** [X+Y, dual armature]: Align your model's skeleton to the target game's skeleton.
 * **Direct Convert** [X+Y]: Rename vertex groups directly on the mesh.
-* **Experimental - Physics Bone Graft** [X+Y, dual armature]: Transplant physics bones from source to target skeleton with auto-generated end bones.
+* **Experimental - Physics Bone Graft** [X+Y, dual armature]: Transplants physical bones from the source skeleton to the target skeleton, handles directional twists, and automatically generates end bones.
+* **Experimental Feature - Physics Weight Downgrade** [X]: Merges physics weights onto the nearest body bone for scenarios where physics are unnecessary or unavailable.
 
 ### 2. Pose Convert
 A standalone pose transformation system, independent of the skeleton converter.
@@ -80,6 +82,7 @@ A built-in GUI editor to create custom bone mappings without writing code.
 * 生化危机4重制版 (RE4)
 * 街霸6 (SF6)
 * 鬼泣5 (DMC5)
+* 绝地潜兵2 (HD2)
 
 ## 核心功能
 
@@ -91,7 +94,8 @@ A built-in GUI editor to create custom bone mappings without writing code.
     * **目标 (Y)**: 怪猎世界冰原、怪猎荒野、生化4重制版、街霸6 等。
 * **骨骼对齐** [X+Y, 双骨架]: 将模型骨架对齐到目标游戏骨架。
 * **重命名顶点组** [X+Y]: 直接在网格上重命名顶点组。
-* **实验性功能 - 物理骨移植** [X+Y, 双骨架]: 将物理骨骼从来源骨架移植到目标骨架，自动生成末端骨。
+* **实验性功能 - 物理骨移植** [X+Y, 双骨架]: 将物理骨骼从来源骨架移植到目标骨架，处理方向扭转并自动生成末端骨。
+* **实验性功能 - 物理权重降级** [X]: 将物理权重合并到最近的身体骨骼上，以用于不需要或不能使用物理的场景。
 
 ### 2. 姿态转换
 独立于骨架转换器的姿态变换系统。

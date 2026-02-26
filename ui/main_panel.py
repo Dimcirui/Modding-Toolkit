@@ -206,6 +206,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             if settings.show_experimental:
                 exp_col = col.column(align=True)
                 exp_col.operator("modder.smart_graft", text="移植物理骨骼 [X+Y, 双骨架]", icon='BONE_DATA')
+                exp_col.operator("modder.merge_physics_weights", text="物理权重降级 [X]", icon='TRASH')
             
             # 映射详情预览
             col.separator()
