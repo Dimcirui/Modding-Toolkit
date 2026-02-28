@@ -207,6 +207,8 @@ class MHW_PT_MainPanel(bpy.types.Panel):
                 exp_col = col.column(align=True)
                 exp_col.operator("modder.smart_graft", text="移植物理骨骼 [X+Y, 双骨架]", icon='BONE_DATA')
                 exp_col.operator("modder.merge_physics_weights", text="物理权重降级 [X]", icon='TRASH')
+                exp_col.operator("modder.remove_non_base_bones", text="剔除非基础骨骼 [X]", icon='X')
+                exp_col.operator("modder.rename_bones_to_target", text="基础骨骼改名 [X+Y]", icon='SORTALPHA')
             
             # 映射详情预览
             col.separator()

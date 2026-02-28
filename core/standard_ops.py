@@ -562,6 +562,119 @@ class MODDER_OT_MergePhysicsWeights(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MODDER_OT_RenameBonesToTarget(bpy.types.Operator):
+    """将骨架上的基础骨骼名从来源名 (X) 改为目标游戏名 (Y)。\n用于手动对齐工作流: 改名后骨骼名与目标游戏一致, 方便手动对齐和数据传递"""
+    bl_idname = "modder.rename_bones_to_target"
+    bl_label = "基础骨骼改名 (X->Y)"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        settings = context.scene.mhw_suite_settings
+        arm_obj = context.active_object
+        
+        if not arm_obj or arm_obj.type != 'ARMATURE':
+            self.report({'ERROR'}, "请先选中一个骨架")
+            return {'CANCELLED'}
+        
+        # 加载 X 和 Y 预设
+        mapper_x = BoneMapManager()
+        if not mapper_x.load_preset(settings.import_preset_enum, is_import_x=True):
+            self.report({'ERROR'}, "无法加载 X 预设")
+            return {'CANCELLED'}
+        
+        mapper_y = BoneMapManager()
+        if not mapper_y.load_preset(settings.target_preset_enum, is_import_x=False):
+            self.report({'ERROR'}, "无法加载 Y 预设")
+            return {'CANCELLED'}
+        
+        # 通过标准键桥接: X 实际骨骼名 -> 标准键 -> Y 目标骨骼名
+        rename_map = {}  # {当前骨骼名: 目标骨骼名}
+        
+        for std_key in STANDARD_BONE_NAMES:
+            # 在骨架上找到 X 预设匹配的实际骨骼
+            src_name, _ = mapper_x.get_matches_for_standard(arm_obj, std_key)
+            if not src_name:
+                continue
+            
+            # 从 Y 预设获取目标名
+            tgt_entry = mapper_y.mapping_data.get(std_key)
+            if not tgt_entry or not tgt_entry.get('main'):
+                continue
+            tgt_name = tgt_entry['main'][0]
+            
+            # 跳过名字相同的
+            if src_name != tgt_name:
+                rename_map[src_name] = tgt_name
+        
+        if not rename_map:
+            self.report({'INFO'}, "没有需要改名的骨骼 (来源和目标名称已一致)")
+            return {'FINISHED'}
+        
+        # 进入编辑模式执行改名
+        bpy.ops.object.mode_set(mode='EDIT')
+        edit_bones = arm_obj.data.edit_bones
+        renamed_count = 0
+        
+        for old_name, new_name in rename_map.items():
+            if old_name in edit_bones:
+                # 如果目标名已被占用 (可能有同名骨骼), 先给它加后缀避让
+                if new_name in edit_bones and new_name != old_name:
+                    edit_bones[new_name].name = new_name + "_old"
+                edit_bones[old_name].name = new_name
+                renamed_count += 1
+        
+        bpy.ops.object.mode_set(mode='OBJECT')
+        self.report({'INFO'}, f"已将 {renamed_count} 根骨骼改名为目标游戏名")
+        return {'FINISHED'}
+
+
+class MODDER_OT_RemoveNonBaseBones(bpy.types.Operator):
+    """删除骨架中所有非基础骨骼 (通过 X 预设判断)。\n建议先执行物理权重降级再使用此功能"""
+    bl_idname = "modder.remove_non_base_bones"
+    bl_label = "剔除非基础骨骼"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        settings = context.scene.mhw_suite_settings
+        arm_obj = context.active_object
+        
+        if not arm_obj or arm_obj.type != 'ARMATURE':
+            self.report({'ERROR'}, "请先选中一个骨架")
+            return {'CANCELLED'}
+        
+        mapper = BoneMapManager()
+        if not mapper.load_preset(settings.import_preset_enum, is_import_x=True):
+            self.report({'ERROR'}, "无法加载 X 预设")
+            return {'CANCELLED'}
+        
+        # 构建基础骨骼集合
+        preset_bones = set()
+        for std_key, entry in mapper.mapping_data.items():
+            for name in entry.get('main', []):
+                preset_bones.add(name)
+            for name in entry.get('aux', []):
+                preset_bones.add(name)
+        
+        # 找出所有非基础骨骼
+        bpy.ops.object.mode_set(mode='EDIT')
+        edit_bones = arm_obj.data.edit_bones
+        to_remove = [b.name for b in edit_bones if b.name not in preset_bones]
+        
+        if not to_remove:
+            bpy.ops.object.mode_set(mode='OBJECT')
+            self.report({'INFO'}, "没有需要剔除的骨骼")
+            return {'FINISHED'}
+        
+        # 删除
+        for name in to_remove:
+            if name in edit_bones:
+                edit_bones.remove(edit_bones[name])
+        
+        bpy.ops.object.mode_set(mode='OBJECT')
+        self.report({'INFO'}, f"已剔除 {len(to_remove)} 根非基础骨骼")
+        return {'FINISHED'}
+
+
 classes = [
     MODDER_OT_ApplyStandardX,
     MODDER_OT_ApplyStandardY,
@@ -569,6 +682,8 @@ classes = [
     MODDER_OT_UniversalSnap,
     MODDER_OT_SmartGraftBones,
     MODDER_OT_MergePhysicsWeights,
+    MODDER_OT_RemoveNonBaseBones,
+    MODDER_OT_RenameBonesToTarget,
 ]
 
 def register():
