@@ -34,12 +34,12 @@
 
     "clavicle_L": { "main": ["l_clavicle"], "aux": [] },
     "upperarm_L": { "main": ["l_shoulder"], "aux": [] },
-    "forearm_L": { "main": ["l_arm"], "aux": [] },
+    "forearm_L": { "main": ["l_elbow"], "aux": [] },
     "hand_L": { "main": ["l_hand"], "aux": [] },
 
     "clavicle_R": { "main": ["r_clavicle"], "aux": [] },
     "upperarm_R": { "main": ["r_shoulder"], "aux": [] },
-    "forearm_R": { "main": ["r_arm"], "aux": [] },
+    "forearm_R": { "main": ["r_elbow"], "aux": [] },
     "hand_R": { "main": ["r_hand"], "aux": [] },
 
     "thigh_L": { "main": ["l_up_leg"], "aux": [] },
