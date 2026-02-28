@@ -50,9 +50,9 @@ def get_pose_presets_callback(self, context):
 # ============================================================
 
 class MODDER_OT_TPoseDirection(bpy.types.Operator):
-    """仅将上臂旋转到水平方向，适用于简单的 A-Pose 骨架"""
+    """仅将上臂旋转到水平方向，适用于简单的 A-Pose 骨架（如MMD），如果无法正确运作，请使用更通用的姿态变换记录器"""
     bl_idname = "modder.tpose_direction"
-    bl_label = "方向计算 (仅上臂)"
+    bl_label = "方向计算 (简单T转A)"
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
