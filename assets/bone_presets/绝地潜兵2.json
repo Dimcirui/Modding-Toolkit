@@ -42,13 +42,13 @@
     "forearm_R": { "main": ["r_elbow"], "aux": [] },
     "hand_R": { "main": ["r_hand"], "aux": [] },
 
-    "thigh_L": { "main": ["l_up_leg"], "aux": [] },
-    "shin_L": { "main": ["l_leg"], "aux": [] },
+    "thigh_L": { "main": ["l_thigh"], "aux": [] },
+    "shin_L": { "main": ["l_knee"], "aux": [] },
     "foot_L": { "main": ["l_foot"], "aux": [] },
     "toe_L": { "main": ["l_toe"], "aux": [] },
 
-    "thigh_R": { "main": ["r_up_leg"], "aux": [] },
-    "shin_R": { "main": ["r_leg"], "aux": [] },
+    "thigh_R": { "main": ["r_thigh"], "aux": [] },
+    "shin_R": { "main": ["r_knee"], "aux": [] },
     "foot_R": { "main": ["r_foot"], "aux": [] },
     "toe_R": { "main": ["r_toe"], "aux": [] },
 
