@@ -112,7 +112,7 @@ class MODDER_OT_TPoseDirection(bpy.types.Operator):
 # ============================================================
 
 class MODDER_OT_TPoseMatrixZero(bpy.types.Operator):
-    """RE Engine 专用: 重置肢体骨骼旋转矩阵为 T-Pose (适用于荒野/街霸6/生化4等)"""
+    """RE Engine 专用: 重置肢体骨骼旋转矩阵为 T-Pose (适用于荒野/街霸6/生化4等，生化9除外)"""
     bl_idname = "modder.tpose_matrix_zero"
     bl_label = "RE Engine 矩阵归零"
     bl_options = {'REGISTER', 'UNDO'}
