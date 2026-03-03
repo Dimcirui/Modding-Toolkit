@@ -13,6 +13,7 @@ A comprehensive Blender toolkit for game modding. Supports Capcom's games and mo
 * Monster Hunter Rise: Sunbreak
 * Monster Hunter Wilds
 * Resident Evil 4: Remake
+* Resident Evil: Requiem
 * Street Fighter 6
 * Devil May Cry 5
 * Helldivers 2
@@ -52,6 +53,7 @@ A built-in GUI editor to create custom bone mappings without writing code.
     * Endfield face vertex group rename (Endfield → MHWilds format).
     * Face weight simplification (merge detailed facial bones to main control bones).
 * **RE4 (Remake)**: FakeBone (end bone) generation, alignment, and merging toolset.
+* **Resident Evil: Requiem (RE9)**: Synchronize child bone orientations, batch export tool (requires RE Mesh Editor plugin).
 
 ### 5. General Utilities
 * Roll Zero, Add Tail Bone, Mirror X, Chain Simplification.
@@ -79,7 +81,8 @@ A built-in GUI editor to create custom bone mappings without writing code.
 * 怪物猎人世界：冰原 (MHWI)
 * 怪物猎人崛起：曙光 (MHRS)
 * 怪物猎人：荒野 (MHWs)
-* 生化危机4重制版 (RE4)
+* 生化危机4重制版 (RE4R)
+* 生化危机：镇魂曲（RE9）
 * 街霸6 (SF6)
 * 鬼泣5 (DMC5)
 * 绝地潜兵2 (HD2)
@@ -118,7 +121,8 @@ A built-in GUI editor to create custom bone mappings without writing code.
 * **怪猎荒野 (MHWilds)**:
     * Endfield 面部顶点组改名（Endfield → MHWilds 格式）。
     * 面部权重简化（将细分面部骨骼权重合并到主控制骨骼）。
-* **生化4重制版 (RE4)**: FakeBone（末端骨）生成、对齐和合并工具集。
+* **生化4重制版 (RE4R)**: FakeBone（末端骨）生成、对齐和合并工具集。
+* **生化危机：镇魂曲 (RE9)**: 同步子级骨骼朝向、批量导出工具（需要RE Mesh Editor插件）。
 
 ### 5. 通用工具
 * 扭转归零、添加尾骨、镜像对齐 X、骨链简化。
