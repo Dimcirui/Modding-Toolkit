@@ -60,8 +60,62 @@ def _set_enabled(scene, character_id, entry_id, suffix, value):
     scene[_make_en_key(character_id, entry_id, suffix)] = value
 
 
+# Simplified mode keys
+def _get_simplified_group_key(character_id, group_name, suffix):
+    key = f"re9sg_{character_id}_{group_name}_{suffix}"
+    return key.replace(" ", "_").replace("(", "").replace(")", "").replace("-", "_")
+
+
+def _get_simplified_group_binding(scene, character_id, group_name, suffix):
+    return scene.get(_get_simplified_group_key(character_id, group_name, suffix), "")
+
+
+def _set_simplified_group_binding(scene, character_id, group_name, suffix, value):
+    scene[_get_simplified_group_key(character_id, group_name, suffix)] = value
+
+
+def _get_simplified_empty_key(character_id, suffix):
+    return f"re9se_{character_id}_{suffix}"
+
+
+def _get_simplified_empty_binding(scene, character_id, suffix):
+    return scene.get(_get_simplified_empty_key(character_id, suffix), "")
+
+
+def _set_simplified_empty_binding(scene, character_id, suffix, value):
+    scene[_get_simplified_empty_key(character_id, suffix)] = value
+
+
+MESH_SETTINGS = {
+    "exportAllLODs": True,
+    "autoSolveRepeatedUVs": True,
+    "preserveSharpEdges": True,
+    "rotate90": True,
+    "useBlenderMaterialName": False,
+    "preserveBoneMatrices": False,
+    "exportBoundingBoxes": False,
+}
+
+
+def _do_export_mesh(filepath, collection_name):
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    bpy.ops.re_mesh.exportfile(filepath=filepath, targetCollection=collection_name, **MESH_SETTINGS)
+
+def _do_export_mdf2(filepath, collection_name):
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    bpy.ops.re_mdf.exportfile(filepath=filepath, targetCollection=collection_name)
+
+def _do_export_sfur(filepath, collection_name):
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    bpy.ops.re_sfur.exportfile(filepath=filepath, targetCollection=collection_name)
+
+def _do_export_fbxskel(filepath, armature_name):
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    bpy.ops.re_fbxskel.exportfile(filepath=filepath, targetArmature=armature_name)
+
+
 class RE9_OT_BatchExport(bpy.types.Operator):
-    """RE9 batch exporter: export mesh, mdf2, sfur and fbxskel files.\nRequires RE Mesh Editor"""
+    """RE9 batch exporter"""
     bl_idname = "re9.batch_export"
     bl_label = "RE9 Batch Export"
     bl_options = {'REGISTER'}
@@ -86,134 +140,109 @@ class RE9_OT_BatchExport(bpy.types.Operator):
 
         scheme = _load_scheme(scheme_file)
         if not scheme:
-            self.report({'ERROR'}, f"Failed to load scheme: {scheme_file}")
+            self.report({'ERROR'}, f"Failed to load: {scheme_file}")
             return {'CANCELLED'}
 
         character_id = scheme["character_id"]
         base_path = scheme["base_path"].replace("\\", "/")
-
-        MESH_SETTINGS = {
-            "exportAllLODs": True,
-            "autoSolveRepeatedUVs": True,
-            "preserveSharpEdges": True,
-            "rotate90": True,
-            "useBlenderMaterialName": False,
-            "preserveBoneMatrices": False,
-            "exportBoundingBoxes": False,
-        }
+        use_simplified = scene.get("re9_use_simplified", False)
 
         export_count = 0
         fail_count = 0
         skip_count = 0
 
+        def make_full(rel):
+            return os.path.join(natives_root, base_path.replace("/", os.sep), rel.replace("/", os.sep))
+
+        def try_export(func, filepath, target, label):
+            nonlocal export_count, fail_count, skip_count
+            if not target or target == "NONE":
+                skip_count += 1
+                return
+            # Check target exists
+            if func == _do_export_fbxskel:
+                if target not in bpy.data.objects or bpy.data.objects[target].type != 'ARMATURE':
+                    print(f"[RE9] SKIP {label}: armature '{target}' not found")
+                    skip_count += 1
+                    return
+            else:
+                if target not in bpy.data.collections:
+                    print(f"[RE9] SKIP {label}: collection '{target}' not found")
+                    skip_count += 1
+                    return
+            try:
+                print(f"[RE9] {label}: {target} -> {os.path.basename(filepath)}")
+                func(filepath, target)
+                export_count += 1
+            except Exception as err:
+                print(f"[RE9] FAILED {label}: {err}")
+                fail_count += 1
+
         # --- FBXSKEL ---
         fbxskel_path = scheme.get("fbxskel", "")
         if fbxskel_path:
-            fbxskel_enabled = _get_enabled(scene, character_id, "_fbxskel", "fbxskel")
-            fbxskel_armature = _get_binding(scene, character_id, "_fbxskel", "fbxskel")
+            fbx_enabled = _get_enabled(scene, character_id, "_fbxskel", "fbxskel")
+            fbx_arm = _get_binding(scene, character_id, "_fbxskel", "fbxskel")
+            if fbx_enabled and fbx_arm:
+                full = os.path.join(natives_root, "stm", "character", fbxskel_path.replace("/", os.sep))
+                try_export(_do_export_fbxskel, full, fbx_arm, "FBXSKEL")
 
-            if fbxskel_enabled and fbxskel_armature:
-                # fbxskel base_path is different: it goes to ch/ch02/ not ch02/0200/
-                # The path in JSON is relative to stm/character/ 
-                full_path = os.path.join(natives_root, "stm", "character",
-                                         fbxskel_path.replace("/", os.sep))
-                os.makedirs(os.path.dirname(full_path), exist_ok=True)
-
-                if fbxskel_armature in bpy.data.objects and bpy.data.objects[fbxskel_armature].type == 'ARMATURE':
-                    try:
-                        print(f"[RE9 Export] FBXSKEL: {fbxskel_armature} -> {fbxskel_path}")
-                        bpy.ops.re_fbxskel.exportfile(
-                            filepath=full_path,
-                            targetArmature=fbxskel_armature,
-                        )
-                        export_count += 1
-                    except Exception as err:
-                        print(f"[RE9 Export] FBXSKEL FAILED: {err}")
-                        fail_count += 1
-                else:
-                    print(f"[RE9 Export] SKIP FBXSKEL: armature '{fbxskel_armature}' not found")
-                    skip_count += 1
-
-        # --- MESH / MDF2 / SFUR per entry ---
+        # --- Per entry ---
         for group in scheme["groups"]:
+            group_name = group["name"]
             for entry in group["entries"]:
                 entry_id = entry["id"]
+                simp = entry.get("simplified", "user")
+                simp_sfur = entry.get("simplified_sfur", "")
 
-                # MESH
-                mesh_enabled = _get_enabled(scene, character_id, entry_id, "mesh")
-                mesh_collection = _get_binding(scene, character_id, entry_id, "mesh")
-
-                if mesh_enabled and mesh_collection and entry.get("mesh"):
-                    rel_path = entry["mesh"].replace("\\", "/")
-                    full_path = os.path.join(natives_root, base_path.replace("/", os.sep),
-                                             rel_path.replace("/", os.sep))
-                    os.makedirs(os.path.dirname(full_path), exist_ok=True)
-
-                    if mesh_collection in bpy.data.collections:
-                        try:
-                            print(f"[RE9 Export] MESH: {mesh_collection} -> {rel_path}")
-                            bpy.ops.re_mesh.exportfile(
-                                filepath=full_path,
-                                targetCollection=mesh_collection,
-                                **MESH_SETTINGS
-                            )
-                            export_count += 1
-                        except Exception as err:
-                            print(f"[RE9 Export] MESH FAILED: {err}")
-                            fail_count += 1
+                if use_simplified:
+                    # Determine mesh/mdf2 collection based on simplified rule
+                    if simp == "skip":
+                        continue
+                    elif simp == "user":
+                        mesh_col = _get_simplified_group_binding(scene, character_id, group_name, "mesh")
+                        mdf2_col = _get_simplified_group_binding(scene, character_id, group_name, "mdf2")
+                    elif simp == "empty":
+                        mesh_col = _get_simplified_empty_binding(scene, character_id, "mesh")
+                        mdf2_col = _get_simplified_empty_binding(scene, character_id, "mdf2")
                     else:
-                        print(f"[RE9 Export] SKIP MESH: collection '{mesh_collection}' not found")
-                        skip_count += 1
+                        continue
 
-                # MDF2
-                mdf2_enabled = _get_enabled(scene, character_id, entry_id, "mdf2")
-                mdf2_collection = _get_binding(scene, character_id, entry_id, "mdf2")
+                    # sfur
+                    sfur_col = ""
+                    if simp_sfur == "empty" and entry.get("sfur"):
+                        sfur_col = _get_simplified_empty_binding(scene, character_id, "sfur")
 
-                if mdf2_enabled and mdf2_collection and entry.get("mdf2"):
-                    if mdf2_collection in bpy.data.collections:
-                        for mdf2_rel in entry["mdf2"]:
-                            mdf2_rel = mdf2_rel.replace("\\", "/")
-                            full_path = os.path.join(natives_root, base_path.replace("/", os.sep),
-                                                     mdf2_rel.replace("/", os.sep))
-                            os.makedirs(os.path.dirname(full_path), exist_ok=True)
-                            try:
-                                print(f"[RE9 Export] MDF2: {mdf2_collection} -> {mdf2_rel}")
-                                bpy.ops.re_mdf.exportfile(
-                                    filepath=full_path,
-                                    targetCollection=mdf2_collection,
-                                )
-                                export_count += 1
-                            except Exception as err:
-                                print(f"[RE9 Export] MDF2 FAILED: {err}")
-                                fail_count += 1
-                    else:
-                        print(f"[RE9 Export] SKIP MDF2: collection '{mdf2_collection}' not found")
-                        skip_count += len(entry["mdf2"])
+                    # Export mesh
+                    if entry.get("mesh") and mesh_col:
+                        try_export(_do_export_mesh, make_full(entry["mesh"]), mesh_col, f"MESH {entry_id}")
 
-                # SFUR
-                sfur_enabled = _get_enabled(scene, character_id, entry_id, "sfur")
-                sfur_collection = _get_binding(scene, character_id, entry_id, "sfur")
+                    # Export mdf2s
+                    if entry.get("mdf2") and mdf2_col:
+                        for m in entry["mdf2"]:
+                            try_export(_do_export_mdf2, make_full(m), mdf2_col, f"MDF2 {entry_id}")
 
-                if sfur_enabled and sfur_collection and entry.get("sfur"):
-                    sfur_rel = entry["sfur"].replace("\\", "/")
-                    full_path = os.path.join(natives_root, base_path.replace("/", os.sep),
-                                             sfur_rel.replace("/", os.sep))
-                    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                    # Export sfur
+                    if entry.get("sfur") and sfur_col:
+                        try_export(_do_export_sfur, make_full(entry["sfur"]), sfur_col, f"SFUR {entry_id}")
 
-                    if sfur_collection in bpy.data.collections:
-                        try:
-                            print(f"[RE9 Export] SFUR: {sfur_collection} -> {sfur_rel}")
-                            bpy.ops.re_sfur.exportfile(
-                                filepath=full_path,
-                                targetCollection=sfur_collection,
-                            )
-                            export_count += 1
-                        except Exception as err:
-                            print(f"[RE9 Export] SFUR FAILED: {err}")
-                            fail_count += 1
-                    else:
-                        print(f"[RE9 Export] SKIP SFUR: collection '{sfur_collection}' not found")
-                        skip_count += 1
+                else:
+                    # Normal mode: use per-entry bindings
+                    mesh_en = _get_enabled(scene, character_id, entry_id, "mesh")
+                    mesh_col = _get_binding(scene, character_id, entry_id, "mesh")
+                    if mesh_en and mesh_col and entry.get("mesh"):
+                        try_export(_do_export_mesh, make_full(entry["mesh"]), mesh_col, f"MESH {entry_id}")
+
+                    mdf2_en = _get_enabled(scene, character_id, entry_id, "mdf2")
+                    mdf2_col = _get_binding(scene, character_id, entry_id, "mdf2")
+                    if mdf2_en and mdf2_col and entry.get("mdf2"):
+                        for m in entry["mdf2"]:
+                            try_export(_do_export_mdf2, make_full(m), mdf2_col, f"MDF2 {entry_id}")
+
+                    sfur_en = _get_enabled(scene, character_id, entry_id, "sfur")
+                    sfur_col = _get_binding(scene, character_id, entry_id, "sfur")
+                    if sfur_en and sfur_col and entry.get("sfur"):
+                        try_export(_do_export_sfur, make_full(entry["sfur"]), sfur_col, f"SFUR {entry_id}")
 
         if fail_count > 0:
             self.report({'WARNING'}, f"Done: {export_count} exported, {fail_count} failed, {skip_count} skipped")
@@ -227,13 +256,10 @@ class RE9_OT_SetNativesRoot(bpy.types.Operator):
     bl_idname = "re9.set_natives_root"
     bl_label = "Set Natives Root"
     bl_options = {'REGISTER'}
-
     directory: bpy.props.StringProperty(subtype='DIR_PATH')
-
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
-
     def execute(self, context):
         context.scene["re9_natives_root"] = self.directory
         self.report({'INFO'}, f"Natives root: {self.directory}")
