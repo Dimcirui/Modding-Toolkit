@@ -344,7 +344,12 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             col = box.column(align=True)
             col.operator("re9.sync_child_orientation", text="同步子级朝向及扭转", icon='CON_ROTLIKE')
             col.separator()
-            col.operator("re9.batch_export_dialog", text="RE9 Batch Exporter", icon='EXPORT')
+            has_re_mesh = hasattr(bpy.ops, 're_mesh') and hasattr(bpy.ops.re_mesh, 'exportfile')
+            row = col.row()
+            row.enabled = has_re_mesh
+            row.operator("re9.batch_export_dialog", text="RE9 Batch Exporter", icon='EXPORT')
+            if not has_re_mesh:
+                col.label(text="需要 RE Mesh Editor!", icon='ERROR')
 
 
 # ==========================================
