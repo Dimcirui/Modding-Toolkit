@@ -431,6 +431,140 @@
           "simplified_sfur": "empty"
         }
       ]
+    },
+	{
+      "name": "FBI右臂",
+	  "base_path": "stm/character/ch/ch02/0250",
+      "entries": [
+        {
+          "id": "完整右臂(ch0250_01_00)",
+          "mesh": "01/00/ch0250_01_00.mesh.250925211",
+          "mdf2": [
+            "01/00/ch0250_01_00_00.mdf2.51"
+          ],
+          "simplified": "user"
+        }
+      ]
+    },
+    {
+      "name": "FBI左臂",
+	  "base_path": "stm/character/ch/ch02/0250",
+      "entries": [
+        {
+          "id": "完整左臂(ch0250_02_00)",
+          "mesh": "02/00/ch0250_02_00.mesh.250925211",
+          "mdf2": [
+            "02/00/ch0250_02_00_00.mdf2.51"
+          ],
+          "simplified": "user"
+        }
+      ]
+    },
+    {
+      "name": "FBI躯干-内件(ch0250)",
+      "base_path": "stm/character/ch/ch02/0250",
+      "entries": [
+        {
+          "id": "躯干(ch0250_40_00)",
+          "mesh": "40/00/ch0250_40_00.mesh.250925211",
+          "mdf2": [
+            "40/00/ch0250_40_00_00.mdf2.51"
+          ],
+          "simplified": "user"
+        },
+        {
+          "id": "躯干斜斩右上(ch0250_40_50)",
+          "mesh": "40/50/ch0250_40_50.mesh.250925211",
+          "mdf2": [
+            "40/50/ch0250_40_50_00.mdf2.51"
+          ],
+          "simplified": "empty"
+        },
+        {
+          "id": "躯干斜斩左下(ch0250_40_60)",
+          "mesh": "40/60/ch0250_40_60.mesh.250925211",
+          "mdf2": [
+            "40/60/ch0250_40_60_00.mdf2.51"
+          ],
+          "simplified": "user"
+        },
+        {
+          "id": "躯干横斩上半(ch0250_40_70)",
+          "mesh": "40/70/ch0250_40_70.mesh.250925211",
+          "mdf2": [
+            "40/70/ch0250_40_70_00.mdf2.51"
+          ],
+          "simplified": "empty"
+        },
+        {
+          "id": "躯干横斩下半(ch0250_40_80)",
+          "mesh": "40/80/ch0250_40_80.mesh.250925211",
+          "mdf2": [
+            "40/80/ch0250_40_80_00.mdf2.51"
+          ],
+          "simplified": "user"
+        }
+      ]
+    },
+    {
+      "name": "FBI躯干-外套(ch0250)",
+      "base_path": "stm/character/ch/ch02/0250",
+      "entries": [
+        {
+          "id": "外套(ch0250_45_00)",
+          "mesh": "45/00/ch0250_45_00.mesh.250925211",
+          "mdf2": [
+            "45/00/ch0250_45_00_00.mdf2.51"
+          ],
+          "simplified": "user"
+        },
+        {
+          "id": "外套斜斩右上(ch0250_45_50)",
+          "mesh": "45/50/ch0250_45_50.mesh.250925211",
+          "mdf2": [
+            "45/50/ch0250_45_50_00.mdf2.51"
+          ],
+          "simplified": "empty"
+        },
+        {
+          "id": "外套斜斩左下(ch0250_45_60)",
+          "mesh": "45/60/ch0250_45_60.mesh.250925211",
+          "mdf2": [
+            "45/60/ch0250_45_60_00.mdf2.51"
+          ],
+          "simplified": "user"
+        }
+      ]
+    },
+    {
+      "name": "FBI下半身(ch0250)",
+      "base_path": "stm/character/ch/ch02/0250",
+      "entries": [
+        {
+          "id": "下半身 A(ch0250_50_00)",
+          "mesh": "50/00/ch0250_50_00.mesh.250925211",
+          "mdf2": [
+            "50/00/ch0250_50_00_00.mdf2.51"
+          ],
+          "simplified": "user"
+        },
+        {
+          "id": "下半身 B(ch0250_50_01)",
+          "mesh": "50/01/ch0250_50_01.mesh.250925211",
+          "mdf2": [
+            "50/01/ch0250_50_01_00.mdf2.51"
+          ],
+          "simplified": "user"
+        },
+        {
+          "id": "下半身 腰斩下半(ch0250_50_80)",
+          "mesh": "50/80/ch0250_50_80.mesh.250925211",
+          "mdf2": [
+            "50/80/ch0250_50_80_00.mdf2.51"
+          ],
+          "simplified": "user"
+        }
+      ]
     }
   ],
   "fbxskel": "ch/ch02/ch02.refskel.8"

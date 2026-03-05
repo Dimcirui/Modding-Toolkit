@@ -242,6 +242,27 @@ class RE9_OT_PickSimplifiedEmptySfur(bpy.types.Operator):
         if self.collection_name != "NONE":
             _set_simplified_empty_binding(context.scene, self.character_id, "sfur", self.collection_name)
         return {'FINISHED'}
+    
+class RE9_OT_ClearSimplifiedGroup(bpy.types.Operator):
+    bl_idname = "re9.clear_sg"
+    bl_label = "Clear Group Binding"
+    bl_options = {'INTERNAL'}
+    character_id: bpy.props.StringProperty()
+    group_name: bpy.props.StringProperty()
+    suffix: bpy.props.StringProperty()
+    def execute(self, context):
+        _set_simplified_group_binding(context.scene, self.character_id, self.group_name, self.suffix, "")
+        return {'FINISHED'}
+
+class RE9_OT_ClearSimplifiedEmpty(bpy.types.Operator):
+    bl_idname = "re9.clear_se"
+    bl_label = "Clear Empty Binding"
+    bl_options = {'INTERNAL'}
+    character_id: bpy.props.StringProperty()
+    suffix: bpy.props.StringProperty()
+    def execute(self, context):
+        _set_simplified_empty_binding(context.scene, self.character_id, self.suffix, "")
+        return {'FINISHED'}
 
 
 # ============================================================
@@ -369,12 +390,18 @@ class RE9_OT_BatchExportDialog(bpy.types.Operator):
             cur = _get_simplified_group_binding(scene, character_id, group_name, "mesh")
             op = row.operator("re9.pick_sg_mesh", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
             op.character_id = character_id; op.group_name = group_name
+            if cur:
+                op_c = row.operator("re9.clear_sg", text="", icon='X')
+                op_c.character_id = character_id; op_c.group_name = group_name; op_c.suffix = "mesh"
 
             row = box.row(align=True)
             row.label(text="MDF2:", icon='MATERIAL')
             cur = _get_simplified_group_binding(scene, character_id, group_name, "mdf2")
             op = row.operator("re9.pick_sg_mdf", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
             op.character_id = character_id; op.group_name = group_name
+            if cur:
+                op_c = row.operator("re9.clear_sg", text="", icon='X')
+                op_c.character_id = character_id; op_c.group_name = group_name; op_c.suffix = "mdf2"
 
             # Show summary
             user_count = sum(1 for e in group["entries"] if e.get("simplified") == "user")
@@ -475,6 +502,8 @@ classes = [
     RE9_OT_PickSimplifiedEmptyMdf,
     RE9_OT_PickSimplifiedEmptySfur,
     RE9_OT_BatchExportDialog,
+    RE9_OT_ClearSimplifiedGroup,
+    RE9_OT_ClearSimplifiedEmpty,
 ]
 
 def register():

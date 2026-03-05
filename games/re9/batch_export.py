@@ -151,8 +151,9 @@ class RE9_OT_BatchExport(bpy.types.Operator):
         fail_count = 0
         skip_count = 0
 
-        def make_full(rel):
-            return os.path.join(natives_root, base_path.replace("/", os.sep), rel.replace("/", os.sep))
+        def make_full(rel, bp_override=None):
+            bp = (bp_override or base_path).replace("/", os.sep)
+            return os.path.join(natives_root, bp, rel.replace("/", os.sep))
 
         def try_export(func, filepath, target, label):
             nonlocal export_count, fail_count, skip_count
@@ -190,6 +191,7 @@ class RE9_OT_BatchExport(bpy.types.Operator):
         # --- Per entry ---
         for group in scheme["groups"]:
             group_name = group["name"]
+            grp_bp = group.get("base_path")  # Optional per-group base_path override
             for entry in group["entries"]:
                 entry_id = entry["id"]
                 simp = entry.get("simplified", "user")
@@ -215,34 +217,34 @@ class RE9_OT_BatchExport(bpy.types.Operator):
 
                     # Export mesh
                     if entry.get("mesh") and mesh_col:
-                        try_export(_do_export_mesh, make_full(entry["mesh"]), mesh_col, f"MESH {entry_id}")
+                        try_export(_do_export_mesh, make_full(entry["mesh"], grp_bp), mesh_col, f"MESH {entry_id}")
 
                     # Export mdf2s
                     if entry.get("mdf2") and mdf2_col:
                         for m in entry["mdf2"]:
-                            try_export(_do_export_mdf2, make_full(m), mdf2_col, f"MDF2 {entry_id}")
+                            try_export(_do_export_mdf2, make_full(m, grp_bp), mdf2_col, f"MDF2 {entry_id}")
 
                     # Export sfur
                     if entry.get("sfur") and sfur_col:
-                        try_export(_do_export_sfur, make_full(entry["sfur"]), sfur_col, f"SFUR {entry_id}")
+                        try_export(_do_export_sfur, make_full(entry["sfur"], grp_bp), sfur_col, f"SFUR {entry_id}")
 
                 else:
                     # Normal mode: use per-entry bindings
                     mesh_en = _get_enabled(scene, character_id, entry_id, "mesh")
                     mesh_col = _get_binding(scene, character_id, entry_id, "mesh")
                     if mesh_en and mesh_col and entry.get("mesh"):
-                        try_export(_do_export_mesh, make_full(entry["mesh"]), mesh_col, f"MESH {entry_id}")
+                        try_export(_do_export_mesh, make_full(entry["mesh"], grp_bp), mesh_col, f"MESH {entry_id}")
 
                     mdf2_en = _get_enabled(scene, character_id, entry_id, "mdf2")
                     mdf2_col = _get_binding(scene, character_id, entry_id, "mdf2")
                     if mdf2_en and mdf2_col and entry.get("mdf2"):
                         for m in entry["mdf2"]:
-                            try_export(_do_export_mdf2, make_full(m), mdf2_col, f"MDF2 {entry_id}")
+                            try_export(_do_export_mdf2, make_full(m, grp_bp), mdf2_col, f"MDF2 {entry_id}")
 
                     sfur_en = _get_enabled(scene, character_id, entry_id, "sfur")
                     sfur_col = _get_binding(scene, character_id, entry_id, "sfur")
                     if sfur_en and sfur_col and entry.get("sfur"):
-                        try_export(_do_export_sfur, make_full(entry["sfur"]), sfur_col, f"SFUR {entry_id}")
+                        try_export(_do_export_sfur, make_full(entry["sfur"], grp_bp), sfur_col, f"SFUR {entry_id}")
 
         if fail_count > 0:
             self.report({'WARNING'}, f"Done: {export_count} exported, {fail_count} failed, {skip_count} skipped")
