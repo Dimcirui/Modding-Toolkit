@@ -7,7 +7,7 @@
     "description": "Target preset for MHWS. Standardized bones will be renamed to Wilds bone names."
   },
   "mappings": {
-    "pelvis": { "main": ["Hip"], "aux": ["Spine_0", "Spine_0_HJ_00", "Hip_HJ_00"] },
+    "pelvis": { "main": ["Hip"], "aux": ["COG", "Spine_0", "Spine_0_HJ_00", "Hip_HJ_00"], "skip_snap": true },
     "spine_01": { "main": ["Spine_1"], "aux": ["Spine_1_HJ_00"] },
     "spine_02": { "main": ["Spine_2"], "aux": ["Spine_2_HJ_00"] },
     "neck": { "main": ["Neck_0"], "aux": ["Neck_0_HJ_00", "Neck_1_HJ_00"] },

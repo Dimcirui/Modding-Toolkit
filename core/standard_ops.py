@@ -252,6 +252,10 @@ class MODDER_OT_UniversalSnap(bpy.types.Operator):
             tgt_entry = mapper_y.mapping_data.get(std_key)
             if not tgt_entry or not tgt_entry.get('main'):
                 continue
+            
+            # 检查 skip_snap 标记 (某些游戏的特定骨骼不允许移动)
+            if tgt_entry.get('skip_snap', False):
+                continue
                 
             tgt_name = tgt_entry['main'][0]
             if tgt_name not in edit_bones:

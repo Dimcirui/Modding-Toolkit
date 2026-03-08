@@ -13,39 +13,26 @@
     "neck": { "main": ["Neck_1"], "aux": [] },
     "head": { 
       "main": ["Head"], 
-      "aux": [
-        "Brow1_L", "Brow2_L", "Brow3_L", 
-        "Brow1_R", "Brow2_R", "Brow3_R",
-        "Eye_L", "Eye_R",
-        "L_U_Eyelid02", "L_U_Eyelid03", "L_U_Eyelid04",
-        "R_U_Eyelid02", "R_U_Eyelid03", "R_U_Eyelid04",
-        "Tongue02", 
-        "R_UpperLip01", "R_UpperLip02", 
-        "L_UpperLip01", "L_UpperLip02",
-        "L_MouthCorner", "R_MouthCorner",
-        "L_LowerLip01", "L_LowerLip02",
-        "R_LowerLip01", "R_LowerLip02",
-        "C_Chin"
-      ] 
+      "aux": [] 
     },
 
     "clavicle_L": { "main": ["L_Shoulder"], "aux": [] },
-    "upperarm_L": { "main": ["L_UpperArm"], "aux": ["L_UpperArm_Twist_s1", "L_UpperArm_Help"] },
-    "forearm_L": { "main": ["L_Forearm"], "aux": ["L_Forearm_Twist_s12", "L_Elbow"] },
+    "upperarm_L": { "main": ["L_UpperArm"], "aux": ["L_UpperArm_Twist_s1", "L_UpperArm_Twist_s2", "L_UpperArm_Help"] },
+    "forearm_L": { "main": ["L_Forearm"], "aux": ["L_Forearm_Twist_s12", "L_Elbow", "L_Forearm_Twist_s1", "L_Forearm_Twist_s2"] },
     "hand_L": { "main": ["L_Hand"], "aux": [] },
 
     "clavicle_R": { "main": ["R_Shoulder"], "aux": [] },
-    "upperarm_R": { "main": ["R_UpperArm"], "aux": ["R_UpperArm_Twist_s1", "R_UpperArm_Help"] },
-    "forearm_R": { "main": ["R_Forearm"], "aux": ["R_Forearm_Twist_s12", "R_Elbow"] },
+    "upperarm_R": { "main": ["R_UpperArm"], "aux": ["R_UpperArm_Twist_s1", "R_UpperArm_Twist_s2", "R_UpperArm_Help"] },
+    "forearm_R": { "main": ["R_Forearm"], "aux": ["R_Forearm_Twist_s12", "R_Elbow", "R_Forearm_Twist_s1", "R_Forearm_Twist_s2"] },
     "hand_R": { "main": ["R_Hand"], "aux": [] },
 
-    "thigh_L": { "main": ["L_Thigh"], "aux": ["Butt_L"] },
-    "shin_L": { "main": ["L_Shin"], "aux": ["LShinHelp"] },
+    "thigh_L": { "main": ["L_Thigh"], "aux": ["Butt_L", "L_Thigh_Twist_s1"] },
+    "shin_L": { "main": ["L_Shin"], "aux": ["LShinHelp", "L_Help_Knee_s", "L_Shin_s"] },
     "foot_L": { "main": ["L_Foot"], "aux": [] },
     "toe_L": { "main": ["L_Toe"], "aux": [] },
 
-    "thigh_R": { "main": ["R_Thigh"], "aux": ["Butt_R"] },
-    "shin_R": { "main": ["R_Shin"], "aux": ["RShinHelp"] },
+    "thigh_R": { "main": ["R_Thigh"], "aux": ["Butt_R", "R_Thigh_Twist_s1"] },
+    "shin_R": { "main": ["R_Shin"], "aux": ["RShinHelp", "R_Help_Knee_s", "R_Shin_s"] },
     "foot_R": { "main": ["R_Foot"], "aux": [] },
     "toe_R": { "main": ["R_Toe"], "aux": [] },
 

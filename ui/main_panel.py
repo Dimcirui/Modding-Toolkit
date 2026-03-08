@@ -2,6 +2,7 @@ import bpy
 from ..core import bone_utils, weight_utils, ui_config
 from ..core.bone_utils import get_import_presets_callback, get_target_presets_callback
 from ..core.pose_ops import get_pose_presets_callback
+from ..games.re9.batch_export import get_schemes_callback
 from ..core.bone_mapper import BoneMapManager
 
 mapper = BoneMapManager()
@@ -11,6 +12,7 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     show_mhwi: bpy.props.BoolProperty(name="MHWI", default=False)
     show_mhws: bpy.props.BoolProperty(name="Wilds", default=False)
     show_re4: bpy.props.BoolProperty(name="RE4", default=False)
+    show_re9: bpy.props.BoolProperty(name="RE9", default=False)
     
     # 通用转换器开关
     show_std_converter: bpy.props.BoolProperty(name="通用骨架转换", default=True)
@@ -46,6 +48,13 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         name="姿态记录",
         description="选择已保存的姿态矩阵记录",
         items=get_pose_presets_callback
+    )
+    
+    # RE9 batch export scheme
+    re9_export_scheme: bpy.props.EnumProperty(
+        name="Export Scheme",
+        description="Select character export scheme for RE9",
+        items=get_schemes_callback
     )
 
 
@@ -153,6 +162,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
         row.prop(settings, "show_mhwi", toggle=True, text="MHWI")
         row.prop(settings, "show_mhws", toggle=True, text="Wilds")
         row.prop(settings, "show_re4", toggle=True, text="RE4")
+        row.prop(settings, "show_re9", toggle=True, text="RE9")
         
         layout.separator()
 
@@ -271,7 +281,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             col.separator()
             col.label(text="简易工具:")
             col.operator("modder.tpose_direction", icon='EMPTY_SINGLE_ARROW')
-            col.operator("modder.tpose_matrix_zero", icon='MESH_GRID')
+            col.operator("modder.tpose_matrix_zero", text="RE Engine 矩阵归零 (生化9除外)", icon='MESH_GRID')
             
             col.separator()
             col.label(text="姿态变换记录器:")
@@ -327,6 +337,37 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row3 = col_fake.row(align=True)
             row3.operator("re4.align_bones_full", text="完全对齐", icon='SNAP_ON')
             row3.operator("re4.align_bones_pos", text="仅对齐位置", icon='SNAP_VERTEX')
+
+        if settings.show_re9:
+            box = layout.box()
+            box.label(text="RE9 Tools", icon='GHOST_ENABLED')
+            col = box.column(align=True)
+            col.operator("re9.sync_child_orientation", text="同步子级朝向及扭转", icon='CON_ROTLIKE')
+
+            col.separator()
+            box_fake = layout.box()
+            box_fake.label(text="假骨与对齐 (FakeBone)", icon='BONE_DATA')
+            col_fake = box_fake.column(align=True)
+            col_fake.label(text="1. 创建 End 骨骼:")
+            row1 = col_fake.row(align=True)
+            row1.operator("re9.fake_body_process", text="身体", icon='ARMATURE_DATA')
+            row1.operator("re9.fake_fingers_process", text="手指", icon='VIEW_PAN')
+            col_fake.label(text="2. 合并与绑定:")
+            row2 = col_fake.row(align=True)
+            row2.operator("re9.fake_body_merge", text="身体", icon='LINKED')
+            row2.operator("re9.fake_fingers_merge", text="手指", icon='LINKED')
+            col_fake.label(text="3. 骨骼对齐 (含子级):")
+            row3 = col_fake.row(align=True)
+            row3.operator("re9.align_bones_full", text="完全对齐", icon='SNAP_ON')
+            row3.operator("re9.align_bones_pos", text="仅对齐位置", icon='SNAP_VERTEX')
+
+            col.separator()
+            has_re_mesh = hasattr(bpy.ops, 're_mesh') and hasattr(bpy.ops.re_mesh, 'exportfile')
+            row = col.row()
+            row.enabled = has_re_mesh
+            row.operator("re9.batch_export_dialog", text="RE9 Batch Exporter", icon='EXPORT')
+            if not has_re_mesh:
+                col.label(text="需要 RE Mesh Editor!", icon='ERROR')
 
 
 # ==========================================
