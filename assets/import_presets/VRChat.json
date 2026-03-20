@@ -14,14 +14,14 @@
     "head": { "main": ["Head"], "aux": ["Head_Adj", "Jaw", "Hair_root", "LeftEye", "RightEye", "LeftEye_end", "RightEye_end"] },
 
     "clavicle_L": { "main": ["Shoulder_L", "Left shoulder", "Shoulder.L"], "aux": [] },
-    "upperarm_L": { "main": ["UpperArm_L", "Left arm", "LeftUpperArm", "UpperArm.L", "Upper_arm.L", "Upper_arm_L"], "aux": ["UpperArm_twist_L", "UpperArm_twist.L", "Upper_arm_support_L", "Upper_arm_support.L"] },
-    "forearm_L": { "main": ["LowerArm_L", "Left elbow", "LeftLowerArm", "LowerArm.L", "Lower_arm.L", "Lower_arm_L"], "aux": ["LowerArm_twist_L", "LowerArm_Twist_L", "Lower_arm_support.L", "Lower_arm_support.L_end", "Lower_arm_support.L.001", "Lower_arm_support.L.001_end", "Lower_arm_support.L.002", "Lower_arm_support.L.002_end", "Lower_arm_support_L"] },
-    "hand_L": { "main": ["Hand_L", "Left wrist", "Hand.L"], "aux": [] },
+    "upperarm_L": { "main": ["UpperArm_L", "Upperarm_L", "Left arm", "LeftUpperArm", "UpperArm.L", "Upper_arm.L", "Upper_arm_L"], "aux": ["UpperArm_twist_L", "UpperArm_twist.L", "Upper_arm_support_L", "Upper_arm_support.L"] },
+    "forearm_L": { "main": ["LowerArm_L", "Lowerarm_L", "Left elbow", "LeftLowerArm", "LowerArm.L", "Lower_arm.L", "Lower_arm_L"], "aux": ["LowerArm_twist_L", "LowerArm_Twist_L", "Lower_arm_support.L", "Lower_arm_support.L_end", "Lower_arm_support.L.001", "Lower_arm_support.L.001_end", "Lower_arm_support.L.002", "Lower_arm_support.L.002_end", "Lower_arm_support_L"] },
+    "hand_L": { "main": ["Hand_L", "Left wrist", "Hand.L", "Left Hand"], "aux": [] },
 
     "clavicle_R": { "main": ["Shoulder_R", "Right shoulder", "Shoulder.R"], "aux": [] },
-    "upperarm_R": { "main": ["UpperArm_R", "Right arm", "RightUpperArm", "UpperArm.R", "Upper_arm.R", "Upper_arm_R"], "aux": ["UpperArm_twist_R", "UpperArm_twist.R",  "Upper_arm_support_R", "Upper_arm_support.R"] },
-    "forearm_R": { "main": ["LowerArm_R", "Right elbow", "RightLowerArm", "LowerArm.R", "Lower_arm.R", "Lower_arm_R"], "aux": ["LowerArm_twist_R", "LowerArm_Twist_R", "Lower_arm_support.R", "Lower_arm_support.R_end", "Lower_arm_support.R.001", "Lower_arm_support.R.001_end", "Lower_arm_support.R.002", "Lower_arm_support.R.002_end", "Lower_arm_support_R"] },
-    "hand_R": { "main": ["Hand_R", "Right wrist", "Hand.R"], "aux": [] },
+    "upperarm_R": { "main": ["UpperArm_R", "Upperarm_R", "Right arm", "RightUpperArm", "UpperArm.R", "Upper_arm.R", "Upper_arm_R"], "aux": ["UpperArm_twist_R", "UpperArm_twist.R",  "Upper_arm_support_R", "Upper_arm_support.R"] },
+    "forearm_R": { "main": ["LowerArm_R", "Lowerarm_R", "Right elbow", "RightLowerArm", "LowerArm.R", "Lower_arm.R", "Lower_arm_R"], "aux": ["LowerArm_twist_R", "LowerArm_Twist_R", "Lower_arm_support.R", "Lower_arm_support.R_end", "Lower_arm_support.R.001", "Lower_arm_support.R.001_end", "Lower_arm_support.R.002", "Lower_arm_support.R.002_end", "Lower_arm_support_R"] },
+    "hand_R": { "main": ["Hand_R", "Right wrist", "Hand.R", "Right Hand"], "aux": [] },
 
     "thigh_L": { "main": ["UpperLeg_L", "Left leg", "UpperLeg.L", "Upper_leg.L", "Upper_leg_L"], "aux": ["Hips_L"] },
     "shin_L": { "main": ["LowerLeg_L", "Left knee", "LowerLeg.L", "Lower_leg.L", "Lower_leg_L", "lower_leg_L"], "aux": [] },
