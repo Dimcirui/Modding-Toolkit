@@ -679,6 +679,46 @@ class MODDER_OT_RemoveNonBaseBones(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MODDER_OT_HidePresetBonesInPose(bpy.types.Operator):
+    """在姿态模式下，将来源预设 (X) 中包含的所有骨骼（main + aux）设为隐藏"""
+    bl_idname = "modder.hide_preset_bones_pose"
+    bl_label = "隐藏所有基础骨骼（姿态）"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        settings = context.scene.mhw_suite_settings
+        arm_obj = context.active_object
+
+        if not arm_obj or arm_obj.type != 'ARMATURE':
+            self.report({'ERROR'}, "请先选中一个骨架")
+            return {'CANCELLED'}
+
+        # 加载来源预设
+        mapper = BoneMapManager()
+        if not mapper.load_preset(settings.import_preset_enum, is_import_x=True):
+            self.report({'ERROR'}, "预设加载失败")
+            return {'CANCELLED'}
+
+        # 收集所有 main + aux 骨骼名
+        preset_bones = set()
+        for entry in mapper.mapping_data.values():
+            for name in entry.get('main', []):
+                preset_bones.add(name)
+            for name in entry.get('aux', []):
+                preset_bones.add(name)
+
+        # 切换到姿态模式并隐藏目标骨骼
+        bpy.ops.object.mode_set(mode='POSE')
+        hidden_count = 0
+        for bone in arm_obj.data.bones:
+            if bone.name in preset_bones:
+                bone.hide = True
+                hidden_count += 1
+
+        self.report({'INFO'}, f"已在姿态模式下隐藏 {hidden_count} 根基础骨骼")
+        return {'FINISHED'}
+
+
 classes = [
     MODDER_OT_ApplyStandardX,
     MODDER_OT_ApplyStandardY,
@@ -688,6 +728,7 @@ classes = [
     MODDER_OT_MergePhysicsWeights,
     MODDER_OT_RemoveNonBaseBones,
     MODDER_OT_RenameBonesToTarget,
+    MODDER_OT_HidePresetBonesInPose,
 ]
 
 def register():
