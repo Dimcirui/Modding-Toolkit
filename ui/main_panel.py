@@ -3,6 +3,7 @@ from ..core import bone_utils, weight_utils, ui_config
 from ..core.bone_utils import get_import_presets_callback, get_target_presets_callback
 from ..core.pose_ops import get_pose_presets_callback
 from ..games.re9.batch_export import get_schemes_callback
+from ..games.mhws.batch_export import get_mhws_schemes_callback, get_mhws_armor_callback
 from ..core.bone_mapper import BoneMapManager
 
 # 映射详情预览缓存：{(x_preset, y_preset): (mapper_x, mapper_y)}
@@ -68,6 +69,18 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         name="Export Scheme",
         description="Select character export scheme for RE9",
         items=get_schemes_callback
+    )
+
+    # MHWs batch export
+    mhws_armor_scheme: bpy.props.EnumProperty(
+        name="装备包",
+        description="选择 MHWs 装备包 JSON",
+        items=get_mhws_schemes_callback
+    )
+    mhws_selected_armor: bpy.props.EnumProperty(
+        name="装备",
+        description="选择要导出的装备",
+        items=get_mhws_armor_callback
     )
 
 
@@ -408,6 +421,14 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             col = box.column(align=True)
             col.operator("mhws.endfield_face_rename", text="Endfield 面部改名", icon='SORTALPHA')
             col.operator("mhws.face_weight_simplify", text="面部权重简化", icon='MOD_VERTEX_WEIGHT')
+
+            col.separator()
+            has_re_mesh = hasattr(bpy.ops, 're_mesh') and hasattr(bpy.ops.re_mesh, 'exportfile')
+            row = col.row()
+            row.enabled = has_re_mesh
+            row.operator("mhws.batch_export_dialog", text="MHWs Batch Exporter", icon='EXPORT')
+            if not has_re_mesh:
+                col.label(text="需要 RE Mesh Editor!", icon='ERROR')
              
         if settings.show_re4:
             box = layout.box()
