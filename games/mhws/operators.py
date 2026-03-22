@@ -1,4 +1,5 @@
 import bpy
+from ...core import weight_utils
 
 # ============================================================
 # Endfield 面部顶点组改名 (Endfield → MHWilds)
@@ -105,28 +106,6 @@ ENDFIELD_FACE_RENAME_MAP = [
 ]
 
 
-def _merge_or_rename_vg(obj, old_name, new_name):
-    """将旧顶点组重命名或合并到新名字"""
-    old_vg = obj.vertex_groups.get(old_name)
-    if old_vg is None:
-        return False
-    existing_vg = obj.vertex_groups.get(new_name)
-    if existing_vg is None:
-        old_vg.name = new_name
-        return True
-    # 合并权重：用 weight() 接口，跳过不在组内的顶点
-    for vert in obj.data.vertices:
-        try:
-            old_w = old_vg.weight(vert.index)
-        except RuntimeError:
-            continue
-        try:
-            existing_w = existing_vg.weight(vert.index)
-        except RuntimeError:
-            existing_w = 0.0
-        existing_vg.add([vert.index], min(existing_w + old_w, 1.0), 'REPLACE')
-    obj.vertex_groups.remove(old_vg)
-    return True
 
 
 class MHWS_OT_EndfieldFaceRename(bpy.types.Operator):
@@ -145,7 +124,7 @@ class MHWS_OT_EndfieldFaceRename(bpy.types.Operator):
             if obj.type != 'MESH':
                 continue
             for old_name, new_name in ENDFIELD_FACE_RENAME_MAP:
-                if _merge_or_rename_vg(obj, old_name, new_name):
+                if weight_utils.rename_or_merge_vgroup(obj, old_name, new_name):
                     total += 1
         self.report({'INFO'}, f"已处理 {total} 个面部顶点组")
         return {'FINISHED'}
@@ -155,34 +134,6 @@ class MHWS_OT_EndfieldFaceRename(bpy.types.Operator):
 # 面部权重简化 (通用)
 # ============================================================
 
-def _merge_vg_full(obj, source_names, target_name):
-    """将源顶点组的权重全部合并到目标"""
-    target_vg = obj.vertex_groups.get(target_name)
-    if target_vg is None:
-        target_vg = obj.vertex_groups.new(name=target_name)
-
-    active_sources = [vg for vg in (obj.vertex_groups.get(n) for n in source_names) if vg is not None]
-    if not active_sources:
-        return
-
-    # 单次遍历顶点，累加所有源组权重后写入目标
-    for vert in obj.data.vertices:
-        total_src_w = 0.0
-        for src_vg in active_sources:
-            try:
-                total_src_w += src_vg.weight(vert.index)
-            except RuntimeError:
-                pass
-        if total_src_w <= 0.0:
-            continue
-        try:
-            tgt_w = target_vg.weight(vert.index)
-        except RuntimeError:
-            tgt_w = 0.0
-        target_vg.add([vert.index], min(tgt_w + total_src_w, 1.0), 'REPLACE')
-
-    for src_vg in active_sources:
-        obj.vertex_groups.remove(src_vg)
 
 
 def _transfer_partial(obj, source_names, targets_with_ratios):
@@ -231,7 +182,7 @@ class MHWS_OT_FaceWeightSimplify(bpy.types.Operator):
         obj = context.active_object
         
         # 1. 合并到 Head
-        _merge_vg_full(obj, [
+        weight_utils.merge_vgroups_multi(obj, [
             "L_malarFat_B_LOD01", "R_malarFat_B_LOD01",
             "L_CheekBone_LOD02", "R_CheekBone_LOD02",
             "C_Nose_LOD01", "C_TongueA_LOD01",
@@ -239,7 +190,7 @@ class MHWS_OT_FaceWeightSimplify(bpy.types.Operator):
         ], "Head")
         
         # 2. 合并到 C_Chin_LOD01
-        _merge_vg_full(obj, [
+        weight_utils.merge_vgroups_multi(obj, [
             "L_JawLine_LOD01", "R_JawLine_LOD01",
             "L_Cheek_LOD02", "R_Cheek_LOD02",
             "C_TongueB_LOD01", "C_TongueC_LOD01",

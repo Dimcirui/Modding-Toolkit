@@ -32,7 +32,7 @@ class MODDER_OT_ApplyStandardX(bpy.types.Operator):
                 if aux_list:
                     # 没找到主骨名时，使用标准名作为目标顶点组，方便后续手动处理
                     target_vg = main_name if main_name else std_key
-                    weight_utils.merge_vgroups_to_main(mesh_obj, target_vg, aux_list)
+                    weight_utils.merge_vgroups_multi(mesh_obj, aux_list, target_vg)
 
         # 4. 骨骼重命名 (Edit Mode)
         bpy.ops.object.mode_set(mode='EDIT')
@@ -69,6 +69,7 @@ class MODDER_OT_ApplyStandardY(bpy.types.Operator):
         
         mapper = BoneMapManager()
         if not mapper.load_preset(settings.target_preset_enum, is_import_x=False):
+            self.report({'ERROR'}, "无法加载 Y 预设")
             return {'CANCELLED'}
 
         bpy.ops.object.mode_set(mode='EDIT')
@@ -175,7 +176,7 @@ class MODDER_OT_DirectConvert(bpy.types.Operator):
                 # 找出当前网格上实际存在的辅助组
                 real_auxs = [aux for aux in src_auxs if aux in vgs]
                 if real_auxs:
-                    weight_utils.merge_vgroups_to_main(mesh_obj, target_vg, real_auxs)
+                    weight_utils.merge_vgroups_multi(mesh_obj, real_auxs, target_vg)
                     mesh_updated = True
                 
                 # 步骤 C: 重命名主顶点组 -> 目标名
@@ -573,7 +574,7 @@ class MODDER_OT_MergePhysicsWeights(bpy.types.Operator):
                     vgs.new(name=base_name)
                 
                 # 合并权重
-                weight_utils.merge_vgroups_to_main(mesh_obj, base_name, [phys_name])
+                weight_utils.merge_vgroups_multi(mesh_obj, [phys_name], base_name)
                 merged_in_mesh += 1
             
             total_merged += merged_in_mesh
