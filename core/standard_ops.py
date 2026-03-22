@@ -472,6 +472,22 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
                 eb.parent = edit_bones[target_parent_name]
                 eb.use_connect = False 
 
+        # --- 7. 染色：将所有移植骨骼标记为蓝色 ---
+        bpy.ops.object.mode_set(mode='POSE')
+        all_new_bone_names = list(new_bones_map.values())
+        for src_name in physics_bones_names:
+            end_name = f"{src_name}_End"
+            if end_name in target_arm.pose.bones:
+                all_new_bone_names.append(end_name)
+
+        for bone_name in all_new_bone_names:
+            pb = target_arm.pose.bones.get(bone_name)
+            if pb:
+                pb.color.palette = 'CUSTOM'
+                pb.color.custom.normal = (0.18, 0.42, 0.90)
+                pb.color.custom.select = (0.45, 0.65, 1.00)
+                pb.color.custom.active = (0.70, 0.85, 1.00)
+
         bpy.ops.object.mode_set(mode='OBJECT')
         self.report({'INFO'}, f"移植完成: 处理 {created_count} 根骨骼 (含自动生成的末端骨)")
         return {'FINISHED'}
