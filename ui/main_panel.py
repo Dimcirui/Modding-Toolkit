@@ -5,6 +5,9 @@ from ..core.pose_ops import get_pose_presets_callback
 from ..games.re9.batch_export import get_schemes_callback
 from ..core.bone_mapper import BoneMapManager
 
+# 映射详情预览缓存：{(x_preset, y_preset): (mapper_x, mapper_y)}
+_mapping_detail_cache = {}
+
 class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     # 顶部开关
     show_mhwi: bpy.props.BoolProperty(name="MHWI", default=False)
@@ -246,6 +249,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             
             # 核心功能（带预设依赖提示）
             row = col.row(align=True)
+            row.scale_y = 1.2
             row.operator("modder.universal_snap", text="对齐骨骼 [X+Y, 双骨架]", icon='SNAP_ON')
             
             row = col.row(align=True)
@@ -277,11 +281,15 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             
             if settings.show_mapping_details:
                 if arm_obj and arm_obj.type == 'ARMATURE':
-                    mapper = BoneMapManager()
-                    mapper.load_preset(settings.import_preset_enum, is_import_x=True)
-
-                    mapper_y = BoneMapManager()
-                    mapper_y.load_preset(settings.target_preset_enum, is_import_x=False)
+                    cache_key = (settings.import_preset_enum, settings.target_preset_enum)
+                    if cache_key not in _mapping_detail_cache:
+                        m_x = BoneMapManager()
+                        m_y = BoneMapManager()
+                        m_x.load_preset(settings.import_preset_enum, is_import_x=True)
+                        m_y.load_preset(settings.target_preset_enum, is_import_x=False)
+                        _mapping_detail_cache.clear()
+                        _mapping_detail_cache[cache_key] = (m_x, m_y)
+                    mapper, mapper_y = _mapping_detail_cache[cache_key]
                     
                     preview_box = col.box()
                     for group_name, group_data in ui_config.UI_HIERARCHY.items():
@@ -369,7 +377,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             box = layout.box()
             box.label(text="RE4 Tools", icon='GHOST_ENABLED')
 
-            box_fake = layout.box()
+            box_fake = box.box()
             box_fake.label(text="假骨与对齐 (FakeBone)", icon='BONE_DATA')
             col_fake = box_fake.column(align=True)
             col_fake.label(text="1. 创建 End 骨骼:")
