@@ -113,6 +113,14 @@ def _do_export_fbxskel(filepath, armature_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     bpy.ops.re_fbxskel.exportfile(filepath=filepath, targetArmature=armature_name)
 
+def _do_export_chain2(filepath, collection_name):
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    bpy.ops.re_chain2.exportfile(filepath=filepath, targetCollection=collection_name)
+
+def _do_export_clsp(filepath, collection_name):
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    bpy.ops.re_clsp.exportfile(filepath=filepath, targetCollection=collection_name)
+
 
 class RE9_OT_BatchExport(bpy.types.Operator):
     """RE9 batch exporter"""
@@ -128,7 +136,7 @@ class RE9_OT_BatchExport(bpy.types.Operator):
             self.report({'ERROR'}, "RE Mesh Editor not installed")
             return {'CANCELLED'}
 
-        natives_root = scene.get("re9_natives_root", "")
+        natives_root = scene.get(f"{game}_natives_root", "")
         if not natives_root or not os.path.isdir(natives_root):
             self.report({'ERROR'}, "Set natives root directory first")
             return {'CANCELLED'}
@@ -143,9 +151,10 @@ class RE9_OT_BatchExport(bpy.types.Operator):
             self.report({'ERROR'}, f"Failed to load: {scheme_file}")
             return {'CANCELLED'}
 
+        game = scheme.get("game", "re9")
         character_id = scheme["character_id"]
         base_path = scheme["base_path"].replace("\\", "/")
-        use_simplified = scene.get("re9_use_simplified", False)
+        use_simplified = scene.get(f"{game}_use_simplified", False)
 
         export_count = 0
         fail_count = 0
@@ -259,11 +268,12 @@ class RE9_OT_SetNativesRoot(bpy.types.Operator):
     bl_label = "Set Natives Root"
     bl_options = {'REGISTER'}
     directory: bpy.props.StringProperty(subtype='DIR_PATH')
+    game_code: bpy.props.StringProperty(default="re9")
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
     def execute(self, context):
-        context.scene["re9_natives_root"] = self.directory
+        context.scene[f"{self.game_code}_natives_root"] = self.directory
         self.report({'INFO'}, f"Natives root: {self.directory}")
         return {'FINISHED'}
 
