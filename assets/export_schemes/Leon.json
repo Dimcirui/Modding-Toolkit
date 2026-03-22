@@ -2,8 +2,6 @@
   "character": "Leon",
   "character_id": "ch0100",
   "base_path": "stm/character/ch/ch01/0100",
-  "mesh_version": "250925211",
-  "mdf2_version": "51",
   "groups": [
     {
       "name": "右臂",
