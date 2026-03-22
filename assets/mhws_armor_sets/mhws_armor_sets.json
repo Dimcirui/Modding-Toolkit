@@ -1,0 +1,2446 @@
+{
+    "armor_sets": [
+        {
+            "id": "pl001",
+            "name": "希望 α (Hope α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_001_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/001/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_001_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/001/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_001_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/001/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_001_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/001/001"
+                }
+            }
+        },
+        {
+            "id": "pl003",
+            "name": "辟兽 α/β (Doshaguma α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_003_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/003/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_003_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/003/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_003_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/003/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_003_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/003/001"
+                }
+            }
+        },
+        {
+            "id": "pl003_500",
+            "name": "护辟兽 α/β (Guardian Doshaguma α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_003_500",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/003/500"
+                },
+                "mf": {
+                    "armor_id": "ch02_003_501",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/003/501"
+                },
+                "fm": {
+                    "armor_id": "ch03_003_500",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/003/500"
+                },
+                "ff": {
+                    "armor_id": "ch03_003_501",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/003/501"
+                }
+            }
+        },
+        {
+            "id": "pl004",
+            "name": "骨制 α (Bone α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_004_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/004/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_004_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/004/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_004_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/004/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_004_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/004/001"
+                }
+            }
+        },
+        {
+            "id": "pl005",
+            "name": "皮制 α (Leather α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_005_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/005/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_005_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/005/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_005_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/005/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_005_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/005/001"
+                }
+            }
+        },
+        {
+            "id": "pl006",
+            "name": "锁甲 α (Chainmail α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_006_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/006/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_006_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/006/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_006_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/006/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_006_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/006/001"
+                }
+            }
+        },
+        {
+            "id": "pl007",
+            "name": "钳速龙 α/β (Talioth α/β)",
+            "parts_mask": 1,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_007_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/007/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_007_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/007/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_007_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/007/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_007_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/007/001"
+                }
+            }
+        },
+        {
+            "id": "pl008",
+            "name": "缠蛙 α/β (Chatacabra α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_008_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/008/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_008_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/008/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_008_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/008/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_008_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/008/001"
+                }
+            }
+        },
+        {
+            "id": "pl009",
+            "name": "炎尾龙 α/β (Quematrice α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_009_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/009/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_009_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/009/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_009_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/009/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_009_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/009/001"
+                }
+            }
+        },
+        {
+            "id": "pl010",
+            "name": "合金 α (Alloy α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_010_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/010/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_010_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/010/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_010_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/010/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_010_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/010/001"
+                }
+            }
+        },
+        {
+            "id": "pl011",
+            "name": "锯带龙 α/β (Piragill α/β)",
+            "parts_mask": 8,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_011_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/011/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_011_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/011/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_011_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/011/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_011_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/011/001"
+                }
+            }
+        },
+        {
+            "id": "pl012",
+            "name": "刺花蜘蛛 α/β (Lala Barina α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_012_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/012/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_012_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/012/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_012_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/012/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_012_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/012/001"
+                }
+            }
+        },
+        {
+            "id": "pl013",
+            "name": "桃毛兽王 α/β (Conga α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_013_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/013/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_013_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/013/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_013_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/013/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_013_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/013/001"
+                }
+            }
+        },
+        {
+            "id": "pl014",
+            "name": "沙海龙 α/β (Balahara α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_014_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/014/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_014_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/014/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_014_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/014/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_014_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/014/001"
+                }
+            }
+        },
+        {
+            "id": "pl015",
+            "name": "铸铁 α (Ingot α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_015_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/015/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_015_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/015/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_015_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/015/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_015_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/015/001"
+                }
+            }
+        },
+        {
+            "id": "pl016",
+            "name": "血盗虫 α/β (Bulaqchi α/β)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_016_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/016/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_016_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/016/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_016_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/016/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_016_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/016/001"
+                }
+            }
+        },
+        {
+            "id": "pl017",
+            "name": "波衣龙 α/β (Uth Duna α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_017_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/017/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_017_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/017/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_017_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/017/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_017_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/017/001"
+                }
+            }
+        },
+        {
+            "id": "pl017_300",
+            "name": "波衣龙 γ (Uth Duna γ)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_017_300",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/017/300"
+                },
+                "mf": {
+                    "armor_id": "ch02_017_301",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/017/301"
+                },
+                "fm": {
+                    "armor_id": "ch03_017_300",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/017/300"
+                },
+                "ff": {
+                    "armor_id": "ch03_017_301",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/017/301"
+                }
+            }
+        },
+        {
+            "id": "pl018",
+            "name": "沼喷龙 α/β (Rompopolo α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_018_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/018/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_018_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/018/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_018_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/018/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_018_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/018/001"
+                }
+            }
+        },
+        {
+            "id": "pl019",
+            "name": "杜宾 α/β (Dober α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_019_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/019/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_019_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/019/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_019_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/019/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_019_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/019/001"
+                }
+            }
+        },
+        {
+            "id": "pl020",
+            "name": "盔速龙 α/β (Kranodath α/β)",
+            "parts_mask": 2,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_020_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/020/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_020_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/020/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_020_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/020/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_020_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/020/001"
+                }
+            }
+        },
+        {
+            "id": "pl021",
+            "name": "煌雷龙 α/β (Rey Dau α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_021_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/021/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_021_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/021/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_021_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/021/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_021_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/021/001"
+                }
+            }
+        },
+        {
+            "id": "pl021_300",
+            "name": "煌雷龙 γ (Rey Dau γ)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_021_300",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/021/300"
+                },
+                "mf": {
+                    "armor_id": "ch02_021_301",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/021/301"
+                },
+                "fm": {
+                    "armor_id": "ch03_021_300",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/021/300"
+                },
+                "ff": {
+                    "armor_id": "ch03_021_301",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/021/301"
+                }
+            }
+        },
+        {
+            "id": "pl022",
+            "name": "影蜘蛛 α/β (Nerscylla α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_022_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/022/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_022_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/022/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_022_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/022/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_022_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/022/001"
+                }
+            }
+        },
+        {
+            "id": "pl023",
+            "name": "风铗龙 α/β (Hirabami α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_023_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/023/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_023_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/023/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_023_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/023/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_023_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/023/001"
+                }
+            }
+        },
+        {
+            "id": "pl024",
+            "name": "赫猿兽 α/β (Ajarakan α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_024_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/024/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_024_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/024/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_024_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/024/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_024_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/024/001"
+                }
+            }
+        },
+        {
+            "id": "pl025",
+            "name": "花纹钢 α/β (Damascus α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_025_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/025/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_025_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/025/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_025_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/025/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_025_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/025/001"
+                }
+            }
+        },
+        {
+            "id": "pl026",
+            "name": "血眠虫 α/β (Comaqchi α/β)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_026_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/026/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_026_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/026/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_026_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/026/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_026_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/026/001"
+                }
+            }
+        },
+        {
+            "id": "pl027",
+            "name": "狱焰蛸 α/β (Nu Udra α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_027_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/027/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_027_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/027/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_027_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/027/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_027_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/027/001"
+                }
+            }
+        },
+        {
+            "id": "pl027_300",
+            "name": "狱焰蛸 γ (Nu Udra γ)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_027_300",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/027/300"
+                },
+                "mf": {
+                    "armor_id": "ch02_027_301",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/027/301"
+                },
+                "fm": {
+                    "armor_id": "ch03_027_300",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/027/300"
+                },
+                "ff": {
+                    "armor_id": "ch03_027_301",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/027/301"
+                }
+            }
+        },
+        {
+            "id": "pl028",
+            "name": "巨蜂 α/β (Vespoid α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_028_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/028/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_028_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/028/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_028_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/028/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_028_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/028/001"
+                }
+            }
+        },
+        {
+            "id": "pl029",
+            "name": "冻峰龙 α/β (Dahaad α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_029_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/029/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_029_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/029/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_029_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/029/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_029_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/029/001"
+                }
+            }
+        },
+        {
+            "id": "pl029_300",
+            "name": "冻峰龙 γ (Dahaad γ)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_029_300",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/029/300"
+                },
+                "mf": {
+                    "armor_id": "ch02_029_301",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/029/301"
+                },
+                "fm": {
+                    "armor_id": "ch03_029_300",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/029/300"
+                },
+                "ff": {
+                    "armor_id": "ch03_029_301",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/029/301"
+                }
+            }
+        },
+        {
+            "id": "pl030_600",
+            "name": "护凶爪龙 α/β (Guardian Ebony α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_030_600",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/030/600"
+                },
+                "mf": {
+                    "armor_id": "ch02_030_601",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/030/601"
+                },
+                "fm": {
+                    "armor_id": "ch03_030_600",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/030/600"
+                },
+                "ff": {
+                    "armor_id": "ch03_030_601",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/030/601"
+                }
+            }
+        },
+        {
+            "id": "pl031",
+            "name": "暗器蛸 α/β (Xu Wu α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_031_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/031/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_031_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/031/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_031_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/031/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_031_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/031/001"
+                }
+            }
+        },
+        {
+            "id": "pl032",
+            "name": "锁刃龙 α/β (Arkveld α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_032_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/032/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_032_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/032/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_032_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/032/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_032_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/032/001"
+                }
+            }
+        },
+        {
+            "id": "pl032_300",
+            "name": "锁刃龙 γ (Arkveld γ)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_032_300",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/032/300"
+                },
+                "mf": {
+                    "armor_id": "ch02_032_301",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/032/301"
+                },
+                "fm": {
+                    "armor_id": "ch03_032_300",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/032/300"
+                },
+                "ff": {
+                    "armor_id": "ch03_032_301",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/032/301"
+                }
+            }
+        },
+        {
+            "id": "pl032_500",
+            "name": "护锁刃龙 α/β (Guardian Arkveld α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_032_500",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/032/500"
+                },
+                "mf": {
+                    "armor_id": "ch02_032_501",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/032/501"
+                },
+                "fm": {
+                    "armor_id": "ch03_032_500",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/032/500"
+                },
+                "ff": {
+                    "armor_id": "ch03_032_501",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/032/501"
+                }
+            }
+        },
+        {
+            "id": "pl033",
+            "name": "护鹭鹰龙 α/β (Guardian Seikret α/β)",
+            "parts_mask": 16,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_033_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/033/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_033_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/033/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_033_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/033/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_033_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/033/001"
+                }
+            }
+        },
+        {
+            "id": "pl034",
+            "name": "怪鸟 α/β (Kut-Ku α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_034_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/034/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_034_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/034/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_034_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/034/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_034_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/034/001"
+                }
+            }
+        },
+        {
+            "id": "pl035",
+            "name": "雌火龙 α/β (Rathian α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_035_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/035/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_035_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/035/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_035_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/035/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_035_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/035/001"
+                }
+            }
+        },
+        {
+            "id": "pl036",
+            "name": "火龙 α/β (Rathalos α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_036_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/036/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_036_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/036/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_036_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/036/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_036_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/036/001"
+                }
+            }
+        },
+        {
+            "id": "pl036_500",
+            "name": "护火龙 α/β (Guardian Rathalos α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_036_500",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/036/500"
+                },
+                "mf": {
+                    "armor_id": "ch02_036_501",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/036/501"
+                },
+                "fm": {
+                    "armor_id": "ch03_036_500",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/036/500"
+                },
+                "ff": {
+                    "armor_id": "ch03_036_501",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/036/501"
+                }
+            }
+        },
+        {
+            "id": "pl037",
+            "name": "毒怪鸟 α/β (Gypceros α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_037_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/037/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_037_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/037/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_037_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/037/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_037_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/037/001"
+                }
+            }
+        },
+        {
+            "id": "pl038",
+            "name": "千刃龙 α/β (Seregios α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_038_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/038/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_038_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/038/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_038_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/038/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_038_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/038/001"
+                }
+            }
+        },
+        {
+            "id": "pl039",
+            "name": "海龙 α/β (Lagiacrus α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_039_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/039/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_039_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/039/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_039_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/039/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_039_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/039/001"
+                }
+            }
+        },
+        {
+            "id": "pl040",
+            "name": "铠龙 α/β (Gravios α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_040_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/040/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_040_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/040/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_040_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/040/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_040_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/040/001"
+                }
+            }
+        },
+        {
+            "id": "pl041",
+            "name": "雪狮子王 α/β (Blango α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_041_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/041/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_041_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/041/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_041_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/041/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_041_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/041/001"
+                }
+            }
+        },
+        {
+            "id": "pl042",
+            "name": "黑蚀龙 α/β (Gore α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_042_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/042/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_042_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/042/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_042_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/042/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_042_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/042/001"
+                }
+            }
+        },
+        {
+            "id": "pl043_600",
+            "name": "护雷颚龙 α/β (Guardian Fulgur α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_043_600",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/043/600"
+                },
+                "mf": {
+                    "armor_id": "ch02_043_601",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/043/601"
+                },
+                "fm": {
+                    "armor_id": "ch03_043_600",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/043/600"
+                },
+                "ff": {
+                    "armor_id": "ch03_043_601",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/043/601"
+                }
+            }
+        },
+        {
+            "id": "pl044",
+            "name": "龙王的独眼 α (Dragonking α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_044_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/044/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_044_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/044/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_044_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/044/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_044_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/044/001"
+                }
+            }
+        },
+        {
+            "id": "pl045",
+            "name": "封印的龙骸布 α (Sealed Dragon Cloth α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_045_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/045/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_045_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/045/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_045_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/045/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_045_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/045/001"
+                }
+            }
+        },
+        {
+            "id": "pl046",
+            "name": "库纳法 α (Kunafa α)",
+            "parts_mask": 30,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_046_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/046/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_046_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/046/000"
+                }
+            }
+        },
+        {
+            "id": "pl047",
+            "name": "阿孜兹 α (Azuz α)",
+            "parts_mask": 14,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_047_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/047/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_047_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/047/000"
+                }
+            }
+        },
+        {
+            "id": "pl048",
+            "name": "西尔德 α (Sild α)",
+            "parts_mask": 6,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_048_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/048/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_048_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/048/000"
+                }
+            }
+        },
+        {
+            "id": "pl049",
+            "name": "酥加 α (Suja α)",
+            "parts_mask": 16,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_049_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/049/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_049_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/049/000"
+                }
+            }
+        },
+        {
+            "id": "pl050",
+            "name": "调查团 α (Commission α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_050_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/050/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_050_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/050/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_050_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/050/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_050_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/050/001"
+                }
+            }
+        },
+        {
+            "id": "pl051",
+            "name": "机械 α (Artian α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_051_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/051/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_051_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/051/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_051_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/051/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_051_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/051/001"
+                }
+            }
+        },
+        {
+            "id": "pl052",
+            "name": "咬鱼 α (Gajau α)",
+            "parts_mask": 8,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_052_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/052/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_052_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/052/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_052_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/052/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_052_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/052/001"
+                }
+            }
+        },
+        {
+            "id": "pl053",
+            "name": "死神 α (Death Stench α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_053_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/053/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_053_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/053/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_053_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/053/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_053_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/053/001"
+                }
+            }
+        },
+        {
+            "id": "pl054",
+            "name": "燕尾蝶 α (Butterfly α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_054_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/054/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_054_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/054/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_054_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/054/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_054_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/054/001"
+                }
+            }
+        },
+        {
+            "id": "pl055",
+            "name": "独角仙 α (King Beetle α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_055_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/055/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_055_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/055/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_055_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/055/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_055_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/055/001"
+                }
+            }
+        },
+        {
+            "id": "pl056",
+            "name": "矿石 α (High Metal α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_056_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/056/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_056_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/056/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_056_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/056/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_056_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/056/001"
+                }
+            }
+        },
+        {
+            "id": "pl057",
+            "name": "战斗 α (Battle α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_057_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/057/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_057_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/057/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_057_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/057/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_057_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/057/001"
+                }
+            }
+        },
+        {
+            "id": "pl058",
+            "name": "花瓣 α (Melahoa α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_058_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/058/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_058_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/058/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_058_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/058/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_058_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/058/001"
+                }
+            }
+        },
+        {
+            "id": "pl059",
+            "name": "纯洁龙 α/β (Numinous α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_059_010",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/059/010"
+                },
+                "mf": {
+                    "armor_id": "ch02_059_011",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/059/011"
+                },
+                "fm": {
+                    "armor_id": "ch03_059_010",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/059/010"
+                },
+                "ff": {
+                    "armor_id": "ch03_059_011",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/059/011"
+                }
+            }
+        },
+        {
+            "id": "pl060",
+            "name": "公会骑士 (Guild Knight)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_060_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/060/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_060_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/060/000"
+                }
+            }
+        },
+        {
+            "id": "pl061",
+            "name": "兵之甲冑 (Feudal Soldier)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_061_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/061/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_061_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/061/000"
+                }
+            }
+        },
+        {
+            "id": "pl062",
+            "name": "公会王牌 α (Guild Ace α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_062_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/062/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_062_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/062/000"
+                }
+            }
+        },
+        {
+            "id": "pl063",
+            "name": "花妖猩 α (Mimiphyta α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_063_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/063/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_063_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/063/000"
+                }
+            }
+        },
+        {
+            "id": "pl064",
+            "name": "鬼角假发 (Oni Horns Wig)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_064_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/064/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_064_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/064/000"
+                }
+            }
+        },
+        {
+            "id": "pl065",
+            "name": "剑豪独眼罩 (Fencer's Eyepatch)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_065_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/065/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_065_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/065/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_065_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/065/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_065_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/065/001"
+                }
+            }
+        },
+        {
+            "id": "pl066",
+            "name": "泡狐龙 α/β (Mizutsune α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_066_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/066/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_066_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/066/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_066_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/066/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_066_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/066/001"
+                }
+            }
+        },
+        {
+            "id": "pl067",
+            "name": "贵族 (Noblesse)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_067_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/067/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_067_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/067/000"
+                }
+            }
+        },
+        {
+            "id": "pl068",
+            "name": "萌芽头冠 (Florescent Circlet)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_068_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/068/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_068_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/068/000"
+                }
+            }
+        },
+        {
+            "id": "pl069",
+            "name": "落樱缤纷 α (Sakuratide α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_069_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/069/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_069_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/069/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_069_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/069/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_069_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/069/001"
+                }
+            }
+        },
+        {
+            "id": "pl070",
+            "name": "恶魔 α (Demon)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_070_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/070/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_070_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/070/000"
+                }
+            }
+        },
+        {
+            "id": "pl071",
+            "name": "潜水员 α (Diver α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_071_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/071/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_071_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/071/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_071_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/071/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_071_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/071/001"
+                }
+            }
+        },
+        {
+            "id": "pl072",
+            "name": "龙人族之耳 (Wyverian Ears)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_072_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/072/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_072_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/072/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_072_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/072/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_072_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/072/001"
+                }
+            }
+        },
+        {
+            "id": "pl073",
+            "name": "公会十字 α (Guild Cross α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_073_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/073/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_073_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/073/000"
+                }
+            }
+        },
+        {
+            "id": "pl074",
+            "name": "职员 α (Clerk α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_074_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/074/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_074_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/074/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_074_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/074/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_074_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/074/001"
+                }
+            }
+        },
+        {
+            "id": "pl075",
+            "name": "盛开 α (Blossom α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_075_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/075/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_075_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/075/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_075_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/075/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_075_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/075/001"
+                }
+            }
+        },
+        {
+            "id": "pl076",
+            "name": "奉献耳饰 α (Earrings of Dedication α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_076_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/076/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_076_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/076/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_076_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/076/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_076_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/076/001"
+                }
+            }
+        },
+        {
+            "id": "pl076_100",
+            "name": "大胃王耳饰 α (Gourmand's Earring α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_076_100",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/076/100"
+                },
+                "mf": {
+                    "armor_id": "ch02_076_101",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/076/101"
+                },
+                "fm": {
+                    "armor_id": "ch03_076_100",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/076/100"
+                },
+                "ff": {
+                    "armor_id": "ch03_076_101",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/076/101"
+                }
+            }
+        },
+        {
+            "id": "pl077",
+            "name": "艾露猫头套 α (Faux Felyne α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_077_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/077/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_077_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/077/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_077_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/077/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_077_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/077/001"
+                }
+            }
+        },
+        {
+            "id": "pl078",
+            "name": "泡歌鸮 α (Amstrigian α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_078_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/078/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_078_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/078/000"
+                }
+            }
+        },
+        {
+            "id": "pl079",
+            "name": "封印的龙骸布 (Sealed Dragon Cloth)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_079_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/079/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_079_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/079/000"
+                }
+            }
+        },
+        {
+            "id": "pl080",
+            "name": "霹雳舞猫 (Cypurrpunk)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_080_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/080/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_080_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/080/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_080_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/080/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_080_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/080/001"
+                }
+            }
+        },
+        {
+            "id": "pl081",
+            "name": "踊火 α (Afi α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_081_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/081/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_081_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/081/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_081_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/081/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_081_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/081/001"
+                }
+            }
+        },
+        {
+            "id": "pl083",
+            "name": "毛茸茸兽耳 (Fluffy Ears)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_083_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/083/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_083_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/083/000"
+                }
+            }
+        },
+        {
+            "id": "pl084",
+            "name": "毛茸茸兽尾 (Fluffy Tail)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_084_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/084/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_084_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/084/000"
+                }
+            }
+        },
+        {
+            "id": "pl085",
+            "name": "哥特幽魂 α (Dreamwalker α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_085_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/085/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_085_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/085/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_085_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/085/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_085_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/085/001"
+                }
+            }
+        },
+        {
+            "id": "pl086",
+            "name": "收获 α (Harvest α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_086_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/086/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_086_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/086/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_086_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/086/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_086_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/086/001"
+                }
+            }
+        },
+        {
+            "id": "pl087",
+            "name": "调查队耳饰 α (Expedition Headgear α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_087_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/087/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_087_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/087/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_087_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/087/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_087_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/087/001"
+                }
+            }
+        },
+        {
+            "id": "pl088",
+            "name": "知性眼镜 α (Strategist Spectacles α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_088_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/088/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_088_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/088/000"
+                }
+            }
+        },
+        {
+            "id": "pl088_100",
+            "name": "方形眼镜 α (Square Glasses α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_088_100",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/088/100"
+                },
+                "fm": {
+                    "armor_id": "ch03_088_100",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/088/100"
+                }
+            }
+        },
+        {
+            "id": "pl088_200",
+            "name": "墨镜 α (Shadow Shades α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_088_200",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/088/200"
+                },
+                "fm": {
+                    "armor_id": "ch03_088_200",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/088/200"
+                }
+            }
+        },
+        {
+            "id": "pl088_300",
+            "name": "圆框眼镜 α (Round Glasses α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_088_300",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/088/300"
+                },
+                "fm": {
+                    "armor_id": "ch03_088_300",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/088/300"
+                }
+            }
+        },
+        {
+            "id": "pl088_400",
+            "name": "心形眼镜 α (Lovely Shades α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_088_400",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/088/400"
+                },
+                "fm": {
+                    "armor_id": "ch03_088_400",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/088/400"
+                }
+            }
+        },
+        {
+            "id": "pl088_500",
+            "name": "下半框眼镜 α (Half Rim Glasses α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_088_500",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/088/500"
+                },
+                "fm": {
+                    "armor_id": "ch03_088_500",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/088/500"
+                }
+            }
+        },
+        {
+            "id": "pl088_600",
+            "name": "泪滴墨镜 α (Aviator Shades α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_088_600",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/088/600"
+                },
+                "fm": {
+                    "armor_id": "ch03_088_600",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/088/600"
+                }
+            }
+        },
+        {
+            "id": "pl088_700",
+            "name": "猫眼眼镜 α (Kitten Frames α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_088_700",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/088/700"
+                },
+                "fm": {
+                    "armor_id": "ch03_088_700",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/088/700"
+                }
+            }
+        },
+        {
+            "id": "pl088_800",
+            "name": "炫光护目镜 α (Mirror Visor α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_088_800",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/088/800"
+                },
+                "fm": {
+                    "armor_id": "ch03_088_800",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/088/800"
+                }
+            }
+        },
+        {
+            "id": "pl088_900",
+            "name": "分析之眼 α (Analytic E.Y.E. α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_088_900",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/088/900"
+                },
+                "fm": {
+                    "armor_id": "ch03_088_900",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/088/900"
+                }
+            }
+        },
+        {
+            "id": "pl089",
+            "name": "单羽项链 α (Pinion Necklace α)",
+            "parts_mask": 2,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_089_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/089/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_089_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/089/000"
+                }
+            }
+        },
+        {
+            "id": "pl090",
+            "name": "启程的鹰之心 α (Hawkheart Jacket α)",
+            "parts_mask": 2,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_090_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/090/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_090_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/090/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_090_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/090/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_090_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/090/001"
+                }
+            }
+        },
+        {
+            "id": "pl091",
+            "name": "宇宙机装 (Cosmoloid)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_091_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/091/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_091_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/091/000"
+                }
+            }
+        },
+        {
+            "id": "pl092",
+            "name": "巨戟龙 α/β (Gogmazios α/β)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_092_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/092/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_092_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/092/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_092_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/092/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_092_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/092/001"
+                }
+            }
+        },
+        {
+            "id": "pl093",
+            "name": "祭典 α (Ceremonial α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_093_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/093/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_093_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/093/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_093_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/093/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_093_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/093/001"
+                }
+            }
+        },
+        {
+            "id": "pl094",
+            "name": "Gala Suit Slacks α (Gala Suit Slacks)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_094_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/094/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_094_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/094/000"
+                }
+            }
+        },
+        {
+            "id": "pl095",
+            "name": "辟兽头套 α (Doshagumask α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_095_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/095/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_095_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/095/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_095_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/095/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_095_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/095/001"
+                }
+            }
+        },
+        {
+            "id": "pl096",
+            "name": "胶鲵 α (Gelidron α)",
+            "parts_mask": 6,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_096_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/096/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_096_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/096/000"
+                }
+            }
+        },
+        {
+            "id": "pl097",
+            "name": "肉垫手套 α (Toe Bean Mittens α)",
+            "parts_mask": 1,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_097_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/097/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_097_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/097/000"
+                }
+            }
+        },
+        {
+            "id": "pl098",
+            "name": "骷髅面罩 α (Skull Mask α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_098_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/098/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_098_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/098/000"
+                }
+            }
+        },
+        {
+            "id": "pl099",
+            "name": "猎户星 α (Orion α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_099_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/099/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_099_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/099/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_099_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/099/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_099_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/099/001"
+                }
+            }
+        },
+        {
+            "id": "pl100",
+            "name": "欧米茄服装 α (Omega Attire α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_100_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/100/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_100_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/100/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_100_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/100/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_100_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/100/001"
+                }
+            }
+        },
+        {
+            "id": "pl100_100",
+            "name": "凶恶套装 α (Bale Armor α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_100_100",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/100/100"
+                },
+                "fm": {
+                    "armor_id": "ch03_100_100",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/100/100"
+                }
+            }
+        },
+        {
+            "id": "pl101",
+            "name": "精力充沛森狸人 α (Eager Wudwud α)",
+            "parts_mask": 4,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_101_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/101/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_101_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/101/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_101_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/101/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_101_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/101/001"
+                }
+            }
+        },
+        {
+            "id": "pl102",
+            "name": "祝福腰饰 α (Blessed Waistchain α)",
+            "parts_mask": 16,
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_102_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/102/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_102_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/102/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_102_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/102/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_102_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/102/001"
+                }
+            }
+        },
+        {
+            "id": "pl103",
+            "name": "女王 α (Sororal α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_103_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/103/000"
+                },
+                "fm": {
+                    "armor_id": "ch03_103_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/103/000"
+                }
+            }
+        },
+        {
+            "id": "pl104",
+            "name": "苍世武士 α (Azure Age Haori)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_104_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/104/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_104_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/104/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_104_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/104/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_104_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/104/001"
+                }
+            }
+        },
+        {
+            "id": "pl105",
+            "name": "沼喷龙头套 α (Rompomask α)",
+            "variants": {
+                "mm": {
+                    "armor_id": "ch02_105_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/105/000"
+                },
+                "mf": {
+                    "armor_id": "ch02_105_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch02/105/001"
+                },
+                "fm": {
+                    "armor_id": "ch03_105_000",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/105/000"
+                },
+                "ff": {
+                    "armor_id": "ch03_105_001",
+                    "base_path": "natives/STM/Art/Model/Character/ch03/105/001"
+                }
+            }
+        }
+    ]
+}

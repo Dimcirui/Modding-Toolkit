@@ -3,7 +3,7 @@ from ..core import bone_utils, weight_utils, ui_config
 from ..core.bone_utils import get_import_presets_callback, get_target_presets_callback
 from ..core.pose_ops import get_pose_presets_callback
 from ..games.re9.batch_export import get_schemes_callback
-from ..games.mhws.batch_export import get_mhws_schemes_callback, get_mhws_armor_callback
+from ..games.mhws.batch_export import get_mhws_schemes_callback, get_mhws_armor_callback, MHWS_VARIANTS
 from ..core.bone_mapper import BoneMapManager
 
 # 映射详情预览缓存：{(x_preset, y_preset): (mapper_x, mapper_y)}
@@ -76,6 +76,11 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         name="装备包",
         description="选择 MHWs 装备包 JSON",
         items=get_mhws_schemes_callback
+    )
+    mhws_armor_variant: bpy.props.EnumProperty(
+        name="套装种类",
+        description="选择套装变体（男猎/女猎 × 男套/女套）",
+        items=MHWS_VARIANTS
     )
     mhws_selected_armor: bpy.props.EnumProperty(
         name="装备",

@@ -1,6 +1,6 @@
 import bpy
 from .batch_export import (
-    MHWS_PARTS, DEFAULT_FILE_TYPES,
+    MHWS_PARTS, MHWS_VARIANTS, DEFAULT_FILE_TYPES,
     _load_scheme, get_binding, set_binding,
 )
 
@@ -53,6 +53,7 @@ class MHWS_OT_PickCollection(bpy.types.Operator):
     bl_property = "collection_name"
 
     armor_id:  bpy.props.StringProperty()
+    variant:   bpy.props.StringProperty()
     part:      bpy.props.StringProperty()
     filetype:  bpy.props.StringProperty()
     collection_name: bpy.props.EnumProperty(
@@ -66,7 +67,7 @@ class MHWS_OT_PickCollection(bpy.types.Operator):
 
     def execute(self, context):
         if self.collection_name and self.collection_name != "NONE":
-            set_binding(context.scene, self.armor_id, self.part, self.filetype, self.collection_name)
+            set_binding(context.scene, self.armor_id, self.variant, self.part, self.filetype, self.collection_name)
         return {'FINISHED'}
 
 
@@ -76,11 +77,12 @@ class MHWS_OT_ClearBinding(bpy.types.Operator):
     bl_options = {'INTERNAL'}
 
     armor_id: bpy.props.StringProperty()
+    variant:  bpy.props.StringProperty()
     part:     bpy.props.StringProperty()
     filetype: bpy.props.StringProperty()
 
     def execute(self, context):
-        set_binding(context.scene, self.armor_id, self.part, self.filetype, "")
+        set_binding(context.scene, self.armor_id, self.variant, self.part, self.filetype, "")
         return {'FINISHED'}
 
 
@@ -102,7 +104,9 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
 
         # ── Selectors ──
         layout.prop(settings, "mhws_armor_scheme", text="装备包")
-        layout.prop(settings, "mhws_selected_armor", text="装备")
+        row = layout.row(align=True)
+        row.prop(settings, "mhws_armor_variant", text="")
+        row.prop(settings, "mhws_selected_armor", text="装备")
 
         # ── Natives Root ──
         natives_root = scene.get("mhws_natives_root", "")
@@ -116,6 +120,7 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
             row.label(text="未设置", icon='ERROR')
 
         # ── Early out ──
+        variant  = settings.mhws_armor_variant
         armor_id = settings.mhws_selected_armor
         if not armor_id or armor_id == 'NONE':
             layout.separator()
@@ -133,6 +138,10 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
         else:
             file_types = DEFAULT_FILE_TYPES
 
+        parts_mask = armor_set.get("parts_mask", 0b11111) if armor_set else 0b11111
+        active_parts = [(pid, pname) for pid, pname in MHWS_PARTS
+                        if parts_mask & (1 << (int(pid) - 1))]
+
         layout.separator()
 
         # ── Header row ──
@@ -142,11 +151,11 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
             header.label(text=_FILETYPE_LABELS[ft], icon=_FILETYPE_ICONS[ft])
 
         # ── Part rows ──
-        for part_id, part_name in MHWS_PARTS:
+        for part_id, part_name in active_parts:
             row = layout.row(align=False)
             row.label(text=f"{part_id}  {part_name}")
             for ft in file_types:
-                cur = get_binding(scene, armor_id, part_id, ft)
+                cur = get_binding(scene, armor_id, variant, part_id, ft)
                 sub = row.row(align=True)
                 op = sub.operator(
                     "mhws.pick_collection",
@@ -154,11 +163,13 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
                     icon='DOWNARROW_HLT' if not cur else _FILETYPE_ICONS[ft]
                 )
                 op.armor_id = armor_id
+                op.variant  = variant
                 op.part     = part_id
                 op.filetype = ft
                 if cur:
                     op_c = sub.operator("mhws.clear_binding", text="", icon='X')
                     op_c.armor_id = armor_id
+                    op_c.variant  = variant
                     op_c.part     = part_id
                     op_c.filetype = ft
 

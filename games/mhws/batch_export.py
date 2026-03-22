@@ -21,6 +21,14 @@ MHWS_PARTS = [
     ("5", "腰"),
 ]
 
+# 4种套装变体
+MHWS_VARIANTS = [
+    ("mm", "男猎男套", ""),
+    ("mf", "男猎女套", ""),
+    ("fm", "女猎男套", ""),
+    ("ff", "女猎女套", ""),
+]
+
 # 默认每套装备包含的文件类型
 # 未来可在 armor_set JSON 中通过 "file_types" 字段覆盖，例如:
 # { "id": "...", "file_types": ["mesh", "mdf2"] }  ← 只有 mesh 和 mdf2，无物理
@@ -86,14 +94,14 @@ def get_mhws_armor_callback(self, context):
 # ── Binding 存储（scene 自定义属性）────────────────────────────
 # Key 格式：mhws_{armor_id}_{part}_{filetype}
 
-def _make_key(armor_id, part, filetype):
-    return f"mhws_{armor_id}_{part}_{filetype}".replace(" ", "_")
+def _make_key(armor_id, variant, part, filetype):
+    return f"mhws_{armor_id}_{variant}_{part}_{filetype}".replace(" ", "_")
 
-def get_binding(scene, armor_id, part, filetype):
-    return scene.get(_make_key(armor_id, part, filetype), "")
+def get_binding(scene, armor_id, variant, part, filetype):
+    return scene.get(_make_key(armor_id, variant, part, filetype), "")
 
-def set_binding(scene, armor_id, part, filetype, value):
-    scene[_make_key(armor_id, part, filetype)] = value
+def set_binding(scene, armor_id, variant, part, filetype, value):
+    scene[_make_key(armor_id, variant, part, filetype)] = value
 
 
 def _make_filepath(natives_root, base_path, part_id, armor_id, filetype):
@@ -140,17 +148,26 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
             self.report({'ERROR'}, f"在装备包中未找到: {armor_id}")
             return {'CANCELLED'}
 
-        base_path = armor_set["base_path"].replace("\\", "/")
-        # 支持单套装备覆盖文件类型（未来扩展接口）
+        variant = settings.mhws_armor_variant
+        variant_data = armor_set.get("variants", {}).get(variant)
+        if not variant_data:
+            self.report({'ERROR'}, f"装备 {armor_id} 没有变体: {variant}")
+            return {'CANCELLED'}
+
+        variant_armor_id = variant_data["armor_id"]
+        base_path = variant_data["base_path"].replace("\\", "/")
         file_types = armor_set.get("file_types", DEFAULT_FILE_TYPES)
+        parts_mask = armor_set.get("parts_mask", 0b11111)
 
         export_count = 0
         fail_count = 0
         skip_count = 0
 
         for part_id, part_name in MHWS_PARTS:
+            if not (parts_mask & (1 << (int(part_id) - 1))):
+                continue
             for filetype in file_types:
-                col = get_binding(scene, armor_id, part_id, filetype)
+                col = get_binding(scene, armor_id, variant, part_id, filetype)
                 if not col:
                     skip_count += 1
                     continue
@@ -158,7 +175,7 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
                     print(f"[MHWs] SKIP {part_name}/{filetype}: collection '{col}' not found")
                     skip_count += 1
                     continue
-                filepath = _make_filepath(natives_root, base_path, part_id, armor_id, filetype)
+                filepath = _make_filepath(natives_root, base_path, part_id, variant_armor_id, filetype)
                 label = f"{part_name} {filetype.upper()}"
                 try:
                     print(f"[MHWs] {label}: {col} -> {os.path.basename(filepath)}")

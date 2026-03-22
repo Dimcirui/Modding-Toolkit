@@ -355,7 +355,14 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
         # 只要不在预设里的，都算物理骨
         physics_bones_names = [b.name for b in source_arm.data.bones if b.name not in all_preset_bones_src]
         physics_bones_set = set(physics_bones_names) # 用于快速查找
-        
+
+        # 标记链首骨：父级不在物理骨集合中的物理骨
+        chain_heads = {
+            b.name for b in source_arm.data.bones
+            if b.name in physics_bones_set
+            and (b.parent is None or b.parent.name not in physics_bones_set)
+        }
+
         if not physics_bones_names:
             self.report({'WARNING'}, "未检测到物理骨骼")
             return {'FINISHED'}
@@ -483,8 +490,16 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
 
         for bone_name in all_new_bone_names:
             pb = target_arm.pose.bones.get(bone_name)
-            if pb:
-                pb.color.palette = 'CUSTOM'
+            if not pb:
+                continue
+            pb.color.palette = 'CUSTOM'
+            if bone_name in chain_heads:
+                # 链首：亮青蓝，作为未来一键生成物理的选取标记
+                pb.color.custom.normal = (0.10, 0.62, 1.00)
+                pb.color.custom.select = (0.40, 0.80, 1.00)
+                pb.color.custom.active = (0.70, 0.93, 1.00)
+            else:
+                # 链身 / End 骨：深蓝
                 pb.color.custom.normal = (0.18, 0.42, 0.90)
                 pb.color.custom.select = (0.45, 0.65, 1.00)
                 pb.color.custom.active = (0.70, 0.85, 1.00)
