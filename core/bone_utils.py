@@ -84,6 +84,46 @@ def propagate_movement(bone, offset_vec):
             child.tail += offset_vec
         propagate_movement(child, offset_vec)
 
+
+def align_armatures_by_name(source_arm, target_arm, mode='POS_ONLY', skip_fn=None):
+    """
+    按骨骼名对齐两个骨架（调用前应处于 OBJECT 模式）。
+    mode: 'FULL' = head+tail 全部对齐；'POS_ONLY' = 仅对齐 head，保持长度方向
+    skip_fn: callable(bone_name) -> bool，返回 True 则跳过该骨骼
+    返回对齐骨骼数。执行后处于 OBJECT 模式，active 对象为 target_arm。
+    """
+    s_mat = source_arm.matrix_world
+    src_data = {}
+    for b in source_arm.data.bones:
+        src_data[b.name] = (s_mat @ b.head_local.copy(), s_mat @ b.tail_local.copy())
+
+    bpy.context.view_layer.update()
+    bpy.context.view_layer.objects.active = target_arm
+    bpy.ops.object.mode_set(mode='EDIT')
+    t_mat_inv = target_arm.matrix_world.inverted()
+
+    count = 0
+    for b in target_arm.data.edit_bones:
+        if b.name not in src_data:
+            continue
+        if skip_fn and skip_fn(b.name):
+            continue
+        src_head, src_tail = src_data[b.name]
+        old_head = b.head.copy()
+        new_head = t_mat_inv @ src_head
+        if mode == 'FULL':
+            b.head = new_head
+            b.tail = t_mat_inv @ src_tail
+        else:
+            orig_vec = b.tail - b.head
+            b.head = new_head
+            b.tail = new_head + orig_vec
+        propagate_movement(b, new_head - old_head)
+        count += 1
+
+    bpy.ops.object.mode_set(mode='OBJECT')
+    return count
+
 def find_bone_smart(bones, name):
     """
     智能查找骨骼：

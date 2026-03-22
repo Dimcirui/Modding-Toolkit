@@ -337,77 +337,37 @@ class RE4_OT_AlignBones(bpy.types.Operator):
     bl_idname = "re4.align_bones_full"
     bl_label = "完全对齐"
     bl_options = {'REGISTER', 'UNDO'}
-    
+
     def execute(self, context):
-        active_obj = context.active_object
         selected = [o for o in context.selected_objects if o.type == 'ARMATURE']
-        if len(selected) != 2: return {'CANCELLED'}
-        target = active_obj
+        if len(selected) != 2:
+            self.report({'ERROR'}, "请选择两个骨架")
+            return {'CANCELLED'}
+        target = context.active_object
         source = [o for o in selected if o != target][0]
-        
-        if context.mode != 'OBJECT': bpy.ops.object.mode_set(mode='OBJECT')
-        context.view_layer.update()
-        
-        src_data = {}
-        s_mat = source.matrix_world
-        for b in source.data.bones:
-            src_data[b.name] = {'head': s_mat @ b.head_local.copy(), 'tail': s_mat @ b.tail_local.copy()}
-            
-        context.view_layer.objects.active = target
-        bpy.ops.object.mode_set(mode='EDIT')
-        t_mat_inv = target.matrix_world.inverted()
-        
-        count = 0
-        for b in target.data.edit_bones:
-            if b.name in src_data:
-                old_head = b.head.copy()
-                new_head = t_mat_inv @ src_data[b.name]['head']
-                b.head = new_head
-                b.tail = t_mat_inv @ src_data[b.name]['tail']
-                
-                bone_utils.propagate_movement(b, new_head - old_head)
-                count += 1
-        
-        bpy.ops.object.mode_set(mode='OBJECT')
+        if context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+        count = bone_utils.align_armatures_by_name(source, target, mode='FULL')
         self.report({'INFO'}, f"完全对齐了 {count} 根骨骼")
         return {'FINISHED'}
+
 
 class RE4_OT_AlignBones_Pos(bpy.types.Operator):
     """仅对齐位置"""
     bl_idname = "re4.align_bones_pos"
     bl_label = "仅对齐位置"
     bl_options = {'REGISTER', 'UNDO'}
-    
+
     def execute(self, context):
-        active_obj = context.active_object
         selected = [o for o in context.selected_objects if o.type == 'ARMATURE']
-        if len(selected) != 2: return {'CANCELLED'}
-        target = active_obj
+        if len(selected) != 2:
+            self.report({'ERROR'}, "请选择两个骨架")
+            return {'CANCELLED'}
+        target = context.active_object
         source = [o for o in selected if o != target][0]
-        
-        if context.mode != 'OBJECT': bpy.ops.object.mode_set(mode='OBJECT')
-        context.view_layer.update()
-        
-        src_heads = {b.name: source.matrix_world @ b.head_local for b in source.data.bones}
-        
-        context.view_layer.objects.active = target
-        bpy.ops.object.mode_set(mode='EDIT')
-        t_mat_inv = target.matrix_world.inverted()
-        
-        count = 0
-        for b in target.data.edit_bones:
-            if b.name in src_heads:
-                old_head = b.head.copy()
-                new_head = t_mat_inv @ src_heads[b.name]
-                orig_vec = b.tail - b.head
-                
-                b.head = new_head
-                b.tail = new_head + orig_vec
-                
-                bone_utils.propagate_movement(b, new_head - old_head)
-                count += 1
-                
-        bpy.ops.object.mode_set(mode='OBJECT')
+        if context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+        count = bone_utils.align_armatures_by_name(source, target, mode='POS_ONLY')
         self.report({'INFO'}, f"位置对齐了 {count} 根骨骼")
         return {'FINISHED'}
 
