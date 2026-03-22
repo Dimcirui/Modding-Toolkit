@@ -2,6 +2,11 @@ import bpy
 from ...core import bone_utils
 from . import data_maps
 
+_FINGER_INITIALS = {
+    'Index': 'I', 'Thumb': 'T', 'Middle': 'M',
+    'Ring': 'R', 'Pinky': 'P',
+}
+
 # ==========================================
 # RE4 假骨工具 (FakeBone Tools)
 # ==========================================
@@ -48,8 +53,8 @@ class RE4_OT_FakeBody_Process(bpy.types.Operator):
         bpy.ops.pose.select_all(action='SELECT')
         bpy.ops.pose.visual_transform_apply()
         for b in armature.pose.bones:
-            for c in b.constraints: b.constraints.remove(c)
-            
+            b.constraints.clear()
+
         bpy.ops.pose.armature_apply()
         bpy.ops.object.mode_set(mode='EDIT')
 
@@ -66,7 +71,9 @@ class RE4_OT_FakeBody_Process(bpy.types.Operator):
                 if pname not in armature.data.edit_bones: continue
                 suffix = "_end"
                 if (pname[0] in ['L', 'R']) and len(ParentName[fake]) > 1:
-                    suffix = f"_end{pname[0]}"
+                    parts = pname.split('_')
+                    finger_initial = next((v for k, v in _FINGER_INITIALS.items() if any(p.startswith(k) for p in parts)), "")
+                    suffix = f"_end{finger_initial}" if finger_initial else "_end"
                 new_bone = armature.data.edit_bones.new(bone.name + suffix)
                 new_bone.head = bone.head
                 new_bone.tail = bone.tail
@@ -88,17 +95,17 @@ class RE4_OT_FakeBody_Process(bpy.types.Operator):
         bpy.ops.pose.select_all(action='SELECT')
         bpy.ops.pose.visual_transform_apply()
         for b in armature.pose.bones:
-            for c in b.constraints: b.constraints.remove(c)
+            b.constraints.clear()
         bpy.ops.pose.armature_apply()
-        
+
         bpy.ops.object.mode_set(mode='EDIT')
         for bone in list(armature.data.edit_bones):
             if "end" not in bone.name:
                 armature.data.edit_bones.remove(bone)
-                
+
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.data.objects.remove(SourceModel)
-        
+
         self.report({'INFO'}, "身体 End 骨骼创建完成")
         return {'FINISHED'}
 
@@ -164,7 +171,7 @@ class RE4_OT_FakeFingers_Process(bpy.types.Operator):
         bpy.ops.pose.select_all(action='SELECT')
         bpy.ops.pose.visual_transform_apply()
         for b in armature.pose.bones:
-            for c in b.constraints: b.constraints.remove(c)
+            b.constraints.clear()
         bpy.ops.pose.armature_apply()
         
         bpy.ops.object.mode_set(mode='EDIT')
@@ -183,8 +190,9 @@ class RE4_OT_FakeFingers_Process(bpy.types.Operator):
                 if child_name not in armature.data.edit_bones: continue
                 
                 if (child_name.startswith('L') or child_name.startswith('R')) and len(ParentName[fake]) > 1:
-                    # 这里的魔法数字 [2] 是根据 RE4 命名规范：R_Index... -> I
-                    suffix = "_end{}".format(child_name[2])
+                    parts = child_name.split('_')
+                    finger_initial = next((v for k, v in _FINGER_INITIALS.items() if any(p.startswith(k) for p in parts)), "")
+                    suffix = f"_end{finger_initial}" if finger_initial else "_end"
                     new_bone = armature.data.edit_bones.new(bone.name + suffix)
                 else:
                     new_bone = armature.data.edit_bones.new(bone.name + "_end")
@@ -214,11 +222,11 @@ class RE4_OT_FakeFingers_Process(bpy.types.Operator):
         bpy.ops.pose.select_all(action='SELECT')
         bpy.ops.pose.visual_transform_apply()
         for b in armature.pose.bones:
-            for c in b.constraints: b.constraints.remove(c)
+            b.constraints.clear()
         bpy.ops.pose.armature_apply()
-        
+
         bpy.ops.object.mode_set(mode='EDIT')
-        
+
         # 删除所有非 end 骨骼
         for bone in list(armature.data.edit_bones):
             if "end" not in bone.name:

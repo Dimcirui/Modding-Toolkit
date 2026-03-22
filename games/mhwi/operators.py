@@ -1,8 +1,7 @@
 import bpy
 from ...core import bone_utils
-from . import data_maps
-from ...core import bone_utils
 from ...core import weight_utils
+from . import data_maps
 from ...core.bone_mapper import BoneMapManager, STANDARD_BONE_NAMES
 
 # ==========================================
@@ -52,7 +51,7 @@ class MHWI_OT_AlignNonPhysics(bpy.types.Operator):
                     if 150 <= num <= 245:
                         skip_count += 1
                         continue
-                except: pass
+                except (ValueError, IndexError): pass
 
             if name in source_heads:
                 s_head_world = source_heads[name]

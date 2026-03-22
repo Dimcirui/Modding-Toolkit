@@ -114,20 +114,17 @@ def _merge_or_rename_vg(obj, old_name, new_name):
     if existing_vg is None:
         old_vg.name = new_name
         return True
-    # 合并权重
-    mesh = obj.data
-    old_idx = old_vg.index
-    existing_idx = existing_vg.index
-    for vert in mesh.vertices:
-        old_w = 0.0
-        existing_w = 0.0
-        for g in vert.groups:
-            if g.group == old_idx:
-                old_w = g.weight
-            elif g.group == existing_idx:
-                existing_w = g.weight
-        if old_w > 0.0:
-            existing_vg.add([vert.index], min(existing_w + old_w, 1.0), 'REPLACE')
+    # 合并权重：用 weight() 接口，跳过不在组内的顶点
+    for vert in obj.data.vertices:
+        try:
+            old_w = old_vg.weight(vert.index)
+        except RuntimeError:
+            continue
+        try:
+            existing_w = existing_vg.weight(vert.index)
+        except RuntimeError:
+            existing_w = 0.0
+        existing_vg.add([vert.index], min(existing_w + old_w, 1.0), 'REPLACE')
     obj.vertex_groups.remove(old_vg)
     return True
 
@@ -160,63 +157,62 @@ class MHWS_OT_EndfieldFaceRename(bpy.types.Operator):
 
 def _merge_vg_full(obj, source_names, target_name):
     """将源顶点组的权重全部合并到目标"""
-    mesh = obj.data
     target_vg = obj.vertex_groups.get(target_name)
     if target_vg is None:
         target_vg = obj.vertex_groups.new(name=target_name)
-    target_idx = target_vg.index
-    
-    for src_name in source_names:
-        src_vg = obj.vertex_groups.get(src_name)
-        if src_vg is None:
+
+    active_sources = [vg for vg in (obj.vertex_groups.get(n) for n in source_names) if vg is not None]
+    if not active_sources:
+        return
+
+    # 单次遍历顶点，累加所有源组权重后写入目标
+    for vert in obj.data.vertices:
+        total_src_w = 0.0
+        for src_vg in active_sources:
+            try:
+                total_src_w += src_vg.weight(vert.index)
+            except RuntimeError:
+                pass
+        if total_src_w <= 0.0:
             continue
-        src_idx = src_vg.index
-        for vert in mesh.vertices:
-            src_w = 0.0
+        try:
+            tgt_w = target_vg.weight(vert.index)
+        except RuntimeError:
             tgt_w = 0.0
-            for g in vert.groups:
-                if g.group == src_idx:
-                    src_w = g.weight
-                elif g.group == target_idx:
-                    tgt_w = g.weight
-            if src_w > 0.0:
-                target_vg.add([vert.index], min(tgt_w + src_w, 1.0), 'REPLACE')
+        target_vg.add([vert.index], min(tgt_w + total_src_w, 1.0), 'REPLACE')
+
+    for src_vg in active_sources:
         obj.vertex_groups.remove(src_vg)
 
 
 def _transfer_partial(obj, source_names, targets_with_ratios):
     """从源顶点组按比例分配权重到多个目标，源保留剩余"""
-    mesh = obj.data
     total_ratio = sum(r for _, r in targets_with_ratios)
     remain_ratio = 1.0 - total_ratio
-    
+
     target_vgs = []
     for tgt_name, ratio in targets_with_ratios:
         tgt_vg = obj.vertex_groups.get(tgt_name)
         if tgt_vg is None:
             tgt_vg = obj.vertex_groups.new(name=tgt_name)
         target_vgs.append((tgt_vg, ratio))
-    
+
     for src_name in source_names:
         src_vg = obj.vertex_groups.get(src_name)
         if src_vg is None:
             continue
-        src_idx = src_vg.index
-        for vert in mesh.vertices:
-            src_w = 0.0
-            for g in vert.groups:
-                if g.group == src_idx:
-                    src_w = g.weight
-                    break
+        for vert in obj.data.vertices:
+            try:
+                src_w = src_vg.weight(vert.index)
+            except RuntimeError:
+                continue
             if src_w <= 0.0:
                 continue
             for tgt_vg, ratio in target_vgs:
-                tgt_idx = tgt_vg.index
-                tgt_w = 0.0
-                for g in vert.groups:
-                    if g.group == tgt_idx:
-                        tgt_w = g.weight
-                        break
+                try:
+                    tgt_w = tgt_vg.weight(vert.index)
+                except RuntimeError:
+                    tgt_w = 0.0
                 tgt_vg.add([vert.index], min(tgt_w + src_w * ratio, 1.0), 'REPLACE')
             src_vg.add([vert.index], src_w * remain_ratio, 'REPLACE')
 
