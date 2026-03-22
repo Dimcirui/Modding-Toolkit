@@ -36,6 +36,15 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     )
     
     show_mapping_details: bpy.props.BoolProperty(name="显示映射细节", default=False)
+
+    bone_view_mode: bpy.props.EnumProperty(
+        items=[
+            ('ALL',     '全显',    '显示所有骨骼'),
+            ('BASE',    '仅基础骨', '隐藏物理骨，只显示预设基础骨'),
+            ('PHYSICS', '仅物理骨', '隐藏基础骨，只显示物理骨'),
+        ],
+        default='ALL'
+    )
     
     # 姿态转换区域
     show_pose_convert: bpy.props.BoolProperty(name="姿态转换", default=False)
@@ -70,11 +79,13 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
     
     action: bpy.props.EnumProperty(
         items=[
-            ('ROLL_ZERO', "扭转归零", "递归将选中骨骼的 Roll 设为 0"),
-            ('ADD_TAIL', "添加尾骨", "在选中骨骼末端添加垂直骨骼"),
-            ('MIRROR_X', "镜像对齐 X", "以 X+ 为基准镜像对齐 X- 骨骼"),
-            ('SIMPLIFY_CHAIN', "骨链简化", "按链结构两两配对删减骨骼并合并权重，自动跳过尾骨"),
-            ('MERGE_TO_ACTIVE', "合并到激活骨", "将其余选中骨骼的权重全部合并到激活骨（最后点击的那根），并删除其余骨骼"),
+            ('ROLL_ZERO',     "扭转归零",     "递归将选中骨骼的 Roll 设为 0"),
+            ('ADD_TAIL',      "添加尾骨",     "在选中骨骼末端添加垂直骨骼"),
+            ('MIRROR_X',      "镜像对齐 X",   "以 X+ 为基准镜像对齐 X- 骨骼"),
+            ('SIMPLIFY_CHAIN',"骨链简化",     "按链结构两两配对删减骨骼并合并权重，自动跳过尾骨"),
+            ('MERGE_TO_ACTIVE',"合并到激活骨","将其余选中骨骼的权重全部合并到激活骨（最后点击的那根），并删除其余骨骼"),
+            ('ALIGN_FULL',    "骨架对齐 (完全)","按骨骼名完全对齐两个骨架 (head+tail)，需选中两个骨架"),
+            ('ALIGN_POS',     "骨架对齐 (位置)","按骨骼名对齐 head 位置，保持骨骼方向，需选中两个骨架"),
         ]
     )
 
@@ -183,6 +194,20 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
             weight_utils.merge_weights_and_delete_bones(arm_obj, pairs)
             self.report({'INFO'}, f"已将 {len(pairs)} 根骨骼并入 [{active.name}]")
 
+        elif self.action in ('ALIGN_FULL', 'ALIGN_POS'):
+            selected_arms = [o for o in context.selected_objects if o.type == 'ARMATURE']
+            if len(selected_arms) != 2:
+                self.report({'ERROR'}, "请选中两个骨架（激活的为目标，另一个为源）")
+                return {'CANCELLED'}
+            target = arm_obj
+            source = [o for o in selected_arms if o != target][0]
+            if context.mode != 'OBJECT':
+                bpy.ops.object.mode_set(mode='OBJECT')
+            mode = 'FULL' if self.action == 'ALIGN_FULL' else 'POS_ONLY'
+            count = bone_utils.align_armatures_by_name(source, target, mode=mode)
+            label = "完全对齐" if self.action == 'ALIGN_FULL' else "位置对齐"
+            self.report({'INFO'}, f"{label}: {count} 根骨骼")
+
         return {'FINISHED'}
 
 
@@ -227,6 +252,9 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row.operator("mhw.general_tools", text="镜像对齐 X").action = 'MIRROR_X'
             col.operator("mhw.general_tools", text="骨链简化").action = 'SIMPLIFY_CHAIN'
             col.operator("mhw.general_tools", text="合并到激活骨").action = 'MERGE_TO_ACTIVE'
+            row = col.row(align=True)
+            row.operator("mhw.general_tools", text="对齐 (完全)").action = 'ALIGN_FULL'
+            row.operator("mhw.general_tools", text="对齐 (位置)").action = 'ALIGN_POS'
 
         layout.separator()
 
@@ -270,7 +298,15 @@ class MHW_PT_MainPanel(bpy.types.Panel):
                 exp_col.operator("modder.merge_physics_weights", text="物理权重降级 [X]", icon='TRASH')
                 exp_col.operator("modder.remove_non_base_bones", text="剔除非基础骨骼 [X]", icon='X')
                 exp_col.operator("modder.rename_bones_to_target", text="基础骨骼改名 [X+Y]", icon='SORTALPHA')
-                exp_col.operator("modder.hide_preset_bones_pose", text="隐藏所有基础骨骼（姿态）[X]", icon='HIDE_ON')
+                row = exp_col.row(align=True)
+                row.label(text="骨骼显示 [X]:", icon='HIDE_OFF')
+                row = exp_col.row(align=True)
+                row.operator("modder.set_bone_visibility", text="全显",
+                             depress=(settings.bone_view_mode == 'ALL')).mode = 'ALL'
+                row.operator("modder.set_bone_visibility", text="仅基础骨",
+                             depress=(settings.bone_view_mode == 'BASE')).mode = 'BASE'
+                row.operator("modder.set_bone_visibility", text="仅物理骨",
+                             depress=(settings.bone_view_mode == 'PHYSICS')).mode = 'PHYSICS'
             
             # 映射详情预览
             col.separator()
