@@ -111,7 +111,7 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
         # ── Natives Root ──
         natives_root = scene.get("mhws_natives_root", "")
         row = layout.row(align=True)
-        row.operator("mhws.set_natives_root", text="Natives Root", icon='FILE_FOLDER')
+        row.operator("mhws.set_natives_root", text="Mod Root", icon='FILE_FOLDER')
         if natives_root:
             parts = natives_root.replace("\\", "/").rstrip("/").split("/")
             short = "/".join(parts[-3:]) if len(parts) > 3 else natives_root

@@ -92,10 +92,10 @@ def get_mhws_armor_callback(self, context):
 
 
 # ── Binding 存储（scene 自定义属性）────────────────────────────
-# Key 格式：mhws_{armor_id}_{part}_{filetype}
+# Key 格式：mhws_{armor_id}_{part}_{filetype}（不含 variant，所有款式共享同一套绑定）
 
 def _make_key(armor_id, variant, part, filetype):
-    return f"mhws_{armor_id}_{variant}_{part}_{filetype}".replace(" ", "_")
+    return f"mhws_{armor_id}_{part}_{filetype}".replace(" ", "_")
 
 def get_binding(scene, armor_id, variant, part, filetype):
     return scene.get(_make_key(armor_id, variant, part, filetype), "")
@@ -129,7 +129,7 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
 
         natives_root = scene.get("mhws_natives_root", "")
         if not natives_root or not os.path.isdir(natives_root):
-            self.report({'ERROR'}, "请先设置 MHWs Natives 目录")
+            self.report({'ERROR'}, "请先设置 Mod Root 目录（natives 的上级文件夹）")
             return {'CANCELLED'}
 
         scheme = _load_scheme(settings.mhws_armor_scheme)
@@ -193,17 +193,21 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
 
 
 class MHWS_OT_SetNativesRoot(bpy.types.Operator):
-    """选择 MHWs Natives 目录"""
+    """选择 MHWs Mod 根目录（natives 的上级）。若选中的文件夹本身名为 natives，自动取其上级"""
     bl_idname = "mhws.set_natives_root"
-    bl_label = "Set Natives Root"
+    bl_label = "Set Mod Root"
     bl_options = {'REGISTER'}
     directory: bpy.props.StringProperty(subtype='DIR_PATH')
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
     def execute(self, context):
-        context.scene["mhws_natives_root"] = self.directory
-        self.report({'INFO'}, f"MHWs Natives root: {self.directory}")
+        path = self.directory.rstrip("/\\")
+        # If the user selected the natives folder itself, step up one level
+        if os.path.basename(path).lower() == "natives":
+            path = os.path.dirname(path)
+        context.scene["mhws_natives_root"] = path
+        self.report({'INFO'}, f"MHWs Mod root: {path}")
         return {'FINISHED'}
 
 
