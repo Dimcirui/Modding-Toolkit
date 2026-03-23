@@ -1,4 +1,5 @@
 import bpy
+import copy
 import json
 import os
 
@@ -111,6 +112,156 @@ def _make_filepath(natives_root, base_path, part_id, armor_id, filetype):
     return os.path.join(natives_root, bp, part_id, filename)
 
 
+# ── Bonesystem ────────────────────────────────────────────────
+
+_REFERENCE_FBXSKEL = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    'assets', 'mhws_bonesystem', 'ch03_000_9000.fbxskel.7',
+)
+
+# Bones whose head position should be snapped to the named parent bone after
+# pose copy. This keeps weapon attachment points and HJ helpers in sync.
+_BONESYSTEM_SNAP_LIST = [
+    ('L_Hand',      'L_Wep_Sub'),
+    ('L_Hand',      'L_Wep'),
+    ('R_Hand',      'R_Wep_Sub'),
+    ('R_Hand',      'R_Wep'),
+    ('R_Forearm',   'R_Shield'),
+    ('L_UpperArm',  'L_UpperArm_HJ_00'),
+    ('R_UpperArm',  'R_UpperArm_HJ_00'),
+    ('L_UpperArm',  'L_UpperArmTwist_HJ_00'),
+    ('R_UpperArm',  'R_UpperArmTwist_HJ_00'),
+    ('L_UpperArm',  'L_UpperArmDouble_HJ_00'),
+    ('R_UpperArm',  'R_UpperArmDouble_HJ_00'),
+    ('L_Forearm',   'L_ForearmDouble_HJ_00'),
+    ('R_Forearm',   'R_ForearmDouble_HJ_00'),
+    ('L_Forearm',   'L_Forearm_HJ_00'),
+    ('R_Forearm',   'R_Forearm_HJ_00'),
+    ('L_Knee',      'L_KneeDouble_HJ_00'),
+    ('R_Knee',      'R_KneeDouble_HJ_00'),
+]
+
+
+def _copy_bone_matrices(context, src_arm, dst_arm):
+    """
+    Copy pose-bone world matrices from src_arm to dst_arm,
+    then apply the result as the new rest pose on dst_arm.
+    """
+    # Read source pose matrices
+    context.view_layer.objects.active = src_arm
+    bpy.ops.object.mode_set(mode='POSE')
+    bone_matrices = {b.name: copy.deepcopy(b.matrix) for b in src_arm.pose.bones}
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+    # Apply to destination
+    context.view_layer.objects.active = dst_arm
+    bpy.ops.object.mode_set(mode='POSE')
+    for bone in dst_arm.pose.bones:
+        if bone.name in bone_matrices:
+            bone.matrix = bone_matrices[bone.name]
+            context.view_layer.update()
+
+    bpy.ops.pose.select_all(action='SELECT')
+    bpy.ops.pose.armature_apply(selected=False)
+    bpy.ops.pose.select_all(action='DESELECT')
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+
+def _do_bonesystem_export(context, settings, variant_armor_id):
+    """
+    Generate reference skeleton, copy user's armature pose onto it,
+    snap helper bones, then write .fbxskel.7 and BoneSystem JSON.
+
+    fbxskel file  → {natives_root}/natives/stm/BoneSystem/{fbxskel_name}.fbxskel.7
+    JSON file     → {natives_root}/reframework/data/BoneSystem/{variant_armor_id}3.json
+
+    Returns (ok: bool, message: str).
+    """
+    from .fbxskel import load_reference_skeleton, export_fbxskel, write_fbxskel
+
+    natives_root  = context.scene.get("mhws_natives_root", "")
+    fbxskel_name  = settings.mhws_fbxskel_name.strip()
+    user_arm      = settings.mhws_bs_armature
+
+    if not fbxskel_name:
+        return False, "Bonesystem: 请填写 FBXSkel 定义名"
+    if user_arm is None or user_arm.type != 'ARMATURE':
+        return False, "Bonesystem: 请选择一个骨架对象"
+    if not os.path.isfile(_REFERENCE_FBXSKEL):
+        return False, f"Bonesystem: 找不到参考骨架文件: {_REFERENCE_FBXSKEL}"
+
+    # Save context state
+    prev_active   = context.view_layer.objects.active
+    prev_selected = [o for o in context.selected_objects]
+    for o in prev_selected:
+        o.select_set(False)
+
+    ref_arm = None
+    try:
+        # 1. Load reference skeleton
+        ref_arm = load_reference_skeleton(_REFERENCE_FBXSKEL)
+
+        # 2. Copy user's bone matrices → reference, apply as rest pose
+        _copy_bone_matrices(context, user_arm, ref_arm)
+
+        # 3. Snap helper bones (replaces bpy.ops.view3d.snap_selected_to_active)
+        context.view_layer.objects.active = ref_arm
+        bpy.ops.object.mode_set(mode='EDIT')
+        eb = ref_arm.data.edit_bones
+        for parent_name, snap_name in _BONESYSTEM_SNAP_LIST:
+            if parent_name in eb and snap_name in eb:
+                target_head = eb[parent_name].head.copy()
+                snap_bone   = eb[snap_name]
+                delta       = target_head - snap_bone.head
+                snap_bone.head  = target_head
+                snap_bone.tail += delta
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        # 4. Export fbxskel binary
+        bone_infos = export_fbxskel(ref_arm)
+        data       = write_fbxskel(bone_infos)
+
+        fbxskel_dir = os.path.join(natives_root, 'natives', 'stm', 'BoneSystem')
+        os.makedirs(fbxskel_dir, exist_ok=True)
+        fbxskel_path = os.path.join(fbxskel_dir, fbxskel_name + '.fbxskel.7')
+        with open(fbxskel_path, 'wb') as f:
+            f.write(data)
+        print(f"[MHWs Bonesystem] fbxskel → {fbxskel_path}")
+
+        # 5. Write JSON  (named after the helmet ID: variant_armor_id + part "3")
+        helmet_id = f"{variant_armor_id}3"
+        json_dir  = os.path.join(natives_root, 'reframework', 'data', 'BoneSystem')
+        os.makedirs(json_dir, exist_ok=True)
+        json_path = os.path.join(json_dir, helmet_id + '.json')
+        json_data = {
+            "HideFace":    settings.mhws_bs_hide_face,
+            "HideHair":    settings.mhws_bs_hide_hair,
+            "HideSlinger": settings.mhws_bs_hide_slinger,
+            "BindFace":    settings.mhws_bs_bind_face,
+            "BindPart":    int(settings.mhws_bs_bind_part),
+            "FbxPath":     fbxskel_name,
+        }
+        with open(json_path, 'w') as f:
+            json.dump(json_data, f, indent=4)
+        print(f"[MHWs Bonesystem] JSON   → {json_path}")
+
+        return True, f"Bonesystem 完成: {fbxskel_name}.fbxskel.7 / {helmet_id}.json"
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return False, f"Bonesystem 失败: {e}"
+
+    finally:
+        # Clean up reference armature and restore context
+        if ref_arm is not None and ref_arm.name in bpy.data.objects:
+            bpy.data.objects.remove(ref_arm, do_unlink=True)
+        context.view_layer.objects.active = prev_active
+        for o in prev_selected:
+            if o.name in bpy.data.objects:
+                o.select_set(True)
+
+
 # ── 导出 Operator ──────────────────────────────────────────────
 
 class MHWS_OT_BatchExport(bpy.types.Operator):
@@ -185,6 +336,15 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
                     print(f"[MHWs] FAILED {label}: {err}")
                     fail_count += 1
 
+        # ── Bonesystem ──
+        if settings.mhws_use_bonesystem:
+            ok, msg = _do_bonesystem_export(context, settings, variant_armor_id)
+            if ok:
+                self.report({'INFO'}, msg)
+            else:
+                self.report({'WARNING'}, msg)
+                fail_count += 1
+
         if fail_count > 0:
             self.report({'WARNING'}, f"完成: 导出 {export_count}, 失败 {fail_count}, 跳过 {skip_count}")
         else:
@@ -211,9 +371,41 @@ class MHWS_OT_SetNativesRoot(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MHWS_OT_BonesystemSettings(bpy.types.Operator):
+    """调整 Bonesystem JSON 导出参数"""
+    bl_idname = "mhws.bonesystem_settings"
+    bl_label = "Bonesystem 导出设置"
+    bl_options = {'REGISTER'}
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=280)
+
+    def draw(self, context):
+        s = context.scene.mhw_suite_settings
+        layout = self.layout
+        row = layout.row()
+        left  = row.column()
+        right = row.column()
+
+        left.label(text="隐藏选项:")
+        left.prop(s, "mhws_bs_hide_face")
+        left.prop(s, "mhws_bs_hide_hair")
+        left.prop(s, "mhws_bs_hide_slinger")
+
+        right.label(text="绑定选项:")
+        right.prop(s, "mhws_bs_bind_face")
+        if s.mhws_bs_bind_face:
+            right.label(text="绑定部位:")
+            right.prop(s, "mhws_bs_bind_part", text="")
+
+    def execute(self, context):
+        return {'FINISHED'}
+
+
 classes = [
     MHWS_OT_BatchExport,
     MHWS_OT_SetNativesRoot,
+    MHWS_OT_BonesystemSettings,
 ]
 
 def register():

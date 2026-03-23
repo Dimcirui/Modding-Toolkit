@@ -117,7 +117,7 @@ _CH_ENUM_ITEMS = [('R', 'R', ''), ('G', 'G', ''), ('B', 'B', ''), ('A', 'A', '')
 # Used for texture slots that should point to a game-provided null texture.
 NULL_TEX_BY_TYPE = {
     'MP_noise':                      'MasterMaterial/Textures/MP_noise_MSK4.tex',
-    'Wind_Effect_VolumeMap':        'RE_ENGINE_LIBRARY/VFX_Library/Texture/TEX_Vectorfield/tex_capcom_vectorfield_0003_MSK4.tex',
+    'Wind_Effect_VolumeMap':         'RE_ENGINE_LIBRARY/VFX_Library/Texture/TEX_Vectorfield/tex_capcom_vectorfield_0003_MSK4.tex',
     'BaseDielectricMap':             'systems/rendering/NullBlack.tex',
     'NormalRoughnessOcclusionMap':   'systems/rendering/NullNormalRoughnessOcclusion.tex',
     'EmissiveMap':                   'systems/rendering/NullBlack.tex',

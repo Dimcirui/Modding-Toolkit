@@ -173,6 +173,23 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
                     op_c.part     = part_id
                     op_c.filetype = ft
 
+        self._draw_bonesystem(layout, settings)
+
+    def _draw_bonesystem(self, layout, settings):
+        layout.separator()
+        box = layout.box()
+        row = box.row(align=True)
+        row.prop(settings, "mhws_use_bonesystem",
+                 text="使用 Bonesystem", icon='ARMATURE_DATA')
+        if not settings.mhws_use_bonesystem:
+            return
+
+        col = box.column(align=False)
+        col.prop(settings, "mhws_bs_armature", text="骨架")
+        name_row = col.row(align=True)
+        name_row.prop(settings, "mhws_fbxskel_name", text="FBXSkel 名")
+        name_row.operator("mhws.bonesystem_settings", text="", icon='PREFERENCES')
+
     def execute(self, context):
         bpy.ops.mhws.batch_export()
         return {'FINISHED'}

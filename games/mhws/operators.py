@@ -247,9 +247,136 @@ class MHWS_OT_FaceWeightSimplify(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# ============================================================
+# 一键创建 RE Chain（实验性）
+# ============================================================
+
+_CHAIN_HEAD_COLOR = (0.10, 0.62, 1.00)
+_COLOR_TOL = 0.01
+
+# invoke 时动态填充，供 EnumProperty 回调使用
+_chain_col_items = []
+
+
+def _is_chain_head(pb):
+    c = pb.color
+    if c.palette != 'CUSTOM':
+        return False
+    n = c.custom.normal
+    return (abs(n[0] - _CHAIN_HEAD_COLOR[0]) < _COLOR_TOL and
+            abs(n[1] - _CHAIN_HEAD_COLOR[1]) < _COLOR_TOL and
+            abs(n[2] - _CHAIN_HEAD_COLOR[2]) < _COLOR_TOL)
+
+
+def _is_valid_chain_collection(col):
+    """与 RE Chain Editor 的 filterChainCollection 逻辑一致"""
+    t = col.get("~TYPE", "")
+    return (t in ("RE_CHAIN_COLLECTION", "RE_CLSP_COLLECTION")
+            and (".chain" in col.name or ".clsp" in col.name))
+
+
+def _get_chain_col_items(self, context):
+    return _chain_col_items
+
+
+class MHWS_OT_AutoCreateChains(bpy.types.Operator):
+    """在姿态模式下，根据物理骨骼颜色自动为每条链创建 Chain Settings 和 Chain Group。
+需要 RE Chain Editor 插件，且场景中存在已创建 Chain Header 的 Chain Collection。"""
+    bl_idname = "mhws.auto_create_chains"
+    bl_label = "一键创建 RE Chain"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    chain_collection: bpy.props.EnumProperty(
+        name="Chain Collection",
+        description="选择要写入的 Chain Collection",
+        items=_get_chain_col_items,
+    )
+
+    @classmethod
+    def poll(cls, context):
+        return (context.mode == 'POSE'
+                and context.active_object is not None
+                and context.active_object.type == 'ARMATURE'
+                and hasattr(bpy.ops, 're_chain')
+                and hasattr(bpy.ops.re_chain, 'create_chain_settings'))
+
+    def invoke(self, context, event):
+        global _chain_col_items
+        _chain_col_items = [
+            (col.name, col.name, "")
+            for col in bpy.data.collections
+            if _is_valid_chain_collection(col)
+        ]
+        if not _chain_col_items:
+            self.report({'ERROR'}, "未找到有效的 Chain Collection（需含 ~TYPE=RE_CHAIN_COLLECTION 且名称含 .chain/.clsp）")
+            return {'CANCELLED'}
+
+        # 预选当前 RE Chain 面板已设置的集合
+        toolpanel = getattr(context.scene, 're_chain_toolpanel', None)
+        if toolpanel and toolpanel.chainCollection:
+            cur = toolpanel.chainCollection.name
+            if any(i[0] == cur for i in _chain_col_items):
+                self.chain_collection = cur
+
+        return context.window_manager.invoke_props_dialog(self, width=360)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "chain_collection")
+
+    def execute(self, context):
+        col = bpy.data.collections.get(self.chain_collection)
+        if col is None:
+            self.report({'ERROR'}, f"找不到集合: {self.chain_collection}")
+            return {'CANCELLED'}
+
+        toolpanel = getattr(context.scene, 're_chain_toolpanel', None)
+        if toolpanel is None:
+            self.report({'ERROR'}, "未找到 RE Chain 场景属性，请确认插件已正确加载")
+            return {'CANCELLED'}
+
+        # 将选中的集合设为 RE Chain 的当前工作集合
+        toolpanel.chainCollection = col
+
+        header = next(
+            (o for o in col.all_objects if o.get("TYPE") == "RE_CHAIN_HEADER"),
+            None
+        )
+        if header is None:
+            self.report({'ERROR'}, f"集合 '{col.name}' 中未找到 Chain Header，请先创建")
+            return {'CANCELLED'}
+
+        armature = context.active_object
+        chain_heads = [pb for pb in armature.pose.bones if _is_chain_head(pb)]
+
+        if not chain_heads:
+            self.report({'WARNING'}, "未找到链首骨骼（浅蓝色），请先执行物理骨骼移植")
+            return {'CANCELLED'}
+
+        created = 0
+        skipped = 0
+        for pb in chain_heads:
+            if bpy.ops.re_chain.create_chain_settings() != {'FINISHED'}:
+                skipped += 1
+                continue
+
+            bpy.ops.pose.select_all(action='DESELECT')
+            pb.bone.select = True
+            armature.data.bones.active = pb.bone
+
+            if bpy.ops.re_chain.chain_from_bone() == {'FINISHED'}:
+                created += 1
+            else:
+                skipped += 1
+
+        self.report({'INFO'}, f"已创建 {created} 条链，跳过 {skipped} 条")
+        return {'FINISHED'}
+
+
 classes = [
     MHWS_OT_EndfieldFaceRename,
     MHWS_OT_FaceWeightSimplify,
+    MHWS_OT_AutoCreateChains,
 ]
 
 def register():

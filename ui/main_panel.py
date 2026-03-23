@@ -89,6 +89,36 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         items=get_mhws_armor_callback
     )
 
+    # MHWs Bonesystem
+    mhws_use_bonesystem: bpy.props.BoolProperty(
+        name="使用 Bonesystem",
+        description="导出时同时生成 fbxskel.7 和 BoneSystem JSON（需要 Bonesystem 框架）",
+        default=False,
+    )
+    mhws_fbxskel_name: bpy.props.StringProperty(
+        name="FBXSkel 定义名",
+        description="写入 JSON 的 FbxPath 字段，同时作为 .fbxskel.7 文件名（如 ch03_000_9000）",
+    )
+    mhws_bs_armature: bpy.props.PointerProperty(
+        type=bpy.types.Object,
+        poll=lambda self, obj: obj.type == 'ARMATURE',
+        name="骨架",
+        description="用于生成 fbxskel 的 MHWs 角色骨架",
+    )
+    mhws_bs_hide_face: bpy.props.BoolProperty(
+        name="隐藏面部",    default=True)
+    mhws_bs_hide_hair: bpy.props.BoolProperty(
+        name="隐藏头发",    default=True)
+    mhws_bs_hide_slinger: bpy.props.BoolProperty(
+        name="隐藏投石器",  default=True)
+    mhws_bs_bind_face: bpy.props.BoolProperty(
+        name="绑定面部",    default=True)
+    mhws_bs_bind_part: bpy.props.EnumProperty(
+        name="绑定部位",
+        items=[("1", "头盔", ""), ("2", "身体", "")],
+        default="1",
+    )
+
 
 class MHW_OT_GeneralTools(bpy.types.Operator):
     """通用工具集合"""
@@ -438,7 +468,15 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row.operator("mhws.mdf_tex_processor_dialog", text="MDF2 + Tex 处理器", icon='TEXTURE')
             if not has_re_mesh:
                 col.label(text="需要 RE Mesh Editor!", icon='ERROR')
-             
+
+            col.separator()
+            has_re_chain = hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
+            row = col.row()
+            row.enabled = has_re_chain
+            row.operator("mhws.auto_create_chains", text="一键创建 RE Chain", icon='LINKED')
+            if not has_re_chain:
+                col.label(text="需要 RE Chain Editor!", icon='ERROR')
+
         if settings.show_re4:
             box = layout.box()
             box.label(text="RE4 Tools", icon='GHOST_ENABLED')
