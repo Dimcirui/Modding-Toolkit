@@ -80,7 +80,8 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     mhws_armor_variant: bpy.props.EnumProperty(
         name="套装种类",
         description="选择套装变体（男猎/女猎 × 男套/女套）",
-        items=MHWS_VARIANTS
+        items=MHWS_VARIANTS,
+        default='ff'
     )
     mhws_selected_armor: bpy.props.EnumProperty(
         name="装备",
@@ -432,6 +433,9 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row = col.row()
             row.enabled = has_re_mesh
             row.operator("mhws.batch_export_dialog", text="MHWs Batch Exporter", icon='EXPORT')
+            row = col.row()
+            row.enabled = has_re_mesh
+            row.operator("mhws.mdf_tex_processor_dialog", text="MDF2 + Tex 处理器", icon='TEXTURE')
             if not has_re_mesh:
                 col.label(text="需要 RE Mesh Editor!", icon='ERROR')
              
