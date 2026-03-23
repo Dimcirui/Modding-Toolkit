@@ -28,7 +28,8 @@ Convert any source model to any target game format using customizable JSON prese
     * **Target (Y)**: MHWI, MHW: Wilds, RE4 Remake, Street Fighter 6, etc.
 * **Bone Snap** [X+Y, dual armature]: Align your model's skeleton to the target game's skeleton.
 * **Direct Convert** [X+Y]: Rename vertex groups directly on the mesh.
-* **Experimental - Physics Bone Graft** [X+Y, dual armature]: Transplants physical bones from the source skeleton to the target skeleton, handles directional twists, and automatically generates end bones.
+* **Fuzzy Bone Matching**: Normalizes separator characters (`_`, `.`, space) when matching bone names, so preset-driven operations work regardless of naming style variations in the source.
+* **Experimental - Physics Bone Graft** [X+Y, dual armature]: Transplants physical bones from the source skeleton to the target skeleton, handles directional twists, automatically generates end bones, and colors chain-head bones for easy identification.
 * **Experimental Feature - Physics Weight Downgrade** [X]: Merges physics weights onto the nearest body bone for scenarios where physics are unnecessary or unavailable.
 
 ### 2. Pose Convert
@@ -45,18 +46,41 @@ A built-in GUI editor to create custom bone mappings without writing code.
 * Pick & click bone assignment from the 3D viewport.
 * Batch auxiliary bone adding.
 * Smart mirror: auto-generate Right-side mappings from the Left side.
+* Grouped category dropdown for large preset libraries.
 
-### 4. Game-Specific Modules
+### 4. General Utilities
+* Roll Zero, Add Tail Bone, Mirror X.
+* **Bone Chain Simplification**: Reduce chain density with configurable keep-ratio; includes a Merge To Active action that merges selected bones into the active bone.
+* **General Align Tools**: Align any armature's bones to a reference armature by name.
+* **Three-state Bone Visibility Toggle**: Cycle bones between visible / hidden / hidden+unselectable.
 
-* **MHWI (Iceborne)**: Non-physics bone alignment tool.
-* **MHWilds (Wilds)**:
-    * Endfield face vertex group rename (Endfield → MHWilds format).
-    * Face weight simplification (merge detailed facial bones to main control bones).
-* **RE4 (Remake)**: FakeBone (end bone) generation, alignment, and merging toolset.
-* **Resident Evil: Requiem (RE9)**: Synchronize child bone orientations, batch export tool (requires RE Mesh Editor plugin).
+### 5. Game-Specific Modules
 
-### 5. General Utilities
-* Roll Zero, Add Tail Bone, Mirror X, Chain Simplification.
+#### MHWI (Iceborne)
+* Non-physics bone alignment tool.
+
+#### MHWilds (Monster Hunter Wilds)
+* Endfield face vertex group rename (Endfield → MHWilds format).
+* Face weight simplification (merge detailed facial bones to main control bones).
+* **Armor Batch Exporter**: Export mesh / MDF2 / Chain2 / CLSP files for all 5 armor parts (arm, body, helmet, leg, waist) in one click.
+    * Armor sets defined in JSON packs under `assets/mhws_armor_sets/`.
+    * 4 armor variants (male-male, male-female, female-male, female-female) with independent armor IDs and base paths.
+    * `parts_mask` support in JSON to skip non-existent parts without manual binding.
+    * Collection bindings shared across variants — configure once, export all.
+* **MDF2 + Tex Semi-Auto Processor**: Batch-update texture binding paths in an MDF2 collection and convert source images to game-ready `.tex` files in a single operation.
+    * Per-material PBR inputs (Albedo / Alpha / Normal / Roughness / Metallic / AO / Emissive).
+    * Per-slot modes: **COMPOSE** (channel-pack from PBR inputs), **DIRECT** (pick any image / DDS / TEX), **DEFAULT** (write game null-tex path), **SKIP** (leave unchanged).
+    * Channel selector (R/G/B/A) + invert toggle for single-channel inputs (e.g. smoothness→roughness, dielectric→metallic).
+    * Auto-detects existing null-texture paths on refresh and sets DEFAULT.
+    * Copy / paste material configuration between materials.
+    * Per-collection state persistence — switching between MDF2 collections preserves each collection's configuration independently.
+    * Output: BC7_UNORM_SRGB for color/emissive slots, BC7_UNORM for linear slots.
+* **One-Click RE Chain Creation**: Detects chain-head bones by color, shows a collection picker, then auto-creates Chain Settings + Chain Group for each chain via RE Chain Editor. Supports per-chain independent Settings or a single shared Settings for all chains.
+* **BoneSystem Export**: Generates the `.fbxskel.7` file and `reframework/data/BoneSystem/{id}.json` configuration used by the BoneSystem REFramework script. Integrated into the batch exporter panel.
+
+#### RE4 Remake / RE: Requiem (RE9)
+* Synchronize child bone orientations.
+* **Batch Exporter** (requires RE Mesh Editor plugin): Export mesh / MDF2 / SFUR / Chain2 / CLSP in bulk from JSON-defined schemes. Supports both RE9 and RE4 scheme formats.
 
 ---
 
@@ -97,7 +121,8 @@ A built-in GUI editor to create custom bone mappings without writing code.
     * **目标 (Y)**: 怪猎世界冰原、怪猎荒野、生化4重制版、街霸6 等。
 * **骨骼对齐** [X+Y, 双骨架]: 将模型骨架对齐到目标游戏骨架。
 * **重命名顶点组** [X+Y]: 直接在网格上重命名顶点组。
-* **实验性功能 - 物理骨移植** [X+Y, 双骨架]: 将物理骨骼从来源骨架移植到目标骨架，处理方向扭转并自动生成末端骨。
+* **模糊骨骼名匹配**: 在匹配骨骼名时自动归一化分隔符（`_`、`.`、空格），使预设驱动的操作不受来源骨骼命名风格差异影响。
+* **实验性功能 - 物理骨移植** [X+Y, 双骨架]: 将物理骨骼从来源骨架移植到目标骨架，处理方向扭转，自动生成末端骨，并对链首骨骼进行颜色标记以便识别。
 * **实验性功能 - 物理权重降级** [X]: 将物理权重合并到最近的身体骨骼上，以用于不需要或不能使用物理的场景。
 
 ### 2. 姿态转换
@@ -114,18 +139,41 @@ A built-in GUI editor to create custom bone mappings without writing code.
 * 在 3D 视口中点选骨骼进行分配。
 * 批量添加辅助骨骼。
 * 智能镜像：自动从左侧生成右侧映射。
+* 分类分组的预设下拉菜单，便于管理大型预设库。
 
-### 4. 游戏专用模块
+### 4. 通用工具
+* 扭转归零、添加尾骨、镜像对齐 X。
+* **骨链简化**: 按保留比例缩减骨链密度；包含合并到活动骨骼功能。
+* **通用骨架对齐**: 按骨骼名将任意骨架对齐到参考骨架。
+* **三态骨骼可见性切换**: 在可见 / 隐藏 / 隐藏且不可选 三种状态间循环切换。
 
-* **怪猎世界冰原 (MHWI)**: 非物理骨对齐工具。
-* **怪猎荒野 (MHWilds)**:
-    * Endfield 面部顶点组改名（Endfield → MHWilds 格式）。
-    * 面部权重简化（将细分面部骨骼权重合并到主控制骨骼）。
-* **生化4重制版 (RE4R)**: FakeBone（末端骨）生成、对齐和合并工具集。
-* **生化危机：镇魂曲 (RE9)**: 同步子级骨骼朝向、批量导出工具（需要RE Mesh Editor插件）。
+### 5. 游戏专用模块
 
-### 5. 通用工具
-* 扭转归零、添加尾骨、镜像对齐 X、骨链简化。
+#### 怪猎世界冰原 (MHWI)
+* 非物理骨对齐工具。
+
+#### 怪猎荒野 (MHWilds)
+* Endfield 面部顶点组改名（Endfield → MHWilds 格式）。
+* 面部权重简化（将细分面部骨骼权重合并到主控制骨骼）。
+* **装备批量导出器**: 一键导出全部5个部位（手臂/身体/头盔/腿/腰）的 Mesh / MDF2 / Chain2 / CLSP 文件。
+    * 装备集由 `assets/mhws_armor_sets/` 下的 JSON 文件定义。
+    * 支持4种装备变体（男猎男套/男猎女套/女猎男套/女猎女套），各自独立的 armor_id 和 base_path。
+    * JSON 中 `parts_mask` 支持跳过不存在的部位，无需手动留空绑定。
+    * 集合绑定在所有变体间共享——配置一次，所有变体通用。
+* **MDF2 + Tex 半自动贴图处理器**: 批量更新 MDF2 集合中的贴图绑定路径，并将来源图像一步转换为游戏可用的 `.tex` 文件。
+    * 每个材质独立配置 PBR 输入（固有色/Alpha/法线/粗糙度/金属度/AO/自发光）。
+    * 每个贴图槽位独立模式：**PBR转换**（从 PBR 输入合成通道）、**直接选择**（选择任意图片/DDS/TEX）、**默认空贴图**（写入游戏内空贴图路径）、**不修改**（保持现有路径）。
+    * 单通道输入支持通道选择（R/G/B/A）和反相（例如平滑度→粗糙度、绝缘度→金属度）。
+    * 刷新时自动检测现有空贴图路径并设为"默认空贴图"模式。
+    * 支持材质配置的复制/粘贴。
+    * 按集合持久化状态——在不同 MDF2 集合间切换时各自独立保留配置。
+    * 输出格式：颜色/自发光槽位用 BC7_UNORM_SRGB，线性槽位用 BC7_UNORM。
+* **一键创建 RE Chain**: 自动检测链首骨骼（按颜色），弹出集合选择器，随后调用 RE Chain Editor 为每条链自动创建 Chain Settings 和 Chain Group。支持每条链独立 Settings 或全部链共用同一 Settings 两种模式。
+* **BoneSystem 导出**: 生成 `.fbxskel.7` 文件及 `reframework/data/BoneSystem/{id}.json` 配置文件，供 BoneSystem REFramework 脚本使用。已集成到批量导出面板中。
+
+#### 生化危机4重制版 / 生化危机：镇魂曲 (RE4R / RE9)
+* 同步子级骨骼朝向。
+* **批量导出工具**（需要 RE Mesh Editor 插件）: 通过 JSON 方案批量导出 Mesh / MDF2 / SFUR / Chain2 / CLSP。同时支持 RE9 和 RE4 方案格式。
 
 ---
 
