@@ -291,6 +291,14 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
         description="选择要写入的 Chain Collection",
         items=_get_chain_col_items,
     )
+    settings_mode: bpy.props.EnumProperty(
+        name="Settings 模式",
+        items=[
+            ('SEPARATE', "各自独立", "每条链拥有独立的 Chain Settings"),
+            ('SHARED',   "共享同一", "所有链共用同一个 Chain Settings"),
+        ],
+        default='SEPARATE',
+    )
 
     @classmethod
     def poll(cls, context):
@@ -323,6 +331,7 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "chain_collection")
+        layout.prop(self, "settings_mode", expand=True)
 
     def execute(self, context):
         col = bpy.data.collections.get(self.chain_collection)
@@ -355,10 +364,17 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
 
         created = 0
         skipped = 0
-        for pb in chain_heads:
+
+        if self.settings_mode == 'SHARED':
             if bpy.ops.re_chain.create_chain_settings() != {'FINISHED'}:
-                skipped += 1
-                continue
+                self.report({'ERROR'}, "无法创建 Chain Settings")
+                return {'CANCELLED'}
+
+        for pb in chain_heads:
+            if self.settings_mode == 'SEPARATE':
+                if bpy.ops.re_chain.create_chain_settings() != {'FINISHED'}:
+                    skipped += 1
+                    continue
 
             bpy.ops.pose.select_all(action='DESELECT')
             pb.bone.select = True

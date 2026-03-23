@@ -110,7 +110,7 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     mhws_bs_hide_hair: bpy.props.BoolProperty(
         name="隐藏头发",    default=True)
     mhws_bs_hide_slinger: bpy.props.BoolProperty(
-        name="隐藏投石器",  default=True)
+        name="隐藏投射器",  default=True)
     mhws_bs_bind_face: bpy.props.BoolProperty(
         name="绑定面部",    default=True)
     mhws_bs_bind_part: bpy.props.EnumProperty(

@@ -23,7 +23,8 @@ _FILETYPE_LABELS = {
 
 def _get_filtered_collections(filetype):
     result = []
-    type_map  = {"mesh": "RE_MESH_COLLECTION", "mdf2": "RE_MDF_COLLECTION"}
+    type_map  = {"mesh": "RE_MESH_COLLECTION", "mdf2": "RE_MDF_COLLECTION",
+                 "chain2": "RE_CHAIN_COLLECTION", "clsp": "RE_CHAIN_COLLECTION"}
     sfx_map   = {"mesh": ".mesh", "mdf2": ".mdf2", "chain2": ".chain2", "clsp": ".clsp"}
     col_type  = type_map.get(filetype, "")
     name_sfx  = sfx_map.get(filetype, "")

@@ -112,8 +112,8 @@ PBR_CHANNEL_SELECTABLE = {'alpha', 'roughness', 'metallic', 'ao'}
 
 _CH_ENUM_ITEMS = [('R', 'R', ''), ('G', 'G', ''), ('B', 'B', ''), ('A', 'A', '')]
 
-# ── Null / default texture paths (relative to natives/STM/) ──────────────────
-# When mode == 'DEFAULT', the binding path is set to natives/STM/{value}.
+# ── Null / default texture paths (relative to STM root, no natives/STM/ prefix) ──
+# When mode == 'DEFAULT', the binding path is set directly to {value}.
 # Used for texture slots that should point to a game-provided null texture.
 NULL_TEX_BY_TYPE = {
     'MP_noise':                      'MasterMaterial/Textures/MP_noise_MSK4.tex',
@@ -310,7 +310,7 @@ def _make_mdf_path(base_path, tex_name, slot_type):
     """Path string stored in the MDF2 binding (no version suffix)."""
     abbrev = TEXTURE_TYPE_ABBREV.get(slot_type, slot_type)
     base   = base_path.strip('/\\').replace('\\', '/')
-    return f"natives/STM/Art/{base}/{tex_name}_{abbrev}.tex"
+    return f"Art/{base}/{tex_name}_{abbrev}.tex"
 
 
 def _make_disk_path(natives_root, base_path, tex_name, slot_type):
@@ -320,8 +320,128 @@ def _make_disk_path(natives_root, base_path, tex_name, slot_type):
     """
     abbrev = TEXTURE_TYPE_ABBREV.get(slot_type, slot_type)
     rel    = os.path.join('natives', 'STM', 'Art',
-                          base_path.strip('/\\'), f"{tex_name}_{abbrev}.tex")
+                          base_path.strip('/\\'), f"{tex_name}_{abbrev}.tex.{MHWS_TEX_VERSION}")
     return os.path.join(natives_root, rel)
+
+
+# ── Per-collection State Persistence ─────────────────────────────────────────
+
+def _capture_material_state(m):
+    """Serialize one MdfTexMaterialItem to a plain dict."""
+    return {
+        'pbr':     {pt: getattr(m.pbr, pt) for pt in PBR_TYPES},
+        'pbr_chs': {pt: getattr(m.pbr, f"{pt}_ch") for pt in PBR_CHANNEL_SELECTABLE},
+        'pbr_inv': {pt: getattr(m.pbr, f"{pt}_inv") for pt in PBR_CHANNEL_SELECTABLE},
+        'slots':   {s.texture_type: {'mode': s.mode, 'direct_image': s.direct_image}
+                    for s in m.slots},
+    }
+
+
+def _save_col_state(scene, col_name, state):
+    scene[f"mdf_tex_saved__{col_name}"] = json.dumps(state)
+
+
+def _load_col_state(scene, col_name):
+    raw = scene.get(f"mdf_tex_saved__{col_name}", "")
+    if not raw:
+        return {}
+    try:
+        return json.loads(raw)
+    except Exception:
+        return {}
+
+
+def _do_refresh(settings, col, scene):
+    """
+    Core refresh logic shared by the Refresh operator and the collection update callback.
+    - Same-collection refresh: captures current in-memory slot config, then repopulates
+      (picks up newly added/removed materials while preserving existing config).
+    - Different-collection refresh: saves old collection's state to scene props first,
+      then loads the new collection's previously saved state.
+    Returns the number of materials found.
+    """
+    loaded_name = settings.mdf_loaded_collection
+    new_name    = col.name
+
+    if loaded_name == new_name:
+        # Same collection: current settings.materials has the latest user edits
+        saved = {m.material_name: _capture_material_state(m) for m in settings.materials}
+        # Fill in any material that exists in scene props but isn't in memory
+        for k, v in _load_col_state(scene, new_name).items():
+            saved.setdefault(k, v)
+    else:
+        # Different collection: commit current state for the old collection first
+        if loaded_name:
+            _save_col_state(scene, loaded_name,
+                            {m.material_name: _capture_material_state(m)
+                             for m in settings.materials})
+        saved = _load_col_state(scene, new_name)
+
+    settings.materials.clear()
+
+    count = 0
+    for obj in col.objects:
+        if obj.get("~TYPE") != "RE_MDF_MATERIAL":
+            continue
+        mat_data = getattr(obj, 're_mdf_material', None)
+        if mat_data is None:
+            continue
+
+        item = settings.materials.add()
+        item.material_obj_name = obj.name
+        item.material_name     = mat_data.materialName
+
+        prev       = saved.get(mat_data.materialName, {})
+        prev_pbr   = prev.get('pbr',     {})
+        prev_chs   = prev.get('pbr_chs', {})
+        prev_inv   = prev.get('pbr_inv', {})
+        prev_slots = prev.get('slots',   {})
+
+        for pt in PBR_TYPES:
+            setattr(item.pbr, pt, prev_pbr.get(pt, ''))
+        for pt in PBR_CHANNEL_SELECTABLE:
+            setattr(item.pbr, f"{pt}_ch",  prev_chs.get(pt, 'R'))
+            setattr(item.pbr, f"{pt}_inv", prev_inv.get(pt, False))
+
+        for binding in mat_data.textureBindingList_items:
+            slot               = item.slots.add()
+            slot.texture_type  = binding.textureType
+            slot.original_path = binding.path
+            if binding.textureType in prev_slots:
+                sd = prev_slots[binding.textureType]
+                if isinstance(sd, dict):
+                    slot.mode         = sd.get('mode', 'SKIP')
+                    slot.direct_image = sd.get('direct_image', '')
+                else:
+                    # backward-compat: old format stored tuples → lists after JSON round-trip
+                    slot.mode, slot.direct_image = sd
+            elif _is_null_tex(binding.path):
+                slot.mode = 'DEFAULT'
+        count += 1
+
+    # Persist final state and update collection tracking
+    _save_col_state(scene, new_name,
+                    {m.material_name: _capture_material_state(m) for m in settings.materials})
+    settings.mdf_loaded_collection = new_name
+    return count
+
+
+def _on_mdf_collection_update(self, context):
+    """Called when the mdf_collection PointerProperty changes."""
+    try:
+        col = self.mdf_collection
+        if col:
+            _do_refresh(self, col, context.scene)
+        else:
+            # Collection cleared: save current state then wipe
+            if self.mdf_loaded_collection:
+                _save_col_state(context.scene, self.mdf_loaded_collection,
+                                {m.material_name: _capture_material_state(m)
+                                 for m in self.materials})
+            self.materials.clear()
+            self.mdf_loaded_collection = ""
+    except Exception as e:
+        print(f"[MDF Tex] Auto-refresh error: {e}")
 
 
 # ── Property Groups ───────────────────────────────────────────────────────────
@@ -386,6 +506,7 @@ class MdfTexProcessorSettings(bpy.types.PropertyGroup):
         type=bpy.types.Collection,
         description="Target MDF2 collection to process",
         poll=_mdf_collection_poll,
+        update=_on_mdf_collection_update,
     )
     texture_base_path: bpy.props.StringProperty(
         name="Base Path",
@@ -396,9 +517,10 @@ class MdfTexProcessorSettings(bpy.types.PropertyGroup):
         name="Generate MipMaps",
         default=True,
     )
-    materials:       bpy.props.CollectionProperty(type=MdfTexMaterialItem)
-    materials_index: bpy.props.IntProperty()
-    clipboard_json:  bpy.props.StringProperty(default="")
+    materials:              bpy.props.CollectionProperty(type=MdfTexMaterialItem)
+    materials_index:        bpy.props.IntProperty()
+    clipboard_json:         bpy.props.StringProperty(default="")
+    mdf_loaded_collection:  bpy.props.StringProperty(default="")
 
 
 # ── Operators ─────────────────────────────────────────────────────────────────
@@ -415,55 +537,7 @@ class MHWS_OT_MdfTexRefresh(bpy.types.Operator):
         if not col:
             self.report({'ERROR'}, "请先选择 MDF 集合")
             return {'CANCELLED'}
-
-        # Preserve existing user data keyed by material name
-        saved = {}
-        for m in settings.materials:
-            saved[m.material_name] = {
-                'pbr':      {pt: getattr(m.pbr, pt) for pt in PBR_TYPES},
-                'pbr_chs':  {pt: getattr(m.pbr, f"{pt}_ch") for pt in PBR_CHANNEL_SELECTABLE},
-                'pbr_inv':  {pt: getattr(m.pbr, f"{pt}_inv") for pt in PBR_CHANNEL_SELECTABLE},
-                'slots':    {s.texture_type: (s.mode, s.direct_image) for s in m.slots},
-            }
-
-        settings.materials.clear()
-
-        count = 0
-        for obj in col.objects:
-            if obj.get("~TYPE") != "RE_MDF_MATERIAL":
-                continue
-            mat_data = getattr(obj, 're_mdf_material', None)
-            if mat_data is None:
-                continue
-
-            item = settings.materials.add()
-            item.material_obj_name = obj.name
-            item.material_name     = mat_data.materialName
-
-            prev = saved.get(mat_data.materialName, {})
-
-            prev_pbr = prev.get('pbr', {})
-            for pt in PBR_TYPES:
-                setattr(item.pbr, pt, prev_pbr.get(pt, ''))
-            prev_chs = prev.get('pbr_chs', {})
-            for pt in PBR_CHANNEL_SELECTABLE:
-                setattr(item.pbr, f"{pt}_ch", prev_chs.get(pt, 'R'))
-            prev_inv = prev.get('pbr_inv', {})
-            for pt in PBR_CHANNEL_SELECTABLE:
-                setattr(item.pbr, f"{pt}_inv", prev_inv.get(pt, False))
-
-            prev_slots = prev.get('slots', {})
-            for binding in mat_data.textureBindingList_items:
-                slot               = item.slots.add()
-                slot.texture_type  = binding.textureType
-                slot.original_path = binding.path
-                if binding.textureType in prev_slots:
-                    slot.mode, slot.direct_image = prev_slots[binding.textureType]
-                elif _is_null_tex(binding.path):
-                    slot.mode = 'DEFAULT'
-                # else: keep default 'SKIP'
-            count += 1
-
+        count = _do_refresh(settings, col, context.scene)
         self.report({'INFO'}, f"已加载 {count} 个材质")
         return {'FINISHED'}
 
@@ -701,8 +775,8 @@ class MHWS_OT_MdfTexProcess(bpy.types.Operator):
                     if slot.mode == 'DEFAULT':
                         null_rel = NULL_TEX_BY_TYPE.get(slot.texture_type)
                         if null_rel:
-                            binding.path = f"natives/STM/{null_rel}"
-                            print(f"[MDF Tex] NULL {slot.texture_type}: natives/STM/{null_rel}")
+                            binding.path = null_rel
+                            print(f"[MDF Tex] NULL {slot.texture_type}: {null_rel}")
                             export_count += 1
                         else:
                             print(f"[MDF Tex] SKIP (no null tex) {slot.texture_type}")
@@ -710,28 +784,28 @@ class MHWS_OT_MdfTexProcess(bpy.types.Operator):
                         continue
 
                     # COMPOSE or DIRECT: need to generate a .tex file
-                    if slot.mode == 'COMPOSE':
-                        src_img = _compose_channels(
-                            slot.texture_type, pbr_paths, pbr_channels, temp_dir, tex_name, pbr_inv)
-                        if src_img is None:
-                            print(f"[MDF Tex] SKIP compose {slot.texture_type}: no channel map")
-                            skip_count += 1
-                            continue
-                    else:  # DIRECT
-                        src_img = bpy.path.abspath(slot.direct_image)
-                        if not src_img or not os.path.isfile(src_img):
-                            print(f"[MDF Tex] SKIP direct {slot.texture_type}: file not found")
-                            skip_count += 1
-                            continue
-
-                    dds_fmt  = ('BC7_UNORM_SRGB'
-                                if slot.texture_type in SRGB_SLOT_TYPES
-                                else 'BC7_UNORM')
-                    disk_path = _make_disk_path(
-                        natives_root, base_path, tex_name, slot.texture_type)
-                    os.makedirs(os.path.dirname(disk_path), exist_ok=True)
-
                     try:
+                        if slot.mode == 'COMPOSE':
+                            src_img = _compose_channels(
+                                slot.texture_type, pbr_paths, pbr_channels, temp_dir, tex_name, pbr_inv)
+                            if src_img is None:
+                                print(f"[MDF Tex] SKIP compose {slot.texture_type}: no channel map")
+                                skip_count += 1
+                                continue
+                        else:  # DIRECT
+                            src_img = bpy.path.abspath(slot.direct_image)
+                            if not src_img or not os.path.isfile(src_img):
+                                print(f"[MDF Tex] SKIP direct {slot.texture_type}: file not found")
+                                skip_count += 1
+                                continue
+
+                        dds_fmt  = ('BC7_UNORM_SRGB'
+                                    if slot.texture_type in SRGB_SLOT_TYPES
+                                    else 'BC7_UNORM')
+                        disk_path = _make_disk_path(
+                            natives_root, base_path, tex_name, slot.texture_type)
+                        os.makedirs(os.path.dirname(disk_path), exist_ok=True)
+
                         src_lower = src_img.lower()
                         src_name  = os.path.basename(src_img)
 

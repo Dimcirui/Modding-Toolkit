@@ -16,6 +16,12 @@ class MHWS_OT_MdfTexProcessorDialog(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def invoke(self, context, event):
+        settings = context.scene.mdf_tex_processor
+        col = settings.mdf_collection
+        if col and col.name == settings.mdf_loaded_collection:
+            # Same collection as last time: refresh to pick up any MDF2 changes
+            # (collection-switch case is already handled by the update callback)
+            bpy.ops.mhws.mdf_tex_refresh()
         return context.window_manager.invoke_props_dialog(
             self, width=PROCESSOR_WINDOW_WIDTH)
 

@@ -173,7 +173,7 @@ def _do_bonesystem_export(context, settings, variant_armor_id):
     snap helper bones, then write .fbxskel.7 and BoneSystem JSON.
 
     fbxskel file  → {natives_root}/natives/stm/BoneSystem/{fbxskel_name}.fbxskel.7
-    JSON file     → {natives_root}/reframework/data/BoneSystem/{variant_armor_id}3.json
+    JSON file     → {natives_root}/reframework/data/BoneSystem/{variant_armor_id}2.json
 
     Returns (ok: bool, message: str).
     """
@@ -228,8 +228,8 @@ def _do_bonesystem_export(context, settings, variant_armor_id):
             f.write(data)
         print(f"[MHWs Bonesystem] fbxskel → {fbxskel_path}")
 
-        # 5. Write JSON  (named after the helmet ID: variant_armor_id + part "3")
-        helmet_id = f"{variant_armor_id}3"
+        # 5. Write JSON  (named after the body ID: variant_armor_id + part "2")
+        helmet_id = f"{variant_armor_id}2"
         json_dir  = os.path.join(natives_root, 'reframework', 'data', 'BoneSystem')
         os.makedirs(json_dir, exist_ok=True)
         json_path = os.path.join(json_dir, helmet_id + '.json')
