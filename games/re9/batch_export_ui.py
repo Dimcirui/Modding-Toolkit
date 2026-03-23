@@ -76,10 +76,8 @@ class RE9_OT_ToggleSimplified(bpy.types.Operator):
     bl_idname = "re9.toggle_simplified"
     bl_label = "Toggle Simplified"
     bl_options = {'INTERNAL'}
-    game_code: bpy.props.StringProperty(default="re9")
     def execute(self, context):
-        key = f"{self.game_code}_use_simplified"
-        context.scene[key] = not context.scene.get(key, False)
+        context.scene["re9_use_simplified"] = not context.scene.get("re9_use_simplified", False)
         return {'FINISHED'}
 
 
@@ -288,11 +286,9 @@ class RE9_OT_BatchExportDialog(bpy.types.Operator):
         layout.prop(settings, "re9_export_scheme", text="Character")
 
         # Natives root
-        game = scheme.get("game", "re9")
-        natives_root = scene.get(f"{game}_natives_root", "")
+        natives_root = scene.get("re9_natives_root", "")
         row = layout.row(align=True)
-        op_nr = row.operator("re9.set_natives_root", text="Natives Root", icon='FILE_FOLDER')
-        op_nr.game_code = game
+        row.operator("re9.set_natives_root", text="Natives Root", icon='FILE_FOLDER')
         if natives_root:
             parts = natives_root.replace("\\", "/").rstrip("/").split("/")
             short = "/".join(parts[-3:]) if len(parts) > 3 else natives_root
@@ -309,16 +305,14 @@ class RE9_OT_BatchExportDialog(bpy.types.Operator):
             layout.label(text="Failed to load scheme", icon='ERROR')
             return
 
-        game = scheme.get("game", "re9")
         character_id = scheme["character_id"]
-        use_simplified = scene.get(f"{game}_use_simplified", False)
+        use_simplified = scene.get("re9_use_simplified", False)
 
         # Simplified toggle
         layout.separator()
         row = layout.row()
         simp_icon = 'CHECKBOX_HLT' if use_simplified else 'CHECKBOX_DEHLT'
-        op_simp = row.operator("re9.toggle_simplified", text="", icon=simp_icon, emboss=False)
-        op_simp.game_code = game
+        row.operator("re9.toggle_simplified", text="", icon=simp_icon, emboss=False)
         row.label(text="Use Simplified Export", icon='SORTBYEXT')
 
         # --- FBXSKEL (always shown) ---
