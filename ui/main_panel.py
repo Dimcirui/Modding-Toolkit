@@ -118,6 +118,16 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         items=[("1", "头盔", ""), ("2", "身体", "")],
         default="1",
     )
+    mhws_use_blank_export: bpy.props.BoolProperty(
+        name="未选项使用空模型",
+        description="导出时对未选择集合的栏位，复制内置空文件代替跳过",
+        default=False,
+    )
+    re9_use_blank_export: bpy.props.BoolProperty(
+        name="未选项使用空模型",
+        description="导出时对未选择集合的栏位，复制内置空文件代替跳过",
+        default=False,
+    )
 
 
 class MHW_OT_GeneralTools(bpy.types.Operator):
@@ -238,10 +248,11 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
                 self.report({'ERROR'}, "请至少选中两根骨骼（激活骨保留，其余骨并入）")
                 return {'CANCELLED'}
 
-            pairs = [(active.name, b.name) for b in others]
+            active_name = active.name
+            pairs = [(active_name, b.name) for b in others]
             bpy.ops.object.mode_set(mode='OBJECT')
             weight_utils.merge_weights_and_delete_bones(arm_obj, pairs)
-            self.report({'INFO'}, f"已将 {len(pairs)} 根骨骼并入 [{active.name}]")
+            self.report({'INFO'}, f"已将 {len(pairs)} 根骨骼并入 [{active_name}]")
 
         elif self.action in ('ALIGN_FULL', 'ALIGN_POS'):
             selected_arms = [o for o in context.selected_objects if o.type == 'ARMATURE']
@@ -510,6 +521,9 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row = col.row()
             row.enabled = has_re_mesh
             row.operator("re9.batch_export_dialog", text="RE9 Batch Exporter", icon='EXPORT')
+            row = col.row()
+            row.enabled = has_re_mesh
+            row.operator("re9.mdf_tex_processor_dialog", text="MDF2 + Tex 处理器", icon='TEXTURE')
             if not has_re_mesh:
                 col.label(text="需要 RE Mesh Editor!", icon='ERROR')
 

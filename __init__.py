@@ -14,10 +14,11 @@ from bpy.types import AddonPreferences
 
 from . import addon_updater_ops 
 
-from .core import standard_ops 
+from .core import standard_ops
 from .core import pose_ops
 from .core import editor_props
 from .core import editor_ops
+from .core import mdf_tex_processor_base
 from . import ui, games
 
 class MT_Preferences(AddonPreferences):
@@ -55,6 +56,7 @@ modules = [
     editor_ops,
     standard_ops,
     pose_ops,
+    mdf_tex_processor_base,
     games,
     ui,
 ]

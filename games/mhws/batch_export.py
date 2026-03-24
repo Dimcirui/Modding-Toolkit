@@ -2,6 +2,7 @@ import bpy
 import copy
 import json
 import os
+import shutil
 
 from ..re9.batch_export import _do_export_mesh, _do_export_mdf2, _do_export_chain2, _do_export_clsp
 
@@ -103,6 +104,12 @@ def get_binding(scene, armor_id, variant, part, filetype):
 
 def set_binding(scene, armor_id, variant, part, filetype, value):
     scene[_make_key(armor_id, variant, part, filetype)] = value
+
+
+def _get_blank_path(filetype):
+    """Return the path to the built-in blank file for the given filetype."""
+    addon_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    return os.path.join(addon_dir, "assets", "blank_files", "mhws", f"blank.{filetype}")
 
 
 def _make_filepath(natives_root, base_path, part_id, armor_id, filetype):
@@ -313,21 +320,33 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
         export_count = 0
         fail_count = 0
         skip_count = 0
+        use_blank = settings.mhws_use_blank_export
 
         for part_id, part_name in MHWS_PARTS:
             if not (parts_mask & (1 << (int(part_id) - 1))):
                 continue
             for filetype in file_types:
                 col = get_binding(scene, armor_id, variant, part_id, filetype)
-                if not col:
-                    skip_count += 1
-                    continue
-                if col not in bpy.data.collections:
-                    print(f"[MHWs] SKIP {part_name}/{filetype}: collection '{col}' not found")
-                    skip_count += 1
-                    continue
                 filepath = _make_filepath(natives_root, base_path, part_id, variant_armor_id, filetype)
                 label = f"{part_name} {filetype.upper()}"
+                if not col:
+                    if use_blank:
+                        blank_src = _get_blank_path(filetype)
+                        if os.path.isfile(blank_src):
+                            os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                            shutil.copy2(blank_src, filepath)
+                            print(f"[MHWs] {label}: BLANK -> {os.path.basename(filepath)}")
+                            export_count += 1
+                        else:
+                            print(f"[MHWs] SKIP blank (file not found): {blank_src}")
+                            skip_count += 1
+                    else:
+                        skip_count += 1
+                    continue
+                if col not in bpy.data.collections:
+                    print(f"[MHWs] SKIP {label}: collection '{col}' not found")
+                    skip_count += 1
+                    continue
                 try:
                     print(f"[MHWs] {label}: {col} -> {os.path.basename(filepath)}")
                     _EXPORT_FUNCS[filetype](filepath, col)

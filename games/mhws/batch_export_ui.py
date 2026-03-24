@@ -174,6 +174,9 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
                     op_c.part     = part_id
                     op_c.filetype = ft
 
+        layout.separator()
+        layout.prop(settings, "mhws_use_blank_export", icon='FILE_BLANK')
+
         self._draw_bonesystem(layout, settings)
 
     def _draw_bonesystem(self, layout, settings):
