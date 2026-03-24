@@ -1,7 +1,13 @@
 import bpy
 import json
 import os
+import re
 from urllib.parse import unquote
+
+
+def _normalize_bone_name(name):
+    """归一化骨骼名：去除分隔符（_ . 空格）并统一小写，用于模糊匹配"""
+    return re.sub(r'[_.\s]', '', name).lower()
 
 # --- 1. 标准骨骼定义 (The Standard) ---
 STANDARD_BONE_NAMES = [
@@ -90,33 +96,47 @@ class BoneMapManager:
         【抢占式执行核心】
         输入：标准名 (如 'upperarm_L')
         返回：(被选中的主骨名, 需要被合并的辅助骨列表)
+        精确匹配优先，失败时归一化模糊匹配（忽略 _ . 空格及大小写）
         """
         if standard_key not in self.mapping_data:
             return None, []
 
         bone_entry = self.mapping_data[standard_key]
         existing_bones = armature_obj.data.bones.keys()
-        
+
+        # 归一化查找表：{归一化名: 实际骨名}，碰撞时保留第一个
+        norm_lookup = {}
+        for b in existing_bones:
+            norm = _normalize_bone_name(b)
+            if norm not in norm_lookup:
+                norm_lookup[norm] = b
+
+        def find_bone(name):
+            """精确匹配优先，归一化匹配兜底，返回实际骨名"""
+            if name in existing_bones:
+                return name
+            return norm_lookup.get(_normalize_bone_name(name))
+
         main_candidates = bone_entry.get("main", [])
         aux_candidates = bone_entry.get("aux", [])
 
         final_main = None
         to_merge = []
 
-        # 1. 查找主骨 (抢占制：列表里第一个在场景中存在的骨骼获胜)
+        # 1. 查找主骨 (抢占制：列表里第一个匹配的骨骼获胜)
         for cand in main_candidates:
-            if cand in existing_bones:
+            actual = find_bone(cand)
+            if actual:
                 if final_main is None:
-                    final_main = cand
+                    final_main = actual
                 else:
-                    # 如果后续的 Candidate 也存在，它们将被视为辅助骨合并掉
-                    to_merge.append(cand)
+                    to_merge.append(actual)
 
-        # 2. 查找辅助骨 (所有在场景中存在的 Aux 骨骼)
+        # 2. 查找辅助骨
         for aux in aux_candidates:
-            if aux in existing_bones:
-                if aux != final_main and aux not in to_merge:
-                    to_merge.append(aux)
+            actual = find_bone(aux)
+            if actual and actual != final_main and actual not in to_merge:
+                to_merge.append(actual)
 
         return final_main, to_merge
 

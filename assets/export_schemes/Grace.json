@@ -2,8 +2,6 @@
   "character": "Grace",
   "character_id": "ch0200",
   "base_path": "stm/character/ch/ch02/0200",
-  "mesh_version": "250925211",
-  "mdf2_version": "51",
   "groups": [
     {
       "name": "右臂",

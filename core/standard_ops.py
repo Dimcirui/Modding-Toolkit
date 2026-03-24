@@ -1,6 +1,18 @@
-import bpy, mathutils
-from .bone_mapper import BoneMapManager, STANDARD_BONE_NAMES
+import bpy, mathutils, re
+from .bone_mapper import BoneMapManager, STANDARD_BONE_NAMES, _normalize_bone_name
 from . import weight_utils, bone_utils
+
+
+def _build_fuzzy_preset_bones(mapper, arm_obj):
+    """用模糊匹配在骨架上构建预设骨骼集合，与 get_matches_for_standard 逻辑一致。
+    返回的集合元素是骨架上的实际骨骼名，而非 JSON 中的字面量。"""
+    preset_bones = set()
+    for std_key in mapper.mapping_data.keys():
+        main_actual, aux_actuals = mapper.get_matches_for_standard(arm_obj, std_key)
+        if main_actual:
+            preset_bones.add(main_actual)
+        preset_bones.update(aux_actuals)
+    return preset_bones
 
 class MODDER_OT_ApplyStandardX(bpy.types.Operator):
     """执行标准化 X：合并权重并重命名为基础名"""
@@ -32,7 +44,7 @@ class MODDER_OT_ApplyStandardX(bpy.types.Operator):
                 if aux_list:
                     # 没找到主骨名时，使用标准名作为目标顶点组，方便后续手动处理
                     target_vg = main_name if main_name else std_key
-                    weight_utils.merge_vgroups_to_main(mesh_obj, target_vg, aux_list)
+                    weight_utils.merge_vgroups_multi(mesh_obj, aux_list, target_vg)
 
         # 4. 骨骼重命名 (Edit Mode)
         bpy.ops.object.mode_set(mode='EDIT')
@@ -69,6 +81,7 @@ class MODDER_OT_ApplyStandardY(bpy.types.Operator):
         
         mapper = BoneMapManager()
         if not mapper.load_preset(settings.target_preset_enum, is_import_x=False):
+            self.report({'ERROR'}, "无法加载 Y 预设")
             return {'CANCELLED'}
 
         bpy.ops.object.mode_set(mode='EDIT')
@@ -152,30 +165,35 @@ class MODDER_OT_DirectConvert(bpy.types.Operator):
         for mesh_obj in selected_meshes:
             vgs = mesh_obj.vertex_groups
             mesh_updated = False
-            
+
+            # 归一化顶点组查找表，与骨骼名模糊匹配逻辑保持一致
+            norm_vg = {_normalize_bone_name(vg.name): vg.name for vg in vgs}
+
+            def find_vg(name):
+                if name in vgs:
+                    return name
+                return norm_vg.get(_normalize_bone_name(name))
+
             for src_mains, src_auxs, tgt_name in conversion_rules:
-                # 步骤 A: 确定当前网格上实际存在哪个“源主顶点组”
-                # (X预设里 main 可能有多个候选，如 ["UpperArm_L", "Left Arm"]，我们要找 Mesh 上有的那个)
+                # 步骤 A: 确定当前网格上实际存在哪个”源主顶点组”
+                # (X预设里 main 可能有多个候选，如 [“UpperArm_L”, “Left Arm”]，我们要找 Mesh 上有的那个)
                 real_src_main = None
                 for candidate in src_mains:
-                    if candidate in vgs:
-                        real_src_main = candidate
+                    actual = find_vg(candidate)
+                    if actual:
+                        real_src_main = actual
                         break
-                
-                # 如果没找到主组，跳过此骨骼（可能这个网格只是个手套，没有腿骨权重）
-                # if not real_src_main:
-                #     continue
-                
+
                 # 确定权重的去向：
                 # 有 源主组 -> 合并到源主组 (稍后改名)
                 # 无 源主组 -> 直接合并到目标名 (tgt_name)
                 target_vg = real_src_main if real_src_main else tgt_name
 
                 # 步骤 B: 合并辅助权重
-                # 找出当前网格上实际存在的辅助组
-                real_auxs = [aux for aux in src_auxs if aux in vgs]
+                # 找出当前网格上实际存在的辅助组（模糊匹配）
+                real_auxs = [find_vg(aux) for aux in src_auxs if find_vg(aux)]
                 if real_auxs:
-                    weight_utils.merge_vgroups_to_main(mesh_obj, target_vg, real_auxs)
+                    weight_utils.merge_vgroups_multi(mesh_obj, real_auxs, target_vg)
                     mesh_updated = True
                 
                 # 步骤 C: 重命名主顶点组 -> 目标名
@@ -319,33 +337,35 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
 
         # --- 2. 加载预设 (仅用于排除非物理骨) ---
         from .bone_mapper import BoneMapManager
-        mapper = BoneMapManager()
         settings = context.scene.mhw_suite_settings
-        
-        if not mapper.load_preset(settings.import_preset_enum, is_import_x=True):
+
+        src_mapper = BoneMapManager()
+        if not src_mapper.load_preset(settings.import_preset_enum, is_import_x=True):
             self.report({'ERROR'}, "无法加载源预设 (In)")
             return {'CANCELLED'}
-        src_data = mapper.mapping_data 
 
-        if not mapper.load_preset(settings.target_preset_enum, is_import_x=False):
+        tgt_mapper = BoneMapManager()
+        if not tgt_mapper.load_preset(settings.target_preset_enum, is_import_x=False):
             self.report({'ERROR'}, "无法加载目标预设 (Out)")
             return {'CANCELLED'}
-        tgt_data = mapper.mapping_data
 
         # --- 3. 构建查找表 ---
+        # 用 get_matches_for_standard 做模糊匹配，与对齐功能保持一致，
+        # 避免命名习惯不同的基础骨（如 UpperLeg.L vs UpperLeg_L）被误判为物理骨
         src_to_std = {}
         all_preset_bones_src = set()
-        
-        for std_key, entry in src_data.items():
-            for m in entry.get('main', []):
-                src_to_std[m] = std_key
-                all_preset_bones_src.add(m)
-            for a in entry.get('aux', []):
-                src_to_std[a] = std_key 
-                all_preset_bones_src.add(a)
+
+        for std_key in src_mapper.mapping_data.keys():
+            main_actual, aux_actuals = src_mapper.get_matches_for_standard(source_arm, std_key)
+            if main_actual:
+                src_to_std[main_actual] = std_key
+                all_preset_bones_src.add(main_actual)
+            for aux_actual in aux_actuals:
+                src_to_std[aux_actual] = std_key
+                all_preset_bones_src.add(aux_actual)
 
         std_to_tgt_bone = {}
-        for std_key, entry in tgt_data.items():
+        for std_key, entry in tgt_mapper.mapping_data.items():
             mains = entry.get('main', [])
             if mains:
                 std_to_tgt_bone[std_key] = mains[0]
@@ -354,7 +374,14 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
         # 只要不在预设里的，都算物理骨
         physics_bones_names = [b.name for b in source_arm.data.bones if b.name not in all_preset_bones_src]
         physics_bones_set = set(physics_bones_names) # 用于快速查找
-        
+
+        # 标记链首骨：父级不在物理骨集合中的物理骨
+        chain_heads = {
+            b.name for b in source_arm.data.bones
+            if b.name in physics_bones_set
+            and (b.parent is None or b.parent.name not in physics_bones_set)
+        }
+
         if not physics_bones_names:
             self.report({'WARNING'}, "未检测到物理骨骼")
             return {'FINISHED'}
@@ -472,6 +499,30 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
                 eb.parent = edit_bones[target_parent_name]
                 eb.use_connect = False 
 
+        # --- 7. 染色：将所有移植骨骼标记为蓝色 ---
+        bpy.ops.object.mode_set(mode='POSE')
+        all_new_bone_names = list(new_bones_map.values())
+        for src_name in physics_bones_names:
+            end_name = f"{src_name}_End"
+            if end_name in target_arm.pose.bones:
+                all_new_bone_names.append(end_name)
+
+        for bone_name in all_new_bone_names:
+            pb = target_arm.pose.bones.get(bone_name)
+            if not pb:
+                continue
+            pb.color.palette = 'CUSTOM'
+            if bone_name in chain_heads:
+                # 链首：亮青蓝，作为未来一键生成物理的选取标记
+                pb.color.custom.normal = (0.10, 0.62, 1.00)
+                pb.color.custom.select = (0.40, 0.80, 1.00)
+                pb.color.custom.active = (0.70, 0.93, 1.00)
+            else:
+                # 链身 / End 骨：深蓝
+                pb.color.custom.normal = (0.18, 0.42, 0.90)
+                pb.color.custom.select = (0.45, 0.65, 1.00)
+                pb.color.custom.active = (0.70, 0.85, 1.00)
+
         bpy.ops.object.mode_set(mode='OBJECT')
         self.report({'INFO'}, f"移植完成: 处理 {created_count} 根骨骼 (含自动生成的末端骨)")
         return {'FINISHED'}
@@ -511,14 +562,9 @@ class MODDER_OT_MergePhysicsWeights(bpy.types.Operator):
             self.report({'ERROR'}, "无法加载 X 预设")
             return {'CANCELLED'}
         
-        # 构建预设骨骼集合 (所有在预设中出现的骨骼 = 基础骨骼)
-        preset_bones = set()
-        for std_key, entry in mapper.mapping_data.items():
-            for name in entry.get('main', []):
-                preset_bones.add(name)
-            for name in entry.get('aux', []):
-                preset_bones.add(name)
-        
+        # 用模糊匹配构建预设骨骼集合，避免命名习惯不同的基础骨被误判为物理骨
+        preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
+
         # 为每根物理骨找到其归属的基础骨骼 (沿父级链向上找)
         # physics_to_base: {physics_bone_name: base_bone_name}
         physics_to_base = {}
@@ -557,7 +603,7 @@ class MODDER_OT_MergePhysicsWeights(bpy.types.Operator):
                     vgs.new(name=base_name)
                 
                 # 合并权重
-                weight_utils.merge_vgroups_to_main(mesh_obj, base_name, [phys_name])
+                weight_utils.merge_vgroups_multi(mesh_obj, [phys_name], base_name)
                 merged_in_mesh += 1
             
             total_merged += merged_in_mesh
@@ -651,14 +697,9 @@ class MODDER_OT_RemoveNonBaseBones(bpy.types.Operator):
             self.report({'ERROR'}, "无法加载 X 预设")
             return {'CANCELLED'}
         
-        # 构建基础骨骼集合
-        preset_bones = set()
-        for std_key, entry in mapper.mapping_data.items():
-            for name in entry.get('main', []):
-                preset_bones.add(name)
-            for name in entry.get('aux', []):
-                preset_bones.add(name)
-        
+        # 用模糊匹配构建基础骨骼集合，避免命名习惯不同的基础骨被误删
+        preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
+
         # 找出所有非基础骨骼
         bpy.ops.object.mode_set(mode='EDIT')
         edit_bones = arm_obj.data.edit_bones
@@ -679,11 +720,20 @@ class MODDER_OT_RemoveNonBaseBones(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MODDER_OT_HidePresetBonesInPose(bpy.types.Operator):
-    """在姿态模式下，将来源预设 (X) 中包含的所有骨骼（main + aux）设为隐藏"""
-    bl_idname = "modder.hide_preset_bones_pose"
-    bl_label = "隐藏所有基础骨骼（姿态）"
+class MODDER_OT_SetBoneVisibility(bpy.types.Operator):
+    """按模式控制骨骼可见性（全显 / 仅基础骨 / 仅物理骨），后两者需加载 X 预设"""
+    bl_idname = "modder.set_bone_visibility"
+    bl_label = "骨骼可见性"
     bl_options = {'REGISTER', 'UNDO'}
+
+    mode: bpy.props.EnumProperty(
+        items=[
+            ('ALL',     '全显',    '显示所有骨骼'),
+            ('BASE',    '仅基础骨', '隐藏物理骨，只显示预设基础骨'),
+            ('PHYSICS', '仅物理骨', '隐藏基础骨，只显示物理骨'),
+        ],
+        default='ALL'
+    )
 
     def execute(self, context):
         settings = context.scene.mhw_suite_settings
@@ -693,29 +743,26 @@ class MODDER_OT_HidePresetBonesInPose(bpy.types.Operator):
             self.report({'ERROR'}, "请先选中一个骨架")
             return {'CANCELLED'}
 
-        # 加载来源预设
-        mapper = BoneMapManager()
-        if not mapper.load_preset(settings.import_preset_enum, is_import_x=True):
-            self.report({'ERROR'}, "预设加载失败")
-            return {'CANCELLED'}
-
-        # 收集所有 main + aux 骨骼名
         preset_bones = set()
-        for entry in mapper.mapping_data.values():
-            for name in entry.get('main', []):
-                preset_bones.add(name)
-            for name in entry.get('aux', []):
-                preset_bones.add(name)
+        if self.mode != 'ALL':
+            mapper = BoneMapManager()
+            if not mapper.load_preset(settings.import_preset_enum, is_import_x=True):
+                self.report({'ERROR'}, "预设加载失败")
+                return {'CANCELLED'}
+            preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
 
-        # 切换到姿态模式并隐藏目标骨骼
         bpy.ops.object.mode_set(mode='POSE')
-        hidden_count = 0
         for bone in arm_obj.data.bones:
-            if bone.name in preset_bones:
-                bone.hide = True
-                hidden_count += 1
+            if self.mode == 'ALL':
+                bone.hide = False
+            elif self.mode == 'BASE':
+                bone.hide = bone.name not in preset_bones
+            else:  # PHYSICS
+                bone.hide = bone.name in preset_bones
 
-        self.report({'INFO'}, f"已在姿态模式下隐藏 {hidden_count} 根基础骨骼")
+        settings.bone_view_mode = self.mode
+        labels = {'ALL': '全显', 'BASE': '仅基础骨', 'PHYSICS': '仅物理骨'}
+        self.report({'INFO'}, f"骨骼显示: {labels[self.mode]}")
         return {'FINISHED'}
 
 
@@ -728,7 +775,7 @@ classes = [
     MODDER_OT_MergePhysicsWeights,
     MODDER_OT_RemoveNonBaseBones,
     MODDER_OT_RenameBonesToTarget,
-    MODDER_OT_HidePresetBonesInPose,
+    MODDER_OT_SetBoneVisibility,
 ]
 
 def register():

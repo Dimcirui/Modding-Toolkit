@@ -1,4 +1,5 @@
 import bpy
+from ...core import weight_utils
 
 # ============================================================
 # Endfield 面部顶点组改名 (Endfield → MHWilds)
@@ -105,31 +106,6 @@ ENDFIELD_FACE_RENAME_MAP = [
 ]
 
 
-def _merge_or_rename_vg(obj, old_name, new_name):
-    """将旧顶点组重命名或合并到新名字"""
-    old_vg = obj.vertex_groups.get(old_name)
-    if old_vg is None:
-        return False
-    existing_vg = obj.vertex_groups.get(new_name)
-    if existing_vg is None:
-        old_vg.name = new_name
-        return True
-    # 合并权重
-    mesh = obj.data
-    old_idx = old_vg.index
-    existing_idx = existing_vg.index
-    for vert in mesh.vertices:
-        old_w = 0.0
-        existing_w = 0.0
-        for g in vert.groups:
-            if g.group == old_idx:
-                old_w = g.weight
-            elif g.group == existing_idx:
-                existing_w = g.weight
-        if old_w > 0.0:
-            existing_vg.add([vert.index], min(existing_w + old_w, 1.0), 'REPLACE')
-    obj.vertex_groups.remove(old_vg)
-    return True
 
 
 class MHWS_OT_EndfieldFaceRename(bpy.types.Operator):
@@ -148,7 +124,7 @@ class MHWS_OT_EndfieldFaceRename(bpy.types.Operator):
             if obj.type != 'MESH':
                 continue
             for old_name, new_name in ENDFIELD_FACE_RENAME_MAP:
-                if _merge_or_rename_vg(obj, old_name, new_name):
+                if weight_utils.rename_or_merge_vgroup(obj, old_name, new_name):
                     total += 1
         self.report({'INFO'}, f"已处理 {total} 个面部顶点组")
         return {'FINISHED'}
@@ -158,65 +134,36 @@ class MHWS_OT_EndfieldFaceRename(bpy.types.Operator):
 # 面部权重简化 (通用)
 # ============================================================
 
-def _merge_vg_full(obj, source_names, target_name):
-    """将源顶点组的权重全部合并到目标"""
-    mesh = obj.data
-    target_vg = obj.vertex_groups.get(target_name)
-    if target_vg is None:
-        target_vg = obj.vertex_groups.new(name=target_name)
-    target_idx = target_vg.index
-    
-    for src_name in source_names:
-        src_vg = obj.vertex_groups.get(src_name)
-        if src_vg is None:
-            continue
-        src_idx = src_vg.index
-        for vert in mesh.vertices:
-            src_w = 0.0
-            tgt_w = 0.0
-            for g in vert.groups:
-                if g.group == src_idx:
-                    src_w = g.weight
-                elif g.group == target_idx:
-                    tgt_w = g.weight
-            if src_w > 0.0:
-                target_vg.add([vert.index], min(tgt_w + src_w, 1.0), 'REPLACE')
-        obj.vertex_groups.remove(src_vg)
 
 
 def _transfer_partial(obj, source_names, targets_with_ratios):
     """从源顶点组按比例分配权重到多个目标，源保留剩余"""
-    mesh = obj.data
     total_ratio = sum(r for _, r in targets_with_ratios)
     remain_ratio = 1.0 - total_ratio
-    
+
     target_vgs = []
     for tgt_name, ratio in targets_with_ratios:
         tgt_vg = obj.vertex_groups.get(tgt_name)
         if tgt_vg is None:
             tgt_vg = obj.vertex_groups.new(name=tgt_name)
         target_vgs.append((tgt_vg, ratio))
-    
+
     for src_name in source_names:
         src_vg = obj.vertex_groups.get(src_name)
         if src_vg is None:
             continue
-        src_idx = src_vg.index
-        for vert in mesh.vertices:
-            src_w = 0.0
-            for g in vert.groups:
-                if g.group == src_idx:
-                    src_w = g.weight
-                    break
+        for vert in obj.data.vertices:
+            try:
+                src_w = src_vg.weight(vert.index)
+            except RuntimeError:
+                continue
             if src_w <= 0.0:
                 continue
             for tgt_vg, ratio in target_vgs:
-                tgt_idx = tgt_vg.index
-                tgt_w = 0.0
-                for g in vert.groups:
-                    if g.group == tgt_idx:
-                        tgt_w = g.weight
-                        break
+                try:
+                    tgt_w = tgt_vg.weight(vert.index)
+                except RuntimeError:
+                    tgt_w = 0.0
                 tgt_vg.add([vert.index], min(tgt_w + src_w * ratio, 1.0), 'REPLACE')
             src_vg.add([vert.index], src_w * remain_ratio, 'REPLACE')
 
@@ -235,7 +182,7 @@ class MHWS_OT_FaceWeightSimplify(bpy.types.Operator):
         obj = context.active_object
         
         # 1. 合并到 Head
-        _merge_vg_full(obj, [
+        weight_utils.merge_vgroups_multi(obj, [
             "L_malarFat_B_LOD01", "R_malarFat_B_LOD01",
             "L_CheekBone_LOD02", "R_CheekBone_LOD02",
             "C_Nose_LOD01", "C_TongueA_LOD01",
@@ -243,7 +190,7 @@ class MHWS_OT_FaceWeightSimplify(bpy.types.Operator):
         ], "Head")
         
         # 2. 合并到 C_Chin_LOD01
-        _merge_vg_full(obj, [
+        weight_utils.merge_vgroups_multi(obj, [
             "L_JawLine_LOD01", "R_JawLine_LOD01",
             "L_Cheek_LOD02", "R_Cheek_LOD02",
             "C_TongueB_LOD01", "C_TongueC_LOD01",
@@ -300,9 +247,152 @@ class MHWS_OT_FaceWeightSimplify(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# ============================================================
+# 一键创建 RE Chain（实验性）
+# ============================================================
+
+_CHAIN_HEAD_COLOR = (0.10, 0.62, 1.00)
+_COLOR_TOL = 0.01
+
+# invoke 时动态填充，供 EnumProperty 回调使用
+_chain_col_items = []
+
+
+def _is_chain_head(pb):
+    c = pb.color
+    if c.palette != 'CUSTOM':
+        return False
+    n = c.custom.normal
+    return (abs(n[0] - _CHAIN_HEAD_COLOR[0]) < _COLOR_TOL and
+            abs(n[1] - _CHAIN_HEAD_COLOR[1]) < _COLOR_TOL and
+            abs(n[2] - _CHAIN_HEAD_COLOR[2]) < _COLOR_TOL)
+
+
+def _is_valid_chain_collection(col):
+    """与 RE Chain Editor 的 filterChainCollection 逻辑一致"""
+    t = col.get("~TYPE", "")
+    return (t in ("RE_CHAIN_COLLECTION", "RE_CLSP_COLLECTION")
+            and (".chain" in col.name or ".clsp" in col.name))
+
+
+def _get_chain_col_items(self, context):
+    return _chain_col_items
+
+
+class MHWS_OT_AutoCreateChains(bpy.types.Operator):
+    """在姿态模式下，根据物理骨骼颜色自动为每条链创建 Chain Settings 和 Chain Group。
+需要 RE Chain Editor 插件，且场景中存在已创建 Chain Header 的 Chain Collection。"""
+    bl_idname = "mhws.auto_create_chains"
+    bl_label = "一键创建 RE Chain"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    chain_collection: bpy.props.EnumProperty(
+        name="Chain Collection",
+        description="选择要写入的 Chain Collection",
+        items=_get_chain_col_items,
+    )
+    settings_mode: bpy.props.EnumProperty(
+        name="Settings 模式",
+        items=[
+            ('SEPARATE', "各自独立", "每条链拥有独立的 Chain Settings"),
+            ('SHARED',   "共享同一", "所有链共用同一个 Chain Settings"),
+        ],
+        default='SEPARATE',
+    )
+
+    @classmethod
+    def poll(cls, context):
+        return (context.mode == 'POSE'
+                and context.active_object is not None
+                and context.active_object.type == 'ARMATURE'
+                and hasattr(bpy.ops, 're_chain')
+                and hasattr(bpy.ops.re_chain, 'create_chain_settings'))
+
+    def invoke(self, context, event):
+        global _chain_col_items
+        _chain_col_items = [
+            (col.name, col.name, "")
+            for col in bpy.data.collections
+            if _is_valid_chain_collection(col)
+        ]
+        if not _chain_col_items:
+            self.report({'ERROR'}, "未找到有效的 Chain Collection（需含 ~TYPE=RE_CHAIN_COLLECTION 且名称含 .chain/.clsp）")
+            return {'CANCELLED'}
+
+        # 预选当前 RE Chain 面板已设置的集合
+        toolpanel = getattr(context.scene, 're_chain_toolpanel', None)
+        if toolpanel and toolpanel.chainCollection:
+            cur = toolpanel.chainCollection.name
+            if any(i[0] == cur for i in _chain_col_items):
+                self.chain_collection = cur
+
+        return context.window_manager.invoke_props_dialog(self, width=360)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "chain_collection")
+        layout.prop(self, "settings_mode", expand=True)
+
+    def execute(self, context):
+        col = bpy.data.collections.get(self.chain_collection)
+        if col is None:
+            self.report({'ERROR'}, f"找不到集合: {self.chain_collection}")
+            return {'CANCELLED'}
+
+        toolpanel = getattr(context.scene, 're_chain_toolpanel', None)
+        if toolpanel is None:
+            self.report({'ERROR'}, "未找到 RE Chain 场景属性，请确认插件已正确加载")
+            return {'CANCELLED'}
+
+        # 将选中的集合设为 RE Chain 的当前工作集合
+        toolpanel.chainCollection = col
+
+        header = next(
+            (o for o in col.all_objects if o.get("TYPE") == "RE_CHAIN_HEADER"),
+            None
+        )
+        if header is None:
+            self.report({'ERROR'}, f"集合 '{col.name}' 中未找到 Chain Header，请先创建")
+            return {'CANCELLED'}
+
+        armature = context.active_object
+        chain_heads = [pb for pb in armature.pose.bones if _is_chain_head(pb)]
+
+        if not chain_heads:
+            self.report({'WARNING'}, "未找到链首骨骼（浅蓝色），请先执行物理骨骼移植")
+            return {'CANCELLED'}
+
+        created = 0
+        skipped = 0
+
+        if self.settings_mode == 'SHARED':
+            if bpy.ops.re_chain.create_chain_settings() != {'FINISHED'}:
+                self.report({'ERROR'}, "无法创建 Chain Settings")
+                return {'CANCELLED'}
+
+        for pb in chain_heads:
+            if self.settings_mode == 'SEPARATE':
+                if bpy.ops.re_chain.create_chain_settings() != {'FINISHED'}:
+                    skipped += 1
+                    continue
+
+            bpy.ops.pose.select_all(action='DESELECT')
+            pb.bone.select = True
+            armature.data.bones.active = pb.bone
+
+            if bpy.ops.re_chain.chain_from_bone() == {'FINISHED'}:
+                created += 1
+            else:
+                skipped += 1
+
+        self.report({'INFO'}, f"已创建 {created} 条链，跳过 {skipped} 条")
+        return {'FINISHED'}
+
+
 classes = [
     MHWS_OT_EndfieldFaceRename,
     MHWS_OT_FaceWeightSimplify,
+    MHWS_OT_AutoCreateChains,
 ]
 
 def register():

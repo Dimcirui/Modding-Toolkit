@@ -1,6 +1,7 @@
 import bpy
 import json
 import os
+import shutil
 
 
 def _get_export_schemes_dir():
@@ -113,6 +114,19 @@ def _do_export_fbxskel(filepath, armature_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     bpy.ops.re_fbxskel.exportfile(filepath=filepath, targetArmature=armature_name)
 
+def _do_export_chain2(filepath, collection_name):
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    bpy.ops.re_chain2.exportfile(filepath=filepath, targetCollection=collection_name)
+
+def _do_export_clsp(filepath, collection_name):
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    bpy.ops.re_clsp.exportfile(filepath=filepath, targetCollection=collection_name)
+
+def _get_blank_path(filetype):
+    """Return the path to the built-in blank file for the given filetype."""
+    addon_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    return os.path.join(addon_dir, "assets", "blank_files", "re9", f"blank.{filetype}")
+
 
 class RE9_OT_BatchExport(bpy.types.Operator):
     """RE9 batch exporter"""
@@ -146,6 +160,7 @@ class RE9_OT_BatchExport(bpy.types.Operator):
         character_id = scheme["character_id"]
         base_path = scheme["base_path"].replace("\\", "/")
         use_simplified = scene.get("re9_use_simplified", False)
+        use_blank = settings.re9_use_blank_export
 
         export_count = 0
         fail_count = 0
@@ -153,7 +168,7 @@ class RE9_OT_BatchExport(bpy.types.Operator):
 
         def make_full(rel, bp_override=None):
             bp = (bp_override or base_path).replace("/", os.sep)
-            return os.path.join(natives_root, bp, rel.replace("/", os.sep))
+            return os.path.join(natives_root, "natives", bp, rel.replace("/", os.sep))
 
         def try_export(func, filepath, target, label):
             nonlocal export_count, fail_count, skip_count
@@ -179,13 +194,25 @@ class RE9_OT_BatchExport(bpy.types.Operator):
                 print(f"[RE9] FAILED {label}: {err}")
                 fail_count += 1
 
+        def try_blank(filetype, filepath, label):
+            nonlocal export_count, skip_count
+            blank_src = _get_blank_path(filetype)
+            if os.path.isfile(blank_src):
+                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                shutil.copy2(blank_src, filepath)
+                print(f"[RE9] {label}: BLANK -> {os.path.basename(filepath)}")
+                export_count += 1
+            else:
+                print(f"[RE9] SKIP blank (file not found): {blank_src}")
+                skip_count += 1
+
         # --- FBXSKEL ---
         fbxskel_path = scheme.get("fbxskel", "")
         if fbxskel_path:
             fbx_enabled = _get_enabled(scene, character_id, "_fbxskel", "fbxskel")
             fbx_arm = _get_binding(scene, character_id, "_fbxskel", "fbxskel")
             if fbx_enabled and fbx_arm:
-                full = os.path.join(natives_root, "stm", "character", fbxskel_path.replace("/", os.sep))
+                full = os.path.join(natives_root, "natives", "stm", "character", fbxskel_path.replace("/", os.sep))
                 try_export(_do_export_fbxskel, full, fbx_arm, "FBXSKEL")
 
         # --- Per entry ---
@@ -205,26 +232,47 @@ class RE9_OT_BatchExport(bpy.types.Operator):
                         mesh_col = _get_simplified_group_binding(scene, character_id, group_name, "mesh")
                         mdf2_col = _get_simplified_group_binding(scene, character_id, group_name, "mdf2")
                     elif simp == "empty":
-                        mesh_col = _get_simplified_empty_binding(scene, character_id, "mesh")
-                        mdf2_col = _get_simplified_empty_binding(scene, character_id, "mdf2")
+                        if use_blank:
+                            # Use built-in blank files directly for empty entries
+                            if entry.get("mesh"):
+                                try_blank("mesh", make_full(entry["mesh"], grp_bp), f"MESH {entry_id}")
+                            if entry.get("mdf2"):
+                                for m in entry["mdf2"]:
+                                    try_blank("mdf2", make_full(m, grp_bp), f"MDF2 {entry_id}")
+                            if entry.get("sfur"):
+                                try_blank("sfur", make_full(entry["sfur"], grp_bp), f"SFUR {entry_id}")
+                            continue
+                        else:
+                            mesh_col = _get_simplified_empty_binding(scene, character_id, "mesh")
+                            mdf2_col = _get_simplified_empty_binding(scene, character_id, "mdf2")
                     else:
                         continue
 
-                    # sfur
+                    # sfur for non-empty entries
                     sfur_col = ""
                     if simp_sfur == "empty" and entry.get("sfur"):
-                        sfur_col = _get_simplified_empty_binding(scene, character_id, "sfur")
+                        if use_blank:
+                            try_blank("sfur", make_full(entry["sfur"], grp_bp), f"SFUR {entry_id}")
+                        else:
+                            sfur_col = _get_simplified_empty_binding(scene, character_id, "sfur")
 
                     # Export mesh
-                    if entry.get("mesh") and mesh_col:
-                        try_export(_do_export_mesh, make_full(entry["mesh"], grp_bp), mesh_col, f"MESH {entry_id}")
+                    if entry.get("mesh"):
+                        if mesh_col:
+                            try_export(_do_export_mesh, make_full(entry["mesh"], grp_bp), mesh_col, f"MESH {entry_id}")
+                        elif use_blank:
+                            try_blank("mesh", make_full(entry["mesh"], grp_bp), f"MESH {entry_id}")
 
                     # Export mdf2s
-                    if entry.get("mdf2") and mdf2_col:
-                        for m in entry["mdf2"]:
-                            try_export(_do_export_mdf2, make_full(m, grp_bp), mdf2_col, f"MDF2 {entry_id}")
+                    if entry.get("mdf2"):
+                        if mdf2_col:
+                            for m in entry["mdf2"]:
+                                try_export(_do_export_mdf2, make_full(m, grp_bp), mdf2_col, f"MDF2 {entry_id}")
+                        elif use_blank:
+                            for m in entry["mdf2"]:
+                                try_blank("mdf2", make_full(m, grp_bp), f"MDF2 {entry_id}")
 
-                    # Export sfur
+                    # Export sfur (collection-bound; blank case handled above)
                     if entry.get("sfur") and sfur_col:
                         try_export(_do_export_sfur, make_full(entry["sfur"], grp_bp), sfur_col, f"SFUR {entry_id}")
 
@@ -232,19 +280,29 @@ class RE9_OT_BatchExport(bpy.types.Operator):
                     # Normal mode: use per-entry bindings
                     mesh_en = _get_enabled(scene, character_id, entry_id, "mesh")
                     mesh_col = _get_binding(scene, character_id, entry_id, "mesh")
-                    if mesh_en and mesh_col and entry.get("mesh"):
-                        try_export(_do_export_mesh, make_full(entry["mesh"], grp_bp), mesh_col, f"MESH {entry_id}")
+                    if entry.get("mesh"):
+                        if mesh_en and mesh_col:
+                            try_export(_do_export_mesh, make_full(entry["mesh"], grp_bp), mesh_col, f"MESH {entry_id}")
+                        elif mesh_en and use_blank:
+                            try_blank("mesh", make_full(entry["mesh"], grp_bp), f"MESH {entry_id}")
 
                     mdf2_en = _get_enabled(scene, character_id, entry_id, "mdf2")
                     mdf2_col = _get_binding(scene, character_id, entry_id, "mdf2")
-                    if mdf2_en and mdf2_col and entry.get("mdf2"):
-                        for m in entry["mdf2"]:
-                            try_export(_do_export_mdf2, make_full(m, grp_bp), mdf2_col, f"MDF2 {entry_id}")
+                    if entry.get("mdf2"):
+                        if mdf2_en and mdf2_col:
+                            for m in entry["mdf2"]:
+                                try_export(_do_export_mdf2, make_full(m, grp_bp), mdf2_col, f"MDF2 {entry_id}")
+                        elif mdf2_en and use_blank:
+                            for m in entry["mdf2"]:
+                                try_blank("mdf2", make_full(m, grp_bp), f"MDF2 {entry_id}")
 
                     sfur_en = _get_enabled(scene, character_id, entry_id, "sfur")
                     sfur_col = _get_binding(scene, character_id, entry_id, "sfur")
-                    if sfur_en and sfur_col and entry.get("sfur"):
-                        try_export(_do_export_sfur, make_full(entry["sfur"], grp_bp), sfur_col, f"SFUR {entry_id}")
+                    if entry.get("sfur"):
+                        if sfur_en and sfur_col:
+                            try_export(_do_export_sfur, make_full(entry["sfur"], grp_bp), sfur_col, f"SFUR {entry_id}")
+                        elif sfur_en and use_blank:
+                            try_blank("sfur", make_full(entry["sfur"], grp_bp), f"SFUR {entry_id}")
 
         if fail_count > 0:
             self.report({'WARNING'}, f"Done: {export_count} exported, {fail_count} failed, {skip_count} skipped")
@@ -254,7 +312,7 @@ class RE9_OT_BatchExport(bpy.types.Operator):
 
 
 class RE9_OT_SetNativesRoot(bpy.types.Operator):
-    """Select the natives root directory"""
+    """选择 RE9 Mod 根目录（natives 的上级）。若选中的文件夹本身名为 natives，自动取其上级"""
     bl_idname = "re9.set_natives_root"
     bl_label = "Set Natives Root"
     bl_options = {'REGISTER'}
@@ -263,8 +321,11 @@ class RE9_OT_SetNativesRoot(bpy.types.Operator):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
     def execute(self, context):
-        context.scene["re9_natives_root"] = self.directory
-        self.report({'INFO'}, f"Natives root: {self.directory}")
+        path = self.directory.rstrip("/\\")
+        if os.path.basename(path).lower() == "natives":
+            path = os.path.dirname(path)
+        context.scene["re9_natives_root"] = path
+        self.report({'INFO'}, f"RE9 Mod root: {path}")
         return {'FINISHED'}
 
 

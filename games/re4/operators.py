@@ -2,6 +2,11 @@ import bpy
 from ...core import bone_utils
 from . import data_maps
 
+_FINGER_INITIALS = {
+    'Index': 'I', 'Thumb': 'T', 'Middle': 'M',
+    'Ring': 'R', 'Pinky': 'P',
+}
+
 # ==========================================
 # RE4 假骨工具 (FakeBone Tools)
 # ==========================================
@@ -48,8 +53,8 @@ class RE4_OT_FakeBody_Process(bpy.types.Operator):
         bpy.ops.pose.select_all(action='SELECT')
         bpy.ops.pose.visual_transform_apply()
         for b in armature.pose.bones:
-            for c in b.constraints: b.constraints.remove(c)
-            
+            b.constraints.clear()
+
         bpy.ops.pose.armature_apply()
         bpy.ops.object.mode_set(mode='EDIT')
 
@@ -66,7 +71,9 @@ class RE4_OT_FakeBody_Process(bpy.types.Operator):
                 if pname not in armature.data.edit_bones: continue
                 suffix = "_end"
                 if (pname[0] in ['L', 'R']) and len(ParentName[fake]) > 1:
-                    suffix = f"_end{pname[0]}"
+                    parts = pname.split('_')
+                    finger_initial = next((v for k, v in _FINGER_INITIALS.items() if any(p.startswith(k) for p in parts)), "")
+                    suffix = f"_end{finger_initial}" if finger_initial else "_end"
                 new_bone = armature.data.edit_bones.new(bone.name + suffix)
                 new_bone.head = bone.head
                 new_bone.tail = bone.tail
@@ -88,17 +95,17 @@ class RE4_OT_FakeBody_Process(bpy.types.Operator):
         bpy.ops.pose.select_all(action='SELECT')
         bpy.ops.pose.visual_transform_apply()
         for b in armature.pose.bones:
-            for c in b.constraints: b.constraints.remove(c)
+            b.constraints.clear()
         bpy.ops.pose.armature_apply()
-        
+
         bpy.ops.object.mode_set(mode='EDIT')
         for bone in list(armature.data.edit_bones):
             if "end" not in bone.name:
                 armature.data.edit_bones.remove(bone)
-                
+
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.data.objects.remove(SourceModel)
-        
+
         self.report({'INFO'}, "身体 End 骨骼创建完成")
         return {'FINISHED'}
 
@@ -164,7 +171,7 @@ class RE4_OT_FakeFingers_Process(bpy.types.Operator):
         bpy.ops.pose.select_all(action='SELECT')
         bpy.ops.pose.visual_transform_apply()
         for b in armature.pose.bones:
-            for c in b.constraints: b.constraints.remove(c)
+            b.constraints.clear()
         bpy.ops.pose.armature_apply()
         
         bpy.ops.object.mode_set(mode='EDIT')
@@ -183,8 +190,9 @@ class RE4_OT_FakeFingers_Process(bpy.types.Operator):
                 if child_name not in armature.data.edit_bones: continue
                 
                 if (child_name.startswith('L') or child_name.startswith('R')) and len(ParentName[fake]) > 1:
-                    # 这里的魔法数字 [2] 是根据 RE4 命名规范：R_Index... -> I
-                    suffix = "_end{}".format(child_name[2])
+                    parts = child_name.split('_')
+                    finger_initial = next((v for k, v in _FINGER_INITIALS.items() if any(p.startswith(k) for p in parts)), "")
+                    suffix = f"_end{finger_initial}" if finger_initial else "_end"
                     new_bone = armature.data.edit_bones.new(bone.name + suffix)
                 else:
                     new_bone = armature.data.edit_bones.new(bone.name + "_end")
@@ -214,11 +222,11 @@ class RE4_OT_FakeFingers_Process(bpy.types.Operator):
         bpy.ops.pose.select_all(action='SELECT')
         bpy.ops.pose.visual_transform_apply()
         for b in armature.pose.bones:
-            for c in b.constraints: b.constraints.remove(c)
+            b.constraints.clear()
         bpy.ops.pose.armature_apply()
-        
+
         bpy.ops.object.mode_set(mode='EDIT')
-        
+
         # 删除所有非 end 骨骼
         for bone in list(armature.data.edit_bones):
             if "end" not in bone.name:
@@ -329,77 +337,37 @@ class RE4_OT_AlignBones(bpy.types.Operator):
     bl_idname = "re4.align_bones_full"
     bl_label = "完全对齐"
     bl_options = {'REGISTER', 'UNDO'}
-    
+
     def execute(self, context):
-        active_obj = context.active_object
         selected = [o for o in context.selected_objects if o.type == 'ARMATURE']
-        if len(selected) != 2: return {'CANCELLED'}
-        target = active_obj
+        if len(selected) != 2:
+            self.report({'ERROR'}, "请选择两个骨架")
+            return {'CANCELLED'}
+        target = context.active_object
         source = [o for o in selected if o != target][0]
-        
-        if context.mode != 'OBJECT': bpy.ops.object.mode_set(mode='OBJECT')
-        context.view_layer.update()
-        
-        src_data = {}
-        s_mat = source.matrix_world
-        for b in source.data.bones:
-            src_data[b.name] = {'head': s_mat @ b.head_local.copy(), 'tail': s_mat @ b.tail_local.copy()}
-            
-        context.view_layer.objects.active = target
-        bpy.ops.object.mode_set(mode='EDIT')
-        t_mat_inv = target.matrix_world.inverted()
-        
-        count = 0
-        for b in target.data.edit_bones:
-            if b.name in src_data:
-                old_head = b.head.copy()
-                new_head = t_mat_inv @ src_data[b.name]['head']
-                b.head = new_head
-                b.tail = t_mat_inv @ src_data[b.name]['tail']
-                
-                bone_utils.propagate_movement(b, new_head - old_head)
-                count += 1
-        
-        bpy.ops.object.mode_set(mode='OBJECT')
+        if context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+        count = bone_utils.align_armatures_by_name(source, target, mode='FULL')
         self.report({'INFO'}, f"完全对齐了 {count} 根骨骼")
         return {'FINISHED'}
+
 
 class RE4_OT_AlignBones_Pos(bpy.types.Operator):
     """仅对齐位置"""
     bl_idname = "re4.align_bones_pos"
     bl_label = "仅对齐位置"
     bl_options = {'REGISTER', 'UNDO'}
-    
+
     def execute(self, context):
-        active_obj = context.active_object
         selected = [o for o in context.selected_objects if o.type == 'ARMATURE']
-        if len(selected) != 2: return {'CANCELLED'}
-        target = active_obj
+        if len(selected) != 2:
+            self.report({'ERROR'}, "请选择两个骨架")
+            return {'CANCELLED'}
+        target = context.active_object
         source = [o for o in selected if o != target][0]
-        
-        if context.mode != 'OBJECT': bpy.ops.object.mode_set(mode='OBJECT')
-        context.view_layer.update()
-        
-        src_heads = {b.name: source.matrix_world @ b.head_local for b in source.data.bones}
-        
-        context.view_layer.objects.active = target
-        bpy.ops.object.mode_set(mode='EDIT')
-        t_mat_inv = target.matrix_world.inverted()
-        
-        count = 0
-        for b in target.data.edit_bones:
-            if b.name in src_heads:
-                old_head = b.head.copy()
-                new_head = t_mat_inv @ src_heads[b.name]
-                orig_vec = b.tail - b.head
-                
-                b.head = new_head
-                b.tail = new_head + orig_vec
-                
-                bone_utils.propagate_movement(b, new_head - old_head)
-                count += 1
-                
-        bpy.ops.object.mode_set(mode='OBJECT')
+        if context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+        count = bone_utils.align_armatures_by_name(source, target, mode='POS_ONLY')
         self.report({'INFO'}, f"位置对齐了 {count} 根骨骼")
         return {'FINISHED'}
 

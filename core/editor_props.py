@@ -43,7 +43,17 @@ class EditorSettings(bpy.types.PropertyGroup):
     show_leg_l: bpy.props.BoolProperty(default=True)
     show_leg_r: bpy.props.BoolProperty(default=True)
     show_fingers: bpy.props.BoolProperty(default=False)
-    
+
+    # 编辑模式：X 预设（来源）或 Y 预设（目标）
+    edit_mode: bpy.props.EnumProperty(
+        name="编辑模式",
+        items=[
+            ('X', 'X 预设 (来源)', '编辑来源游戏的骨骼映射预设'),
+            ('Y', 'Y 预设 (目标)', '编辑目标游戏的骨骼映射预设'),
+        ],
+        default='X',
+    )
+
 classes = [
     AuxBoneItem,
     MappingSlot,

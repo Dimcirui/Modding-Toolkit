@@ -84,6 +84,50 @@ def propagate_movement(bone, offset_vec):
             child.tail += offset_vec
         propagate_movement(child, offset_vec)
 
+
+def align_armatures_by_name(source_arm, target_arm, mode='POS_ONLY', skip_fn=None):
+    """
+    按骨骼名对齐两个骨架（调用前应处于 OBJECT 模式）。
+    mode: 'FULL' = head+tail 全部对齐；'POS_ONLY' = 仅对齐 head，保持长度方向
+    skip_fn: callable(bone_name) -> bool，返回 True 则跳过该骨骼
+    返回对齐骨骼数。执行后处于 OBJECT 模式，active 对象为 target_arm。
+    """
+    s_mat = source_arm.matrix_world
+    s_mat3 = s_mat.to_3x3()
+    src_data = {}
+    for b in source_arm.data.bones:
+        x_world = (s_mat3 @ b.matrix.col[0].to_3d()).normalized()
+        src_data[b.name] = (s_mat @ b.head_local.copy(), s_mat @ b.tail_local.copy(), x_world)
+
+    bpy.context.view_layer.update()
+    bpy.context.view_layer.objects.active = target_arm
+    bpy.ops.object.mode_set(mode='EDIT')
+    t_mat_inv = target_arm.matrix_world.inverted()
+    t_mat3_inv = t_mat_inv.to_3x3()
+
+    count = 0
+    for b in target_arm.data.edit_bones:
+        if b.name not in src_data:
+            continue
+        if skip_fn and skip_fn(b.name):
+            continue
+        src_head, src_tail, src_x_world = src_data[b.name]
+        old_head = b.head.copy()
+        new_head = t_mat_inv @ src_head
+        if mode == 'FULL':
+            b.head = new_head
+            b.tail = t_mat_inv @ src_tail
+            b.align_roll(t_mat3_inv @ src_x_world)
+        else:
+            orig_vec = b.tail - b.head
+            b.head = new_head
+            b.tail = new_head + orig_vec
+        propagate_movement(b, new_head - old_head)
+        count += 1
+
+    bpy.ops.object.mode_set(mode='OBJECT')
+    return count
+
 def find_bone_smart(bones, name):
     """
     智能查找骨骼：
@@ -121,40 +165,62 @@ def find_bone_smart(bones, name):
 _import_preset_cache = []
 _target_preset_cache = []
 
+# 预设分类规则：文件名前缀 → 分类标签
+_PRESET_CATEGORY_RULES = [
+    (('怪猎',),                          '怪猎系'),
+    (('生化危机', '鬼泣', '街霸'),        'Capcom RE引擎'),
+    (('MMD', 'VRChat', 'Valve'),          '通用平台'),
+]
+
+def _get_preset_category(filename):
+    stem = os.path.splitext(filename)[0]
+    for prefixes, category in _PRESET_CATEGORY_RULES:
+        if any(stem.startswith(p) for p in prefixes):
+            return category
+    return '其他游戏'
+
 def get_preset_items(subdir):
     """
-    通用函数：扫描指定子目录下的所有 .json 文件
+    扫描指定子目录下的所有 .json 文件，按分类分组并插入分隔标题。
     subdir: "import_presets" 或 "bone_presets"
     """
-    # 获取插件根目录
     current_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.dirname(current_dir)
     preset_dir = os.path.join(root_dir, "assets", subdir)
-    
-    items = []
-    
+
     if not os.path.exists(preset_dir):
         return [('NONE', "未找到文件夹", "请检查 assets 目录")]
 
-    files = [f for f in os.listdir(preset_dir) if f.endswith('.json')]
-    
-    for i, f in enumerate(files):
-        display_name = f.replace("_preset.json", "").replace(".json", "")
-        items.append((f, display_name, f"加载 {f} 预设"))
-        
-    if not items:
+    files = sorted(f for f in os.listdir(preset_dir) if f.endswith('.json'))
+    if not files:
         return [('NONE', "无预设文件", "")]
-        
-    return items
+
+    # 按分类分组
+    grouped = {}
+    cat_order = ['怪猎系', 'Capcom RE引擎', '通用平台', '其他游戏']
+    for f in files:
+        cat = _get_preset_category(f)
+        grouped.setdefault(cat, []).append(f)
+
+    items = []
+    for cat in cat_order:
+        if cat not in grouped:
+            continue
+        items.append(('', cat, ''))  # 分组标题（不可选）
+        for f in grouped[cat]:
+            display_name = os.path.splitext(f)[0]
+            items.append((f, display_name, f"加载 {f} 预设"))
+
+    return items if items else [('NONE', "无预设文件", "")]
 
 # --- 回调函数接口 ---
 
 def get_import_presets_callback(self, context):
-    global _import_preset_cache
-    _import_preset_cache = get_preset_items("import_presets")
+    _import_preset_cache.clear()
+    _import_preset_cache.extend(get_preset_items("import_presets"))
     return _import_preset_cache
 
 def get_target_presets_callback(self, context):
-    global _target_preset_cache
-    _target_preset_cache = get_preset_items("bone_presets")
+    _target_preset_cache.clear()
+    _target_preset_cache.extend(get_preset_items("bone_presets"))
     return _target_preset_cache
