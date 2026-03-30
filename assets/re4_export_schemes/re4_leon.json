@@ -1,0 +1,156 @@
+{
+  "character": "Leon (RE4)",
+  "character_id": "re4_leon",
+  "base_path": "STM/_Chainsaw/Character/ch/cha0",
+  "fbxskel": "_Chainsaw/Character/ch/cha0/cha000.skeleton.5",
+  "groups": [
+    {
+      "name": "头发",
+      "entries": [
+        {
+          "id": "cha000_20",
+          "mesh": "cha000/20/cha000_20.mesh.221108797",
+          "mdf2": [
+            "cha000/20/cha000_20.mdf2.32"
+          ],
+          "chain": "cha000_20.chain.53",
+          "simplified": "user",
+          "note": "cha000 头发"
+        },
+        {
+          "id": "cha003_20",
+          "mesh": "cha003/20/cha003_20.mesh.221108797",
+          "mdf2": [
+            "cha003/20/cha003_20.mdf2.32"
+          ],
+          "chain": "cha003/cha003_20.chain.53",
+          "simplified": "user",
+          "note": "cha003 头发"
+        },
+        {
+          "id": "cha000_1a",
+          "mesh": "cha000/1a/cha000_1a.mesh.221108797",
+          "simplified": "empty",
+          "blank_mesh": "special_empty_1.mesh.221108797",
+          "note": "特殊空 mesh 1"
+        }
+      ]
+    },
+    {
+      "name": "头部",
+      "entries": [
+        {
+          "id": "cha000_10",
+          "mesh": "cha000/10/cha000_10.mesh.221108797",
+          "mdf2": [
+            "cha000/10/cha000_10.mdf2.32",
+            "cha000/10/cha000_10a.mdf2.32",
+            "cha000/10/cha000_10b.mdf2.32",
+            "cha000/10/cha000_10c.mdf2.32",
+            "cha000/10/cha000_10d.mdf2.32",
+            "cha000/10/cha000_10e.mdf2.32",
+            "cha000/10/cha000_10f.mdf2.32",
+            "cha000/10/cha000_10g.mdf2.32",
+            "cha000/13/cha000_13_B_FaceBlend.mdf2.32",
+            "cha000/13/cha000_13_faceblend.mdf2.32"
+          ],
+          "simplified": "user",
+          "note": "头部+脖子"
+        },
+        {
+          "id": "cha003_10",
+          "mdf2": [
+            "cha003/10/cha003_10d.mdf2.32",
+            "cha003/13/cha003_13_faceblend.mdf2.32"
+          ],
+          "simplified": "user",
+          "note": "cha003 头部 mdf2"
+        },
+        {
+          "id": "cha000_11",
+          "mesh": "cha000/11/cha000_11.mesh.221108797",
+          "mdf2": [
+            "cha000/11/cha000_11.mdf2.32"
+          ],
+          "simplified": "user",
+          "note": "部位破坏头部（与头部使用同一模型）"
+        },
+        {
+          "id": "cha000_12",
+          "simplified": "empty",
+          "note": "部位破坏脖子，空文件"
+        }
+      ]
+    },
+    {
+      "name": "身体",
+      "entries": [
+        {
+          "id": "cha000_00",
+          "mesh": "cha000/00/cha000_00.mesh.221108797",
+          "mdf2": [
+            "cha000/00/cha000_00.mdf2.32",
+            "cha000/00/cha000_00a.mdf2.32",
+            "cha000/00/cha000_00b.mdf2.32",
+            "cha000/00/cha000_00c.mdf2.32",
+            "cha000/00/cha000_00d.mdf2.32",
+            "cha000/00/cha000_00e.mdf2.32",
+            "cha000/00/cha000_00f.mdf2.32"
+          ],
+          "chain": "cha000_00.chain.53",
+          "simplified": "user",
+          "note": "cha000 身体"
+        },
+        {
+          "id": "cha001_00",
+          "mesh": "cha001/00/cha001_00.mesh.221108797",
+          "mdf2": [
+            "cha001/00/cha001_00.mdf2.32",
+            "cha001/00/cha001_00a.mdf2.32",
+            "cha001/00/cha001_00b.mdf2.32",
+            "cha001/00/cha001_00c.mdf2.32",
+            "cha001/00/cha001_00d.mdf2.32",
+            "cha001/00/cha001_00e.mdf2.32",
+            "cha001/00/cha001_00f.mdf2.32"
+          ],
+          "simplified": "user",
+          "note": "cha001 身体（无 chain）"
+        },
+        {
+          "id": "cha002_00",
+          "mesh": "cha002/00/cha002_00.mesh.221108797",
+          "mdf2": [
+            "cha002/00/cha002_00.mdf2.32"
+          ],
+          "chain": "cha002_00.chain.53",
+          "simplified": "user",
+          "note": "cha002 身体"
+        },
+        {
+          "id": "cha003_00",
+          "mesh": "cha003/00/cha003_00.mesh.221108797",
+          "mdf2": [
+            "cha003/00/cha003_00.mdf2.32"
+          ],
+          "chain": "cha003/cha003_00.chain.53",
+          "simplified": "user",
+          "note": "cha003 身体"
+        },
+        {
+          "id": "cha002_01",
+          "mesh": "cha002/01/cha002_01.mesh.221108797",
+          "simplified": "empty",
+          "blank_mesh": "special_empty_2.mesh.221108797",
+          "note": "特殊空 mesh 2"
+        },
+        {
+          "id": "cha002_02",
+          "mesh": "cha002/02/cha002_02.mesh.221108797",
+          "simplified": "empty",
+          "blank_mesh": "special_empty_2.mesh.221108797",
+          "note": "特殊空 mesh 3"
+        }
+      ]
+    }
+  ]
+}

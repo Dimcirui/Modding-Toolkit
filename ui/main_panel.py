@@ -3,6 +3,7 @@ from ..core import bone_utils, weight_utils, ui_config
 from ..core.bone_utils import get_import_presets_callback, get_target_presets_callback
 from ..core.pose_ops import get_pose_presets_callback
 from ..games.re9.batch_export import get_schemes_callback
+from ..games.re4.batch_export import get_schemes_callback as get_re4_schemes_callback
 from ..games.mhws.batch_export import get_mhws_schemes_callback, get_mhws_armor_callback, MHWS_VARIANTS
 from ..core.bone_mapper import BoneMapManager
 
@@ -124,6 +125,18 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         default=False,
     )
     re9_use_blank_export: bpy.props.BoolProperty(
+        name="未选项使用空模型",
+        description="导出时对未选择集合的栏位，复制内置空文件代替跳过",
+        default=False,
+    )
+
+    # RE4 batch export
+    re4_export_scheme: bpy.props.EnumProperty(
+        name="Export Scheme",
+        description="Select character export scheme for RE4",
+        items=get_re4_schemes_callback
+    )
+    re4_use_blank_export: bpy.props.BoolProperty(
         name="未选项使用空模型",
         description="导出时对未选择集合的栏位，复制内置空文件代替跳过",
         default=False,
@@ -509,6 +522,16 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row3 = col_fake.row(align=True)
             row3.operator("re4.align_bones_full", text="完全对齐", icon='SNAP_ON')
             row3.operator("re4.align_bones_pos", text="仅对齐位置", icon='SNAP_VERTEX')
+
+            col = box.column(align=True)
+            col.separator()
+            has_re_mesh = hasattr(bpy.ops, 're_mesh') and hasattr(bpy.ops.re_mesh, 'exportfile')
+            row = col.row()
+            row.enabled = has_re_mesh
+            row.operator("re4.batch_export_dialog", text="RE4 Batch Exporter", icon='EXPORT')
+            row = col.row()
+            row.enabled = has_re_mesh
+            row.operator("re4.mdf_tex_processor_dialog", text="MDF2 + Tex 处理器", icon='TEXTURE')
 
         if settings.show_re9:
             box = layout.box()
