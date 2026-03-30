@@ -637,6 +637,7 @@ class MdfTexProcessBase(bpy.types.Operator):
     _tex_version      = 0
     _abbrev_map       = {}
     _use_art_prefix   = True
+    _path_fixed_prefix = ""   # Optional path segment prepended to texture_base_path
     _log_tag          = "MDF Tex"
 
     def execute(self, context):
@@ -655,6 +656,8 @@ class MdfTexProcessBase(bpy.types.Operator):
         if not base_path:
             self.report({'ERROR'}, "请填写 Base Path")
             return {'CANCELLED'}
+        if cls._path_fixed_prefix:
+            base_path = cls._path_fixed_prefix.strip('/') + '/' + base_path.strip('/')
         if not settings.materials:
             self.report({'ERROR'}, "请先点击 Refresh 加载材质")
             return {'CANCELLED'}

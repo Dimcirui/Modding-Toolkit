@@ -65,7 +65,7 @@ class RE4MdfTexProcessorSettings(bpy.types.PropertyGroup):
     )
     texture_base_path: bpy.props.StringProperty(
         name="Base Path",
-        description="Path under natives/STM/ (e.g. _Chainsaw/Character/ch/cha000_00)",
+        description="Path under natives/STM/_Chainsaw/Character/ch/ (e.g. Author/Name)",
         default="",
     )
     generate_mipmaps: bpy.props.BoolProperty(name="Generate MipMaps", default=True)
@@ -121,8 +121,9 @@ class RE4_OT_MdfTexProcess(MdfTexProcessBase):
     _channel_maps     = RE4_SLOT_CHANNEL_MAPS
     _tex_version      = RE4_TEX_VERSION
     _abbrev_map       = RE4_TEXTURE_TYPE_ABBREV
-    _use_art_prefix   = False
-    _log_tag          = "RE4 MDF Tex"
+    _use_art_prefix    = False
+    _path_fixed_prefix = "_Chainsaw/Character/ch"
+    _log_tag           = "RE4 MDF Tex"
 
 
 # ── Registration ───────────────────────────────────────────────────────────────

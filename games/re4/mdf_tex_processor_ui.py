@@ -13,8 +13,8 @@ class RE4_OT_MdfTexProcessorDialog(MdfTexDialogBase):
     _settings_attr     = "re4_mdf_tex_processor"
     _natives_root_key  = "re4_natives_root"
     _root_label        = "Natives Root"
-    _path_prefix_label = "natives/STM/"
-    _path_hint         = "e.g. _Chainsaw/Character/ch/cha000_00/"
+    _path_prefix_label = "natives/STM/_Chainsaw/Character/ch/"
+    _path_hint         = "e.g. Author/Name/"
     _common_slot_types = RE4_COMMON_SLOT_TYPES
     _null_tex_by_type  = RE4_NULL_TEX_BY_TYPE
 
