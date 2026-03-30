@@ -53,7 +53,8 @@ class RE4_OT_FakeBody_Process(bpy.types.Operator):
         bpy.ops.pose.select_all(action='SELECT')
         bpy.ops.pose.visual_transform_apply()
         for b in armature.pose.bones:
-            b.constraints.clear()
+            for c in b.constraints[:]:
+                b.constraints.remove(c)
 
         bpy.ops.pose.armature_apply()
         bpy.ops.object.mode_set(mode='EDIT')
@@ -95,7 +96,8 @@ class RE4_OT_FakeBody_Process(bpy.types.Operator):
         bpy.ops.pose.select_all(action='SELECT')
         bpy.ops.pose.visual_transform_apply()
         for b in armature.pose.bones:
-            b.constraints.clear()
+            for c in b.constraints[:]:
+                b.constraints.remove(c)
         bpy.ops.pose.armature_apply()
 
         bpy.ops.object.mode_set(mode='EDIT')
@@ -171,7 +173,8 @@ class RE4_OT_FakeFingers_Process(bpy.types.Operator):
         bpy.ops.pose.select_all(action='SELECT')
         bpy.ops.pose.visual_transform_apply()
         for b in armature.pose.bones:
-            b.constraints.clear()
+            for c in b.constraints[:]:
+                b.constraints.remove(c)
         bpy.ops.pose.armature_apply()
         
         bpy.ops.object.mode_set(mode='EDIT')
@@ -222,7 +225,8 @@ class RE4_OT_FakeFingers_Process(bpy.types.Operator):
         bpy.ops.pose.select_all(action='SELECT')
         bpy.ops.pose.visual_transform_apply()
         for b in armature.pose.bones:
-            b.constraints.clear()
+            for c in b.constraints[:]:
+                b.constraints.remove(c)
         bpy.ops.pose.armature_apply()
 
         bpy.ops.object.mode_set(mode='EDIT')
