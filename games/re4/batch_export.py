@@ -206,7 +206,48 @@ class RE4_OT_BatchExport(bpy.types.Operator):
             fbx_arm = _get_binding(scene, character_id, "_fbxskel", "fbxskel")
             if fbx_enabled and fbx_arm:
                 full = os.path.join(natives_root, "natives", "STM", fbxskel_path.replace("/", os.sep))
-                try_export(_do_export_fbxskel, full, fbx_arm, "FBXSKEL")
+                if settings.re4_use_fakebone:
+                    from .operators import do_fakebone, _get_native_skeletons_dir
+                    native_file = scheme.get("native_skeleton", "")
+                    if not native_file:
+                        self.report({'WARNING'}, "假头法: 未选择原生骨架，跳过 FBXSKEL")
+                        fail_count += 1
+                    else:
+                        native_path = os.path.join(_get_native_skeletons_dir(), native_file)
+                        if not os.path.isfile(native_path):
+                            self.report({'WARNING'}, f"假头法: 找不到原生骨架文件 {native_file}")
+                            fail_count += 1
+                        else:
+                            user_arm_obj = bpy.data.objects.get(fbx_arm)
+                            if user_arm_obj is None:
+                                self.report({'WARNING'}, f"假头法: 骨架对象 '{fbx_arm}' 不存在")
+                                fail_count += 1
+                            else:
+                                # 在副本上操作，不修改原骨架
+                                prev_active = context.view_layer.objects.active
+                                prev_sel = [o for o in context.selected_objects]
+                                for o in prev_sel:
+                                    o.select_set(False)
+                                context.view_layer.objects.active = user_arm_obj
+                                user_arm_obj.select_set(True)
+                                bpy.ops.object.duplicate()
+                                arm_copy = context.active_object
+                                user_arm_obj.select_set(False)
+                                try:
+                                    do_fakebone(context, arm_copy, native_path)
+                                    try_export(_do_export_fbxskel, full, arm_copy.name, "FBXSKEL (假头法)")
+                                except Exception as err:
+                                    print(f"[RE4] FAILED FBXSKEL (假头法): {err}")
+                                    fail_count += 1
+                                finally:
+                                    if arm_copy.name in bpy.data.objects:
+                                        bpy.data.objects.remove(arm_copy, do_unlink=True)
+                                    context.view_layer.objects.active = prev_active
+                                    for o in prev_sel:
+                                        if o.name in bpy.data.objects:
+                                            o.select_set(True)
+                else:
+                    try_export(_do_export_fbxskel, full, fbx_arm, "FBXSKEL")
 
         # --- Per entry ---
         for group in scheme["groups"]:

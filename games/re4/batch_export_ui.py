@@ -1,7 +1,7 @@
 import bpy
 from .batch_export import (
     _load_scheme, _get_binding, _set_binding,
-    _get_enabled, _set_enabled, get_schemes_callback,
+    _get_enabled, _set_enabled,
     _get_simplified_group_binding, _set_simplified_group_binding,
     _get_simplified_empty_binding, _set_simplified_empty_binding,
 )
@@ -349,6 +349,15 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
             op_p = row.operator("re4.pick_armature", text=cur_arm if cur_arm else "Select armature...",
                                 icon='DOWNARROW_HLT')
             op_p.character_id = character_id
+            # 假头法
+            row2 = box.row(align=True)
+            row2.prop(settings, "re4_use_fakebone", icon='BONE_DATA')
+            if settings.re4_use_fakebone:
+                native_skel = scheme.get("native_skeleton", "")
+                if native_skel:
+                    row2.label(text=native_skel, icon='FILE')
+                else:
+                    row2.label(text="预设未配置 native_skeleton", icon='ERROR')
 
         layout.separator()
         layout.prop(settings, "re4_use_blank_export", icon='FILE_BLANK')
