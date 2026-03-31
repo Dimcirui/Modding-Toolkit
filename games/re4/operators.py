@@ -27,6 +27,9 @@ def get_native_skeletons_callback(self, context):
             if '.fbxskel.' in f:
                 name = f.split('.fbxskel.')[0]
                 _native_skel_cache.append((f, name, ""))
+            elif '.skeleton.' in f:
+                name = f.split('.skeleton.')[0]
+                _native_skel_cache.append((f, name, ""))
     if not _native_skel_cache:
         _native_skel_cache.append(('NONE', "无可用骨架 (添加至 assets/re4_native_skeletons/)", ""))
     return _native_skel_cache

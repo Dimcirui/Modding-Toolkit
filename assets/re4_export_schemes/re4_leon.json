@@ -3,7 +3,7 @@
   "character_id": "re4_leon",
   "base_path": "STM/_Chainsaw/Character/ch/cha0",
   "fbxskel": "_Chainsaw/Character/ch/cha0/cha000.skeleton.5",
-  "native_skeleton": "leon.fbxskel.5",
+  "native_skeleton": "leon.skeleton.5",
   "groups": [
     {
       "name": "头发",
