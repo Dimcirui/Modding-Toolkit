@@ -168,9 +168,8 @@ def _fakebone_fingers(context, source_arm, ruler_arm):
             if child_name not in ruler_arm.data.edit_bones:
                 continue
             if (child_name.startswith('L') or child_name.startswith('R')) and len(ParentName[fake]) > 1:
-                parts = child_name.split('_')
-                finger_initial = next(
-                    (v for k, v in _FINGER_INITIALS.items() if any(p.startswith(k) for p in parts)), "")
+                # 取 L_/R_ 后面的首字母作为 end 骨后缀，如 L_Palm -> P, L_IndexF1 -> I
+                finger_initial = child_name.split('_')[1][0] if '_' in child_name else ""
                 suffix = f"_end{finger_initial}" if finger_initial else "_end"
             else:
                 suffix = "_end"
@@ -227,21 +226,11 @@ def _merge_end_bones(context, main_arm, end_arm, merge_type):
     arm = main_arm.data
 
     if merge_type == 'body':
-        end_to_parent = {}
-        for fake, parents in data_maps.FAKEBONE_BODY_PARENTS.items():
-            for pname in parents:
-                suffix = "_end"
-                if len(parents) > 1:
-                    if pname.startswith("L_") or pname.endswith("_L"):
-                        suffix = "_endL"
-                    elif pname.startswith("R_") or pname.endswith("_R"):
-                        suffix = "_endR"
-                end_to_parent[fake + suffix] = pname
         for bone in arm.edit_bones:
             if "_end" in bone.name:
-                parent_name = end_to_parent.get(bone.name)
-                if parent_name and parent_name in arm.edit_bones:
-                    bone.parent = arm.edit_bones[parent_name]
+                base_name = bone.name.split("_end")[0]
+                if base_name in arm.edit_bones:
+                    bone.parent = arm.edit_bones[base_name]
                     bone.use_connect = False
 
     elif merge_type == 'fingers':
