@@ -3,7 +3,7 @@ from .batch_export import (
     _load_scheme, _get_binding, _set_binding,
     _get_enabled, _set_enabled, get_schemes_callback,
     _get_simplified_group_binding, _set_simplified_group_binding,
-    _get_simplified_empty_binding, _set_simplified_empty_binding,
+    _set_simplified_empty_binding,
 )
 
 EXPORTER_WINDOW_WIDTH = 600
@@ -335,34 +335,11 @@ class RE9_OT_BatchExportDialog(bpy.types.Operator):
         layout.prop(settings, "re9_use_blank_export", icon='FILE_BLANK')
 
         if use_simplified:
-            self._draw_simplified(layout, scene, scheme, character_id, settings.re9_use_blank_export)
+            self._draw_simplified(layout, scene, scheme, character_id)
         else:
             self._draw_normal(layout, scene, scheme, character_id)
 
-    def _draw_simplified(self, layout, scene, scheme, character_id, use_blank=False):
-        # Global empty model settings — hidden when blank export is on (built-in blanks used)
-        if not use_blank:
-            box = layout.box()
-            box.label(text="Empty Model Collections (Global)", icon='GHOST_ENABLED')
-
-            row = box.row(align=True)
-            row.label(text="Empty MESH:", icon='OUTLINER_OB_MESH')
-            cur = _get_simplified_empty_binding(scene, character_id, "mesh")
-            op = row.operator("re9.pick_se_mesh", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
-            op.character_id = character_id
-
-            row = box.row(align=True)
-            row.label(text="Empty MDF2:", icon='MATERIAL')
-            cur = _get_simplified_empty_binding(scene, character_id, "mdf2")
-            op = row.operator("re9.pick_se_mdf", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
-            op.character_id = character_id
-
-            row = box.row(align=True)
-            row.label(text="Empty SFUR:", icon='OUTLINER_OB_CURVES')
-            cur = _get_simplified_empty_binding(scene, character_id, "sfur")
-            op = row.operator("re9.pick_se_sfur", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
-            op.character_id = character_id
-
+    def _draw_simplified(self, layout, scene, scheme, character_id):
         layout.separator()
 
         # Per-group user model settings

@@ -127,7 +127,7 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     re9_use_blank_export: bpy.props.BoolProperty(
         name="未选项使用空模型",
         description="导出时对未选择集合的栏位，复制内置空文件代替跳过",
-        default=False,
+        default=True,
     )
 
     # RE4 batch export
@@ -139,7 +139,7 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     re4_use_blank_export: bpy.props.BoolProperty(
         name="未选项使用空模型",
         description="导出时对未选择集合的栏位，复制内置空文件代替跳过",
-        default=False,
+        default=True,
     )
     re4_use_fakebone: bpy.props.BoolProperty(
         name="使用假头法",

@@ -3,7 +3,7 @@ from .batch_export import (
     _load_scheme, _get_binding, _set_binding,
     _get_enabled, _set_enabled,
     _get_simplified_group_binding, _set_simplified_group_binding,
-    _get_simplified_empty_binding, _set_simplified_empty_binding,
+    _set_simplified_empty_binding,
 )
 
 EXPORTER_WINDOW_WIDTH = 600
@@ -335,8 +335,10 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
         row.label(text="Use Simplified Export", icon='SORTBYEXT')
 
         # --- FBXSKEL ---
-        fbxskel_path = scheme.get("fbxskel", "")
-        if fbxskel_path:
+        fbxskel_raw = scheme.get("fbxskel", "")
+        fbxskel_paths = ([fbxskel_raw] if isinstance(fbxskel_raw, str) else list(fbxskel_raw))
+        fbxskel_paths = [p for p in fbxskel_paths if p]
+        if fbxskel_paths:
             layout.separator()
             box = layout.box()
             row = box.row(align=True)
@@ -344,7 +346,8 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
             op = row.operator("re4.toggle_entry", text="",
                               icon='CHECKBOX_HLT' if fbx_en else 'CHECKBOX_DEHLT', emboss=False)
             op.character_id = character_id; op.entry_id = "_fbxskel"; op.suffix = "fbxskel"
-            row.label(text="FBXSKEL", icon='ARMATURE_DATA')
+            fbx_label = f"FBXSKEL (×{len(fbxskel_paths)})" if len(fbxskel_paths) > 1 else "FBXSKEL"
+            row.label(text=fbx_label, icon='ARMATURE_DATA')
             cur_arm = _get_binding(scene, character_id, "_fbxskel", "fbxskel")
             op_p = row.operator("re4.pick_armature", text=cur_arm if cur_arm else "Select armature...",
                                 icon='DOWNARROW_HLT')
@@ -363,34 +366,11 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
         layout.prop(settings, "re4_use_blank_export", icon='FILE_BLANK')
 
         if use_simplified:
-            self._draw_simplified(layout, scene, scheme, character_id, settings.re4_use_blank_export)
+            self._draw_simplified(layout, scene, scheme, character_id)
         else:
             self._draw_normal(layout, scene, scheme, character_id)
 
-    def _draw_simplified(self, layout, scene, scheme, character_id, use_blank=False):
-        # Global empty model settings — hidden when blank export is on
-        if not use_blank:
-            box = layout.box()
-            box.label(text="Empty Model Collections (Global)", icon='GHOST_ENABLED')
-
-            row = box.row(align=True)
-            row.label(text="Empty MESH:", icon='OUTLINER_OB_MESH')
-            cur = _get_simplified_empty_binding(scene, character_id, "mesh")
-            op = row.operator("re4.pick_se_mesh", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
-            op.character_id = character_id
-
-            row = box.row(align=True)
-            row.label(text="Empty MDF2:", icon='MATERIAL')
-            cur = _get_simplified_empty_binding(scene, character_id, "mdf2")
-            op = row.operator("re4.pick_se_mdf", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
-            op.character_id = character_id
-
-            row = box.row(align=True)
-            row.label(text="Empty Chain:", icon='CONSTRAINT_BONE')
-            cur = _get_simplified_empty_binding(scene, character_id, "chain")
-            op = row.operator("re4.pick_se_chain", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
-            op.character_id = character_id
-
+    def _draw_simplified(self, layout, scene, scheme, character_id):
         layout.separator()
 
         for group in scheme["groups"]:

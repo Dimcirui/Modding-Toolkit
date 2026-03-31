@@ -46,7 +46,7 @@ _EXPORT_FUNCS = {
 
 def _get_mhws_schemes_dir():
     addon_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    d = os.path.join(addon_dir, "assets", "mhws_armor_sets")
+    d = os.path.join(addon_dir, "assets", "mhws", "armor_sets")
     os.makedirs(d, exist_ok=True)
     return d
 
@@ -123,7 +123,7 @@ def _make_filepath(natives_root, base_path, part_id, armor_id, filetype):
 
 _REFERENCE_FBXSKEL = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-    'assets', 'mhws_bonesystem', 'ch03_000_9000.fbxskel.7',
+    'assets', 'mhws', 'bonesystem', 'ch03_000_9000.fbxskel.7',
 )
 
 # Bones whose head position should be snapped to the named parent bone after

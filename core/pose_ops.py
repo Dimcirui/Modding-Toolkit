@@ -25,7 +25,7 @@ from .bone_utils import get_import_presets_callback
 
 def _get_pose_presets_dir():
     addon_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    d = os.path.join(addon_dir, "assets", "pose_presets")
+    d = os.path.join(addon_dir, "assets", "presets", "pose")
     os.makedirs(d, exist_ok=True)
     return d
 

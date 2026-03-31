@@ -6,7 +6,7 @@ import shutil
 
 def _get_export_schemes_dir():
     addon_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    d = os.path.join(addon_dir, "assets", "re4_export_schemes")
+    d = os.path.join(addon_dir, "assets", "export_schemes", "re4")
     os.makedirs(d, exist_ok=True)
     return d
 
@@ -200,12 +200,13 @@ class RE4_OT_BatchExport(bpy.types.Operator):
                 skip_count += 1
 
         # --- FBXSKEL ---
-        fbxskel_path = scheme.get("fbxskel", "")
-        if fbxskel_path:
+        fbxskel_raw = scheme.get("fbxskel", "")
+        fbxskel_paths = ([fbxskel_raw] if isinstance(fbxskel_raw, str) else list(fbxskel_raw))
+        fbxskel_paths = [p for p in fbxskel_paths if p]
+        if fbxskel_paths:
             fbx_enabled = _get_enabled(scene, character_id, "_fbxskel", "fbxskel")
             fbx_arm = _get_binding(scene, character_id, "_fbxskel", "fbxskel")
             if fbx_enabled and fbx_arm:
-                full = os.path.join(natives_root, "natives", "STM", fbxskel_path.replace("/", os.sep))
                 if settings.re4_use_fakebone:
                     from .operators import do_fakebone, _get_native_skeletons_dir
                     native_file = scheme.get("native_skeleton", "")
@@ -235,7 +236,9 @@ class RE4_OT_BatchExport(bpy.types.Operator):
                                 user_arm_obj.select_set(False)
                                 try:
                                     do_fakebone(context, arm_copy, native_path)
-                                    try_export(_do_export_fbxskel, full, arm_copy.name, "FBXSKEL (假头法)")
+                                    for fbxskel_path in fbxskel_paths:
+                                        full = os.path.join(natives_root, "natives", "STM", fbxskel_path.replace("/", os.sep))
+                                        try_export(_do_export_fbxskel, full, arm_copy.name, f"FBXSKEL (假头法) {os.path.basename(fbxskel_path)}")
                                 except Exception as err:
                                     print(f"[RE4] FAILED FBXSKEL (假头法): {err}")
                                     fail_count += 1
@@ -247,7 +250,9 @@ class RE4_OT_BatchExport(bpy.types.Operator):
                                         if o.name in bpy.data.objects:
                                             o.select_set(True)
                 else:
-                    try_export(_do_export_fbxskel, full, fbx_arm, "FBXSKEL")
+                    for fbxskel_path in fbxskel_paths:
+                        full = os.path.join(natives_root, "natives", "STM", fbxskel_path.replace("/", os.sep))
+                        try_export(_do_export_fbxskel, full, fbx_arm, f"FBXSKEL {os.path.basename(fbxskel_path)}")
 
         # --- Per entry ---
         for group in scheme["groups"]:

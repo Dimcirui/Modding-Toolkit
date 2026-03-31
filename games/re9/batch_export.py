@@ -6,7 +6,7 @@ import shutil
 
 def _get_export_schemes_dir():
     addon_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    d = os.path.join(addon_dir, "assets", "export_schemes")
+    d = os.path.join(addon_dir, "assets", "export_schemes", "re9")
     os.makedirs(d, exist_ok=True)
     return d
 

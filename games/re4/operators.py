@@ -13,7 +13,7 @@ _FINGER_INITIALS = {
 
 def _get_native_skeletons_dir():
     addon_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    return os.path.join(addon_dir, 'assets', 're4_native_skeletons')
+    return os.path.join(addon_dir, 'assets', 'native_skeletons', 're4')
 
 
 _native_skel_cache = []
@@ -31,7 +31,7 @@ def get_native_skeletons_callback(self, context):
                 name = f.split('.skeleton.')[0]
                 _native_skel_cache.append((f, name, ""))
     if not _native_skel_cache:
-        _native_skel_cache.append(('NONE', "无可用骨架 (添加至 assets/re4_native_skeletons/)", ""))
+        _native_skel_cache.append(('NONE', "无可用骨架 (添加至 assets/native_skeletons/re4/)", ""))
     return _native_skel_cache
 
 
@@ -364,7 +364,7 @@ class RE4_OT_FakeBone_OneClick(bpy.types.Operator):
             return {'CANCELLED'}
 
         if not self.native_skeleton or self.native_skeleton == 'NONE':
-            self.report({'ERROR'}, "请选择原生骨架（添加文件到 assets/re4_native_skeletons/）")
+            self.report({'ERROR'}, "请选择原生骨架（添加文件到 assets/native_skeletons/re4/）")
             return {'CANCELLED'}
 
         native_path = os.path.join(_get_native_skeletons_dir(), self.native_skeleton)

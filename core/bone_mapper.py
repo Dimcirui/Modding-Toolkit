@@ -51,7 +51,7 @@ class BoneMapManager:
         # 根目录是 core 的上一级
         root_dir = os.path.dirname(current_dir)
         
-        sub_folder = "import_presets" if is_import_x else "bone_presets"
+        sub_folder = os.path.join("presets", "import" if is_import_x else "bone")
         return os.path.join(root_dir, "assets", sub_folder, filename)
 
     def load_preset(self, filename, is_import_x=False):
