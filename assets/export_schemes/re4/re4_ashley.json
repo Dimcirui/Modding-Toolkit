@@ -1,0 +1,140 @@
+{
+  "character": "Ashley (RE4)",
+  "character_id": "re4_ashley",
+  "base_path": "STM/_Chainsaw/Character/ch/cha1",
+  "fbxskel": [
+    "_Chainsaw/Character/ch/cha1/cha1.fbxskel.5",
+    "_Chainsaw/Character/ch/cha1/cha1z0.fbxskel.5"
+  ],
+  "native_skeleton": "ashley.fbxskel.5",
+  "groups": [
+    {
+      "name": "身体(00)",
+      "entries": [
+        {
+          "id": "cha100_00",
+          "mesh": "cha100/00/cha100_00.mesh.221108797",
+          "mdf2": [
+            "cha100/00/cha100_00.mdf2.32",
+            "cha100/00/cha100_00b.mdf2.32",
+            "cha100/00/cha100_00c.mdf2.32",
+            "cha100/00/cha100_00d.mdf2.32"
+          ],
+          "chain": "cha100_00.chain.53",
+          "simplified": "user",
+          "note": "cha100 身体"
+        },
+        {
+          "id": "cha101_00",
+          "mesh": "cha101/00/cha101_00.mesh.221108797",
+          "mdf2": [
+            "cha101/00/cha101_00.mdf2.32",
+            "cha101/00/cha101_00b.mdf2.32",
+            "cha101/00/cha101_00c.mdf2.32"
+          ],
+          "chain": "cha101_00.chain.53",
+          "simplified": "user",
+          "note": "cha101 身体"
+        },
+        {
+          "id": "cha100_01",
+          "mesh": "cha100/01/cha100_01.mesh.221108797",
+          "simplified": "empty",
+          "blank_mesh": "special_empty_3.mesh.221108797",
+          "note": "特殊空文件"
+        },
+        {
+          "id": "cha100_02",
+          "mesh": "cha100/02/cha100_02.mesh.221108797",
+          "simplified": "empty",
+          "blank_mesh": "special_empty_3.mesh.221108797",
+          "note": "特殊空文件"
+        },
+        {
+          "id": "cha100_21",
+          "mesh": "cha100/21/cha100_21.mesh.221108797",
+          "simplified": "empty",
+          "blank_mesh": "special_empty_3.mesh.221108797",
+          "note": "特殊空文件"
+        },
+        {
+          "id": "cha100_50",
+          "mesh": "cha100/50/cha100_50.mesh.221108797",
+          "simplified": "empty",
+          "blank_mesh": "special_empty_3.mesh.221108797",
+          "note": "特殊空文件"
+        },
+        {
+          "id": "cha101_01",
+          "mesh": "cha101/01/cha101_01.mesh.221108797",
+          "simplified": "empty",
+          "blank_mesh": "special_empty_3.mesh.221108797",
+          "note": "特殊空文件"
+        },
+        {
+          "id": "cha101_50",
+          "mesh": "cha101/50/cha101_50.mesh.221108797",
+          "simplified": "empty",
+          "blank_mesh": "special_empty_3.mesh.221108797",
+          "note": "特殊空文件"
+        }
+      ]
+    },
+    {
+      "name": "头部(10)",
+      "entries": [
+        {
+          "id": "cha100_10",
+          "mesh": "cha100/10/cha100_10.mesh.221108797",
+          "mdf2": [
+            "cha100/10/cha100_10.mdf2.32",
+            "cha100/10/cha100_10b.mdf2.32",
+            "cha100/10/cha100_10c.mdf2.32",
+            "cha100/10/cha100_10d.mdf2.32"
+          ],
+          "simplified": "user",
+          "note": "头部"
+        },
+        {
+          "id": "cha100_11_faceblend",
+          "mdf2": [
+            "cha100/11/cha100_11_faceblend.mdf2.32"
+          ],
+          "simplified": "user",
+          "note": "FaceBlend mdf2"
+        },
+        {
+          "id": "cha100_92",
+          "mdf2": [
+            "cha100/92/cha100_92.mdf2.32"
+          ],
+          "simplified": "user",
+          "note": "cha100_92 mdf2"
+        },
+        {
+          "id": "cha100_93",
+          "mdf2": [
+            "cha100/93/cha100_93.mdf2.32"
+          ],
+          "simplified": "user",
+          "note": "cha100_93 mdf2"
+        }
+      ]
+    },
+    {
+      "name": "头发(20)",
+      "entries": [
+        {
+          "id": "cha100_20",
+          "mesh": "cha100/20/cha100_20.mesh.221108797",
+          "mdf2": [
+            "cha100/20/cha100_20.mdf2.32"
+          ],
+          "chain": "cha100_20.chain.53",
+          "simplified": "user",
+          "note": "头发"
+        }
+      ]
+    }
+  ]
+}

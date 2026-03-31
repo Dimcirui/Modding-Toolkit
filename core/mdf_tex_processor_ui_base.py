@@ -103,14 +103,18 @@ class MdfTexDialogBase(bpy.types.Operator):
             if not mat.expanded:
                 continue
 
-            # PBR inputs section
-            pbr_header = box.row(align=False)
+            # PBR inputs section — indented under material header
+            pbr_split = box.split(factor=0.03)
+            pbr_split.column()
+            pbr_col = pbr_split.column()
+
+            pbr_header = pbr_col.row(align=False)
             pbr_icon = 'TRIA_DOWN' if mat.pbr_expanded else 'TRIA_RIGHT'
             pbr_header.prop(mat, "pbr_expanded", text="", icon=pbr_icon, emboss=False)
             pbr_header.label(text="PBR Input", icon='NODE_COMPOSITING')
 
             if mat.pbr_expanded:
-                pbr_box = box.box()
+                pbr_box = pbr_col.box()
                 for pt in PBR_TYPES:
                     row = pbr_box.row(align=True)
                     row.label(text=PBR_TYPE_LABELS[pt])
@@ -148,7 +152,7 @@ class MdfTexDialogBase(bpy.types.Operator):
                             if s.texture_type not in cls._common_slot_types]
 
             if common_slots:
-                box.label(text="Common Textures", icon='TEXTURE')
+                box.label(text="Common Textures", icon='RENDERLAYERS')
                 self._draw_slots(box, common_slots, mi)
 
             if other_slots:
@@ -156,7 +160,7 @@ class MdfTexDialogBase(bpy.types.Operator):
                 other_icon = 'TRIA_DOWN' if mat.other_expanded else 'TRIA_RIGHT'
                 other_header.prop(mat, "other_expanded", text="",
                                   icon=other_icon, emboss=False)
-                other_header.label(text="Other Textures", icon='TEXTURE_DATA')
+                other_header.label(text="Other Textures", icon='RENDERLAYERS')
                 if mat.other_expanded:
                     self._draw_slots(box, other_slots, mi)
 

@@ -3,6 +3,8 @@ import json
 import os
 import re
 import shutil
+import subprocess
+import sys
 from . import ui_config, bone_mapper
 from .bone_mapper import BoneMapManager, STANDARD_BONE_NAMES
 
@@ -167,7 +169,7 @@ def _get_addon_dir():
     return os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 def _get_preset_dir(is_x):
-    subdir = "import_presets" if is_x else "bone_presets"
+    subdir = os.path.join("presets", "import" if is_x else "bone")
     return os.path.join(_get_addon_dir(), "assets", subdir)
 
 def _get_selected_filename(context, is_x):
@@ -307,6 +309,30 @@ class MODDER_OT_DeleteXPreset(bpy.types.Operator):
 
         return {'FINISHED'}
 
+# === 打开预设文件夹 ===
+class MODDER_OT_OpenPresetFolder(bpy.types.Operator):
+    """在文件管理器中打开当前预设所在的文件夹"""
+    bl_idname = "modder.open_preset_folder"
+    bl_label = "打开预设文件夹"
+
+    def execute(self, context):
+        editor = context.scene.mhw_preset_editor
+        is_x = editor.edit_mode == 'X'
+        folder = _get_preset_dir(is_x)
+
+        if not os.path.isdir(folder):
+            self.report({'ERROR'}, f"文件夹不存在: {folder}")
+            return {'CANCELLED'}
+
+        if sys.platform == 'win32':
+            os.startfile(folder)
+        elif sys.platform == 'darwin':
+            subprocess.Popen(['open', folder])
+        else:
+            subprocess.Popen(['xdg-open', folder])
+
+        return {'FINISHED'}
+
 # === 转换预设（X→Y 或 Y→X，复制方式）===
 class MODDER_OT_ConvertPreset(bpy.types.Operator):
     """复制当前预设到另一类型目录（X→Y 或 Y→X），文件名加转换标记"""
@@ -366,6 +392,7 @@ classes = [
     MODDER_OT_SaveXPreset,
     MODDER_OT_LoadXPreset,
     MODDER_OT_DeleteXPreset,
+    MODDER_OT_OpenPresetFolder,
     MODDER_OT_ConvertPreset,
 ]
 

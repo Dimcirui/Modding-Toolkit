@@ -182,7 +182,7 @@ def _get_preset_category(filename):
 def get_preset_items(subdir):
     """
     扫描指定子目录下的所有 .json 文件，按分类分组并插入分隔标题。
-    subdir: "import_presets" 或 "bone_presets"
+    subdir: "presets/import" 或 "presets/bone"
     """
     current_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.dirname(current_dir)
@@ -217,10 +217,10 @@ def get_preset_items(subdir):
 
 def get_import_presets_callback(self, context):
     _import_preset_cache.clear()
-    _import_preset_cache.extend(get_preset_items("import_presets"))
+    _import_preset_cache.extend(get_preset_items("presets/import"))
     return _import_preset_cache
 
 def get_target_presets_callback(self, context):
     _target_preset_cache.clear()
-    _target_preset_cache.extend(get_preset_items("bone_presets"))
+    _target_preset_cache.extend(get_preset_items("presets/bone"))
     return _target_preset_cache

@@ -44,6 +44,10 @@ class MHW_PT_PresetEditor(bpy.types.Panel):
         row.operator("modder.load_x_preset", text="读取/编辑", icon='IMPORT')
         row.operator("modder.delete_x_preset", text="", icon='TRASH')
 
+        # 打开文件夹按钮
+        row = box.row()
+        row.operator("modder.open_preset_folder", text="打开预设文件夹", icon='FILE_FOLDER')
+
         # 转换按钮
         row = box.row()
         if is_x:

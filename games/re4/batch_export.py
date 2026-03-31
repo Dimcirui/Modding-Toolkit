@@ -6,7 +6,7 @@ import shutil
 
 def _get_export_schemes_dir():
     addon_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    d = os.path.join(addon_dir, "assets", "export_schemes", "re9")
+    d = os.path.join(addon_dir, "assets", "export_schemes", "re4")
     os.makedirs(d, exist_ok=True)
     return d
 
@@ -36,7 +36,7 @@ def _load_scheme(filename):
 
 
 def _make_key(character_id, entry_id, suffix):
-    key = f"re9ex_{character_id}_{entry_id}_{suffix}"
+    key = f"re4ex_{character_id}_{entry_id}_{suffix}"
     return key.replace(" ", "_").replace("(", "").replace(")", "")
 
 
@@ -49,7 +49,7 @@ def _set_binding(scene, character_id, entry_id, suffix, value):
 
 
 def _make_en_key(character_id, entry_id, suffix):
-    key = f"re9en_{character_id}_{entry_id}_{suffix}"
+    key = f"re4en_{character_id}_{entry_id}_{suffix}"
     return key.replace(" ", "_").replace("(", "").replace(")", "")
 
 
@@ -63,7 +63,7 @@ def _set_enabled(scene, character_id, entry_id, suffix, value):
 
 # Simplified mode keys
 def _get_simplified_group_key(character_id, group_name, suffix):
-    key = f"re9sg_{character_id}_{group_name}_{suffix}"
+    key = f"re4sg_{character_id}_{group_name}_{suffix}"
     return key.replace(" ", "_").replace("(", "").replace(")", "").replace("-", "_")
 
 
@@ -76,7 +76,7 @@ def _set_simplified_group_binding(scene, character_id, group_name, suffix, value
 
 
 def _get_simplified_empty_key(character_id, suffix):
-    return f"re9se_{character_id}_{suffix}"
+    return f"re4se_{character_id}_{suffix}"
 
 
 def _get_simplified_empty_binding(scene, character_id, suffix):
@@ -106,32 +106,26 @@ def _do_export_mdf2(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     bpy.ops.re_mdf.exportfile(filepath=filepath, targetCollection=collection_name)
 
-def _do_export_sfur(filepath, collection_name):
+def _do_export_chain(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    bpy.ops.re_sfur.exportfile(filepath=filepath, targetCollection=collection_name)
+    bpy.ops.re_chain.exportfile(filepath=filepath, targetCollection=collection_name)
 
 def _do_export_fbxskel(filepath, armature_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     bpy.ops.re_fbxskel.exportfile(filepath=filepath, targetArmature=armature_name)
 
-def _do_export_chain2(filepath, collection_name):
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    bpy.ops.re_chain2.exportfile(filepath=filepath, targetCollection=collection_name)
-
-def _do_export_clsp(filepath, collection_name):
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    bpy.ops.re_clsp.exportfile(filepath=filepath, targetCollection=collection_name)
-
-def _get_blank_path(filetype):
-    """Return the path to the built-in blank file for the given filetype."""
+def _get_blank_path(filetype, filename=None):
+    """Return the path to a blank file in blank_files/re4/.
+    If filename is given, use that directly; otherwise fall back to blank.<filetype>."""
     addon_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    return os.path.join(addon_dir, "assets", "blank_files", "re9", f"blank.{filetype}")
+    name = filename if filename else f"blank.{filetype}"
+    return os.path.join(addon_dir, "assets", "blank_files", "re4", name)
 
 
-class RE9_OT_BatchExport(bpy.types.Operator):
-    """RE9 batch exporter"""
-    bl_idname = "re9.batch_export"
-    bl_label = "RE9 Batch Export"
+class RE4_OT_BatchExport(bpy.types.Operator):
+    """RE4 batch exporter"""
+    bl_idname = "re4.batch_export"
+    bl_label = "RE4 Batch Export"
     bl_options = {'REGISTER'}
 
     def execute(self, context):
@@ -142,12 +136,12 @@ class RE9_OT_BatchExport(bpy.types.Operator):
             self.report({'ERROR'}, "RE Mesh Editor not installed")
             return {'CANCELLED'}
 
-        natives_root = scene.get("re9_natives_root", "")
+        natives_root = scene.get("re4_natives_root", "")
         if not natives_root or not os.path.isdir(natives_root):
             self.report({'ERROR'}, "Set natives root directory first")
             return {'CANCELLED'}
 
-        scheme_file = settings.re9_export_scheme
+        scheme_file = settings.re4_export_scheme
         if not scheme_file or scheme_file == 'NONE':
             self.report({'ERROR'}, "No export scheme selected")
             return {'CANCELLED'}
@@ -159,8 +153,8 @@ class RE9_OT_BatchExport(bpy.types.Operator):
 
         character_id = scheme["character_id"]
         base_path = scheme["base_path"].replace("\\", "/")
-        use_simplified = scene.get("re9_use_simplified", False)
-        use_blank = settings.re9_use_blank_export
+        use_simplified = scene.get("re4_use_simplified", True)
+        use_blank = settings.re4_use_blank_export
 
         export_count = 0
         fail_count = 0
@@ -175,95 +169,132 @@ class RE9_OT_BatchExport(bpy.types.Operator):
             if not target or target == "NONE":
                 skip_count += 1
                 return
-            # Check target exists
             if func == _do_export_fbxskel:
                 if target not in bpy.data.objects or bpy.data.objects[target].type != 'ARMATURE':
-                    print(f"[RE9] SKIP {label}: armature '{target}' not found")
+                    print(f"[RE4] SKIP {label}: armature '{target}' not found")
                     skip_count += 1
                     return
             else:
                 if target not in bpy.data.collections:
-                    print(f"[RE9] SKIP {label}: collection '{target}' not found")
+                    print(f"[RE4] SKIP {label}: collection '{target}' not found")
                     skip_count += 1
                     return
             try:
-                print(f"[RE9] {label}: {target} -> {os.path.basename(filepath)}")
+                print(f"[RE4] {label}: {target} -> {os.path.basename(filepath)}")
                 func(filepath, target)
                 export_count += 1
             except Exception as err:
-                print(f"[RE9] FAILED {label}: {err}")
+                print(f"[RE4] FAILED {label}: {err}")
                 fail_count += 1
 
-        def try_blank(filetype, filepath, label):
+        def try_blank(filetype, filepath, label, filename=None):
             nonlocal export_count, skip_count
-            blank_src = _get_blank_path(filetype)
+            blank_src = _get_blank_path(filetype, filename)
             if os.path.isfile(blank_src):
                 os.makedirs(os.path.dirname(filepath), exist_ok=True)
                 shutil.copy2(blank_src, filepath)
-                print(f"[RE9] {label}: BLANK -> {os.path.basename(filepath)}")
+                print(f"[RE4] {label}: BLANK -> {os.path.basename(filepath)}")
                 export_count += 1
             else:
-                print(f"[RE9] SKIP blank (file not found): {blank_src}")
+                print(f"[RE4] SKIP blank (file not found): {blank_src}")
                 skip_count += 1
 
         # --- FBXSKEL ---
-        fbxskel_path = scheme.get("fbxskel", "")
-        if fbxskel_path:
+        fbxskel_raw = scheme.get("fbxskel", "")
+        fbxskel_paths = ([fbxskel_raw] if isinstance(fbxskel_raw, str) else list(fbxskel_raw))
+        fbxskel_paths = [p for p in fbxskel_paths if p]
+        if fbxskel_paths:
             fbx_enabled = _get_enabled(scene, character_id, "_fbxskel", "fbxskel")
             fbx_arm = _get_binding(scene, character_id, "_fbxskel", "fbxskel")
             if fbx_enabled and fbx_arm:
-                full = os.path.join(natives_root, "natives", "stm", "character", fbxskel_path.replace("/", os.sep))
-                try_export(_do_export_fbxskel, full, fbx_arm, "FBXSKEL")
+                if settings.re4_use_fakebone:
+                    from .operators import do_fakebone, _get_native_skeletons_dir
+                    native_file = scheme.get("native_skeleton", "")
+                    if not native_file:
+                        self.report({'WARNING'}, "假头法: 未选择原生骨架，跳过 FBXSKEL")
+                        fail_count += 1
+                    else:
+                        native_path = os.path.join(_get_native_skeletons_dir(), native_file)
+                        if not os.path.isfile(native_path):
+                            self.report({'WARNING'}, f"假头法: 找不到原生骨架文件 {native_file}")
+                            fail_count += 1
+                        else:
+                            user_arm_obj = bpy.data.objects.get(fbx_arm)
+                            if user_arm_obj is None:
+                                self.report({'WARNING'}, f"假头法: 骨架对象 '{fbx_arm}' 不存在")
+                                fail_count += 1
+                            else:
+                                # 在副本上操作，不修改原骨架
+                                prev_active = context.view_layer.objects.active
+                                prev_sel = [o for o in context.selected_objects]
+                                for o in prev_sel:
+                                    o.select_set(False)
+                                context.view_layer.objects.active = user_arm_obj
+                                user_arm_obj.select_set(True)
+                                bpy.ops.object.duplicate()
+                                arm_copy = context.active_object
+                                user_arm_obj.select_set(False)
+                                try:
+                                    do_fakebone(context, arm_copy, native_path)
+                                    for fbxskel_path in fbxskel_paths:
+                                        full = os.path.join(natives_root, "natives", "STM", fbxskel_path.replace("/", os.sep))
+                                        try_export(_do_export_fbxskel, full, arm_copy.name, f"FBXSKEL (假头法) {os.path.basename(fbxskel_path)}")
+                                except Exception as err:
+                                    print(f"[RE4] FAILED FBXSKEL (假头法): {err}")
+                                    fail_count += 1
+                                finally:
+                                    if arm_copy.name in bpy.data.objects:
+                                        bpy.data.objects.remove(arm_copy, do_unlink=True)
+                                    context.view_layer.objects.active = prev_active
+                                    for o in prev_sel:
+                                        if o.name in bpy.data.objects:
+                                            o.select_set(True)
+                else:
+                    for fbxskel_path in fbxskel_paths:
+                        full = os.path.join(natives_root, "natives", "STM", fbxskel_path.replace("/", os.sep))
+                        try_export(_do_export_fbxskel, full, fbx_arm, f"FBXSKEL {os.path.basename(fbxskel_path)}")
 
         # --- Per entry ---
         for group in scheme["groups"]:
             group_name = group["name"]
-            grp_bp = group.get("base_path")  # Optional per-group base_path override
+            grp_bp = group.get("base_path")
             for entry in group["entries"]:
                 entry_id = entry["id"]
                 simp = entry.get("simplified", "user")
-                simp_sfur = entry.get("simplified_sfur", "")
 
                 if use_simplified:
-                    # Determine mesh/mdf2 collection based on simplified rule
                     if simp == "skip":
                         continue
                     elif simp == "user":
-                        mesh_col = _get_simplified_group_binding(scene, character_id, group_name, "mesh")
-                        mdf2_col = _get_simplified_group_binding(scene, character_id, group_name, "mdf2")
+                        mesh_col  = _get_simplified_group_binding(scene, character_id, group_name, "mesh")
+                        mdf2_col  = _get_simplified_group_binding(scene, character_id, group_name, "mdf2")
+                        chain_col = _get_simplified_group_binding(scene, character_id, group_name, "chain")
                     elif simp == "empty":
                         if use_blank:
-                            # Use built-in blank files directly for empty entries
                             if entry.get("mesh"):
-                                try_blank("mesh", make_full(entry["mesh"], grp_bp), f"MESH {entry_id}")
+                                try_blank("mesh", make_full(entry["mesh"], grp_bp), f"MESH {entry_id}",
+                                          entry.get("blank_mesh"))
                             if entry.get("mdf2"):
                                 for m in entry["mdf2"]:
-                                    try_blank("mdf2", make_full(m, grp_bp), f"MDF2 {entry_id}")
-                            if entry.get("sfur"):
-                                try_blank("sfur", make_full(entry["sfur"], grp_bp), f"SFUR {entry_id}")
+                                    try_blank("mdf2", make_full(m, grp_bp), f"MDF2 {entry_id}",
+                                              entry.get("blank_mdf2"))
+                            if entry.get("chain"):
+                                try_blank("chain", make_full(entry["chain"], grp_bp), f"CHAIN {entry_id}",
+                                          entry.get("blank_chain"))
                             continue
                         else:
-                            mesh_col = _get_simplified_empty_binding(scene, character_id, "mesh")
-                            mdf2_col = _get_simplified_empty_binding(scene, character_id, "mdf2")
+                            mesh_col  = _get_simplified_empty_binding(scene, character_id, "mesh")
+                            mdf2_col  = _get_simplified_empty_binding(scene, character_id, "mdf2")
+                            chain_col = _get_simplified_empty_binding(scene, character_id, "chain")
                     else:
                         continue
 
-                    # sfur for non-empty entries
-                    sfur_col = ""
-                    if simp_sfur == "empty" and entry.get("sfur"):
-                        if use_blank:
-                            try_blank("sfur", make_full(entry["sfur"], grp_bp), f"SFUR {entry_id}")
-                        else:
-                            sfur_col = _get_simplified_empty_binding(scene, character_id, "sfur")
-
-                    # Export mesh
                     if entry.get("mesh"):
                         if mesh_col:
                             try_export(_do_export_mesh, make_full(entry["mesh"], grp_bp), mesh_col, f"MESH {entry_id}")
                         elif use_blank:
                             try_blank("mesh", make_full(entry["mesh"], grp_bp), f"MESH {entry_id}")
 
-                    # Export mdf2s
                     if entry.get("mdf2"):
                         if mdf2_col:
                             for m in entry["mdf2"]:
@@ -272,13 +303,15 @@ class RE9_OT_BatchExport(bpy.types.Operator):
                             for m in entry["mdf2"]:
                                 try_blank("mdf2", make_full(m, grp_bp), f"MDF2 {entry_id}")
 
-                    # Export sfur (collection-bound; blank case handled above)
-                    if entry.get("sfur") and sfur_col:
-                        try_export(_do_export_sfur, make_full(entry["sfur"], grp_bp), sfur_col, f"SFUR {entry_id}")
+                    if entry.get("chain"):
+                        if chain_col:
+                            try_export(_do_export_chain, make_full(entry["chain"], grp_bp), chain_col, f"CHAIN {entry_id}")
+                        elif use_blank:
+                            try_blank("chain", make_full(entry["chain"], grp_bp), f"CHAIN {entry_id}")
 
                 else:
-                    # Normal mode: use per-entry bindings
-                    mesh_en = _get_enabled(scene, character_id, entry_id, "mesh")
+                    # Normal mode: per-entry bindings
+                    mesh_en  = _get_enabled(scene, character_id, entry_id, "mesh")
                     mesh_col = _get_binding(scene, character_id, entry_id, "mesh")
                     if entry.get("mesh"):
                         if mesh_en and mesh_col:
@@ -286,7 +319,7 @@ class RE9_OT_BatchExport(bpy.types.Operator):
                         elif mesh_en and use_blank:
                             try_blank("mesh", make_full(entry["mesh"], grp_bp), f"MESH {entry_id}")
 
-                    mdf2_en = _get_enabled(scene, character_id, entry_id, "mdf2")
+                    mdf2_en  = _get_enabled(scene, character_id, entry_id, "mdf2")
                     mdf2_col = _get_binding(scene, character_id, entry_id, "mdf2")
                     if entry.get("mdf2"):
                         if mdf2_en and mdf2_col:
@@ -296,13 +329,13 @@ class RE9_OT_BatchExport(bpy.types.Operator):
                             for m in entry["mdf2"]:
                                 try_blank("mdf2", make_full(m, grp_bp), f"MDF2 {entry_id}")
 
-                    sfur_en = _get_enabled(scene, character_id, entry_id, "sfur")
-                    sfur_col = _get_binding(scene, character_id, entry_id, "sfur")
-                    if entry.get("sfur"):
-                        if sfur_en and sfur_col:
-                            try_export(_do_export_sfur, make_full(entry["sfur"], grp_bp), sfur_col, f"SFUR {entry_id}")
-                        elif sfur_en and use_blank:
-                            try_blank("sfur", make_full(entry["sfur"], grp_bp), f"SFUR {entry_id}")
+                    chain_en  = _get_enabled(scene, character_id, entry_id, "chain")
+                    chain_col = _get_binding(scene, character_id, entry_id, "chain")
+                    if entry.get("chain"):
+                        if chain_en and chain_col:
+                            try_export(_do_export_chain, make_full(entry["chain"], grp_bp), chain_col, f"CHAIN {entry_id}")
+                        elif chain_en and use_blank:
+                            try_blank("chain", make_full(entry["chain"], grp_bp), f"CHAIN {entry_id}")
 
         if fail_count > 0:
             self.report({'WARNING'}, f"Done: {export_count} exported, {fail_count} failed, {skip_count} skipped")
@@ -311,9 +344,9 @@ class RE9_OT_BatchExport(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class RE9_OT_SetNativesRoot(bpy.types.Operator):
-    """选择 RE9 Mod 根目录（natives 的上级）。若选中的文件夹本身名为 natives，自动取其上级"""
-    bl_idname = "re9.set_natives_root"
+class RE4_OT_SetNativesRoot(bpy.types.Operator):
+    """选择 RE4 Mod 根目录（natives 的上级）。若选中的文件夹本身名为 natives，自动取其上级"""
+    bl_idname = "re4.set_natives_root"
     bl_label = "Set Natives Root"
     bl_options = {'REGISTER'}
     directory: bpy.props.StringProperty(subtype='DIR_PATH')
@@ -324,14 +357,14 @@ class RE9_OT_SetNativesRoot(bpy.types.Operator):
         path = self.directory.rstrip("/\\")
         if os.path.basename(path).lower() == "natives":
             path = os.path.dirname(path)
-        context.scene["re9_natives_root"] = path
-        self.report({'INFO'}, f"RE9 Mod root: {path}")
+        context.scene["re4_natives_root"] = path
+        self.report({'INFO'}, f"RE4 Mod root: {path}")
         return {'FINISHED'}
 
 
 classes = [
-    RE9_OT_BatchExport,
-    RE9_OT_SetNativesRoot,
+    RE4_OT_BatchExport,
+    RE4_OT_SetNativesRoot,
 ]
 
 def register():

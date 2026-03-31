@@ -5,40 +5,32 @@ def merge_weights_and_delete_bones(armature_obj, bone_pairs):
     bone_pairs: List of (keep_bone_name, delete_bone_name)
     """
     # 1. 找到受该骨架影响的所有网格
-    mesh_objects = [o for o in bpy.data.objects 
-                   if o.type == 'MESH' and 
+    mesh_objects = [o for o in bpy.data.objects
+                   if o.type == 'MESH' and
                    any(m.type == 'ARMATURE' and m.object == armature_obj for m in o.modifiers)]
-    
-    # 2. 遍历网格处理权重
+
+    # 2. 遍历网格处理权重（直接顶点遍历，确保只在 delete 组的顶点也能合并进 keep 组）
     for obj in mesh_objects:
-        # 激活物体以确保修改器操作正常
-        bpy.context.view_layer.objects.active = obj
         vg = obj.vertex_groups
-        
+
         for keep, delete in bone_pairs:
-            # 检查两个组是否都存在于该网格
-            if keep not in vg or delete not in vg:
+            keep_vg = vg.get(keep)
+            delete_vg = vg.get(delete)
+            if keep_vg is None or delete_vg is None:
                 continue
-            
-            # 添加混合修改器
-            mod = obj.modifiers.new(name="TempMerge", type='VERTEX_WEIGHT_MIX')
-            mod.vertex_group_a = keep
-            mod.vertex_group_b = delete
-            mod.mix_mode = 'ADD'
-            mod.mix_set = 'ALL'
-            
-            # 应用修改器
-            try:
-                bpy.ops.object.modifier_apply(modifier=mod.name)
-            except Exception as e:
-                print(f"Warning: Failed to apply modifier on {obj.name}: {e}")
-                # 如果应用失败，移除修改器以防堆积
-                if mod.name in obj.modifiers:
-                    obj.modifiers.remove(mod)
-                continue
-            
-            if delete in vg:
-                vg.remove(vg[delete])
+
+            for vert in obj.data.vertices:
+                try:
+                    del_w = delete_vg.weight(vert.index)
+                except RuntimeError:
+                    continue
+                try:
+                    keep_w = keep_vg.weight(vert.index)
+                except RuntimeError:
+                    keep_w = 0.0
+                keep_vg.add([vert.index], min(keep_w + del_w, 1.0), 'REPLACE')
+
+            vg.remove(delete_vg)
             
     # 3. 删除骨骼
     bpy.context.view_layer.objects.active = armature_obj

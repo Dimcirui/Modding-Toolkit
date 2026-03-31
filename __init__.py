@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Modding Toolkit",
     "author": "Dimcirui",
-    "version": (2, 4, 0),
+    "version": (2, 4, 1),
     "blender": (3, 0, 0),
     "location": "View3D > Sidebar > MOD Toolkit",
     "description": "Modding Toolkit for Capcom's games",
@@ -14,6 +14,7 @@ from bpy.types import AddonPreferences
 
 from . import addon_updater_ops 
 
+from .core import migrate
 from .core import standard_ops
 from .core import pose_ops
 from .core import editor_props
@@ -63,7 +64,8 @@ modules = [
 
 def register():
     addon_updater_ops.register(bl_info)
-    
+    migrate.run()
+
     bpy.utils.register_class(MT_Preferences)
 
     for mod in modules:

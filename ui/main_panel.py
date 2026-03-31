@@ -3,6 +3,7 @@ from ..core import bone_utils, weight_utils, ui_config
 from ..core.bone_utils import get_import_presets_callback, get_target_presets_callback
 from ..core.pose_ops import get_pose_presets_callback
 from ..games.re9.batch_export import get_schemes_callback
+from ..games.re4.batch_export import get_schemes_callback as get_re4_schemes_callback
 from ..games.mhws.batch_export import get_mhws_schemes_callback, get_mhws_armor_callback, MHWS_VARIANTS
 from ..core.bone_mapper import BoneMapManager
 
@@ -126,6 +127,23 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     re9_use_blank_export: bpy.props.BoolProperty(
         name="未选项使用空模型",
         description="导出时对未选择集合的栏位，复制内置空文件代替跳过",
+        default=True,
+    )
+
+    # RE4 batch export
+    re4_export_scheme: bpy.props.EnumProperty(
+        name="Export Scheme",
+        description="Select character export scheme for RE4",
+        items=get_re4_schemes_callback
+    )
+    re4_use_blank_export: bpy.props.BoolProperty(
+        name="未选项使用空模型",
+        description="导出时对未选择集合的栏位，复制内置空文件代替跳过",
+        default=True,
+    )
+    re4_use_fakebone: bpy.props.BoolProperty(
+        name="使用假头法",
+        description="导出 fbxskel 前自动生成身体+手指 End 骨骼（原生骨架由预设 native_skeleton 字段指定）",
         default=False,
     )
 
@@ -493,22 +511,23 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             box.label(text="RE4 Tools", icon='GHOST_ENABLED')
 
             box_fake = box.box()
-            box_fake.label(text="假骨与对齐 (FakeBone)", icon='BONE_DATA')
-            col_fake = box_fake.column(align=True)
-            col_fake.label(text="1. 创建 End 骨骼:")
-            row1 = col_fake.row(align=True)
-            row1.operator("re4.fake_body_process", text="身体", icon='ARMATURE_DATA')
-            row1.operator("re4.fake_fingers_process", text="手指", icon='VIEW_PAN')
-            
-            col_fake.label(text="2. 合并与绑定:")
-            row2 = col_fake.row(align=True)
-            row2.operator("re4.fake_body_merge", text="身体", icon='LINKED')
-            row2.operator("re4.fake_fingers_merge", text="手指", icon='LINKED')
-            
-            col_fake.label(text="3. 骨骼对齐 (含子级):")
-            row3 = col_fake.row(align=True)
-            row3.operator("re4.align_bones_full", text="完全对齐", icon='SNAP_ON')
-            row3.operator("re4.align_bones_pos", text="仅对齐位置", icon='SNAP_VERTEX')
+            box_fake.label(text="假头法 (FakeBone)", icon='BONE_DATA')
+            has_re_fbxskel = hasattr(bpy.ops, 're_fbxskel') and hasattr(bpy.ops.re_fbxskel, 'exportfile')
+            row_fb = box_fake.row()
+            row_fb.enabled = has_re_fbxskel
+            row_fb.operator("re4.fakebone_one_click", text="生成假骨骼", icon='ARMATURE_DATA')
+            if not has_re_fbxskel:
+                box_fake.label(text="需要 RE Mesh Editor!", icon='ERROR')
+
+            col = box.column(align=True)
+            col.separator()
+            has_re_mesh = hasattr(bpy.ops, 're_mesh') and hasattr(bpy.ops.re_mesh, 'exportfile')
+            row = col.row()
+            row.enabled = has_re_mesh
+            row.operator("re4.batch_export_dialog", text="RE4 Batch Exporter", icon='EXPORT')
+            row = col.row()
+            row.enabled = has_re_mesh
+            row.operator("re4.mdf_tex_processor_dialog", text="MDF2 + Tex 处理器", icon='TEXTURE')
 
         if settings.show_re9:
             box = layout.box()

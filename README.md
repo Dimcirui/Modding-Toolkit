@@ -39,7 +39,7 @@ A standalone pose transformation system, independent of the skeleton converter.
 * **RE Engine Matrix Zero**: Reset limb bone rotation matrices for all RE Engine games (MH Wilds, SF6, RE4, etc.).
 * **Pose Transform Recorder**: Record the relative rotation transform between two poses of the same skeleton type, then apply forward (A→B) or inverse (B→A) to any skeleton of that type.
     * Record once, use forever — no need to keep reference armatures in the scene.
-    * JSON-based storage in `assets/pose_presets/`, preserved across addon updates.
+    * JSON-based storage in `assets/presets/pose/`, preserved across addon updates.
 
 ### 3. Visual Preset Editor
 A built-in GUI editor to create custom bone mappings without writing code.
@@ -64,7 +64,7 @@ A built-in GUI editor to create custom bone mappings without writing code.
 * Endfield face vertex group rename (Endfield → MHWilds format).
 * Face weight simplification (merge detailed facial bones to main control bones).
 * **Armor Batch Exporter**: Export mesh / MDF2 / Chain2 / CLSP files for all 5 armor parts (arm, body, helmet, leg, waist) in one click.
-    * Armor sets defined in JSON packs under `assets/mhws_armor_sets/`.
+    * Armor sets defined in JSON packs under `assets/mhws/armor_sets/`.
     * 4 armor variants (male-male, male-female, female-male, female-female) with independent armor IDs and base paths.
     * `parts_mask` support in JSON to skip non-existent parts without manual binding.
     * Collection bindings shared across variants — configure once, export all.
@@ -138,7 +138,7 @@ A built-in GUI editor to create custom bone mappings without writing code.
 * **RE Engine 矩阵归零**: 重置 RE Engine 游戏骨架的肢体旋转矩阵（适用于荒野/街霸6/生化4等）。
 * **姿态变换记录器**: 录制同类型骨架两个姿态之间的相对旋转变换，之后可正向 (A→B) 或逆向 (B→A) 应用到任何同类型骨架。
     * 录制一次，永久使用——不需要每次都在场景中准备参考骨架。
-    * 基于 JSON 文件存储在 `assets/pose_presets/`，插件更新不会删除已有记录。
+    * 基于 JSON 文件存储在 `assets/presets/pose/`，插件更新不会删除已有记录。
 
 ### 3. 可视化预设编辑器
 内置的图形界面编辑器，无需编写代码即可创建自定义骨骼映射。
@@ -163,7 +163,7 @@ A built-in GUI editor to create custom bone mappings without writing code.
 * Endfield 面部顶点组改名（Endfield → MHWilds 格式）。
 * 面部权重简化（将细分面部骨骼权重合并到主控制骨骼）。
 * **装备批量导出器**: 一键导出全部5个部位（手臂/身体/头盔/腿/腰）的 Mesh / MDF2 / Chain2 / CLSP 文件。
-    * 装备集由 `assets/mhws_armor_sets/` 下的 JSON 文件定义。
+    * 装备集由 `assets/mhws/armor_sets/` 下的 JSON 文件定义。
     * 支持4种装备变体（男猎男套/男猎女套/女猎男套/女猎女套），各自独立的 armor_id 和 base_path。
     * JSON 中 `parts_mask` 支持跳过不存在的部位，无需手动留空绑定。
     * 集合绑定在所有变体间共享——配置一次，所有变体通用。
