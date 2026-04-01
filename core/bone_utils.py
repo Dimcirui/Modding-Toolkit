@@ -72,7 +72,7 @@ def mirror_bone_transform(edit_bones, bone_names):
     # 同步 Roll (通常镜像需要取反或保持，视骨骼轴向而定，这里简单复制处理，视情况可调整)
     mirror.roll = -ref.roll 
     
-    return True, ("已将 %s 对齐到 %s", mirror.name, ref.name)
+    return True, "已将 %s 对齐到 %s", mirror.name, ref.name
 
 def propagate_movement(bone, offset_vec):
     """递归移动子骨骼"""
