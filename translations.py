@@ -271,5 +271,54 @@ TRANSLATIONS = {
         # EditorSettings — edit_mode enum item descriptions
         ("*", "编辑来源游戏的骨骼映射预设"): "Edit the bone mapping preset for the source game",
         ("*", "编辑目标游戏的骨骼映射预设"): "Edit the bone mapping preset for the target game",
+
+        # === core/editor_ops.py ===
+
+        # Operator bl_label strings
+        ("*", "初始化/刷新列表"): "Initialize / Refresh List",
+        ("*", "拾取"): "Pick",
+        ("*", "清除"): "Clear",
+        ("*", "镜像左侧 -> 右侧"): "Mirror Left -> Right",
+        ("*", "保存预设"): "Save Preset",
+        ("*", "读取预设"): "Load Preset",
+        ("*", "删除预设"): "Delete Preset",
+        ("*", "转换预设"): "Convert Preset",
+
+        # Operator docstring / bl_description strings
+        ("*", "初始化预设编辑器列表"): "Initialize the preset editor list",
+        ("*", "将当前选中的骨骼填入指定槽位"): "Fill the specified slot with the currently selected bone",
+        ("*", "清除槽位内容"): "Clear slot contents",
+        ("*", "将左侧映射规则镜像到右侧"): "Mirror left-side mapping rules to the right side",
+        ("*", "保存预设 JSON（根据编辑模式保存为 X 或 Y 预设）"): "Save preset JSON (saves as X or Y preset depending on edit mode)",
+        ("*", "读取选中的预设到编辑器中进行修改"): "Load the selected preset into the editor for modification",
+        ("*", "删除当前选中的预设文件"): "Delete the currently selected preset file",
+        ("*", "在文件管理器中打开当前预设所在的文件夹"): "Open the folder containing the current preset in file manager",
+        ("*", "复制当前预设到另一类型目录（X→Y 或 Y→X），文件名加转换标记"): "Copy current preset to the other type directory (X→Y or Y→X), appending a conversion marker to the filename",
+
+        # Static report messages
+        ("*", "编辑器已重置"): "Editor has been reset",
+        ("*", "请先选中一个骨架"): "Please select an armature first",
+        ("*", "请进入 Pose 或 Edit 模式选择骨骼"): "Please enter Pose or Edit mode to select bones",
+        ("*", "没有选中任何骨骼"): "No bones selected",
+        ("*", "未添加任何新骨骼 (可能是重复或选重了主骨)"): "No new bones added (possibly duplicates or main bone reselected)",
+        ("*", "无法确定活动骨骼，请点击具体的一根骨骼"): "Cannot determine active bone, please click a specific bone",
+        ("*", "列表为空，未保存"): "List is empty, nothing saved",
+        ("*", "未选择任何预设"): "No preset selected",
+        ("*", "文件不存在"): "File does not exist",
+
+        # Template report messages (variable substitution with %)
+        ("*", "已批量添加 %d 个辅助骨"): "Batch added %d auxiliary bones",
+        ("*", "智能镜像完成: 更新 %d 项"): "Smart mirror complete: updated %d items",
+        ("*", "%s 预设已保存: %s"): "%s preset saved: %s",
+        ("*", "保存失败: %s"): "Save failed: %s",
+        ("*", "无法加载文件: %s"): "Cannot load file: %s",
+        ("*", "成功加载%s预设: %s (%d 个映射)"): "Successfully loaded %s preset: %s (%d mappings)",
+        ("*", "已删除: %s"): "Deleted: %s",
+        ("*", "删除失败: %s"): "Delete failed: %s",
+        ("*", "文件夹不存在: %s"): "Folder does not exist: %s",
+        ("*", "源文件不存在: %s"): "Source file does not exist: %s",
+        ("*", "目标文件已存在: %s，已跳过覆盖"): "Target file already exists: %s, skipped overwrite",
+        ("*", "已复制 (%s): %s"): "Copied (%s): %s",
+        ("*", "转换失败: %s"): "Conversion failed: %s",
     },
 }
