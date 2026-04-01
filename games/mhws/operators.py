@@ -1,4 +1,5 @@
 import bpy
+from bpy.app.translations import pgettext as _
 from ...core import weight_utils
 
 # ============================================================
@@ -126,7 +127,7 @@ class MHWS_OT_EndfieldFaceRename(bpy.types.Operator):
             for old_name, new_name in ENDFIELD_FACE_RENAME_MAP:
                 if weight_utils.rename_or_merge_vgroup(obj, old_name, new_name):
                     total += 1
-        self.report({'INFO'}, f"已处理 {total} 个面部顶点组")
+        self.report({'INFO'}, _("已处理 %d 个面部顶点组") % total)
         return {'FINISHED'}
 
 
@@ -243,7 +244,7 @@ class MHWS_OT_FaceWeightSimplify(bpy.types.Operator):
         _transfer_partial(obj, ["R_upLip_T_LOD01", "L_upLip_T_LOD01"],
                           [("C_upLip_T_LOD01", 0.6)])
         
-        self.report({'INFO'}, "面部权重简化完成")
+        self.report({'INFO'}, _("面部权重简化完成"))
         return {'FINISHED'}
 
 
@@ -316,7 +317,7 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
             if _is_valid_chain_collection(col)
         ]
         if not _chain_col_items:
-            self.report({'ERROR'}, "未找到有效的 Chain Collection（需含 ~TYPE=RE_CHAIN_COLLECTION 且名称含 .chain/.clsp）")
+            self.report({'ERROR'}, _("未找到有效的 Chain Collection（需含 ~TYPE=RE_CHAIN_COLLECTION 且名称含 .chain/.clsp）"))
             return {'CANCELLED'}
 
         # 预选当前 RE Chain 面板已设置的集合
@@ -336,12 +337,12 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
     def execute(self, context):
         col = bpy.data.collections.get(self.chain_collection)
         if col is None:
-            self.report({'ERROR'}, f"找不到集合: {self.chain_collection}")
+            self.report({'ERROR'}, _("找不到集合: %s") % self.chain_collection)
             return {'CANCELLED'}
 
         toolpanel = getattr(context.scene, 're_chain_toolpanel', None)
         if toolpanel is None:
-            self.report({'ERROR'}, "未找到 RE Chain 场景属性，请确认插件已正确加载")
+            self.report({'ERROR'}, _("未找到 RE Chain 场景属性，请确认插件已正确加载"))
             return {'CANCELLED'}
 
         # 将选中的集合设为 RE Chain 的当前工作集合
@@ -352,14 +353,14 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
             None
         )
         if header is None:
-            self.report({'ERROR'}, f"集合 '{col.name}' 中未找到 Chain Header，请先创建")
+            self.report({'ERROR'}, _("集合 '%s' 中未找到 Chain Header，请先创建") % col.name)
             return {'CANCELLED'}
 
         armature = context.active_object
         chain_heads = [pb for pb in armature.pose.bones if _is_chain_head(pb)]
 
         if not chain_heads:
-            self.report({'WARNING'}, "未找到链首骨骼（浅蓝色），请先执行物理骨骼移植")
+            self.report({'WARNING'}, _("未找到链首骨骼（浅蓝色），请先执行物理骨骼移植"))
             return {'CANCELLED'}
 
         created = 0
@@ -367,7 +368,7 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
 
         if self.settings_mode == 'SHARED':
             if bpy.ops.re_chain.create_chain_settings() != {'FINISHED'}:
-                self.report({'ERROR'}, "无法创建 Chain Settings")
+                self.report({'ERROR'}, _("无法创建 Chain Settings"))
                 return {'CANCELLED'}
 
         for pb in chain_heads:
@@ -385,7 +386,7 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
             else:
                 skipped += 1
 
-        self.report({'INFO'}, f"已创建 {created} 条链，跳过 {skipped} 条")
+        self.report({'INFO'}, _("已创建 %d 条链，跳过 %d 条") % (created, skipped))
         return {'FINISHED'}
 
 

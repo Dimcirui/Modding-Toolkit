@@ -427,5 +427,76 @@ TRANSLATIONS = {
         ("*", "%s: %d 根骨骼"): "%s: %d bones",
         ("*", "完全对齐"): "Full Align",
         ("*", "位置对齐"): "Position Align",
+
+        # === games/mhws/ ===
+
+        # MHWS_OT_EndfieldFaceRename — bl_description
+        ("*", "将 Endfield 面部顶点组名称批量转换为 MHWilds 格式"): "Batch-convert Endfield face vertex group names to MHWilds format",
+
+        # MHWS_OT_FaceWeightSimplify — bl_description
+        ("*", "简化面部权重: 将 MHWilds 格式的细分面部骨骼权重合并到主要骨骼上"): "Simplify face weights: merge MHWilds subdivided face bone weights into primary bones",
+
+        # MHWS_OT_AutoCreateChains — bl_description
+        ("*", "在姿态模式下，根据物理骨骼颜色自动为每条链创建 Chain Settings 和 Chain Group。\n需要 RE Chain Editor 插件，且场景中存在已创建 Chain Header 的 Chain Collection。"): "In pose mode, automatically create Chain Settings and Chain Group for each chain based on physics bone color.\nRequires the RE Chain Editor addon, and the scene must have a Chain Collection with a Chain Header already created.",
+
+        # MHWS_OT_AutoCreateChains — chain_collection EnumProperty description
+        ("*", "选择要写入的 Chain Collection"): "Select the Chain Collection to write to",
+
+        # MHWS_OT_AutoCreateChains — settings_mode EnumProperty items
+        ("*", "各自独立"): "Separate",
+        ("*", "每条链拥有独立的 Chain Settings"): "Each chain has its own Chain Settings",
+        ("*", "共享同一"): "Shared",
+        ("*", "所有链共用同一个 Chain Settings"): "All chains share a single Chain Settings",
+
+        # MHWS_OT_EndfieldFaceRename — self.report (template)
+        ("*", "已处理 %d 个面部顶点组"): "Processed %d face vertex groups",
+
+        # MHWS_OT_FaceWeightSimplify — self.report (static)
+        ("*", "面部权重简化完成"): "Face weight simplification complete",
+
+        # MHWS_OT_AutoCreateChains — self.report (static)
+        ("*", "未找到有效的 Chain Collection（需含 ~TYPE=RE_CHAIN_COLLECTION 且名称含 .chain/.clsp）"): "No valid Chain Collection found (must have ~TYPE=RE_CHAIN_COLLECTION and name containing .chain/.clsp)",
+        ("*", "未找到 RE Chain 场景属性，请确认插件已正确加载"): "RE Chain scene property not found, please confirm the addon is loaded correctly",
+        ("*", "未找到链首骨骼（浅蓝色），请先执行物理骨骼移植"): "No chain-head bones found (light blue), please run physics bone graft first",
+        ("*", "无法创建 Chain Settings"): "Cannot create Chain Settings",
+
+        # MHWS_OT_AutoCreateChains — self.report (template)
+        ("*", "找不到集合: %s"): "Collection not found: %s",
+        ("*", "集合 '%s' 中未找到 Chain Header，请先创建"): "No Chain Header found in collection '%s', please create one first",
+        ("*", "已创建 %d 条链，跳过 %d 条"): "Created %d chains, skipped %d",
+
+        # games/mhws/batch_export_ui.py — layout label strings
+        ("*", "未设置"): "Not set",
+        ("*", "请选择装备以配置绑定"): "Please select armor to configure bindings",
+        ("*", "FBXSkel 名"): "FBXSkel Name",
+
+        # === games/re4/ ===
+
+        # RE4_OT_FakeBone_OneClick — bl_label, bl_description
+        ("*", "(假头法) 生成假骨骼"): "(FakeBone) Generate Fake Bones",
+        ("*", "(假头法) 一键为选中骨架生成全套 End 骨骼"): "(FakeBone) One-click generate full End bones for the selected armature",
+
+        # RE4_OT_FakeBone_OneClick — native_skeleton EnumProperty
+        ("*", "原生骨架"): "Native Skeleton",
+        ("*", "选择对应角色的原生 fbxskel 文件"): "Select the native fbxskel file for the corresponding character",
+
+        # RE4_OT_FakeBone_OneClick — draw prop text
+        ("*", "角色原生骨架"): "Character Native Skeleton",
+
+        # get_native_skeletons_callback — fallback enum item label
+        ("*", "无可用骨架 (添加至 assets/native_skeletons/re4/)"): "No skeletons available (add files to assets/native_skeletons/re4/)",
+
+        # RE4_OT_FakeBone_OneClick — self.report (static)
+        ("*", "请先选中目标骨架"): "Please select the target armature first",
+        ("*", "需要 RE Mesh Editor 插件"): "Requires RE Mesh Editor addon",
+        ("*", "请选择原生骨架（添加文件到 assets/native_skeletons/re4/）"): "Please select a native skeleton (add files to assets/native_skeletons/re4/)",
+        ("*", "假骨骼生成完成"): "Fake bone generation complete",
+
+        # RE4_OT_FakeBone_OneClick — self.report (template)
+        ("*", "找不到原生骨架: %s"): "Native skeleton not found: %s",
+        ("*", "假骨骼生成失败: %s"): "Fake bone generation failed: %s",
+
+        # games/re4/batch_export_ui.py — layout label strings
+        ("*", "预设未配置 native_skeleton"): "Preset has no native_skeleton configured",
     },
 }

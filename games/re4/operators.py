@@ -1,5 +1,6 @@
 import bpy
 import os
+from bpy.app.translations import pgettext as _
 from . import data_maps
 
 _FINGER_INITIALS = {
@@ -335,7 +336,7 @@ class RE4_OT_FakeBone_OneClick(bpy.types.Operator):
 
     def invoke(self, context, event):
         if context.active_object is None or context.active_object.type != 'ARMATURE':
-            self.report({'ERROR'}, "请先选中目标骨架")
+            self.report({'ERROR'}, _("请先选中目标骨架"))
             return {'CANCELLED'}
         return context.window_manager.invoke_props_dialog(self, width=320)
 
@@ -344,29 +345,29 @@ class RE4_OT_FakeBone_OneClick(bpy.types.Operator):
 
     def execute(self, context):
         if not hasattr(bpy.ops, 're_fbxskel') or not hasattr(bpy.ops.re_fbxskel, 'exportfile'):
-            self.report({'ERROR'}, "需要 RE Mesh Editor 插件")
+            self.report({'ERROR'}, _("需要 RE Mesh Editor 插件"))
             return {'CANCELLED'}
 
         user_arm = context.active_object
         if user_arm is None or user_arm.type != 'ARMATURE':
-            self.report({'ERROR'}, "请先选中目标骨架")
+            self.report({'ERROR'}, _("请先选中目标骨架"))
             return {'CANCELLED'}
 
         if not self.native_skeleton or self.native_skeleton == 'NONE':
-            self.report({'ERROR'}, "请选择原生骨架（添加文件到 assets/native_skeletons/re4/）")
+            self.report({'ERROR'}, _("请选择原生骨架（添加文件到 assets/native_skeletons/re4/）"))
             return {'CANCELLED'}
 
         native_path = os.path.join(_get_native_skeletons_dir(), self.native_skeleton)
         if not os.path.isfile(native_path):
-            self.report({'ERROR'}, f"找不到原生骨架: {native_path}")
+            self.report({'ERROR'}, _("找不到原生骨架: %s") % native_path)
             return {'CANCELLED'}
 
         try:
             do_fakebone(context, user_arm, native_path)
-            self.report({'INFO'}, "假骨骼生成完成")
+            self.report({'INFO'}, _("假骨骼生成完成"))
             return {'FINISHED'}
         except Exception as e:
-            self.report({'ERROR'}, f"假骨骼生成失败: {e}")
+            self.report({'ERROR'}, _("假骨骼生成失败: %s") % e)
             return {'CANCELLED'}
 
 
