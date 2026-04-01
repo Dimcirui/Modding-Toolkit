@@ -430,6 +430,9 @@ TRANSLATIONS = {
 
         # === games/mhws/ ===
 
+        ("*", "Settings 模式"):              "Settings Mode",
+        ("*", "MHWs 装备批量导出对话框"):    "MHWs Batch Export Dialog",
+
         # MHWS_OT_EndfieldFaceRename — bl_description
         ("*", "将 Endfield 面部顶点组名称批量转换为 MHWilds 格式"): "Batch-convert Endfield face vertex group names to MHWilds format",
 
