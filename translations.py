@@ -135,5 +135,99 @@ TRANSLATIONS = {
         # (appear in layout.operator calls in the experimental section)
         # -----------------------------------------------
         ("*", "假头法 (FakeBone)"): "FakeBone Method",
+
+        # === core/ui_config.py ===
+
+        # BONE_DISPLAY_NAMES — torso
+        ("*", "胯部 (pelvis)"):    "Pelvis (pelvis)",
+        ("*", "腰腹部 (spine_01)"): "Abdomen (spine_01)",
+        ("*", "胸腔 (spine_02)"):  "Chest (spine_02)",
+        ("*", "上胸 (spine_03)"):  "Upper Chest (spine_03)",
+        ("*", "颈部 (neck)"):      "Neck (neck)",
+        ("*", "头部 (head)"):      "Head (head)",
+
+        # BONE_DISPLAY_NAMES — left arm
+        ("*", "左肩 (clavicle_L)"):    "L Shoulder (clavicle_L)",
+        ("*", "左上臂 (upperarm_L)"):   "L Upper Arm (upperarm_L)",
+        ("*", "左前臂 (forearm_L)"):    "L Forearm (forearm_L)",
+        ("*", "左手掌 (hand_L)"):       "L Palm (hand_L)",
+
+        # BONE_DISPLAY_NAMES — right arm
+        ("*", "右肩 (clavicle_R)"):    "R Shoulder (clavicle_R)",
+        ("*", "右上臂 (upperarm_R)"):   "R Upper Arm (upperarm_R)",
+        ("*", "右前臂 (forearm_R)"):    "R Forearm (forearm_R)",
+        ("*", "右手掌 (hand_R)"):       "R Palm (hand_R)",
+
+        # BONE_DISPLAY_NAMES — left leg
+        ("*", "左大腿 (thigh_L)"): "L Thigh (thigh_L)",
+        ("*", "左小腿 (shin_L)"):  "L Shin (shin_L)",
+        ("*", "左脚掌 (foot_L)"): "L Foot (foot_L)",
+        ("*", "左脚趾 (toe_L)"):   "L Toes (toe_L)",
+
+        # BONE_DISPLAY_NAMES — right leg
+        ("*", "右大腿 (thigh_R)"): "R Thigh (thigh_R)",
+        ("*", "右小腿 (shin_R)"):  "R Shin (shin_R)",
+        ("*", "右脚掌 (foot_R)"): "R Foot (foot_R)",
+        ("*", "右脚趾 (toe_R)"):   "R Toes (toe_R)",
+
+        # BONE_DISPLAY_NAMES — left fingers
+        ("*", "左拇指1"): "L Thumb 1",
+        ("*", "左拇指2"): "L Thumb 2",
+        ("*", "左拇指3"): "L Thumb 3",
+        ("*", "左食指1"): "L Index 1",
+        ("*", "左食指2"): "L Index 2",
+        ("*", "左食指3"): "L Index 3",
+        ("*", "左中指1"): "L Middle 1",
+        ("*", "左中指2"): "L Middle 2",
+        ("*", "左中指3"): "L Middle 3",
+        ("*", "左无名指1"): "L Ring 1",
+        ("*", "左无名指2"): "L Ring 2",
+        ("*", "左无名指3"): "L Ring 3",
+        ("*", "左小指1"): "L Pinky 1",
+        ("*", "左小指2"): "L Pinky 2",
+        ("*", "左小指3"): "L Pinky 3",
+
+        # BONE_DISPLAY_NAMES — right fingers
+        ("*", "右拇指1"): "R Thumb 1",
+        ("*", "右拇指2"): "R Thumb 2",
+        ("*", "右拇指3"): "R Thumb 3",
+        ("*", "右食指1"): "R Index 1",
+        ("*", "右食指2"): "R Index 2",
+        ("*", "右食指3"): "R Index 3",
+        ("*", "右中指1"): "R Middle 1",
+        ("*", "右中指2"): "R Middle 2",
+        ("*", "右中指3"): "R Middle 3",
+        ("*", "右无名指1"): "R Ring 1",
+        ("*", "右无名指2"): "R Ring 2",
+        ("*", "右无名指3"): "R Ring 3",
+        ("*", "右小指1"): "R Pinky 1",
+        ("*", "右小指2"): "R Pinky 2",
+        ("*", "右小指3"): "R Pinky 3",
+
+        # OPTIONAL_BONES — suffix string
+        ("*", "可选 | 上胸"): "Optional | Upper Chest",
+
+        # Composite display name for optional bone (as returned by get_display_name)
+        ("*", "上胸 (spine_03)  [可选 | 上胸]"): "Upper Chest (spine_03)  [Optional | Upper Chest]",
+
+        # UI_HIERARCHY — top-level section names
+        ("*", "躯干和头部"): "Torso & Head",
+        ("*", "手臂"):      "Arms",
+        ("*", "腿部"):      "Legs",
+        ("*", "手指 (左)"): "Fingers (L)",
+        ("*", "手指 (右)"): "Fingers (R)",
+
+        # UI_HIERARCHY — subsection names
+        ("*", "脊椎"):  "Spine",
+        ("*", "上半身"): "Upper Body",
+        ("*", "左臂"):  "Left Arm",
+        ("*", "右臂"):  "Right Arm",
+        ("*", "左腿"):  "Left Leg",
+        ("*", "右腿"):  "Right Leg",
+        ("*", "拇指"):  "Thumb",
+        ("*", "食指"):  "Index",
+        ("*", "中指"):  "Middle",
+        ("*", "无名指"): "Ring",
+        ("*", "小指"):  "Pinky",
     },
 }
