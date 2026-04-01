@@ -329,15 +329,15 @@ class MHW_PT_MainPanel(bpy.types.Panel):
 
         if settings.show_basic_tools:
             col = basic_box.column(align=True)
-            col.operator("mhw.general_tools", text="扭转归零 (Roll=0)").action = 'ROLL_ZERO'
+            col.operator("mhw.general_tools", text=_("扭转归零 (Roll=0)")).action = 'ROLL_ZERO'
             row = col.row(align=True)
-            row.operator("mhw.general_tools", text="添加尾骨").action = 'ADD_TAIL'
-            row.operator("mhw.general_tools", text="镜像对齐 X").action = 'MIRROR_X'
-            col.operator("mhw.general_tools", text="骨链简化").action = 'SIMPLIFY_CHAIN'
-            col.operator("mhw.general_tools", text="合并到激活骨").action = 'MERGE_TO_ACTIVE'
+            row.operator("mhw.general_tools", text=_("添加尾骨")).action = 'ADD_TAIL'
+            row.operator("mhw.general_tools", text=_("镜像对齐 X")).action = 'MIRROR_X'
+            col.operator("mhw.general_tools", text=_("骨链简化")).action = 'SIMPLIFY_CHAIN'
+            col.operator("mhw.general_tools", text=_("合并到激活骨")).action = 'MERGE_TO_ACTIVE'
             row = col.row(align=True)
-            row.operator("mhw.general_tools", text="对齐 (完全)").action = 'ALIGN_FULL'
-            row.operator("mhw.general_tools", text="对齐 (位置)").action = 'ALIGN_POS'
+            row.operator("mhw.general_tools", text=_("对齐 (完全)")).action = 'ALIGN_FULL'
+            row.operator("mhw.general_tools", text=_("对齐 (位置)")).action = 'ALIGN_POS'
 
         layout.separator()
 
@@ -361,11 +361,11 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             # 核心功能（带预设依赖提示）
             row = col.row(align=True)
             row.scale_y = 1.2
-            row.operator("modder.universal_snap", text="对齐骨骼 [X+Y, 双骨架]", icon='SNAP_ON')
+            row.operator("modder.universal_snap", text=_("对齐骨骼 [X+Y, 双骨架]"), icon='SNAP_ON')
             
             row = col.row(align=True)
             row.scale_y = 1.2
-            row.operator("modder.direct_convert", text="重命名顶点组 [X+Y]", icon='MOD_VERTEX_WEIGHT')
+            row.operator("modder.direct_convert", text=_("重命名顶点组 [X+Y]"), icon='MOD_VERTEX_WEIGHT')
             
             # 实验性功能（折叠）
             col.separator()
@@ -377,18 +377,18 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             
             if settings.show_experimental:
                 exp_col = col.column(align=True)
-                exp_col.operator("modder.smart_graft", text="移植物理骨骼 [X+Y, 双骨架]", icon='BONE_DATA')
-                exp_col.operator("modder.merge_physics_weights", text="物理权重降级 [X]", icon='TRASH')
-                exp_col.operator("modder.remove_non_base_bones", text="剔除非基础骨骼 [X]", icon='X')
-                exp_col.operator("modder.rename_bones_to_target", text="基础骨骼改名 [X+Y]", icon='SORTALPHA')
+                exp_col.operator("modder.smart_graft", text=_("移植物理骨骼 [X+Y, 双骨架]"), icon='BONE_DATA')
+                exp_col.operator("modder.merge_physics_weights", text=_("物理权重降级 [X]"), icon='TRASH')
+                exp_col.operator("modder.remove_non_base_bones", text=_("剔除非基础骨骼 [X]"), icon='X')
+                exp_col.operator("modder.rename_bones_to_target", text=_("基础骨骼改名 [X+Y]"), icon='SORTALPHA')
                 row = exp_col.row(align=True)
                 row.label(text="骨骼显示 [X]:", icon='HIDE_OFF')
                 row = exp_col.row(align=True)
-                row.operator("modder.set_bone_visibility", text="全显",
+                row.operator("modder.set_bone_visibility", text=_("全显"),
                              depress=(settings.bone_view_mode == 'ALL')).mode = 'ALL'
-                row.operator("modder.set_bone_visibility", text="仅基础骨",
+                row.operator("modder.set_bone_visibility", text=_("仅基础骨"),
                              depress=(settings.bone_view_mode == 'BASE')).mode = 'BASE'
-                row.operator("modder.set_bone_visibility", text="仅物理骨",
+                row.operator("modder.set_bone_visibility", text=_("仅物理骨"),
                              depress=(settings.bone_view_mode == 'PHYSICS')).mode = 'PHYSICS'
             
             # 映射详情预览
@@ -457,7 +457,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             col.separator()
             col.label(text="简易工具:")
             col.operator("modder.tpose_direction", icon='EMPTY_SINGLE_ARROW')
-            col.operator("modder.tpose_matrix_zero", text="RE Engine 矩阵归零 (生化9除外)", icon='MESH_GRID')
+            col.operator("modder.tpose_matrix_zero", text=_("RE Engine 矩阵归零 (生化9除外)"), icon='MESH_GRID')
             
             col.separator()
             col.label(text="姿态变换记录器:")
@@ -466,12 +466,12 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row.prop(settings, "pose_preset_enum", text="")
             row.operator("modder.delete_pose_preset", text="", icon='TRASH')
             
-            col.operator("modder.record_transform", text="录制变换 (选两个骨架)", icon='REC')
-            
+            col.operator("modder.record_transform", text=_("录制变换 (选两个骨架)"), icon='REC')
+
             row = col.row(align=True)
             row.scale_y = 1.3
-            row.operator("modder.apply_transform_forward", text="▶ 正向 (A→B)", icon='PLAY')
-            row.operator("modder.apply_transform_inverse", text="◀ 逆向 (B→A)", icon='LOOP_BACK')
+            row.operator("modder.apply_transform_forward", text=_("▶ 正向 (A→B)"), icon='PLAY')
+            row.operator("modder.apply_transform_inverse", text=_("◀ 逆向 (B→A)"), icon='LOOP_BACK')
 
         layout.separator()
 
@@ -483,14 +483,14 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             box = layout.box()
             box.label(text="MHWI Tools", icon='ARMATURE_DATA')
             col = box.column(align=True)
-            col.operator("mhwi.align_non_physics", text="对齐非物理骨骼", icon='BONE_DATA')
+            col.operator("mhwi.align_non_physics", text=_("对齐非物理骨骼"), icon='BONE_DATA')
 
         if settings.show_mhws:
             box = layout.box()
             box.label(text="MHWilds Tools", icon='WORLD')
             col = box.column(align=True)
-            col.operator("mhws.endfield_face_rename", text="Endfield 面部改名", icon='SORTALPHA')
-            col.operator("mhws.face_weight_simplify", text="面部权重简化", icon='MOD_VERTEX_WEIGHT')
+            col.operator("mhws.endfield_face_rename", text=_("Endfield 面部改名"), icon='SORTALPHA')
+            col.operator("mhws.face_weight_simplify", text=_("面部权重简化"), icon='MOD_VERTEX_WEIGHT')
 
             col.separator()
             has_re_mesh = hasattr(bpy.ops, 're_mesh') and hasattr(bpy.ops.re_mesh, 'exportfile')
@@ -499,7 +499,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row.operator("mhws.batch_export_dialog", text="MHWs Batch Exporter", icon='EXPORT')
             row = col.row()
             row.enabled = has_re_mesh
-            row.operator("mhws.mdf_tex_processor_dialog", text="MDF2 + Tex 处理器", icon='TEXTURE')
+            row.operator("mhws.mdf_tex_processor_dialog", text=_("MDF2 + Tex 处理器"), icon='TEXTURE')
             if not has_re_mesh:
                 col.label(text="需要 RE Mesh Editor!", icon='ERROR')
 
@@ -507,7 +507,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             has_re_chain = hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
             row = col.row()
             row.enabled = has_re_chain
-            row.operator("mhws.auto_create_chains", text="一键创建 RE Chain", icon='LINKED')
+            row.operator("mhws.auto_create_chains", text=_("一键创建 RE Chain"), icon='LINKED')
             if not has_re_chain:
                 col.label(text="需要 RE Chain Editor!", icon='ERROR')
 
@@ -520,7 +520,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             has_re_fbxskel = hasattr(bpy.ops, 're_fbxskel') and hasattr(bpy.ops.re_fbxskel, 'exportfile')
             row_fb = box_fake.row()
             row_fb.enabled = has_re_fbxskel
-            row_fb.operator("re4.fakebone_one_click", text="生成假骨骼", icon='ARMATURE_DATA')
+            row_fb.operator("re4.fakebone_one_click", text=_("生成假骨骼"), icon='ARMATURE_DATA')
             if not has_re_fbxskel:
                 box_fake.label(text="需要 RE Mesh Editor!", icon='ERROR')
 
@@ -532,13 +532,13 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row.operator("re4.batch_export_dialog", text="RE4 Batch Exporter", icon='EXPORT')
             row = col.row()
             row.enabled = has_re_mesh
-            row.operator("re4.mdf_tex_processor_dialog", text="MDF2 + Tex 处理器", icon='TEXTURE')
+            row.operator("re4.mdf_tex_processor_dialog", text=_("MDF2 + Tex 处理器"), icon='TEXTURE')
 
         if settings.show_re9:
             box = layout.box()
             box.label(text="RE9 Tools", icon='GHOST_ENABLED')
             col = box.column(align=True)
-            col.operator("re9.sync_child_orientation", text="同步子级朝向及扭转", icon='CON_ROTLIKE')
+            col.operator("re9.sync_child_orientation", text=_("同步子级朝向及扭转"), icon='CON_ROTLIKE')
 
             col.separator()
             has_re_mesh = hasattr(bpy.ops, 're_mesh') and hasattr(bpy.ops.re_mesh, 'exportfile')
@@ -547,7 +547,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row.operator("re9.batch_export_dialog", text="RE9 Batch Exporter", icon='EXPORT')
             row = col.row()
             row.enabled = has_re_mesh
-            row.operator("re9.mdf_tex_processor_dialog", text="MDF2 + Tex 处理器", icon='TEXTURE')
+            row.operator("re9.mdf_tex_processor_dialog", text=_("MDF2 + Tex 处理器"), icon='TEXTURE')
             if not has_re_mesh:
                 col.label(text="需要 RE Mesh Editor!", icon='ERROR')
 
