@@ -229,5 +229,47 @@ TRANSLATIONS = {
         ("*", "中指"):  "Middle",
         ("*", "无名指"): "Ring",
         ("*", "小指"):  "Pinky",
+
+        # === ui/editor_panel.py ===
+
+        # MHW_PT_PresetEditor — panel label
+        ("*", "预设编辑器"): "Preset Editor",
+
+        # MHW_PT_PresetEditor — section header labels (layout.label text=)
+        ("*", "管理现有预设 (Manage):"): "Manage Existing Presets (Manage):",
+        ("*", "编辑器工作区:"): "Editor Workspace:",
+        ("*", "列表为空，请点击初始化"): "List is empty, click to initialize",
+
+        # MHW_PT_PresetEditor — operator button texts (layout.operator / row.operator text=)
+        ("*", "读取/编辑"): "Load / Edit",
+        ("*", "打开预设文件夹"): "Open Preset Folder",
+        ("*", "复制为 Y 预设 (X转换)"): "Copy as Y Preset (X Convert)",
+        ("*", "复制为 X 预设 (Y转换)"): "Copy as X Preset (Y Convert)",
+        ("*", "保存"): "Save",
+        ("*", "清空并初始化列表"): "Clear and Initialize List",
+
+        # MHW_PT_PresetEditor — prop text label
+        ("*", "保存名"): "Save Name",
+
+        # MHW_PT_PresetEditor — slot status label
+        ("*", "[未设置]"): "[Not Set]",
+
+        # === core/editor_props.py ===
+
+        # EditorSettings — prop names
+        ("*", "预设名称"): "Preset Name",
+        ("*", "搜索"): "Search",
+        ("*", "编辑模式"): "Edit Mode",
+
+        # EditorSettings — prop descriptions
+        ("*", "过滤骨骼名称"): "Filter bone names",
+
+        # EditorSettings — edit_mode enum item labels
+        ("*", "X 预设 (来源)"): "X Preset (Source)",
+        ("*", "Y 预设 (目标)"): "Y Preset (Target)",
+
+        # EditorSettings — edit_mode enum item descriptions
+        ("*", "编辑来源游戏的骨骼映射预设"): "Edit the bone mapping preset for the source game",
+        ("*", "编辑目标游戏的骨骼映射预设"): "Edit the bone mapping preset for the target game",
     },
 }
