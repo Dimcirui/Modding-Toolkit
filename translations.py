@@ -93,7 +93,7 @@ TRANSLATIONS = {
         # Main panel — section header labels (layout.label text=)
         # -----------------------------------------------
         ("*", "通用标准转换"): "Universal Standard Converter",
-        ("*", "姿态转换 (Pose Convert)"): "Pose Convert (Pose Convert)",
+        ("*", "姿态转换 (Pose Convert)"): "Pose Convert",
         ("*", "简易工具:"): "Quick Tools:",
         ("*", "姿态变换记录器:"): "Pose Transform Recorder:",
         ("*", "骨骼显示 [X]:"): "Bone Visibility [X]:",
