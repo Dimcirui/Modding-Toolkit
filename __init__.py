@@ -21,6 +21,7 @@ from .core import editor_props
 from .core import editor_ops
 from .core import mdf_tex_processor_base
 from . import ui, games
+from . import translations as _translations
 
 class MT_Preferences(AddonPreferences):
     bl_idname = __name__
@@ -67,12 +68,14 @@ def register():
     migrate.run()
 
     bpy.utils.register_class(MT_Preferences)
+    bpy.app.translations.register(__name__, _translations.TRANSLATIONS)
 
     for mod in modules:
         mod.register()
 
 def unregister():
     addon_updater_ops.unregister()
+    bpy.app.translations.unregister(__name__)
     bpy.utils.unregister_class(MT_Preferences)
     
     for mod in reversed(modules):
