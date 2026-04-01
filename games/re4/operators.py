@@ -227,12 +227,26 @@ def _merge_end_bones(context, main_arm, end_arm, merge_type):
     arm = main_arm.data
 
     if merge_type == 'body':
+        # 1. end 骨挂回各自 base 骨（如 Spine_0_end → Spine_0）
         for bone in arm.edit_bones:
             if "_end" in bone.name:
                 base_name = bone.name.split("_end")[0]
                 if base_name in arm.edit_bones:
                     bone.parent = arm.edit_bones[base_name]
                     bone.use_connect = False
+        # 2. 子骨重新挂到 end 骨，形成三连（如 Spine_1 → Spine_0_end → Spine_0）
+        for fake, parents in data_maps.FAKEBONE_BODY_PARENTS.items():
+            for pname in parents:
+                suffix = "_end"
+                if len(parents) > 1:
+                    if pname.startswith("L_") or pname.endswith("_L"):
+                        suffix = "_endL"
+                    elif pname.startswith("R_") or pname.endswith("_R"):
+                        suffix = "_endR"
+                end_bone_name = fake + suffix
+                if pname in arm.edit_bones and end_bone_name in arm.edit_bones:
+                    arm.edit_bones[pname].parent = arm.edit_bones[end_bone_name]
+                    arm.edit_bones[pname].use_connect = False
 
     elif merge_type == 'fingers':
         # 1. end 骨挂回各自 base 骨

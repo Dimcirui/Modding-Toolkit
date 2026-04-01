@@ -1,0 +1,1894 @@
+{
+  "armor_sets": [
+    {
+      "id": "pl001_0000",
+      "name": "皮制",
+      "variant_label": "alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl002_0000",
+      "name": "猎人",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl002_0010",
+      "name": "猎人",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl003_0000",
+      "name": "骨制",
+      "variant_label": "MR-alpha/MR-beta/alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl004_0000",
+      "name": "合金",
+      "variant_label": "MR-alpha/MR-beta/alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl005_0000",
+      "name": "突龙",
+      "variant_label": "MR-alpha/MR-beta/alpha/beta",
+      "rank": "HR",
+      "mask": "10000"
+    },
+    {
+      "id": "pl006_0000",
+      "name": "咬鱼",
+      "variant_label": "MR-alpha/MR-beta/alpha/beta",
+      "rank": "HR",
+      "mask": "01000"
+    },
+    {
+      "id": "pl007_0000",
+      "name": "巨蜂",
+      "variant_label": "alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl007_0001",
+      "name": "巨蜂",
+      "variant_label": "MR/MR-alpha/MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl008_0000",
+      "name": "贼龙",
+      "variant_label": "alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl008_0001",
+      "name": "贼龙",
+      "variant_label": "MR/MR-alpha/MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl009_0000",
+      "name": "搔鸟",
+      "variant_label": "alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl009_0001",
+      "name": "搔鸟",
+      "variant_label": "MR/MR-alpha/MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl010_0000",
+      "name": "毒妖鸟",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl010_0001",
+      "name": "毒妖鸟",
+      "variant_label": "MR/MR-alpha/MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl010_0010",
+      "name": "毒妖鸟",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl010_0101",
+      "name": "妖水",
+      "variant_label": "MR/MR-alpha/MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl011_0000",
+      "name": "泥鱼龙",
+      "variant_label": "alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl011_0001",
+      "name": "泥鱼龙",
+      "variant_label": "MR/MR-alpha/MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl012_0000",
+      "name": "土砂龙",
+      "variant_label": "alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl012_0001",
+      "name": "土砂龙",
+      "variant_label": "MR/MR-alpha/MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl013_0000",
+      "name": "飞雷龙",
+      "variant_label": "alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl013_0001",
+      "name": "飞雷龙",
+      "variant_label": "MR/MR-alpha/MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl013_0101",
+      "name": "朱毒",
+      "variant_label": "MR/MR-alpha/MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl014_0000",
+      "name": "锁甲",
+      "variant_label": "alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl015_0000",
+      "name": "突击龙角",
+      "variant_label": "MR-alpha/MR-beta/alpha/beta",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl016_0000",
+      "name": "酸翼龙身体",
+      "variant_label": "MR-alpha/MR-beta/alpha/beta",
+      "rank": "HR",
+      "mask": "00100"
+    },
+    {
+      "id": "pl017_0000",
+      "name": "巨甲部",
+      "variant_label": "alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl017_0001",
+      "name": "巨甲虫",
+      "variant_label": "MR/MR-alpha/MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl018_0000",
+      "name": "原型",
+      "variant_label": "",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl019_0000",
+      "name": "燕尾蝶",
+      "variant_label": "alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl020_0000",
+      "name": "蛮颚龙",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl020_0001",
+      "name": "蛮颚龙",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl020_0010",
+      "name": "蛮颚龙",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl020_0011",
+      "name": "蛮颚龙",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl020_0101",
+      "name": "雷颚",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl020_0111",
+      "name": "雷颚",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl021_0000",
+      "name": "雌火龙",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl021_0001",
+      "name": "雌火龙",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl021_0010",
+      "name": "雌火龙",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl021_0011",
+      "name": "雌火龙",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl021_0100",
+      "name": "火龙心",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl021_0101",
+      "name": "火龙心",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl021_0110",
+      "name": "火龙心",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl021_0111",
+      "name": "火龙心",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl021_0200",
+      "name": "金黄澄月",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl021_0210",
+      "name": "金黄澄月",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl022_0000",
+      "name": "痹贼龙",
+      "variant_label": "alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl022_0001",
+      "name": "痹贼龙",
+      "variant_label": "MR/MR-alpha/MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl023_0000",
+      "name": "眩鸟",
+      "variant_label": "alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl023_0001",
+      "name": "眩鸟",
+      "variant_label": "MR/MR-alpha/MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl024_0000",
+      "name": "浮空龙",
+      "variant_label": "alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl024_0001",
+      "name": "浮空龙",
+      "variant_label": "MR/MR-alpha/MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl024_0101",
+      "name": "浮梦",
+      "variant_label": "MR/MR-alpha/MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl025_0000",
+      "name": "矿石",
+      "variant_label": "MR-alpha/MR-beta/alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl026_0000",
+      "name": "死神",
+      "variant_label": "alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl027_0000",
+      "name": "风漂龙",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl027_0001",
+      "name": "风漂龙",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl027_0010",
+      "name": "风漂龙",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl027_0011",
+      "name": "风漂龙",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl027_0500",
+      "name": "霜漂",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl027_0510",
+      "name": "霜漂",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl028_0000",
+      "name": "骨锤龙",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl028_0001",
+      "name": "骨锤龙",
+      "variant_label": "MR/MR-alpha/MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl028_0010",
+      "name": "骨锤龙",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl029_0000",
+      "name": "惨爪龙",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl029_0001",
+      "name": "惨爪",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl029_0010",
+      "name": "惨爪龙",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl029_0011",
+      "name": "惨爪",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl029_0101",
+      "name": "亡爪",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl029_0111",
+      "name": "亡爪",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl030_0000",
+      "name": "战纹",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl030_0010",
+      "name": "战纹",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl030_0020",
+      "name": "战纹",
+      "variant_label": "gamma",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl030_0500",
+      "name": "狂纹",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl030_0510",
+      "name": "狂纹",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl031_0000",
+      "name": "铸铁",
+      "variant_label": "MR-alpha/MR-beta/alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl032_0000",
+      "name": "乌尔德",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl032_0010",
+      "name": "乌尔德",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl032_0020",
+      "name": "乌尔德",
+      "variant_label": "gamma",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl032_0500",
+      "name": "死灭",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl032_0510",
+      "name": "死灭",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl033_0000",
+      "name": "火龙",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl033_0001",
+      "name": "火龙",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl033_0010",
+      "name": "火龙",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl033_0011",
+      "name": "火龙",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl033_0100",
+      "name": "火龙魂",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl033_0101",
+      "name": "火龙魂",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl033_0110",
+      "name": "火龙魂",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl033_0111",
+      "name": "火龙魂",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl033_0200",
+      "name": "银白耀日",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl033_0210",
+      "name": "银白耀日",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl034_0000",
+      "name": "角龙",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl034_0001",
+      "name": "角龙",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl034_0010",
+      "name": "角龙",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl034_0011",
+      "name": "角龙",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl034_0100",
+      "name": "暴君角龙",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl034_0101",
+      "name": "暴君角龙",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl034_0110",
+      "name": "暴君角龙",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl034_0111",
+      "name": "暴君角龙",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl035_0000",
+      "name": "麒麟角",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl035_0001",
+      "name": "麒麟角",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl035_0010",
+      "name": "麒麟角",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl035_0011",
+      "name": "麒麟角",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl035_0020",
+      "name": "麒麟角",
+      "variant_label": "gamma",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl036_0000",
+      "name": "旅团",
+      "variant_label": "alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl037_0000",
+      "name": "爆碎羽饰",
+      "variant_label": "",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl038_0000",
+      "name": "铸岛熔岩",
+      "variant_label": "MR-alpha/alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl038_0010",
+      "name": "铸岛熔岩",
+      "variant_label": "MR-beta/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl038_0020",
+      "name": "铸岛熔岩",
+      "variant_label": "gamma",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl039_0000",
+      "name": "岩贼龙",
+      "variant_label": "alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl039_0001",
+      "name": "岩贼龙",
+      "variant_label": "MR/MR-alpha/MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl040_0000",
+      "name": "熔岩龙",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl040_0001",
+      "name": "熔岩龙",
+      "variant_label": "MR/MR-alpha/MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl040_0010",
+      "name": "熔岩龙",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl041_0000",
+      "name": "爆锤龙",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl041_0001",
+      "name": "爆锤龙",
+      "variant_label": "MR/MR-alpha/MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl041_0010",
+      "name": "爆锤龙",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl042_0000",
+      "name": "爆鳞龙",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl042_0010",
+      "name": "爆鳞龙",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl042_0500",
+      "name": "矜持",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl042_0510",
+      "name": "矜持",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl043_0000",
+      "name": "大马士革",
+      "variant_label": "MR-alpha/alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl043_0010",
+      "name": "大马士革",
+      "variant_label": "MR-beta/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl044_0000",
+      "name": "杜宾",
+      "variant_label": "MR-alpha/MR-beta/alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl045_0000",
+      "name": "冥灯幽火",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl045_0010",
+      "name": "冥灯幽火",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl045_0020",
+      "name": "冥灯幽火",
+      "variant_label": "gamma",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl046_0000",
+      "name": "帝王",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl046_0001",
+      "name": "帝王",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl046_0010",
+      "name": "帝王",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl046_0011",
+      "name": "帝王",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl046_0020",
+      "name": "帝王",
+      "variant_label": "gamma",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl047_0000",
+      "name": "钢龙部",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl047_0001",
+      "name": "钢龙部",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl047_0010",
+      "name": "钢龙部",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl047_0011",
+      "name": "钢龙部",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl047_0020",
+      "name": "钢龙部",
+      "variant_label": "gamma",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl048_0000",
+      "name": "公会十字",
+      "variant_label": "alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl049_0000",
+      "name": "绚辉龙罗",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl049_0001",
+      "name": "绚辉龙罗",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl049_0010",
+      "name": "绚辉龙罗",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl049_0011",
+      "name": "绚辉龙罗",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl049_0020",
+      "name": "绚辉龙罗",
+      "variant_label": "gamma",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl050_0000",
+      "name": "残虐",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl050_0010",
+      "name": "残虐",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl050_0500",
+      "name": "贪欲",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl050_0510",
+      "name": "贪欲",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl051_0000",
+      "name": "皇后",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl051_0001",
+      "name": "皇后",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl051_0010",
+      "name": "皇后",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl051_0011",
+      "name": "皇后",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl051_0020",
+      "name": "皇后",
+      "variant_label": "gamma",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl052_0000",
+      "name": "煌黑龙部",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl052_0010",
+      "name": "煌黑龙部",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl053_0000",
+      "name": "追踪者",
+      "variant_label": "alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl054_0000",
+      "name": "骷髅面罩",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl055_0000",
+      "name": "艾露猫头套",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl056_0000",
+      "name": "蘑菇猪头套",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl057_0000",
+      "name": "燕尾蝶男",
+      "variant_label": "alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl057_0010",
+      "name": "燕尾蝶男",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl058_0000",
+      "name": "猫蜥龙头部",
+      "variant_label": "MR-alpha/MR-beta/alpha/beta",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl059_0000",
+      "name": "封龙耳饰",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl060_0000",
+      "name": "知性眼镜",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl061_0000",
+      "name": "龙王的独眼",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl062_0000",
+      "name": "墨镜",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl063_0000",
+      "name": "封印的眼罩",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl064_0000",
+      "name": "摇曳鳗头套",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl065_0000",
+      "name": "扒手龙头套",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl066_0000",
+      "name": "黎明武士寂部",
+      "variant_label": "",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl066_0010",
+      "name": "黎明武士誉部",
+      "variant_label": "",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl067_0000",
+      "name": "武者部",
+      "variant_label": "",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl069_0000",
+      "name": "隆",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl070_0000",
+      "name": "樱",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl071_0000",
+      "name": "但丁",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl072_0000",
+      "name": "苍星之将",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl072_0001",
+      "name": "苍世武士",
+      "variant_label": "MR-alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl073_0000",
+      "name": "腾龙",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl074_0000",
+      "name": "盛开",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl075_0000",
+      "name": "潜水员",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl076_0000",
+      "name": "收获",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl077_0000",
+      "name": "猎户星",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl078_0000",
+      "name": "盛装",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl080_0000",
+      "name": "迅龙",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl080_0010",
+      "name": "迅龙",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl081_0000",
+      "name": "斩龙",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl081_0010",
+      "name": "斩龙",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl081_0100",
+      "name": "斩黄",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl081_0110",
+      "name": "斩黄",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl082_0000",
+      "name": "碎龙",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl082_0010",
+      "name": "碎龙",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl082_0500",
+      "name": "铁腕",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl082_0510",
+      "name": "铁腕",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl083_0000",
+      "name": "轰龙",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl083_0010",
+      "name": "轰龙",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl083_0100",
+      "name": "轰吼",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl083_0110",
+      "name": "轰吼",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl084_0000",
+      "name": "猛牛龙",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl084_0010",
+      "name": "猛牛龙",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl085_0000",
+      "name": "雪崩",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl085_0010",
+      "name": "雪崩",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl085_0020",
+      "name": "雪崩",
+      "variant_label": "MR-gamma",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl086_0000",
+      "name": "触角",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl086_0010",
+      "name": "触角",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl086_0020",
+      "name": "触角",
+      "variant_label": "MR-gamma",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl087_0000",
+      "name": "龙纹部",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl087_0010",
+      "name": "龙纹部",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl088_0000",
+      "name": "迦楼罗",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl088_0010",
+      "name": "迦楼罗",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl089_0000",
+      "name": "冰牙",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl089_0010",
+      "name": "冰牙龙",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl089_0500",
+      "name": "霜刃冰牙龙",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl089_0510",
+      "name": "霜刃冰牙龙",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl091_0000",
+      "name": "机械",
+      "variant_label": "MR-alpha/MR-beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl092_0000",
+      "name": "公会成果",
+      "variant_label": "MR-alpha/MR-beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl093_0000",
+      "name": "黑带",
+      "variant_label": "MR-alpha/MR-beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl094_0000",
+      "name": "公会宫殿",
+      "variant_label": "MR-alpha/MR-beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl095_0000",
+      "name": "敏捷耳饰",
+      "variant_label": "MR-alpha",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl095_0010",
+      "name": "佯动耳饰",
+      "variant_label": "MR-alpha",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl096_0000",
+      "name": "精灵鹿头套",
+      "variant_label": "",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl097_0000",
+      "name": "草食龙头套",
+      "variant_label": "",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl098_0000",
+      "name": "企鹅头套",
+      "variant_label": "MR-alpha",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl099_0000",
+      "name": "骷髅方巾",
+      "variant_label": "",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl100_0000",
+      "name": "封印的龙骸布",
+      "variant_label": "MR-alpha",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl101_0000",
+      "name": "龙人族之耳",
+      "variant_label": "MR-alpha",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl102_0000",
+      "name": "冰豺狼围巾",
+      "variant_label": "MR/MR-alpha/MR-beta",
+      "rank": "MR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl103_0000",
+      "name": "冬翼龙身体",
+      "variant_label": "MR/MR-alpha/MR-beta",
+      "rank": "MR",
+      "mask": "00100"
+    },
+    {
+      "id": "pl104_0000",
+      "name": "弧锁",
+      "variant_label": "MR-alpha/MR-beta/alpha/beta",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl104_0010",
+      "name": "弧锁",
+      "variant_label": "MR-beta/beta",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl105_0000",
+      "name": "冰狼部",
+      "variant_label": "",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl106_0000",
+      "name": "浴场",
+      "variant_label": "",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl107_0000",
+      "name": "雷狼龙",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl107_0010",
+      "name": "雷狼龙",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl107_0100",
+      "name": "狱狼龙",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl107_0110",
+      "name": "狱狼龙",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl108_0000",
+      "name": "黑狼鸟",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl108_0010",
+      "name": "黑狼鸟",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl109_0000",
+      "name": "金色",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl109_0010",
+      "name": "金色",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl109_0500",
+      "name": "齐天",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl109_0510",
+      "name": "齐天",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl110_0000",
+      "name": "冰鱼龙",
+      "variant_label": "MR/MR-alpha/MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl111_0000",
+      "name": "兔耳朵",
+      "variant_label": "",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl112_0000",
+      "name": "柔毛秧鸡",
+      "variant_label": "",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl113_0000",
+      "name": "温泉银猴",
+      "variant_label": "MR-alpha",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl113_0001",
+      "name": "温泉金猴",
+      "variant_label": "",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl114_0000",
+      "name": "飞雷龙围巾",
+      "variant_label": "",
+      "rank": "HR",
+      "mask": "00010"
+    },
+    {
+      "id": "pl115_0000",
+      "name": "健美",
+      "variant_label": "MR-alpha/alpha",
+      "rank": "HR",
+      "mask": "11101"
+    },
+    {
+      "id": "pl115_0001",
+      "name": "健美部",
+      "variant_label": "gamma",
+      "rank": "HR",
+      "mask": "11101"
+    },
+    {
+      "id": "pl116_0000",
+      "name": "甲虫部",
+      "variant_label": "",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl117_0000",
+      "name": "蝴蝶部",
+      "variant_label": "",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl118_0000",
+      "name": "杰洛特",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl119_0000",
+      "name": "希里",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl120_0000",
+      "name": "巴耶克部",
+      "variant_label": "",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl121_0000",
+      "name": "守护者",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl122_0000",
+      "name": "结云部",
+      "variant_label": "",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl123_0000",
+      "name": "银骑士部",
+      "variant_label": "",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl124_0000",
+      "name": "蔷薇",
+      "variant_label": "MR-alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl125_0000",
+      "name": "热情",
+      "variant_label": "MR-alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl126_0000",
+      "name": "魔界之主黑",
+      "variant_label": "MR-alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl127_0000",
+      "name": "风火轮",
+      "variant_label": "MR-alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl128_0000",
+      "name": "阿斯特拉",
+      "variant_label": "MR-alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl129_0000",
+      "name": "龙",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl129_0010",
+      "name": "龙",
+      "variant_label": "MR-beta",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl130_0000",
+      "name": "里昂部",
+      "variant_label": "MR-alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl131_0000",
+      "name": "克莱尔部",
+      "variant_label": "MR-alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl132_0010",
+      "name": "阿尔忒弥斯部",
+      "variant_label": "MR-alpha",
+      "rank": "MR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl133_0000",
+      "name": "阿尔忒弥斯",
+      "variant_label": "MR-alpha",
+      "rank": "HR",
+      "mask": "11111"
+    },
+    {
+      "id": "pl500_0000",
+      "name": "内衣部",
+      "variant_label": "alpha",
+      "rank": "HR",
+      "mask": "11101"
+    },
+    {
+      "id": "pl501_0000",
+      "name": "内衣部",
+      "variant_label": "beta",
+      "rank": "HR",
+      "mask": "11101"
+    }
+  ]
+}
