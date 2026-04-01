@@ -1,4 +1,5 @@
 import bpy, mathutils, re
+from bpy.app.translations import pgettext as _
 from .bone_mapper import BoneMapManager, STANDARD_BONE_NAMES, _normalize_bone_name
 from . import weight_utils, bone_utils
 
@@ -27,7 +28,7 @@ class MODDER_OT_ApplyStandardX(bpy.types.Operator):
         # 1. 加载预设
         mapper = BoneMapManager()
         if not mapper.load_preset(settings.import_preset_enum, is_import_x=True):
-            self.report({'ERROR'}, "预设加载失败")
+            self.report({'ERROR'}, _("预设加载失败"))
             return {'CANCELLED'}
 
         # 2. 匹配分析
@@ -66,7 +67,7 @@ class MODDER_OT_ApplyStandardX(bpy.types.Operator):
                     deleted_count += 1
 
         bpy.ops.object.mode_set(mode='OBJECT')
-        self.report({'INFO'}, f"标准化完成: 重命名 {rename_count} 根, 清理 {deleted_count} 根辅助骨")
+        self.report({'INFO'}, _("标准化完成: 重命名 %d 根, 清理 %d 根辅助骨") % (rename_count, deleted_count))
         return {'FINISHED'}
 
 class MODDER_OT_ApplyStandardY(bpy.types.Operator):
@@ -81,7 +82,7 @@ class MODDER_OT_ApplyStandardY(bpy.types.Operator):
         
         mapper = BoneMapManager()
         if not mapper.load_preset(settings.target_preset_enum, is_import_x=False):
-            self.report({'ERROR'}, "无法加载 Y 预设")
+            self.report({'ERROR'}, _("无法加载 Y 预设"))
             return {'CANCELLED'}
 
         bpy.ops.object.mode_set(mode='EDIT')
@@ -108,18 +109,18 @@ class MODDER_OT_DirectConvert(bpy.types.Operator):
         selected_meshes = [o for o in context.selected_objects if o.type == 'MESH']
         
         if not selected_meshes:
-            self.report({'ERROR'}, "请至少选中一个网格 (Mesh)")
+            self.report({'ERROR'}, _("请至少选中一个网格 (Mesh)"))
             return {'CANCELLED'}
 
         # 2. 加载映射表
         mapper_x = BoneMapManager()
         if not mapper_x.load_preset(settings.import_preset_enum, is_import_x=True):
-            self.report({'ERROR'}, "无法加载 X 预设")
+            self.report({'ERROR'}, _("无法加载 X 预设"))
             return {'CANCELLED'}
-            
+
         mapper_y = BoneMapManager()
         if not mapper_y.load_preset(settings.target_preset_enum, is_import_x=False):
-            self.report({'ERROR'}, "无法加载 Y 预设")
+            self.report({'ERROR'}, _("无法加载 Y 预设"))
             return {'CANCELLED'}
 
         # 3. 预计算转换规则
@@ -154,7 +155,7 @@ class MODDER_OT_DirectConvert(bpy.types.Operator):
                 conversion_rules.append((src_mains, src_auxs, tgt_mains[0]))
 
         if not conversion_rules:
-            self.report({'WARNING'}, "X与Y预设之间没有共同的骨骼映射")
+            self.report({'WARNING'}, _("X与Y预设之间没有共同的骨骼映射"))
             return {'CANCELLED'}
 
         # 4. 开始处理网格 (Object Mode)
@@ -206,7 +207,7 @@ class MODDER_OT_DirectConvert(bpy.types.Operator):
             if mesh_updated:
                 processed_count += 1
 
-        self.report({'INFO'}, f"处理完成: 已更新 {processed_count} 个网格的顶点组")
+        self.report({'INFO'}, _("处理完成: 已更新 %d 个网格的顶点组") % processed_count)
         return {'FINISHED'}
     
 class MODDER_OT_UniversalSnap(bpy.types.Operator):
@@ -221,7 +222,7 @@ class MODDER_OT_UniversalSnap(bpy.types.Operator):
         
         # 1. 检查选中项
         if len(selected_objs) != 2 or not context.active_object:
-            self.report({'ERROR'}, "操作对象错误: 请先选中源骨架(X)，再按住Ctrl选中目标骨架(Y)")
+            self.report({'ERROR'}, _("操作对象错误: 请先选中源骨架(X)，再按住Ctrl选中目标骨架(Y)"))
             return {'CANCELLED'}
             
         target_arm = context.active_object  # 活动的是目标 (Y, 如 MHWI)
@@ -230,12 +231,12 @@ class MODDER_OT_UniversalSnap(bpy.types.Operator):
         # 2. 加载映射表
         mapper_x = BoneMapManager()
         if not mapper_x.load_preset(settings.import_preset_enum, is_import_x=True):
-            self.report({'ERROR'}, "无法加载 X 预设")
+            self.report({'ERROR'}, _("无法加载 X 预设"))
             return {'CANCELLED'}
-            
+
         mapper_y = BoneMapManager()
         if not mapper_y.load_preset(settings.target_preset_enum, is_import_x=False):
-            self.report({'ERROR'}, "无法加载 Y 预设")
+            self.report({'ERROR'}, _("无法加载 Y 预设"))
             return {'CANCELLED'}
 
         # 3. 预计算源骨骼的世界坐标 (在 Object 模式下进行)
@@ -301,7 +302,7 @@ class MODDER_OT_UniversalSnap(bpy.types.Operator):
             aligned_count += 1
         
         bpy.ops.object.mode_set(mode='OBJECT')
-        self.report({'INFO'}, f"刚性对齐完成: {aligned_count} 根骨骼")
+        self.report({'INFO'}, _("刚性对齐完成: %d 根骨骼") % aligned_count)
         return {'FINISHED'}
     
 class MODDER_OT_SmartGraftBones(bpy.types.Operator):
@@ -322,7 +323,7 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
         target_arm = context.active_object # Out (目标)
 
         if not target_arm or target_arm.type != 'ARMATURE':
-            self.report({'ERROR'}, "操作失败：请先选择 In 骨架，再 Ctrl 加选 Out 骨架(Out需为黄色激活状态)")
+            self.report({'ERROR'}, _("操作失败：请先选择 In 骨架，再 Ctrl 加选 Out 骨架(Out需为黄色激活状态)"))
             return {'CANCELLED'}
         
         source_arm = None # In (来源)
@@ -332,7 +333,7 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
                 break
         
         if not source_arm:
-            self.report({'ERROR'}, "操作失败：未找到来源(In)骨架")
+            self.report({'ERROR'}, _("操作失败：未找到来源(In)骨架"))
             return {'CANCELLED'}
 
         # --- 2. 加载预设 (仅用于排除非物理骨) ---
@@ -341,12 +342,12 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
 
         src_mapper = BoneMapManager()
         if not src_mapper.load_preset(settings.import_preset_enum, is_import_x=True):
-            self.report({'ERROR'}, "无法加载源预设 (In)")
+            self.report({'ERROR'}, _("无法加载源预设 (In)"))
             return {'CANCELLED'}
 
         tgt_mapper = BoneMapManager()
         if not tgt_mapper.load_preset(settings.target_preset_enum, is_import_x=False):
-            self.report({'ERROR'}, "无法加载目标预设 (Out)")
+            self.report({'ERROR'}, _("无法加载目标预设 (Out)"))
             return {'CANCELLED'}
 
         # --- 3. 构建查找表 ---
@@ -383,7 +384,7 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
         }
 
         if not physics_bones_names:
-            self.report({'WARNING'}, "未检测到物理骨骼")
+            self.report({'WARNING'}, _("未检测到物理骨骼"))
             return {'FINISHED'}
 
         # --- 5. 核心移植逻辑 ---
@@ -524,7 +525,7 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
                 pb.color.custom.active = (0.70, 0.85, 1.00)
 
         bpy.ops.object.mode_set(mode='OBJECT')
-        self.report({'INFO'}, f"移植完成: 处理 {created_count} 根骨骼 (含自动生成的末端骨)")
+        self.report({'INFO'}, _("移植完成: 处理 %d 根骨骼 (含自动生成的末端骨)") % created_count)
         return {'FINISHED'}
 
 
@@ -541,7 +542,7 @@ class MODDER_OT_MergePhysicsWeights(bpy.types.Operator):
         # 获取选中的网格
         selected_meshes = [o for o in context.selected_objects if o.type == 'MESH']
         if not selected_meshes:
-            self.report({'ERROR'}, "请至少选中一个网格")
+            self.report({'ERROR'}, _("请至少选中一个网格"))
             return {'CANCELLED'}
         
         # 需要一个骨架来分析骨骼层级
@@ -553,15 +554,15 @@ class MODDER_OT_MergePhysicsWeights(bpy.types.Operator):
                 break
         
         if not arm_obj:
-            self.report({'ERROR'}, "选中的网格没有绑定骨架")
+            self.report({'ERROR'}, _("选中的网格没有绑定骨架"))
             return {'CANCELLED'}
         
         # 加载 X 预设，判断哪些是基础骨骼
         mapper = BoneMapManager()
         if not mapper.load_preset(settings.import_preset_enum, is_import_x=True):
-            self.report({'ERROR'}, "无法加载 X 预设")
+            self.report({'ERROR'}, _("无法加载 X 预设"))
             return {'CANCELLED'}
-        
+
         # 用模糊匹配构建预设骨骼集合，避免命名习惯不同的基础骨被误判为物理骨
         preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
 
@@ -583,7 +584,7 @@ class MODDER_OT_MergePhysicsWeights(bpy.types.Operator):
             # 如果找不到基础父级 (孤儿物理骨)，跳过
         
         if not physics_to_base:
-            self.report({'INFO'}, "未检测到物理骨骼的顶点组")
+            self.report({'INFO'}, _("未检测到物理骨骼的顶点组"))
             return {'FINISHED'}
         
         # 对每个网格执行权重合并
@@ -608,7 +609,7 @@ class MODDER_OT_MergePhysicsWeights(bpy.types.Operator):
             
             total_merged += merged_in_mesh
         
-        self.report({'INFO'}, f"物理权重降级完成: 在 {len(selected_meshes)} 个网格上合并了 {total_merged} 个物理顶点组")
+        self.report({'INFO'}, _("物理权重降级完成: 在 %d 个网格上合并了 %d 个物理顶点组") % (len(selected_meshes), total_merged))
         return {'FINISHED'}
 
 
@@ -623,18 +624,18 @@ class MODDER_OT_RenameBonesToTarget(bpy.types.Operator):
         arm_obj = context.active_object
         
         if not arm_obj or arm_obj.type != 'ARMATURE':
-            self.report({'ERROR'}, "请先选中一个骨架")
+            self.report({'ERROR'}, _("请先选中一个骨架"))
             return {'CANCELLED'}
-        
+
         # 加载 X 和 Y 预设
         mapper_x = BoneMapManager()
         if not mapper_x.load_preset(settings.import_preset_enum, is_import_x=True):
-            self.report({'ERROR'}, "无法加载 X 预设")
+            self.report({'ERROR'}, _("无法加载 X 预设"))
             return {'CANCELLED'}
-        
+
         mapper_y = BoneMapManager()
         if not mapper_y.load_preset(settings.target_preset_enum, is_import_x=False):
-            self.report({'ERROR'}, "无法加载 Y 预设")
+            self.report({'ERROR'}, _("无法加载 Y 预设"))
             return {'CANCELLED'}
         
         # 通过标准键桥接: X 实际骨骼名 -> 标准键 -> Y 目标骨骼名
@@ -657,7 +658,7 @@ class MODDER_OT_RenameBonesToTarget(bpy.types.Operator):
                 rename_map[src_name] = tgt_name
         
         if not rename_map:
-            self.report({'INFO'}, "没有需要改名的骨骼 (来源和目标名称已一致)")
+            self.report({'INFO'}, _("没有需要改名的骨骼 (来源和目标名称已一致)"))
             return {'FINISHED'}
         
         # 进入编辑模式执行改名
@@ -674,7 +675,7 @@ class MODDER_OT_RenameBonesToTarget(bpy.types.Operator):
                 renamed_count += 1
         
         bpy.ops.object.mode_set(mode='OBJECT')
-        self.report({'INFO'}, f"已将 {renamed_count} 根骨骼改名为目标游戏名")
+        self.report({'INFO'}, _("已将 %d 根骨骼改名为目标游戏名") % renamed_count)
         return {'FINISHED'}
 
 
@@ -689,12 +690,12 @@ class MODDER_OT_RemoveNonBaseBones(bpy.types.Operator):
         arm_obj = context.active_object
         
         if not arm_obj or arm_obj.type != 'ARMATURE':
-            self.report({'ERROR'}, "请先选中一个骨架")
+            self.report({'ERROR'}, _("请先选中一个骨架"))
             return {'CANCELLED'}
-        
+
         mapper = BoneMapManager()
         if not mapper.load_preset(settings.import_preset_enum, is_import_x=True):
-            self.report({'ERROR'}, "无法加载 X 预设")
+            self.report({'ERROR'}, _("无法加载 X 预设"))
             return {'CANCELLED'}
         
         # 用模糊匹配构建基础骨骼集合，避免命名习惯不同的基础骨被误删
@@ -707,7 +708,7 @@ class MODDER_OT_RemoveNonBaseBones(bpy.types.Operator):
         
         if not to_remove:
             bpy.ops.object.mode_set(mode='OBJECT')
-            self.report({'INFO'}, "没有需要剔除的骨骼")
+            self.report({'INFO'}, _("没有需要剔除的骨骼"))
             return {'FINISHED'}
         
         # 删除
@@ -716,7 +717,7 @@ class MODDER_OT_RemoveNonBaseBones(bpy.types.Operator):
                 edit_bones.remove(edit_bones[name])
         
         bpy.ops.object.mode_set(mode='OBJECT')
-        self.report({'INFO'}, f"已剔除 {len(to_remove)} 根非基础骨骼")
+        self.report({'INFO'}, _("已剔除 %d 根非基础骨骼") % len(to_remove))
         return {'FINISHED'}
 
 
@@ -740,14 +741,14 @@ class MODDER_OT_SetBoneVisibility(bpy.types.Operator):
         arm_obj = context.active_object
 
         if not arm_obj or arm_obj.type != 'ARMATURE':
-            self.report({'ERROR'}, "请先选中一个骨架")
+            self.report({'ERROR'}, _("请先选中一个骨架"))
             return {'CANCELLED'}
 
         preset_bones = set()
         if self.mode != 'ALL':
             mapper = BoneMapManager()
             if not mapper.load_preset(settings.import_preset_enum, is_import_x=True):
-                self.report({'ERROR'}, "预设加载失败")
+                self.report({'ERROR'}, _("预设加载失败"))
                 return {'CANCELLED'}
             preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
 
@@ -762,7 +763,7 @@ class MODDER_OT_SetBoneVisibility(bpy.types.Operator):
 
         settings.bone_view_mode = self.mode
         labels = {'ALL': '全显', 'BASE': '仅基础骨', 'PHYSICS': '仅物理骨'}
-        self.report({'INFO'}, f"骨骼显示: {labels[self.mode]}")
+        self.report({'INFO'}, _("骨骼显示: %s") % labels[self.mode])
         return {'FINISHED'}
 
 

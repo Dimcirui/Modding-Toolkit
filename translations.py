@@ -320,5 +320,95 @@ TRANSLATIONS = {
         ("*", "目标文件已存在: %s，已跳过覆盖"): "Target file already exists: %s, skipped overwrite",
         ("*", "已复制 (%s): %s"): "Copied (%s): %s",
         ("*", "转换失败: %s"): "Conversion failed: %s",
+
+        # === core/standard_ops.py ===
+
+        # Operator bl_label strings
+        ("*", "1. 标准化重命名 (X)"): "1. Standardize Rename (X)",
+        ("*", "2. 转换为游戏名 (Y)"): "2. Convert to Game Name (Y)",
+        ("*", "一键转换 (X -> Y)"): "One-Click Convert (X -> Y)",
+        ("*", "0. 骨架对齐 (Snap)"): "0. Armature Snap",
+        ("*", "3. 物理骨移植 (+End Bone)"): "3. Graft Physics Bones (+End Bone)",
+        ("*", "物理权重降级"): "Downgrade Physics Weights",
+        ("*", "基础骨骼改名 (X->Y)"): "Rename Base Bones (X->Y)",
+        ("*", "剔除非基础骨骼"): "Remove Non-Base Bones",
+        ("*", "骨骼可见性"): "Bone Visibility",
+
+        # Operator bl_description strings
+        ("*", "执行标准化 X：合并权重并重命名为基础名"): "Execute Standard X: merge weights and rename to base names",
+        ("*", "执行标准化 Y：将基础名转为目标游戏名"): "Execute Standard Y: convert base names to target game names",
+        ("*", "将选中网格的顶点组转换成目标游戏的格式"): "Convert vertex groups of selected meshes to the target game format",
+        ("*", "将目标游戏骨架的身体骨骼对齐来源预设骨骼（后选要修改的目标骨架）"): "Align the body bones of the target game armature to the source preset bones (select target armature last)",
+        ("*", "将物理骨骼的顶点组权重合并到其最近的基础骨骼上 (通过 X 预设判断)。\n用于不需要物理效果或目标游戏不支持物理的降级场景"): "Merge physics bone vertex group weights into their nearest base bone (determined by X preset).\nFor downgrade scenarios where physics is unsupported or unneeded",
+        ("*", "将骨架上的基础骨骼名从来源名 (X) 改为目标游戏名 (Y)。\n用于手动对齐工作流: 改名后骨骼名与目标游戏一致, 方便手动对齐和数据传递"): "Rename base bones on the armature from source name (X) to target game name (Y).\nFor manual alignment workflows: renamed bones match the target game for easier alignment and data transfer",
+        ("*", "删除骨架中所有非基础骨骼 (通过 X 预设判断)。\n建议先执行物理权重降级再使用此功能"): "Delete all non-base bones in the armature (determined by X preset).\nRecommended to run Downgrade Physics Weights first",
+        ("*", "按模式控制骨骼可见性（全显 / 仅基础骨 / 仅物理骨），后两者需加载 X 预设"): "Control bone visibility by mode (All / Base Only / Physics Only); the latter two require loading the X preset",
+
+        # Static report messages
+        ("*", "预设加载失败"): "Preset load failed",
+        ("*", "无法加载 Y 预设"): "Cannot load Y preset",
+        ("*", "请至少选中一个网格 (Mesh)"): "Please select at least one mesh",
+        ("*", "无法加载 X 预设"): "Cannot load X preset",
+        ("*", "X与Y预设之间没有共同的骨骼映射"): "No common bone mappings between X and Y presets",
+        ("*", "操作对象错误: 请先选中源骨架(X)，再按住Ctrl选中目标骨架(Y)"): "Operation error: please select source armature (X) first, then Ctrl-select target armature (Y)",
+        ("*", "无法加载源预设 (In)"): "Cannot load source preset (In)",
+        ("*", "无法加载目标预设 (Out)"): "Cannot load target preset (Out)",
+        ("*", "未检测到物理骨骼"): "No physics bones detected",
+        ("*", "请至少选中一个网格"): "Please select at least one mesh",
+        ("*", "选中的网格没有绑定骨架"): "Selected meshes have no bound armature",
+        ("*", "未检测到物理骨骼的顶点组"): "No physics bone vertex groups detected",
+        ("*", "没有需要改名的骨骼 (来源和目标名称已一致)"): "No bones need renaming (source and target names already match)",
+        ("*", "没有需要剔除的骨骼"): "No bones to remove",
+
+        # Template report messages
+        ("*", "标准化完成: 重命名 %d 根, 清理 %d 根辅助骨"): "Standardization complete: renamed %d, cleaned %d auxiliary bones",
+        ("*", "处理完成: 已更新 %d 个网格的顶点组"): "Done: updated vertex groups in %d meshes",
+        ("*", "刚性对齐完成: %d 根骨骼"): "Rigid snap complete: %d bones",
+        ("*", "移植完成: 处理 %d 根骨骼 (含自动生成的末端骨)"): "Graft complete: processed %d bones (including auto-generated end bones)",
+        ("*", "物理权重降级完成: 在 %d 个网格上合并了 %d 个物理顶点组"): "Physics weight downgrade complete: merged %d physics vertex groups across %d meshes",
+        ("*", "已将 %d 根骨骼改名为目标游戏名"): "Renamed %d bones to target game names",
+        ("*", "已剔除 %d 根非基础骨骼"): "Removed %d non-base bones",
+        ("*", "骨骼显示: %s"): "Bone display: %s",
+        ("*", "操作失败：请先选择 In 骨架，再 Ctrl 加选 Out 骨架(Out需为黄色激活状态)"): "Operation failed: please select the In armature first, then Ctrl-select the Out armature (Out must be the active yellow object)",
+        ("*", "操作失败：未找到来源(In)骨架"): "Operation failed: source (In) armature not found",
+
+        # === core/pose_ops.py ===
+
+        # Operator bl_label strings
+        ("*", "方向计算 (简单T转A)"): "Direction Calc (Simple T to A)",
+        ("*", "RE Engine 矩阵归零"): "RE Engine Matrix Reset",
+        ("*", "录制变换"): "Record Transform",
+        ("*", "正向 (A->B)"): "Forward (A->B)",
+        ("*", "逆向 (B->A)"): "Inverse (B->A)",
+        ("*", "删除记录"): "Delete Record",
+
+        # Operator bl_description strings
+        ("*", "仅将上臂旋转到水平方向，适用于简单的 A-Pose 骨架（如MMD），如果无法正确运作，请使用更通用的姿态变换记录器"): "Rotate upper arms to horizontal only; suitable for simple A-Pose armatures (e.g. MMD). If it does not work correctly, use the more general Pose Transform Recorder",
+        ("*", "RE Engine 专用: 重置肢体骨骼旋转矩阵为 T-Pose (适用于荒野/街霸6/生化4等，生化9除外)"): "RE Engine only: reset limb bone rotation matrices to T-Pose (for Wilds/SF6/RE4 etc., except RE9)",
+        ("*", "录制相对变换: 先选 A 姿态骨架，再 Ctrl 选 B 姿态骨架，计算并保存 A->B 的变换"): "Record relative transform: select A-pose armature first, then Ctrl-select B-pose armature, compute and save A->B transform",
+        ("*", "正向应用变换 (A->B): 将选中骨架从 A 姿态转换为 B 姿态"): "Apply transform forward (A->B): convert selected armature from A-pose to B-pose",
+        ("*", "逆向应用变换 (B->A): 将选中骨架从 B 姿态转换回 A 姿态"): "Apply transform inverse (B->A): convert selected armature from B-pose back to A-pose",
+        ("*", "删除选中的变换记录"): "Delete the selected transform record",
+
+        # Static report messages
+        ("*", "无法加载骨架预设"): "Cannot load armature preset",
+        ("*", "未找到上臂骨骼"): "Upper arm bones not found",
+        ("*", "预设中没有匹配到任何骨骼"): "No bones matched in preset",
+        ("*", "请选中两个骨架: 先选 A 姿态, 再 Ctrl 选 B 姿态"): "Please select two armatures: A-pose first, then Ctrl-select B-pose",
+        ("*", "名称不能为空"): "Name cannot be empty",
+        ("*", "请确保选中了两个骨架对象"): "Please make sure two armature objects are selected",
+        ("*", "两个骨架没有同名骨骼"): "The two armatures have no bones with the same name",
+        ("*", "两个骨架的姿态几乎相同, 没有显著变换可记录"): "The two armatures have nearly identical poses; no significant transform to record",
+        ("*", "未选择变换记录"): "No transform record selected",
+        ("*", "记录文件中没有变换数据"): "No transform data in record file",
+        ("*", "骨架与变换记录之间找不到对应的骨骼 (请检查骨架预设)"): "No matching bones found between armature and transform record (check armature preset)",
+
+        # Template report messages
+        ("*", "方向计算完成: %d 根上臂骨骼, %d 个网格"): "Direction calc complete: %d upper arm bones, %d meshes",
+        ("*", "RE Engine 矩阵归零完成: %d 根骨骼, %d 个网格"): "RE Engine matrix reset complete: %d bones, %d meshes",
+        ("*", "已录制 %d 根骨骼的变换 -> %s"): "Recorded transforms for %d bones -> %s",
+        ("*", "文件不存在: %s"): "File does not exist: %s",
+        ("*", "读取失败: %s"): "Read failed: %s",
+        ("*", "变换完成 (%s): %d 根骨骼, %d 个网格"): "Transform complete (%s): %d bones, %d meshes",
     },
 }
