@@ -1,4 +1,5 @@
 import bpy
+from bpy.app.translations import pgettext as _
 from ..core import ui_config
 from ..core.ui_config import get_display_name
 
@@ -41,19 +42,19 @@ class MHW_PT_PresetEditor(bpy.types.Panel):
             row.prop(suite_settings, "import_preset_enum", text="")
         else:
             row.prop(suite_settings, "target_preset_enum", text="")
-        row.operator("modder.load_x_preset", text="读取/编辑", icon='IMPORT')
+        row.operator("modder.load_x_preset", text=_("读取/编辑"), icon='IMPORT')
         row.operator("modder.delete_x_preset", text="", icon='TRASH')
 
         # 打开文件夹按钮
         row = box.row()
-        row.operator("modder.open_preset_folder", text="打开预设文件夹", icon='FILE_FOLDER')
+        row.operator("modder.open_preset_folder", text=_("打开预设文件夹"), icon='FILE_FOLDER')
 
         # 转换按钮
         row = box.row()
         if is_x:
-            row.operator("modder.convert_preset", text="复制为 Y 预设 (X转换)", icon='PASTEDOWN')
+            row.operator("modder.convert_preset", text=_("复制为 Y 预设 (X转换)"), icon='PASTEDOWN')
         else:
-            row.operator("modder.convert_preset", text="复制为 X 预设 (Y转换)", icon='PASTEDOWN')
+            row.operator("modder.convert_preset", text=_("复制为 X 预设 (Y转换)"), icon='PASTEDOWN')
 
         layout.separator()
 
@@ -64,9 +65,9 @@ class MHW_PT_PresetEditor(bpy.types.Panel):
 
         row = layout.row(align=True)
         row.prop(editor_settings, "new_preset_name", text="保存名")
-        row.operator("modder.save_x_preset", text="保存", icon='DISK_DRIVE')
+        row.operator("modder.save_x_preset", text=_("保存"), icon='DISK_DRIVE')
 
-        layout.operator("modder.init_editor", text="清空并初始化列表", icon='FILE_NEW')
+        layout.operator("modder.init_editor", text=_("清空并初始化列表"), icon='FILE_NEW')
 
         row = layout.row()
         row.prop(editor_settings, "search_filter", text="", icon='VIEWZOOM')

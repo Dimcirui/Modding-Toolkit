@@ -1,5 +1,6 @@
 import bpy
 import os
+from bpy.app.translations import pgettext as _
 from . import data_maps
 
 _FINGER_INITIALS = {
@@ -168,9 +169,8 @@ def _fakebone_fingers(context, source_arm, ruler_arm):
             if child_name not in ruler_arm.data.edit_bones:
                 continue
             if (child_name.startswith('L') or child_name.startswith('R')) and len(ParentName[fake]) > 1:
-                parts = child_name.split('_')
-                finger_initial = next(
-                    (v for k, v in _FINGER_INITIALS.items() if any(p.startswith(k) for p in parts)), "")
+                # 取 L_/R_ 后面的首字母作为 end 骨后缀，如 L_Palm -> P, L_IndexF1 -> I
+                finger_initial = child_name.split('_')[1][0] if '_' in child_name else ""
                 suffix = f"_end{finger_initial}" if finger_initial else "_end"
             else:
                 suffix = "_end"
@@ -227,21 +227,11 @@ def _merge_end_bones(context, main_arm, end_arm, merge_type):
     arm = main_arm.data
 
     if merge_type == 'body':
-        end_to_parent = {}
-        for fake, parents in data_maps.FAKEBONE_BODY_PARENTS.items():
-            for pname in parents:
-                suffix = "_end"
-                if len(parents) > 1:
-                    if pname.startswith("L_") or pname.endswith("_L"):
-                        suffix = "_endL"
-                    elif pname.startswith("R_") or pname.endswith("_R"):
-                        suffix = "_endR"
-                end_to_parent[fake + suffix] = pname
         for bone in arm.edit_bones:
             if "_end" in bone.name:
-                parent_name = end_to_parent.get(bone.name)
-                if parent_name and parent_name in arm.edit_bones:
-                    bone.parent = arm.edit_bones[parent_name]
+                base_name = bone.name.split("_end")[0]
+                if base_name in arm.edit_bones:
+                    bone.parent = arm.edit_bones[base_name]
                     bone.use_connect = False
 
     elif merge_type == 'fingers':
@@ -346,7 +336,7 @@ class RE4_OT_FakeBone_OneClick(bpy.types.Operator):
 
     def invoke(self, context, event):
         if context.active_object is None or context.active_object.type != 'ARMATURE':
-            self.report({'ERROR'}, "请先选中目标骨架")
+            self.report({'ERROR'}, _("请先选中目标骨架"))
             return {'CANCELLED'}
         return context.window_manager.invoke_props_dialog(self, width=320)
 
@@ -355,29 +345,29 @@ class RE4_OT_FakeBone_OneClick(bpy.types.Operator):
 
     def execute(self, context):
         if not hasattr(bpy.ops, 're_fbxskel') or not hasattr(bpy.ops.re_fbxskel, 'exportfile'):
-            self.report({'ERROR'}, "需要 RE Mesh Editor 插件")
+            self.report({'ERROR'}, _("需要 RE Mesh Editor 插件"))
             return {'CANCELLED'}
 
         user_arm = context.active_object
         if user_arm is None or user_arm.type != 'ARMATURE':
-            self.report({'ERROR'}, "请先选中目标骨架")
+            self.report({'ERROR'}, _("请先选中目标骨架"))
             return {'CANCELLED'}
 
         if not self.native_skeleton or self.native_skeleton == 'NONE':
-            self.report({'ERROR'}, "请选择原生骨架（添加文件到 assets/native_skeletons/re4/）")
+            self.report({'ERROR'}, _("请选择原生骨架（添加文件到 assets/native_skeletons/re4/）"))
             return {'CANCELLED'}
 
         native_path = os.path.join(_get_native_skeletons_dir(), self.native_skeleton)
         if not os.path.isfile(native_path):
-            self.report({'ERROR'}, f"找不到原生骨架: {native_path}")
+            self.report({'ERROR'}, _("找不到原生骨架: %s") % native_path)
             return {'CANCELLED'}
 
         try:
             do_fakebone(context, user_arm, native_path)
-            self.report({'INFO'}, "假骨骼生成完成")
+            self.report({'INFO'}, _("假骨骼生成完成"))
             return {'FINISHED'}
         except Exception as e:
-            self.report({'ERROR'}, f"假骨骼生成失败: {e}")
+            self.report({'ERROR'}, _("假骨骼生成失败: %s") % e)
             return {'CANCELLED'}
 
 

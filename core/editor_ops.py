@@ -5,6 +5,7 @@ import re
 import shutil
 import subprocess
 import sys
+from bpy.app.translations import pgettext as _
 from . import ui_config, bone_mapper
 from .bone_mapper import BoneMapManager, STANDARD_BONE_NAMES
 
@@ -21,7 +22,7 @@ class MODDER_OT_InitEditor(bpy.types.Operator):
             item = settings.slots.add()
             item.std_name = std_key
             item.ui_name = std_key
-        self.report({'INFO'}, "编辑器已重置")
+        self.report({'INFO'}, _("编辑器已重置"))
         return {'FINISHED'}
 
 # === 拾取骨骼 ===
@@ -39,7 +40,7 @@ class MODDER_OT_PickBone(bpy.types.Operator):
         arm_obj = context.active_object
 
         if not arm_obj or arm_obj.type != 'ARMATURE':
-            self.report({'ERROR'}, "请先选中一个骨架")
+            self.report({'ERROR'}, _("请先选中一个骨架"))
             return {'CANCELLED'}
 
         selected_names = []
@@ -54,11 +55,11 @@ class MODDER_OT_PickBone(bpy.types.Operator):
             if context.active_bone:
                 active_name = context.active_bone.name
         else:
-            self.report({'WARNING'}, "请进入 Pose 或 Edit 模式选择骨骼")
+            self.report({'WARNING'}, _("请进入 Pose 或 Edit 模式选择骨骼"))
             return {'CANCELLED'}
 
         if not selected_names and not active_name:
-            self.report({'WARNING'}, "没有选中任何骨骼")
+            self.report({'WARNING'}, _("没有选中任何骨骼"))
             return {'CANCELLED'}
 
         if self.is_aux:
@@ -73,9 +74,9 @@ class MODDER_OT_PickBone(bpy.types.Operator):
                 added_count += 1
             if added_count > 0:
                 slot.is_expanded = True
-                self.report({'INFO'}, f"已批量添加 {added_count} 个辅助骨")
+                self.report({'INFO'}, _("已批量添加 %d 个辅助骨") % added_count)
             else:
-                self.report({'WARNING'}, "未添加任何新骨骼 (可能是重复或选重了主骨)")
+                self.report({'WARNING'}, _("未添加任何新骨骼 (可能是重复或选重了主骨)"))
         else:
             if active_name:
                 slot.source_bone_name = active_name
@@ -84,7 +85,7 @@ class MODDER_OT_PickBone(bpy.types.Operator):
                         slot.aux_bones.remove(i)
                         break
             else:
-                self.report({'WARNING'}, "无法确定活动骨骼，请点击具体的一根骨骼")
+                self.report({'WARNING'}, _("无法确定活动骨骼，请点击具体的一根骨骼"))
                 return {'CANCELLED'}
 
         return {'FINISHED'}
@@ -161,7 +162,7 @@ class MODDER_OT_MirrorMapping(bpy.types.Operator):
                         new_item.name = mirrored_aux
                         count += 1
 
-        self.report({'INFO'}, f"智能镜像完成: 更新 {count} 项")
+        self.report({'INFO'}, _("智能镜像完成: 更新 %d 项") % count)
         return {'FINISHED'}
 
 # === 工具函数 ===
@@ -202,7 +203,7 @@ class MODDER_OT_SaveXPreset(bpy.types.Operator):
             fill_count += 1
 
         if fill_count == 0:
-            self.report({'ERROR'}, "列表为空，未保存")
+            self.report({'ERROR'}, _("列表为空，未保存"))
             return {'CANCELLED'}
 
         preset_type = "X_PRESET" if is_x else "Y_PRESET"
@@ -225,9 +226,9 @@ class MODDER_OT_SaveXPreset(bpy.types.Operator):
         try:
             with open(filepath, 'w', encoding='utf-8') as f:
                 json.dump(final_data, f, indent=2, ensure_ascii=False)
-            self.report({'INFO'}, f"{'X' if is_x else 'Y'} 预设已保存: {filename}")
+            self.report({'INFO'}, _("%s 预设已保存: %s") % ('X' if is_x else 'Y', filename))
         except Exception as e:
-            self.report({'ERROR'}, f"保存失败: {str(e)}")
+            self.report({'ERROR'}, _("保存失败: %s") % str(e))
             return {'CANCELLED'}
 
         return {'FINISHED'}
@@ -245,12 +246,12 @@ class MODDER_OT_LoadXPreset(bpy.types.Operator):
 
         real_filename = _get_selected_filename(context, is_x)
         if not real_filename:
-            self.report({'WARNING'}, "未选择任何预设")
+            self.report({'WARNING'}, _("未选择任何预设"))
             return {'CANCELLED'}
 
         mapper = BoneMapManager()
         if not mapper.load_preset(real_filename, is_import_x=is_x):
-            self.report({'ERROR'}, f"无法加载文件: {real_filename}")
+            self.report({'ERROR'}, _("无法加载文件: %s") % real_filename)
             return {'CANCELLED'}
 
         bpy.ops.modder.init_editor()
@@ -271,7 +272,7 @@ class MODDER_OT_LoadXPreset(bpy.types.Operator):
 
         clean_name = real_filename.rsplit('.', 1)[0]
         editor.new_preset_name = clean_name
-        self.report({'INFO'}, f"成功加载{'X' if is_x else 'Y'}预设: {clean_name} ({loaded_count} 个映射)")
+        self.report({'INFO'}, _("成功加载%s预设: %s (%d 个映射)") % ('X' if is_x else 'Y', clean_name, loaded_count))
         return {'FINISHED'}
 
 # === 删除预设 ===
@@ -301,11 +302,11 @@ class MODDER_OT_DeleteXPreset(bpy.types.Operator):
                     suite.import_preset_enum = "NONE"
                 else:
                     suite.target_preset_enum = "NONE"
-                self.report({'INFO'}, f"已删除: {real_filename}")
+                self.report({'INFO'}, _("已删除: %s") % real_filename)
             except Exception as e:
-                self.report({'ERROR'}, f"删除失败: {e}")
+                self.report({'ERROR'}, _("删除失败: %s") % e)
         else:
-            self.report({'ERROR'}, "文件不存在")
+            self.report({'ERROR'}, _("文件不存在"))
 
         return {'FINISHED'}
 
@@ -321,7 +322,7 @@ class MODDER_OT_OpenPresetFolder(bpy.types.Operator):
         folder = _get_preset_dir(is_x)
 
         if not os.path.isdir(folder):
-            self.report({'ERROR'}, f"文件夹不存在: {folder}")
+            self.report({'ERROR'}, _("文件夹不存在: %s") % folder)
             return {'CANCELLED'}
 
         if sys.platform == 'win32':
@@ -345,12 +346,12 @@ class MODDER_OT_ConvertPreset(bpy.types.Operator):
 
         src_filename = _get_selected_filename(context, is_x)
         if not src_filename:
-            self.report({'WARNING'}, "未选择任何预设")
+            self.report({'WARNING'}, _("未选择任何预设"))
             return {'CANCELLED'}
 
         src_path = os.path.join(_get_preset_dir(is_x), src_filename)
         if not os.path.exists(src_path):
-            self.report({'ERROR'}, f"源文件不存在: {src_filename}")
+            self.report({'ERROR'}, _("源文件不存在: %s") % src_filename)
             return {'CANCELLED'}
 
         # 生成目标文件名：去掉 .json，加上转换标记，再加 .json
@@ -361,7 +362,7 @@ class MODDER_OT_ConvertPreset(bpy.types.Operator):
         dst_path = os.path.join(dst_dir, dst_filename)
 
         if os.path.exists(dst_path):
-            self.report({'WARNING'}, f"目标文件已存在: {dst_filename}，已跳过覆盖")
+            self.report({'WARNING'}, _("目标文件已存在: %s，已跳过覆盖") % dst_filename)
             return {'CANCELLED'}
 
         try:
@@ -376,9 +377,9 @@ class MODDER_OT_ConvertPreset(bpy.types.Operator):
                 json.dump(data, f, indent=2, ensure_ascii=False)
 
             direction = "X → Y" if is_x else "Y → X"
-            self.report({'INFO'}, f"已复制 ({direction}): {dst_filename}")
+            self.report({'INFO'}, _("已复制 (%s): %s") % (direction, dst_filename))
         except Exception as e:
-            self.report({'ERROR'}, f"转换失败: {e}")
+            self.report({'ERROR'}, _("转换失败: %s") % e)
             return {'CANCELLED'}
 
         return {'FINISHED'}
