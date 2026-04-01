@@ -6,6 +6,11 @@ from ..core.pose_ops import get_pose_presets_callback
 from ..games.re9.batch_export import get_schemes_callback
 from ..games.re4.batch_export import get_schemes_callback as get_re4_schemes_callback
 from ..games.mhws.batch_export import get_mhws_schemes_callback, get_mhws_armor_callback, MHWS_VARIANTS
+from ..games.mhwi.batch_export import (
+    get_mhwi_armor_sets_callback,
+    get_mhwi_hr_armor_callback,
+    get_mhwi_mr_armor_callback,
+)
 from ..core.bone_mapper import BoneMapManager
 
 # 映射详情预览缓存：{(x_preset, y_preset): (mapper_x, mapper_y)}
@@ -71,6 +76,40 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         name="Export Scheme",
         description="Select character export scheme for RE9",
         items=get_schemes_callback
+    )
+
+    # MHWI batch export
+    mhwi_armor_sets_file: bpy.props.EnumProperty(
+        name="装备包",
+        description="选择 MHWI 装备包 JSON",
+        items=get_mhwi_armor_sets_callback,
+    )
+    mhwi_rank_tab: bpy.props.EnumProperty(
+        name="位阶",
+        items=[
+            ('HR', "上下位", "低位/高位装备"),
+            ('MR', "大师位", "冰原大师位装备"),
+        ],
+        default='HR',
+    )
+    mhwi_gender: bpy.props.EnumProperty(
+        name="性别",
+        items=[
+            ('F',    "女",   "仅导出女猎装备文件"),
+            ('M',    "男",   "仅导出男猎装备文件"),
+            ('BOTH', "双性", "同时导出男女猎装备文件"),
+        ],
+        default='F',
+    )
+    mhwi_selected_hr_armor: bpy.props.EnumProperty(
+        name="上下位装备",
+        description="选择要导出的上下位装备",
+        items=get_mhwi_hr_armor_callback,
+    )
+    mhwi_selected_mr_armor: bpy.props.EnumProperty(
+        name="大师位装备",
+        description="选择要导出的大师位装备",
+        items=get_mhwi_mr_armor_callback,
     )
 
     # MHWs batch export
@@ -484,6 +523,15 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             box.label(text="MHWI Tools", icon='ARMATURE_DATA')
             col = box.column(align=True)
             col.operator("mhwi.align_non_physics", text=_("对齐非物理骨骼"), icon='BONE_DATA')
+
+            col.separator()
+            has_mhw_model = hasattr(bpy.ops, 'mhw_mod3') and hasattr(bpy.ops.mhw_mod3, 'export_mhw_mod3')
+            row = col.row()
+            row.enabled = has_mhw_model
+            row.operator("mhwi.batch_export_dialog", text=_("批量导出装备"), icon='EXPORT')
+            row = col.row()
+            row.enabled = has_mhw_model
+            row.operator("mhwi.mrl3_tex_processor_dialog", text=_("MRL3 + Tex 处理器"), icon='TEXTURE')
 
         if settings.show_mhws:
             box = layout.box()
