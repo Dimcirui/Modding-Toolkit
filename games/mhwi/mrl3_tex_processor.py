@@ -35,7 +35,7 @@ MHWI_SRGB_SLOT_TYPES = {'AlbedoMap', 'EmissiveMap'}
 MHWI_BC5_SLOT_TYPES  = {'NormalMap'}
 
 MHWI_ABBREV_MAP = {
-    'AlbedoMap':      'ALBD',
+    'AlbedoMap':      'BML',
     'NormalMap':      'NM',
     'RMTMap':         'RMT',
     'EmissiveMap':    'EMI',
@@ -88,10 +88,10 @@ _is_null_mhwi = make_null_checker(MHWI_NULL_TEX)
 # ── Path helpers ──────────────────────────────────────────────────────────────
 
 def _mhwi_tex_binding(base_path, tex_name, slot_type):
-    """Value written to MRL3 mapList (no .tex extension)."""
+    """Value written to MRL3 mapList (no nativePC prefix, no extension, backslashes)."""
     abbrev = MHWI_ABBREV_MAP.get(slot_type, slot_type)
-    base   = base_path.strip('/\\').replace('\\', '/')
-    return f"nativePC/{base}/{tex_name}_{abbrev}"
+    base   = base_path.strip('/\\').replace('/', '\\')
+    return f"{base}\\{tex_name}_{abbrev}"
 
 
 def _mhwi_disk_path(natives_root, base_path, tex_name, slot_type):
@@ -158,9 +158,9 @@ def _do_mhwi_refresh(settings, col, scene):
 
         item                   = settings.materials.add()
         item.material_obj_name = obj.name
-        item.material_name     = obj.name
+        item.material_name     = mat_data.materialName
 
-        prev       = saved.get(obj.name, {})
+        prev       = saved.get(mat_data.materialName, {})
         prev_pbr   = prev.get('pbr',     {})
         prev_chs   = prev.get('pbr_chs', {})
         prev_inv   = prev.get('pbr_inv', {})
