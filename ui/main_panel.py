@@ -207,11 +207,15 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
 
             bpy.ops.object.mode_set(mode='EDIT')
             edit_bones = arm_obj.data.edit_bones
-            success, msg = bone_utils.mirror_bone_transform(edit_bones, selected_names)
+            result = bone_utils.mirror_bone_transform(edit_bones, selected_names)
+            success = result[0]
+            msg_template = result[1]
+            msg_args = result[2:] if len(result) > 2 else ()
+            translated = _(msg_template) % msg_args if msg_args else _(msg_template)
             if success:
-                self.report({'INFO'}, msg)
+                self.report({'INFO'}, translated)
             else:
-                self.report({'ERROR'}, msg)
+                self.report({'ERROR'}, translated)
 
         elif self.action == 'SIMPLIFY_CHAIN':
             if context.mode != 'EDIT':
