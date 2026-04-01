@@ -1,4 +1,5 @@
 import bpy
+from bpy.app.translations import pgettext as _
 from ..core import bone_utils, weight_utils, ui_config
 from ..core.bone_utils import get_import_presets_callback, get_target_presets_callback
 from ..core.pose_ops import get_pose_presets_callback
@@ -169,27 +170,27 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
     def execute(self, context):
         arm_obj = context.active_object
         if not arm_obj or arm_obj.type != 'ARMATURE':
-            self.report({'ERROR'}, "请先选中一个骨架")
+            self.report({'ERROR'}, _("请先选中一个骨架"))
             return {'CANCELLED'}
 
         if self.action == 'ROLL_ZERO':
             bpy.ops.object.mode_set(mode='EDIT')
             selected_bones = context.selected_editable_bones
             if not selected_bones:
-                self.report({'WARNING'}, "请在编辑模式下至少选中一根骨骼")
+                self.report({'WARNING'}, _("请在编辑模式下至少选中一根骨骼"))
                 return {'CANCELLED'}
             count = bone_utils.set_roll_to_zero_recursive(selected_bones)
-            self.report({'INFO'}, f"已重置 {count} 根骨骼的 Roll")
+            self.report({'INFO'}, _("已重置 %d 根骨骼的 Roll") % count)
 
         elif self.action == 'ADD_TAIL':
             bpy.ops.object.mode_set(mode='EDIT')
             edit_bones = arm_obj.data.edit_bones
             selected_bones = context.selected_editable_bones
             if not selected_bones:
-                self.report({'WARNING'}, "请选中需要加尾巴的骨骼")
+                self.report({'WARNING'}, _("请选中需要加尾巴的骨骼"))
                 return {'CANCELLED'}
             count = bone_utils.add_vertical_tail_bone(edit_bones, selected_bones)
-            self.report({'INFO'}, f"添加了 {count} 根尾骨")
+            self.report({'INFO'}, _("添加了 %d 根尾骨") % count)
 
         elif self.action == 'MIRROR_X':
             selected_names = []
@@ -201,7 +202,7 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
                 selected_names = [b.name for b in arm_obj.data.bones if b.select]
 
             if len(selected_names) != 2:
-                self.report({'ERROR'}, "请正好选中两个骨骼进行镜像对齐")
+                self.report({'ERROR'}, _("请正好选中两个骨骼进行镜像对齐"))
                 return {'CANCELLED'}
 
             bpy.ops.object.mode_set(mode='EDIT')
@@ -218,7 +219,7 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
 
             selected_bones = list(context.selected_editable_bones)
             if len(selected_bones) < 2:
-                self.report({'ERROR'}, "至少需要选中两个骨骼")
+                self.report({'ERROR'}, _("至少需要选中两个骨骼"))
                 return {'CANCELLED'}
 
             selected_names = [b.name for b in selected_bones]
@@ -245,12 +246,12 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
                     pairs.append((effective[i], effective[i + 1]))
 
             if not pairs:
-                self.report({'WARNING'}, "未生成任何配对（骨骼数不足或全为尾骨）")
+                self.report({'WARNING'}, _("未生成任何配对（骨骼数不足或全为尾骨）"))
                 return {'CANCELLED'}
 
             bpy.ops.object.mode_set(mode='OBJECT')
             weight_utils.merge_weights_and_delete_bones(arm_obj, pairs)
-            self.report({'INFO'}, f"骨链简化完成: 处理 {len(pairs)} 对骨骼")
+            self.report({'INFO'}, _("骨链简化完成: 处理 %d 对骨骼") % len(pairs))
 
         elif self.action == 'MERGE_TO_ACTIVE':
             if context.mode != 'EDIT':
@@ -258,24 +259,24 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
 
             active = context.active_bone
             if not active:
-                self.report({'ERROR'}, "请确保有激活骨骼（最后点击的那根为保留目标）")
+                self.report({'ERROR'}, _("请确保有激活骨骼（最后点击的那根为保留目标）"))
                 return {'CANCELLED'}
 
             others = [b for b in context.selected_editable_bones if b.name != active.name]
             if not others:
-                self.report({'ERROR'}, "请至少选中两根骨骼（激活骨保留，其余骨并入）")
+                self.report({'ERROR'}, _("请至少选中两根骨骼（激活骨保留，其余骨并入）"))
                 return {'CANCELLED'}
 
             active_name = active.name
             pairs = [(active_name, b.name) for b in others]
             bpy.ops.object.mode_set(mode='OBJECT')
             weight_utils.merge_weights_and_delete_bones(arm_obj, pairs)
-            self.report({'INFO'}, f"已将 {len(pairs)} 根骨骼并入 [{active_name}]")
+            self.report({'INFO'}, _("已将 %d 根骨骼并入 [%s]") % (len(pairs), active_name))
 
         elif self.action in ('ALIGN_FULL', 'ALIGN_POS'):
             selected_arms = [o for o in context.selected_objects if o.type == 'ARMATURE']
             if len(selected_arms) != 2:
-                self.report({'ERROR'}, "请选中两个骨架（激活的为目标，另一个为源）")
+                self.report({'ERROR'}, _("请选中两个骨架（激活的为目标，另一个为源）"))
                 return {'CANCELLED'}
             target = arm_obj
             source = [o for o in selected_arms if o != target][0]
@@ -283,8 +284,8 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
                 bpy.ops.object.mode_set(mode='OBJECT')
             mode = 'FULL' if self.action == 'ALIGN_FULL' else 'POS_ONLY'
             count = bone_utils.align_armatures_by_name(source, target, mode=mode)
-            label = "完全对齐" if self.action == 'ALIGN_FULL' else "位置对齐"
-            self.report({'INFO'}, f"{label}: {count} 根骨骼")
+            label = _("完全对齐") if self.action == 'ALIGN_FULL' else _("位置对齐")
+            self.report({'INFO'}, _("%s: %d 根骨骼") % (label, count))
 
         return {'FINISHED'}
 

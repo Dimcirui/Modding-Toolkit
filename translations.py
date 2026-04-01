@@ -410,5 +410,22 @@ TRANSLATIONS = {
         ("*", "文件不存在: %s"): "File does not exist: %s",
         ("*", "读取失败: %s"): "Read failed: %s",
         ("*", "变换完成 (%s): %d 根骨骼, %d 个网格"): "Transform complete (%s): %d bones, %d meshes",
+
+        # === ui/main_panel.py report messages ===
+        ("*", "请在编辑模式下至少选中一根骨骼"): "Please select at least one bone in Edit mode",
+        ("*", "已重置 %d 根骨骼的 Roll"): "Reset Roll for %d bones",
+        ("*", "请选中需要加尾巴的骨骼"): "Please select the bones to add tail bones to",
+        ("*", "添加了 %d 根尾骨"): "Added %d tail bones",
+        ("*", "请正好选中两个骨骼进行镜像对齐"): "Please select exactly two bones for mirror align",
+        ("*", "至少需要选中两个骨骼"): "Please select at least two bones",
+        ("*", "未生成任何配对（骨骼数不足或全为尾骨）"): "No pairs generated (too few bones or all are tail bones)",
+        ("*", "骨链简化完成: 处理 %d 对骨骼"): "Chain simplification complete: processed %d bone pairs",
+        ("*", "请确保有激活骨骼（最后点击的那根为保留目标）"): "Please ensure there is an active bone (the last clicked one is the merge target)",
+        ("*", "请至少选中两根骨骼（激活骨保留，其余骨并入）"): "Please select at least two bones (active bone is kept, others are merged in)",
+        ("*", "已将 %d 根骨骼并入 [%s]"): "Merged %d bones into [%s]",
+        ("*", "请选中两个骨架（激活的为目标，另一个为源）"): "Please select two armatures (the active one is the target, the other is the source)",
+        ("*", "%s: %d 根骨骼"): "%s: %d bones",
+        ("*", "完全对齐"): "Full Align",
+        ("*", "位置对齐"): "Position Align",
     },
 }
