@@ -501,5 +501,13 @@ TRANSLATIONS = {
 
         # games/re4/batch_export_ui.py — layout label strings
         ("*", "预设未配置 native_skeleton"): "Preset has no native_skeleton configured",
+
+        # === core/mdf_tex_processor_ui_base.py ===
+
+        # MdfTexDialogBase — _path_hint default (shown in layout.label when texture_base_path is empty)
+        ("*", "例：Author/Character/"): "e.g. Author/Character/",
+
+        # === games/*/mdf_tex_processor_ui.py ===
+        # (all game-specific subclasses use English strings only; no additional entries needed)
     },
 }
