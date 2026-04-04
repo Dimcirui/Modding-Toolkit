@@ -1,4 +1,4 @@
-import bpy, mathutils, re
+import bpy, mathutils
 from bpy.app.translations import pgettext as _
 from .bone_mapper import BoneMapManager, STANDARD_BONE_NAMES, _normalize_bone_name
 from . import weight_utils, bone_utils
@@ -14,6 +14,35 @@ def _build_fuzzy_preset_bones(mapper, arm_obj):
             preset_bones.add(main_actual)
         preset_bones.update(aux_actuals)
     return preset_bones
+
+
+def _apply_physics_bone_colors(arm_obj, preset_bones):
+    """根据 chain_role 自定义属性为物理骨骼应用四色标记系统。
+    会切换到姿态模式执行，调用后停留在姿态模式。
+    preset_bones: 基础骨骼名称集合（这些骨骼不会被修改颜色）"""
+    bpy.context.view_layer.objects.active = arm_obj
+    bpy.ops.object.mode_set(mode='POSE')
+    for pb in arm_obj.pose.bones:
+        if pb.name in preset_bones:
+            continue
+        role = pb.get("chain_role", "body")
+        pb.color.palette = 'CUSTOM'
+        if role == "head":
+            pb.color.custom.normal = (0.10, 0.62, 1.00)
+            pb.color.custom.select = (0.40, 0.80, 1.00)
+            pb.color.custom.active = (0.70, 0.93, 1.00)
+        elif role == "branch_head":
+            pb.color.custom.normal = (0.70, 0.20, 1.00)
+            pb.color.custom.select = (0.83, 0.50, 1.00)
+            pb.color.custom.active = (0.93, 0.75, 1.00)
+        elif role == "main_continue":
+            pb.color.custom.normal = (1.0, 0.70, 0.10)
+            pb.color.custom.select = (1.0, 0.85, 0.40)
+            pb.color.custom.active = (1.0, 0.95, 0.70)
+        else:  # body / _End / untagged
+            pb.color.custom.normal = (0.18, 0.42, 0.90)
+            pb.color.custom.select = (0.45, 0.65, 1.00)
+            pb.color.custom.active = (0.70, 0.85, 1.00)
 
 class MODDER_OT_ApplyStandardX(bpy.types.Operator):
     """执行标准化 X：合并权重并重命名为基础名"""
@@ -245,7 +274,7 @@ class MODDER_OT_UniversalSnap(bpy.types.Operator):
         source_mw = source_arm.matrix_world
         
         for std_key in STANDARD_BONE_NAMES:
-            src_name, _ = mapper_x.get_matches_for_standard(source_arm, std_key)
+            src_name, _aux = mapper_x.get_matches_for_standard(source_arm, std_key)
             if src_name:
                 try:
                     b = source_arm.data.bones[src_name]
@@ -376,13 +405,6 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
         physics_bones_names = [b.name for b in source_arm.data.bones if b.name not in all_preset_bones_src]
         physics_bones_set = set(physics_bones_names) # 用于快速查找
 
-        # 标记链首骨：父级不在物理骨集合中的物理骨
-        chain_heads = {
-            b.name for b in source_arm.data.bones
-            if b.name in physics_bones_set
-            and (b.parent is None or b.parent.name not in physics_bones_set)
-        }
-
         if not physics_bones_names:
             self.report({'WARNING'}, _("未检测到物理骨骼"))
             return {'FINISHED'}
@@ -425,19 +447,25 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
 
         # 5.2 第二轮：检测末端并创建 _End 骨骼
         # (此时所有基础物理骨已创建，位置对应 Source Head)
-        
+
         for p_name in physics_bones_names:
             src_bone = source_arm.data.bones.get(p_name)
-            
-            # 判断是否是"叶子节点" (在物理骨集合中没有子级)
-            # 注意：只检查物理骨集合内的子级。如果它下面连着非物理骨(极少见)，这里也会视为断开。
-            is_leaf = True
-            for child in src_bone.children:
-                if child.name in physics_bones_set:
-                    is_leaf = False
-                    break
-            
-            if is_leaf:
+
+            # 需要 _End 的两种情况：
+            # A. 叶骨：在物理骨集合中没有子级
+            # B. 无主链延伸的分叉骨：有 ≥2 个物理子骨，但没有子骨标记为 main_continue
+            #    线性链（恰好一个物理子骨）不需要 _End
+            physics_children = [c for c in src_bone.children if c.name in physics_bones_set]
+            is_leaf = len(physics_children) == 0
+            is_fork = len(physics_children) >= 2
+            has_main_continue_child = any(
+                source_arm.pose.bones.get(c.name) and
+                source_arm.pose.bones[c.name].get("chain_role") == "main_continue"
+                for c in physics_children
+            )
+            needs_end = is_leaf or (is_fork and not has_main_continue_child)
+
+            if needs_end:
                 # 这是一个末端骨骼，需要生成 _End
                 end_bone_name = f"{p_name}_End"
                 if end_bone_name in edit_bones:
@@ -500,29 +528,15 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
                 eb.parent = edit_bones[target_parent_name]
                 eb.use_connect = False 
 
-        # --- 7. 染色：将所有移植骨骼标记为蓝色 ---
+        # --- 7. 从源骨骼复制 chain_role 属性到目标骨骼 ---
         bpy.ops.object.mode_set(mode='POSE')
-        all_new_bone_names = list(new_bones_map.values())
-        for src_name in physics_bones_names:
-            end_name = f"{src_name}_End"
-            if end_name in target_arm.pose.bones:
-                all_new_bone_names.append(end_name)
-
-        for bone_name in all_new_bone_names:
-            pb = target_arm.pose.bones.get(bone_name)
-            if not pb:
-                continue
-            pb.color.palette = 'CUSTOM'
-            if bone_name in chain_heads:
-                # 链首：亮青蓝，作为未来一键生成物理的选取标记
-                pb.color.custom.normal = (0.10, 0.62, 1.00)
-                pb.color.custom.select = (0.40, 0.80, 1.00)
-                pb.color.custom.active = (0.70, 0.93, 1.00)
-            else:
-                # 链身 / End 骨：深蓝
-                pb.color.custom.normal = (0.18, 0.42, 0.90)
-                pb.color.custom.select = (0.45, 0.65, 1.00)
-                pb.color.custom.active = (0.70, 0.85, 1.00)
+        for src_name, tgt_name in new_bones_map.items():
+            src_pb = source_arm.pose.bones.get(src_name)
+            tgt_pb = target_arm.pose.bones.get(tgt_name)
+            if src_pb and tgt_pb:
+                role = src_pb.get("chain_role")
+                if role:
+                    tgt_pb["chain_role"] = role
 
         bpy.ops.object.mode_set(mode='OBJECT')
         self.report({'INFO'}, _("移植完成: 处理 %d 根骨骼 (含自动生成的末端骨)") % created_count)
@@ -643,7 +657,7 @@ class MODDER_OT_RenameBonesToTarget(bpy.types.Operator):
         
         for std_key in STANDARD_BONE_NAMES:
             # 在骨架上找到 X 预设匹配的实际骨骼
-            src_name, _ = mapper_x.get_matches_for_standard(arm_obj, std_key)
+            src_name, _aux = mapper_x.get_matches_for_standard(arm_obj, std_key)
             if not src_name:
                 continue
             
@@ -767,6 +781,177 @@ class MODDER_OT_SetBoneVisibility(bpy.types.Operator):
         return {'FINISHED'}
 
 
+def _detect_chain_roles(arm_obj, preset_bones):
+    """根据骨骼拓扑自动写入 chain_role。
+    - 主链首（父骨不是物理骨）→ 'head'
+    - 分叉子骨（父骨有 ≥2 个物理子骨）→ 'branch_head'（已手动设为 main_continue 的保留）
+    - 拓扑已变、不再是链首 → 清除 head/branch_head
+    - main_continue 及普通体骨不受影响。
+    需在 POSE 模式下调用。"""
+    physics_bones = {b.name for b in arm_obj.data.bones if b.name not in preset_bones}
+    fork_bones = {
+        b.name for b in arm_obj.data.bones
+        if b.name in physics_bones
+        and sum(1 for c in b.children if c.name in physics_bones) >= 2
+    }
+    for b in arm_obj.data.bones:
+        if b.name not in physics_bones:
+            continue
+        pb = arm_obj.pose.bones.get(b.name)
+        if not pb:
+            continue
+        is_main_head = (b.parent is None or b.parent.name not in physics_bones)
+        is_branch_head = (not is_main_head and b.parent.name in fork_bones)
+        current_role = pb.get("chain_role")
+        if is_main_head:
+            pb["chain_role"] = "head"
+        elif is_branch_head:
+            if current_role != "main_continue":
+                pb["chain_role"] = "branch_head"
+        elif current_role in ("head", "branch_head"):
+            del pb["chain_role"]
+
+
+class MODDER_OT_RefreshPhysicsBoneColors(bpy.types.Operator):
+    """根据骨骼的 chain_role 自定义属性刷新物理骨骼的颜色标记"""
+    bl_idname = "modder.refresh_physics_bone_colors"
+    bl_label = "刷新骨骼颜色"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        arm_obj = context.active_object
+        if not arm_obj or arm_obj.type != 'ARMATURE':
+            self.report({'ERROR'}, _("请先选中一个骨架"))
+            return {'CANCELLED'}
+        settings = context.scene.mhw_suite_settings
+        mapper = BoneMapManager()
+        if not mapper.load_preset(settings.import_preset_enum, is_import_x=True):
+            self.report({'ERROR'}, _("无法加载 X 预设"))
+            return {'CANCELLED'}
+        preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
+        bpy.context.view_layer.objects.active = arm_obj
+        bpy.ops.object.mode_set(mode='POSE')
+        _detect_chain_roles(arm_obj, preset_bones)
+        _apply_physics_bone_colors(arm_obj, preset_bones)
+        self.report({'INFO'}, _("骨骼颜色已刷新"))
+        return {'FINISHED'}
+
+
+class MODDER_OT_MarkAsMainContinue(bpy.types.Operator):
+    """将选中骨骼标记为主链延伸 (chain_role = main_continue)，并染为琥珀金色。
+在分叉处标记哪个子骨是主链方向，未标记的子骨将被视为支链头"""
+    bl_idname = "modder.mark_as_main_continue"
+    bl_label = "标记为主链延伸"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        arm_obj = context.active_object
+        if not arm_obj or arm_obj.type != 'ARMATURE':
+            self.report({'ERROR'}, _("请先选中一个骨架"))
+            return {'CANCELLED'}
+        if context.mode != 'POSE':
+            bpy.ops.object.mode_set(mode='POSE')
+        selected = context.selected_pose_bones
+        if not selected:
+            self.report({'WARNING'}, _("请在姿态模式下选中骨骼"))
+            return {'CANCELLED'}
+        for pb in selected:
+            pb["chain_role"] = "main_continue"
+            pb.color.palette = 'CUSTOM'
+            pb.color.custom.normal = (1.0, 0.70, 0.10)
+            pb.color.custom.select = (1.0, 0.85, 0.40)
+            pb.color.custom.active = (1.0, 0.95, 0.70)
+        self.report({'INFO'}, _("已标记 %d 根骨骼为主链延伸") % len(selected))
+        return {'FINISHED'}
+
+
+class MODDER_OT_ClearChainRole(bpy.types.Operator):
+    """清除选中骨骼的 chain_role 标记，恢复为普通体骨（深蓝色）"""
+    bl_idname = "modder.clear_chain_role"
+    bl_label = "清除链角色标记"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        arm_obj = context.active_object
+        if not arm_obj or arm_obj.type != 'ARMATURE':
+            self.report({'ERROR'}, _("请先选中一个骨架"))
+            return {'CANCELLED'}
+        if context.mode != 'POSE':
+            bpy.ops.object.mode_set(mode='POSE')
+        selected = context.selected_pose_bones
+        if not selected:
+            self.report({'WARNING'}, _("请在姿态模式下选中骨骼"))
+            return {'CANCELLED'}
+        for pb in selected:
+            if "chain_role" in pb:
+                del pb["chain_role"]
+            pb.color.palette = 'CUSTOM'
+            pb.color.custom.normal = (0.18, 0.42, 0.90)
+            pb.color.custom.select = (0.45, 0.65, 1.00)
+            pb.color.custom.active = (0.70, 0.85, 1.00)
+        self.report({'INFO'}, _("已清除 %d 根骨骼的链角色标记") % len(selected))
+        return {'FINISHED'}
+
+
+class MODDER_OT_MergeIntoParent(bpy.types.Operator):
+    """将选中骨骼的顶点权重合并到其父骨骼，并删除选中骨骼。
+用于清理功能性根骨（如 hair_root 等无物理模拟的连接器骨骼）"""
+    bl_idname = "modder.merge_into_parent"
+    bl_label = "合并到父骨"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        arm_obj = context.active_object
+        if not arm_obj or arm_obj.type != 'ARMATURE':
+            self.report({'ERROR'}, _("请先选中一个骨架"))
+            return {'CANCELLED'}
+
+        if context.mode == 'POSE':
+            selected_names = [pb.name for pb in context.selected_pose_bones]
+        elif context.mode == 'EDIT_ARMATURE':
+            selected_names = [b.name for b in context.selected_editable_bones]
+        else:
+            self.report({'ERROR'}, _("请在姿态模式或编辑模式下操作"))
+            return {'CANCELLED'}
+
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bones_data = arm_obj.data.bones
+        pairs = []
+        for name in selected_names:
+            bone = bones_data.get(name)
+            if bone and bone.parent:
+                pairs.append((bone.parent.name, name))
+
+        if not pairs:
+            self.report({'WARNING'}, _("选中的骨骼没有可用的父骨骼"))
+            return {'CANCELLED'}
+
+        # 断开子骨连接，防止删除父骨后子骨位置被吸附
+        bpy.ops.object.mode_set(mode='EDIT')
+        edit_bones = arm_obj.data.edit_bones
+        for _parent_name, delete_name in pairs:
+            eb = edit_bones.get(delete_name)
+            if eb:
+                for child in eb.children:
+                    child.use_connect = False
+
+        bpy.ops.object.mode_set(mode='OBJECT')
+        weight_utils.merge_weights_and_delete_bones(arm_obj, pairs)
+
+        settings = context.scene.mhw_suite_settings
+        mapper = BoneMapManager()
+        if mapper.load_preset(settings.import_preset_enum, is_import_x=True):
+            preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
+            bpy.context.view_layer.objects.active = arm_obj
+            bpy.ops.object.mode_set(mode='POSE')
+            _detect_chain_roles(arm_obj, preset_bones)
+            _apply_physics_bone_colors(arm_obj, preset_bones)
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        self.report({'INFO'}, _("已合并 %d 根骨骼到父骨") % len(pairs))
+        return {'FINISHED'}
+
+
 classes = [
     MODDER_OT_ApplyStandardX,
     MODDER_OT_ApplyStandardY,
@@ -777,6 +962,10 @@ classes = [
     MODDER_OT_RemoveNonBaseBones,
     MODDER_OT_RenameBonesToTarget,
     MODDER_OT_SetBoneVisibility,
+    MODDER_OT_RefreshPhysicsBoneColors,
+    MODDER_OT_MarkAsMainContinue,
+    MODDER_OT_ClearChainRole,
+    MODDER_OT_MergeIntoParent,
 ]
 
 def register():

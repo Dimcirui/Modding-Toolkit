@@ -97,6 +97,8 @@ TRANSLATIONS = {
         ("*", "简易工具:"): "Quick Tools:",
         ("*", "姿态变换记录器:"): "Pose Transform Recorder:",
         ("*", "骨骼显示 [X]:"): "Bone Visibility [X]:",
+        ("*", "骨架清理:"): "Armature Cleanup:",
+        ("*", "物理链工具:"): "Physics Chain Tools:",
 
         # -----------------------------------------------
         # Main panel — operator button texts (layout.operator text=)
@@ -110,6 +112,10 @@ TRANSLATIONS = {
         ("*", "物理权重降级 [X]"): "Downgrade Physics Weights [X]",
         ("*", "剔除非基础骨骼 [X]"): "Remove Non-Base Bones [X]",
         ("*", "基础骨骼改名 [X+Y]"): "Rename Base Bones [X+Y]",
+        ("*", "合并到父骨"): "Merge into Parent",
+        ("*", "标记为主链延伸"): "Mark as Main Continue",
+        ("*", "清除标记"): "Clear Mark",
+        ("*", "刷新骨骼颜色 [X]"): "Refresh Bone Colors [X]",
         ("*", "对齐非物理骨骼"): "Align Non-Physics Bones",
         ("*", "Endfield 面部改名"): "Endfield Face Rename",
         ("*", "面部权重简化"): "Simplify Face Weights",
@@ -333,6 +339,8 @@ TRANSLATIONS = {
         ("*", "基础骨骼改名 (X->Y)"): "Rename Base Bones (X->Y)",
         ("*", "剔除非基础骨骼"): "Remove Non-Base Bones",
         ("*", "骨骼可见性"): "Bone Visibility",
+        ("*", "刷新骨骼颜色"): "Refresh Bone Colors",
+        ("*", "清除链角色标记"): "Clear Chain Role Mark",
 
         # Operator bl_description strings
         ("*", "执行标准化 X：合并权重并重命名为基础名"): "Execute Standard X: merge weights and rename to base names",
@@ -343,6 +351,10 @@ TRANSLATIONS = {
         ("*", "将骨架上的基础骨骼名从来源名 (X) 改为目标游戏名 (Y)。\n用于手动对齐工作流: 改名后骨骼名与目标游戏一致, 方便手动对齐和数据传递"): "Rename base bones on the armature from source name (X) to target game name (Y).\nFor manual alignment workflows: renamed bones match the target game for easier alignment and data transfer",
         ("*", "删除骨架中所有非基础骨骼 (通过 X 预设判断)。\n建议先执行物理权重降级再使用此功能"): "Delete all non-base bones in the armature (determined by X preset).\nRecommended to run Downgrade Physics Weights first",
         ("*", "按模式控制骨骼可见性（全显 / 仅基础骨 / 仅物理骨），后两者需加载 X 预设"): "Control bone visibility by mode (All / Base Only / Physics Only); the latter two require loading the X preset",
+        ("*", "根据骨骼的 chain_role 自定义属性刷新物理骨骼的颜色标记"): "Refresh physics bone color marks based on the bone's chain_role custom property",
+        ("*", "将选中骨骼标记为主链延伸 (chain_role = main_continue)，并染为琥珀金色。\n在分叉处标记哪个子骨是主链方向，未标记的子骨将被视为支链头"): "Mark selected bones as main chain continue (chain_role = main_continue) and color them amber gold.\nAt forks, mark which child bone continues the main chain; unmarked children will be treated as branch heads",
+        ("*", "清除选中骨骼的 chain_role 标记，恢复为普通体骨（深蓝色）"): "Clear the chain_role mark on selected bones, reverting them to regular body bones (deep blue)",
+        ("*", "将选中骨骼的顶点权重合并到其父骨骼，并删除选中骨骼。\n用于清理功能性根骨（如 hair_root 等无物理模拟的连接器骨骼）"): "Merge selected bone vertex weights into its parent bone and delete the selected bone.\nFor cleaning up functional root bones (connector bones without physics simulation, such as hair_root)",
 
         # Static report messages
         ("*", "预设加载失败"): "Preset load failed",
@@ -359,6 +371,10 @@ TRANSLATIONS = {
         ("*", "未检测到物理骨骼的顶点组"): "No physics bone vertex groups detected",
         ("*", "没有需要改名的骨骼 (来源和目标名称已一致)"): "No bones need renaming (source and target names already match)",
         ("*", "没有需要剔除的骨骼"): "No bones to remove",
+        ("*", "骨骼颜色已刷新"): "Bone colors refreshed",
+        ("*", "请在姿态模式下选中骨骼"): "Please select bones in Pose Mode",
+        ("*", "请在姿态模式或编辑模式下操作"): "Please operate in Pose Mode or Edit Mode",
+        ("*", "选中的骨骼没有可用的父骨骼"): "Selected bones have no valid parent bone",
 
         # Template report messages
         ("*", "标准化完成: 重命名 %d 根, 清理 %d 根辅助骨"): "Standardization complete: renamed %d, cleaned %d auxiliary bones",
@@ -369,6 +385,9 @@ TRANSLATIONS = {
         ("*", "已将 %d 根骨骼改名为目标游戏名"): "Renamed %d bones to target game names",
         ("*", "已剔除 %d 根非基础骨骼"): "Removed %d non-base bones",
         ("*", "骨骼显示: %s"): "Bone display: %s",
+        ("*", "已标记 %d 根骨骼为主链延伸"): "Marked %d bones as main continue",
+        ("*", "已清除 %d 根骨骼的链角色标记"): "Cleared chain role mark from %d bones",
+        ("*", "已合并 %d 根骨骼到父骨"): "Merged %d bones into parent",
         ("*", "操作失败：请先选择 In 骨架，再 Ctrl 加选 Out 骨架(Out需为黄色激活状态)"): "Operation failed: please select the In armature first, then Ctrl-select the Out armature (Out must be the active yellow object)",
         ("*", "操作失败：未找到来源(In)骨架"): "Operation failed: source (In) armature not found",
 
@@ -443,7 +462,7 @@ TRANSLATIONS = {
         ("*", "简化面部权重: 将 MHWilds 格式的细分面部骨骼权重合并到主要骨骼上"): "Simplify face weights: merge MHWilds subdivided face bone weights into primary bones",
 
         # MHWS_OT_AutoCreateChains — bl_description
-        ("*", "在姿态模式下，根据物理骨骼颜色自动为每条链创建 Chain Settings 和 Chain Group。\n需要 RE Chain Editor 插件，且场景中存在已创建 Chain Header 的 Chain Collection。"): "In pose mode, automatically create Chain Settings and Chain Group for each chain based on physics bone color.\nRequires the RE Chain Editor addon, and the scene must have a Chain Collection with a Chain Header already created.",
+        ("*", "在姿态模式下，根据物理骨骼的 chain_role 属性自动为每条链创建 Chain Settings 和 Chain Group。\n支持分叉物理链，分叉链使用实验模式生成，线性链使用默认模式生成。\n需要 RE Chain Editor 插件，且场景中存在已创建 Chain Header 的 Chain Collection。"): "In pose mode, automatically create Chain Settings and Chain Group for each chain based on bone chain_role properties.\nSupports branching physics chains; branching chains use experimental mode, linear chains use default mode.\nRequires the RE Chain Editor addon, and the scene must have a Chain Collection with a Chain Header already created.",
 
         # MHWS_OT_AutoCreateChains — chain_collection EnumProperty description
         ("*", "选择要写入的 Chain Collection"): "Select the Chain Collection to write to",
@@ -463,7 +482,7 @@ TRANSLATIONS = {
         # MHWS_OT_AutoCreateChains — self.report (static)
         ("*", "未找到有效的 Chain Collection（需含 ~TYPE=RE_CHAIN_COLLECTION 且名称含 .chain/.clsp）"): "No valid Chain Collection found (must have ~TYPE=RE_CHAIN_COLLECTION and name containing .chain/.clsp)",
         ("*", "未找到 RE Chain 场景属性，请确认插件已正确加载"): "RE Chain scene property not found, please confirm the addon is loaded correctly",
-        ("*", "未找到链首骨骼（浅蓝色），请先执行物理骨骼移植"): "No chain-head bones found (light blue), please run physics bone graft first",
+        ("*", "未找到链首骨骼（chain_role=head/branch_head），请先刷新骨骼颜色"): "No chain-head bones found (chain_role=head/branch_head), please refresh bone colors first",
         ("*", "无法创建 Chain Settings"): "Cannot create Chain Settings",
 
         # MHWS_OT_AutoCreateChains — self.report (template)
