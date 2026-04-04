@@ -184,7 +184,8 @@ def make_disk_path(natives_root, base_path, tex_name, slot_type, abbrev_map, tex
                    use_art_prefix=True):
     """Absolute filesystem path for the .tex file."""
     abbrev = abbrev_map.get(slot_type, slot_type)
-    mid    = os.path.join('Art', base_path.strip('/\\')) if use_art_prefix else base_path.strip('/\\')
+    parts  = base_path.strip('/\\').replace('\\', '/').split('/')
+    mid    = os.path.join('Art', *parts) if use_art_prefix else os.path.join(*parts)
     rel    = os.path.join('natives', 'STM', mid, f"{tex_name}_{abbrev}.tex.{tex_version}")
     return os.path.join(natives_root, rel)
 
@@ -679,7 +680,7 @@ class MdfTexProcessBase(bpy.types.Operator):
                 if mat_data is None:
                     continue
 
-                tex_name     = mat_item.material_name
+                tex_name     = mat_item.material_name.removesuffix('_UseSC')
                 pbr_paths      = {pt: getattr(mat_item.pbr, pt) for pt in PBR_TYPES}
                 pbr_channels   = {pt: getattr(mat_item.pbr, f"{pt}_ch")
                                   for pt in PBR_CHANNEL_SELECTABLE}

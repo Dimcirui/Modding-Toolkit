@@ -1,5 +1,7 @@
 .claude/
 scripts/
+__pycache__/
+**/__pycache__/
 MHW-Modding-Toolkit.code-workspace
 docs/
 tests/

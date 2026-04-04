@@ -416,10 +416,21 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             
             if settings.show_experimental:
                 exp_col = col.column(align=True)
-                exp_col.operator("modder.smart_graft", text=_("移植物理骨骼 [X+Y, 双骨架]"), icon='BONE_DATA')
+
+                exp_col.label(text="骨架清理:", icon='TOOL_SETTINGS')
                 exp_col.operator("modder.merge_physics_weights", text=_("物理权重降级 [X]"), icon='TRASH')
                 exp_col.operator("modder.remove_non_base_bones", text=_("剔除非基础骨骼 [X]"), icon='X')
                 exp_col.operator("modder.rename_bones_to_target", text=_("基础骨骼改名 [X+Y]"), icon='SORTALPHA')
+
+                exp_col.separator()
+                exp_col.label(text="物理链工具:", icon='BONE_DATA')
+                exp_col.operator("modder.smart_graft", text=_("移植物理骨骼 [X+Y, 双骨架]"), icon='BONE_DATA')
+                exp_col.operator("modder.merge_into_parent", text=_("合并到父骨"), icon='SNAP_MIDPOINT')
+                row = exp_col.row(align=True)
+                row.operator("modder.mark_as_main_continue", text=_("标记为主链延伸"), icon='HANDLE_ALIGNED')
+                row.operator("modder.clear_chain_role", text=_("清除标记"), icon='X')
+                exp_col.operator("modder.refresh_physics_bone_colors", text=_("刷新骨骼颜色 [X]"), icon='COLOR')
+                exp_col.separator()
                 row = exp_col.row(align=True)
                 row.label(text="骨骼显示 [X]:", icon='HIDE_OFF')
                 row = exp_col.row(align=True)
@@ -533,6 +544,14 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row.enabled = has_mhw_model
             row.operator("mhwi.mrl3_tex_processor_dialog", text=_("MRL3 + Tex 处理器"), icon='TEXTURE')
 
+            col.separator()
+            has_re_chain = hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
+            row = col.row()
+            row.enabled = has_re_chain
+            row.operator("mhws.auto_create_chains", text=_("一键创建 RE Chain"), icon='LINKED')
+            if not has_re_chain:
+                col.label(text="需要 RE Chain Editor!", icon='ERROR')
+
         if settings.show_mhws:
             box = layout.box()
             box.label(text="MHWilds Tools", icon='WORLD')
@@ -582,6 +601,14 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row.enabled = has_re_mesh
             row.operator("re4.mdf_tex_processor_dialog", text=_("MDF2 + Tex 处理器"), icon='TEXTURE')
 
+            col.separator()
+            has_re_chain = hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
+            row = col.row()
+            row.enabled = has_re_chain
+            row.operator("mhws.auto_create_chains", text=_("一键创建 RE Chain"), icon='LINKED')
+            if not has_re_chain:
+                col.label(text="需要 RE Chain Editor!", icon='ERROR')
+
         if settings.show_re9:
             box = layout.box()
             box.label(text="RE9 Tools", icon='GHOST_ENABLED')
@@ -598,6 +625,14 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row.operator("re9.mdf_tex_processor_dialog", text=_("MDF2 + Tex 处理器"), icon='TEXTURE')
             if not has_re_mesh:
                 col.label(text="需要 RE Mesh Editor!", icon='ERROR')
+
+            col.separator()
+            has_re_chain = hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
+            row = col.row()
+            row.enabled = has_re_chain
+            row.operator("mhws.auto_create_chains", text=_("一键创建 RE Chain"), icon='LINKED')
+            if not has_re_chain:
+                col.label(text="需要 RE Chain Editor!", icon='ERROR')
 
 
 # ==========================================

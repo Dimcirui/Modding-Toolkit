@@ -1,6 +1,8 @@
 import bpy
 from bpy.app.translations import pgettext as _
 from ...core import weight_utils
+from ...core.bone_mapper import BoneMapManager
+from ...core.standard_ops import _build_fuzzy_preset_bones
 
 # ============================================================
 # Endfield 面部顶点组改名 (Endfield → MHWilds)
@@ -252,21 +254,77 @@ class MHWS_OT_FaceWeightSimplify(bpy.types.Operator):
 # 一键创建 RE Chain（实验性）
 # ============================================================
 
-_CHAIN_HEAD_COLOR = (0.10, 0.62, 1.00)
-_COLOR_TOL = 0.01
-
 # invoke 时动态填充，供 EnumProperty 回调使用
 _chain_col_items = []
 
 
-def _is_chain_head(pb):
-    c = pb.color
-    if c.palette != 'CUSTOM':
-        return False
-    n = c.custom.normal
-    return (abs(n[0] - _CHAIN_HEAD_COLOR[0]) < _COLOR_TOL and
-            abs(n[1] - _CHAIN_HEAD_COLOR[1]) < _COLOR_TOL and
-            abs(n[2] - _CHAIN_HEAD_COLOR[2]) < _COLOR_TOL)
+def _decompose_chains(head_pb, armature, physics_bones):
+    """将以 head_pb 为根的物理链递归分解为多条线性路径。
+
+    规则：
+    - 在每个分叉处，标记了 chain_role='main_continue' 的子骨继续主路径；
+      其余子骨各自成为独立支链的起点（递归分解）。
+    - 若分叉处无 main_continue 标记，当前骨骼为主链终点，
+      所有物理子骨均视为支链头。
+    - 路径末尾若存在对应的 _End 骨骼，则一并纳入路径。
+
+    physics_bones: 物理骨骼名称集合（由预设骨骼集合排除得到）
+    返回：list of list[str]，每条路径为按顺序排列的骨骼名列表。
+    """
+    paths = []
+
+    def walk(pb, current_path):
+        current_path = current_path + [pb.name]
+
+        bone_data = armature.data.bones.get(pb.name)
+        if not bone_data:
+            paths.append(current_path)
+            return
+
+        # _End 骨骼作为终结符单独处理，不参与子骨遍历
+        physics_children = [
+            armature.pose.bones[c.name]
+            for c in bone_data.children
+            if c.name in physics_bones
+            and armature.pose.bones.get(c.name)
+            and not c.name.endswith('_End')
+        ]
+
+        if not physics_children:
+            # 叶骨：追加 _End 后路径结束
+            end_pb = armature.pose.bones.get(f"{pb.name}_End")
+            if end_pb and end_pb.name in physics_bones:
+                current_path = current_path + [end_pb.name]
+            paths.append(current_path)
+            return
+
+        if len(physics_children) == 1:
+            # 线性链：直接继续，不需要 main_continue
+            walk(physics_children[0], current_path)
+            return
+
+        # 分叉（≥2个物理子骨）：才需要判断 main_continue
+        main_child = next(
+            (c for c in physics_children if c.get("chain_role") == "main_continue"),
+            None
+        )
+
+        if main_child:
+            walk(main_child, current_path)
+            for branch in physics_children:
+                if branch != main_child:
+                    walk(branch, [])
+        else:
+            # 分叉无主链标记：当前骨为主链终点，所有子骨各自开始新支链
+            end_pb = armature.pose.bones.get(f"{pb.name}_End")
+            if end_pb and end_pb.name in physics_bones:
+                current_path = current_path + [end_pb.name]
+            paths.append(current_path)
+            for child in physics_children:
+                walk(child, [])
+
+    walk(head_pb, [])
+    return paths
 
 
 def _is_valid_chain_collection(col):
@@ -281,7 +339,8 @@ def _get_chain_col_items(self, context):
 
 
 class MHWS_OT_AutoCreateChains(bpy.types.Operator):
-    """在姿态模式下，根据物理骨骼颜色自动为每条链创建 Chain Settings 和 Chain Group。
+    """在姿态模式下，根据物理骨骼的 chain_role 属性自动为每条链创建 Chain Settings 和 Chain Group。
+支持分叉物理链，分叉链使用实验模式生成，线性链使用默认模式生成。
 需要 RE Chain Editor 插件，且场景中存在已创建 Chain Header 的 Chain Collection。"""
     bl_idname = "mhws.auto_create_chains"
     bl_label = "一键创建 RE Chain"
@@ -345,7 +404,6 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
             self.report({'ERROR'}, _("未找到 RE Chain 场景属性，请确认插件已正确加载"))
             return {'CANCELLED'}
 
-        # 将选中的集合设为 RE Chain 的当前工作集合
         toolpanel.chainCollection = col
 
         header = next(
@@ -357,11 +415,27 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
             return {'CANCELLED'}
 
         armature = context.active_object
-        chain_heads = [pb for pb in armature.pose.bones if _is_chain_head(pb)]
+        chain_heads = [pb for pb in armature.pose.bones if pb.get("chain_role") in ("head", "branch_head")]
 
         if not chain_heads:
-            self.report({'WARNING'}, _("未找到链首骨骼（浅蓝色），请先执行物理骨骼移植"))
+            self.report({'WARNING'}, _("未找到链首骨骼（chain_role=head/branch_head），请先刷新骨骼颜色"))
             return {'CANCELLED'}
+
+        # 构建物理骨骼集合（非预设骨骼）
+        settings = context.scene.mhw_suite_settings
+        mapper = BoneMapManager()
+        if mapper.load_preset(settings.import_preset_enum, is_import_x=True):
+            preset_bones = _build_fuzzy_preset_bones(mapper, armature)
+        else:
+            preset_bones = set()
+        physics_bones = {b.name for b in armature.data.bones if b.name not in preset_bones}
+
+        # 将所有链头分解为线性路径：[(head_pb, paths, path), ...]
+        all_entries = []
+        for head_pb in chain_heads:
+            paths = _decompose_chains(head_pb, armature, physics_bones)
+            for path in paths:
+                all_entries.append((head_pb, paths, path))
 
         created = 0
         skipped = 0
@@ -371,20 +445,39 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
                 self.report({'ERROR'}, _("无法创建 Chain Settings"))
                 return {'CANCELLED'}
 
-        for pb in chain_heads:
-            if self.settings_mode == 'SEPARATE':
-                if bpy.ops.re_chain.create_chain_settings() != {'FINISHED'}:
+        saved_experimental = getattr(toolpanel, 'experimentalPoseModeOptions', False)
+        try:
+            for head_pb, head_paths, path in all_entries:
+                if self.settings_mode == 'SEPARATE':
+                    if bpy.ops.re_chain.create_chain_settings() != {'FINISHED'}:
+                        skipped += 1
+                        continue
+
+                bpy.ops.pose.select_all(action='DESELECT')
+                use_experimental = len(head_paths) > 1
+
+                if use_experimental:
+                    # 分支链：实验模式，选中路径上的全部骨骼
+                    for bone_name in path:
+                        pb2 = armature.pose.bones.get(bone_name)
+                        if pb2:
+                            pb2.bone.select = True
+                    first_pb = armature.pose.bones.get(path[0]) if path else None
+                    if first_pb:
+                        armature.data.bones.active = first_pb.bone
+                    toolpanel.experimentalPoseModeOptions = True
+                else:
+                    # 线性链：默认模式，只选链头
+                    head_pb.bone.select = True
+                    armature.data.bones.active = head_pb.bone
+                    toolpanel.experimentalPoseModeOptions = False
+
+                if bpy.ops.re_chain.chain_from_bone() == {'FINISHED'}:
+                    created += 1
+                else:
                     skipped += 1
-                    continue
-
-            bpy.ops.pose.select_all(action='DESELECT')
-            pb.bone.select = True
-            armature.data.bones.active = pb.bone
-
-            if bpy.ops.re_chain.chain_from_bone() == {'FINISHED'}:
-                created += 1
-            else:
-                skipped += 1
+        finally:
+            toolpanel.experimentalPoseModeOptions = saved_experimental
 
         self.report({'INFO'}, _("已创建 %d 条链，跳过 %d 条") % (created, skipped))
         return {'FINISHED'}
