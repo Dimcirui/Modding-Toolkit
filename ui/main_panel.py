@@ -544,14 +544,6 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row.enabled = has_mhw_model
             row.operator("mhwi.mrl3_tex_processor_dialog", text=_("MRL3 + Tex 处理器"), icon='TEXTURE')
 
-            col.separator()
-            has_re_chain = hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
-            row = col.row()
-            row.enabled = has_re_chain
-            row.operator("mhws.auto_create_chains", text=_("一键创建 RE Chain"), icon='LINKED')
-            if not has_re_chain:
-                col.label(text="需要 RE Chain Editor!", icon='ERROR')
-
         if settings.show_mhws:
             box = layout.box()
             box.label(text="MHWilds Tools", icon='WORLD')
