@@ -440,6 +440,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row.operator("mhw.general_tools", text=_("镜像对齐 X")).action = 'MIRROR_X'
             col.operator("mhw.general_tools", text=_("骨链简化")).action = 'SIMPLIFY_CHAIN'
             col.operator("mhw.general_tools", text=_("合并到激活骨")).action = 'MERGE_TO_ACTIVE'
+            col.operator("mhw.general_tools", text=_("合并链到激活链")).action = 'MERGE_CHAINS'
             row = col.row(align=True)
             row.operator("mhw.general_tools", text=_("对齐 (完全)")).action = 'ALIGN_FULL'
             row.operator("mhw.general_tools", text=_("对齐 (位置)")).action = 'ALIGN_POS'
