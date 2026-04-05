@@ -3,7 +3,7 @@ scripts/
 __pycache__/
 **/__pycache__/
 MHW-Modding-Toolkit.code-workspace
-docs/
+docs/superpowers/
 tests/
 
 # Working data files (armor list source / generation scripts)
