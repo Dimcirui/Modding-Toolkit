@@ -260,6 +260,9 @@ def _compose_channels(slot_type, pbr_paths, pbr_channels, temp_dir, tex_name, pb
         loaded[pbr_type] = np.array(img.pixels[:], dtype=np.float32).reshape(ih, iw, 4)
         bpy.data.images.remove(img)
 
+    if not loaded:
+        return None
+
     if ref_w == 0:
         ref_w = ref_h = 1024
 
@@ -688,6 +691,11 @@ class MdfTexProcessBase(bpy.types.Operator):
                                   for pt in PBR_CHANNEL_SELECTABLE}
                 normal_flip_g  = mat_item.pbr.normal_flip_g
 
+                color_path    = pbr_paths.get('color', '')
+                emissive_path = pbr_paths.get('emissive', '')
+                share_emi     = bool(color_path and emissive_path and color_path == emissive_path)
+                albd_path_out = None
+
                 for slot in mat_item.slots:
                     if slot.mode == 'SKIP':
                         skip_count += 1
@@ -713,6 +721,14 @@ class MdfTexProcessBase(bpy.types.Operator):
                             skip_count += 1
                         continue
 
+                    if (slot.mode == 'COMPOSE'
+                            and slot.texture_type == 'EmissiveMap'
+                            and share_emi and albd_path_out):
+                        binding.path = albd_path_out
+                        print(f"[{cls._log_tag}] EMI reuse ALBD: {albd_path_out}")
+                        export_count += 1
+                        continue
+
                     try:
                         if slot.mode == 'COMPOSE':
                             src_img = _compose_channels(
@@ -721,8 +737,14 @@ class MdfTexProcessBase(bpy.types.Operator):
                                 channel_maps=cls._channel_maps,
                                 normal_flip_g=normal_flip_g)
                             if src_img is None:
-                                print(f"[{cls._log_tag}] SKIP compose {slot.texture_type}: no map")
-                                skip_count += 1
+                                null_rel = cls._null_tex_by_type.get(slot.texture_type)
+                                if null_rel:
+                                    binding.path = null_rel
+                                    print(f"[{cls._log_tag}] NULL (empty inputs) {slot.texture_type}: {null_rel}")
+                                    export_count += 1
+                                else:
+                                    print(f"[{cls._log_tag}] SKIP (empty inputs, no null) {slot.texture_type}")
+                                    skip_count += 1
                                 continue
                         else:  # DIRECT
                             src_img = bpy.path.abspath(slot.direct_image)
@@ -757,6 +779,8 @@ class MdfTexProcessBase(bpy.types.Operator):
                             DDSToTex([dds_path], cls._tex_version, disk_path)
 
                         binding.path = mdf_path
+                        if slot.texture_type == 'BaseDielectricMap':
+                            albd_path_out = mdf_path
                         print(f"[{cls._log_tag}] OK {slot.texture_type} -> {os.path.basename(disk_path)}")
                         export_count += 1
 
