@@ -201,6 +201,7 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
             ('MIRROR_X',      "镜像对齐 X",   "以 X+ 为基准镜像对齐 X- 骨骼"),
             ('SIMPLIFY_CHAIN',"骨链简化",     "按链结构两两配对删减骨骼并合并权重，自动跳过尾骨"),
             ('MERGE_TO_ACTIVE',"合并到激活骨","将其余选中骨骼的权重全部合并到激活骨（最后点击的那根），并删除其余骨骼"),
+            ('MERGE_CHAINS',  "合并链到激活链","选中多条链的链首，将其余链按位置逐骨合并到激活骨所在链，超出部分合并到链末"),
             ('ALIGN_FULL',    "骨架对齐 (完全)","按骨骼名完全对齐两个骨架 (head+tail)，需选中两个骨架"),
             ('ALIGN_POS',     "骨架对齐 (位置)","按骨骼名对齐 head 位置，保持骨骼方向，需选中两个骨架"),
         ]
@@ -534,6 +535,17 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             box.label(text="MHWI Tools", icon='ARMATURE_DATA')
             col = box.column(align=True)
             col.operator("mhwi.align_non_physics", text=_("对齐非物理骨骼"), icon='BONE_DATA')
+
+            col.separator()
+            col.operator("mhwi.normalize_physics_bones", text=_("物理骨骼规范化"), icon='BONE_DATA')
+
+            col.separator()
+            has_mhw_ctc = hasattr(bpy.ops, 'mhw_ctc') and hasattr(bpy.ops.mhw_ctc, 'create_chain_from_bone')
+            row = col.row()
+            row.enabled = has_mhw_ctc
+            row.operator("mhwi.auto_create_chains", text=_("一键创建 Chain"), icon='LINKED')
+            if not has_mhw_ctc:
+                col.label(text="需要 MHW Model Editor!", icon='ERROR')
 
             col.separator()
             has_mhw_model = hasattr(bpy.ops, 'mhw_mod3') and hasattr(bpy.ops.mhw_mod3, 'export_mhw_mod3')
