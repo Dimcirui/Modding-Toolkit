@@ -317,6 +317,71 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
             weight_utils.merge_weights_and_delete_bones(arm_obj, pairs)
             self.report({'INFO'}, _("已将 %d 根骨骼并入 [%s]") % (len(pairs), active_name))
 
+        elif self.action == 'MERGE_CHAINS':
+            # 获取激活骨名和选中骨名（兼容 EDIT 和 POSE 模式）
+            if context.mode == 'EDIT':
+                active = context.active_bone
+                selected_names = [b.name for b in context.selected_editable_bones]
+            elif context.mode == 'POSE':
+                active = context.active_pose_bone
+                selected_names = [b.name for b in context.selected_pose_bones]
+            else:
+                bpy.ops.object.mode_set(mode='EDIT')
+                active = context.active_bone
+                selected_names = [b.name for b in context.selected_editable_bones]
+
+            if not active:
+                self.report({'ERROR'}, _("请确保有激活骨骼（最后点击的那根为保留目标）"))
+                return {'CANCELLED'}
+
+            active_name = active.name
+            selected_set = set(selected_names)
+
+            # 过滤出非激活的候选链首：去除祖先也在选中集合中的骨骼
+            if context.mode != 'EDIT':
+                bpy.ops.object.mode_set(mode='EDIT')
+
+            edit_bones = arm_obj.data.edit_bones
+            candidate_heads = []
+            for name in selected_names:
+                if name == active_name:
+                    continue
+                bone = edit_bones.get(name)
+                if bone is None:
+                    continue
+                # 向上遍历父骨，若父骨在选中集合中则跳过（非链首）
+                is_descendant = False
+                parent = bone.parent
+                while parent:
+                    if parent.name in selected_set:
+                        is_descendant = True
+                        break
+                    parent = parent.parent
+                if not is_descendant:
+                    candidate_heads.append(name)
+
+            if not candidate_heads:
+                self.report({'WARNING'}, _("未找到有效的待合并链首（请选中其他链的链首骨骼）"))
+                return {'CANCELLED'}
+
+            # 构建激活链和各源链，生成配对列表
+            active_chain = weight_utils.build_chain_from_head(active_name, arm_obj)
+            pairs = []
+            chain_count = 0
+            for head in candidate_heads:
+                src_chain = weight_utils.build_chain_from_head(head, arm_obj)
+                chain_count += 1
+                for i, src_bone in enumerate(src_chain):
+                    if i < len(active_chain):
+                        keep = active_chain[i]
+                    else:
+                        keep = active_chain[-1]
+                    pairs.append((keep, src_bone))
+
+            bpy.ops.object.mode_set(mode='OBJECT')
+            weight_utils.merge_weights_and_delete_bones(arm_obj, pairs)
+            self.report({'INFO'}, _("已将 %d 条链合并到 [%s]，共处理 %d 对骨骼") % (chain_count, active_name, len(pairs)))
+
         elif self.action in ('ALIGN_FULL', 'ALIGN_POS'):
             selected_arms = [o for o in context.selected_objects if o.type == 'ARMATURE']
             if len(selected_arms) != 2:
