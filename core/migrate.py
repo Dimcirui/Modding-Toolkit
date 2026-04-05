@@ -12,6 +12,13 @@ _RENAMES = [
     ("mhws_bonesystem",      os.path.join("mhws", "bonesystem")),
 ]
 
+# Deprecated files to remove on update (hardcoded names only, never patterns)
+_DEPRECATED = [
+    (os.path.join("presets", "import"), "怪猎世界(物理移植用).json"),
+    (os.path.join("presets", "import"), "MMD(物理移植用).json"),
+    (os.path.join("presets", "import"), "终末地(物理移植用).json"),
+]
+
 # Top-level .json files in the old export_schemes/ root → export_schemes/re9/
 _EXPORT_SCHEMES_ROOT = "export_schemes"
 _EXPORT_SCHEMES_RE9  = os.path.join("export_schemes", "re9")
@@ -74,6 +81,16 @@ def run():
                 all_migrated.append((src, dst))
             except Exception as e:
                 print(f"[Modding Toolkit] migrate: failed to copy {src} → {dst}: {e}")
+
+    # Remove deprecated files (hardcoded list, safe against user custom presets)
+    for subdir, filename in _DEPRECATED:
+        path = os.path.join(assets, subdir, filename)
+        if os.path.isfile(path):
+            try:
+                os.remove(path)
+                print(f"[Modding Toolkit] Removed deprecated file: {os.path.join(subdir, filename)}")
+            except Exception as e:
+                print(f"[Modding Toolkit] migrate: failed to remove {path}: {e}")
 
     if all_migrated:
         print(f"[Modding Toolkit] Migrated {len(all_migrated)} file(s) from old asset paths:")
