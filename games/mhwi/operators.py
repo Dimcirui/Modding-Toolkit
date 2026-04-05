@@ -485,10 +485,9 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
 
     def invoke(self, context, _event):
         armature = context.active_object
-        settings = context.scene.mhw_suite_settings
         mapper = BoneMapManager()
-        if not mapper.load_preset(settings.import_preset_enum, is_import_x=True):
-            self.report({'ERROR'}, _("无法加载 X 预设，请先选择正确的骨架预设"))
+        if not mapper.load_preset("怪猎世界.json", is_import_x=True):
+            self.report({'ERROR'}, _("无法加载怪猎世界预设"))
             return {'CANCELLED'}
         preset_bones = _build_fuzzy_preset_bones(mapper, armature)
         physics_bones = _collect_physics_bones(armature, preset_bones)
@@ -519,10 +518,9 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
 
     def execute(self, context):
         armature = context.active_object
-        settings = context.scene.mhw_suite_settings
         mapper = BoneMapManager()
-        if not mapper.load_preset(settings.import_preset_enum, is_import_x=True):
-            self.report({'ERROR'}, _("无法加载 X 预设"))
+        if not mapper.load_preset("怪猎世界.json", is_import_x=True):
+            self.report({'ERROR'}, _("无法加载怪猎世界预设"))
             return {'CANCELLED'}
         preset_bones = _build_fuzzy_preset_bones(mapper, armature)
         physics_bones = _collect_physics_bones(armature, preset_bones)
@@ -605,10 +603,9 @@ class MHWI_OT_BatchRenamePhysicsBones(bpy.types.Operator):
         return base.endswith('_body')
 
     def execute(self, context):
-        settings = context.scene.mhw_suite_settings
         mapper = BoneMapManager()
-        if not mapper.load_preset(settings.import_preset_enum, is_import_x=True):
-            self.report({'ERROR'}, _("无法加载 X 预设"))
+        if not mapper.load_preset("怪猎世界.json", is_import_x=True):
+            self.report({'ERROR'}, _("无法加载怪猎世界预设"))
             return {'CANCELLED'}
 
         armatures = [obj for obj in context.selected_objects if obj.type == 'ARMATURE']
