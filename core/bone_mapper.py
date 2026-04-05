@@ -42,7 +42,8 @@ class BoneMapManager:
         # 统一后的数据存储
         self.mapping_data = {}      # 存储 JSON 中的 "mappings" 内容
         self.preset_info = {}       # 存储 JSON 中的 "preset_info" 内容
-        self.reverse_mapping = {}    # 反向查找表：仅存储每个 Standard Key 对应的第一个 Main Candidate
+        self.reverse_mapping = {}   # 反向查找表：仅存储每个 Standard Key 对应的第一个 Main Candidate
+        self.exclude_bones = set()  # 顶级 "exclude" 字段：不是物理骨，但不属于任何标准骨骼映射
 
     def get_preset_path(self, filename, is_import_x=False):
         """路径获取"""
@@ -74,7 +75,8 @@ class BoneMapManager:
             
             self.preset_info = data.get("preset_info", {})
             self.mapping_data = data.get("mappings", {})
-            
+            self.exclude_bones = set(data.get("exclude", []))
+
             # 生成反向映射 (主要为了兼容导出逻辑：GameBoneName -> StandardKey)
             # 我们只取 mappings 中每个 standard_key 的 main 列表里的第一个元素作为主键
             self.reverse_mapping = {}

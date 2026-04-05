@@ -6,13 +6,17 @@ from . import weight_utils, bone_utils
 
 def _build_fuzzy_preset_bones(mapper, arm_obj):
     """用模糊匹配在骨架上构建预设骨骼集合，与 get_matches_for_standard 逻辑一致。
-    返回的集合元素是骨架上的实际骨骼名，而非 JSON 中的字面量。"""
+    返回的集合元素是骨架上的实际骨骼名，而非 JSON 中的字面量。
+    顶级 exclude 字段中的骨骼也会被并入集合（仅用于排除物理骨识别，不参与对齐/随动）。"""
     preset_bones = set()
     for std_key in mapper.mapping_data.keys():
         main_actual, aux_actuals = mapper.get_matches_for_standard(arm_obj, std_key)
         if main_actual:
             preset_bones.add(main_actual)
         preset_bones.update(aux_actuals)
+    # exclude 骨骼：直接按名称并入（无需模糊匹配，使用者自行确保名称准确）
+    existing = {b.name for b in arm_obj.data.bones}
+    preset_bones.update(mapper.exclude_bones & existing)
     return preset_bones
 
 
