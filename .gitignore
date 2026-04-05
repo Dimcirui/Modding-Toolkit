@@ -10,3 +10,4 @@ tests/
 armor_list_summary.md
 *.csv
 process_*.py
+mhw-modding-toolkit_updater/MHW-Modding-Toolkit_updater_status.json
