@@ -156,3 +156,25 @@ def build_bone_chains(selected_names, arm_obj):
         traverse(root, [])
 
     return chains
+
+
+def build_chain_from_head(head_name, arm_obj):
+    """
+    从 head_name 骨骼向下遍历，返回骨骼名列表（从根到末）。
+    遇到分叉（多个子骨）时截断，不进入任何分支。
+    需在 EDIT 模式下调用。
+    """
+    bones = arm_obj.data.edit_bones
+    chain = []
+    current = head_name
+    while current:
+        bone = bones.get(current)
+        if bone is None:
+            break
+        chain.append(current)
+        children = bone.children
+        if len(children) == 1:
+            current = children[0].name
+        else:
+            break
+    return chain
