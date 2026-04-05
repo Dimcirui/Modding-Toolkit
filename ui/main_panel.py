@@ -603,7 +603,9 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             col.operator("mhwi.align_non_physics", text=_("对齐非物理骨骼"), icon='BONE_DATA')
 
             col.separator()
-            col.operator("mhwi.normalize_physics_bones", text=_("物理骨骼规范化"), icon='BONE_DATA')
+            col.label(text=_("规范化:"), icon='BONE_DATA')
+            col.operator("mhwi.split_physics_bones", text=_("拆分物理骨"), icon='BONE_DATA')
+            col.operator("mhwi.batch_rename_physics_bones", text=_("一键重命名"), icon='SORTALPHA')
 
             col.separator()
             has_mhw_ctc = hasattr(bpy.ops, 'mhw_ctc') and hasattr(bpy.ops.mhw_ctc, 'create_chain_from_bone')

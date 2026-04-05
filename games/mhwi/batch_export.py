@@ -24,10 +24,10 @@ HELM_FILE_TYPES = ["mod3", "mrl3"]
 
 # 导出时写入 MOD3 的默认参数
 MOD3_EXPORT_SETTINGS = {
-    "autoSolveRepeatedUVs":    False,
-    "preserveSharpEdges":      False,
+    "autoSolveRepeatedUVs":    True,
+    "preserveSharpEdges":      True,
     "useBlenderMaterialName":  False,
-    "invisibleMantlesModFix":  False,
+    "invisibleMantlesModFix":  True,
     "exportAllLODs":           False,
 }
 
@@ -170,24 +170,27 @@ def _make_filepath(natives_root, model_id, gender, part, ext):
 
 def _do_export_mod3(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    col = bpy.data.collections.get(collection_name)
+    bpy.context.scene.mhw_mod3_toolpanel.exportMod3Collection = col
     bpy.ops.mhw_mod3.export_mhw_mod3(
         filepath=filepath,
-        targetCollection=collection_name,
         **MOD3_EXPORT_SETTINGS,
     )
 
 def _do_export_mrl3(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    col = bpy.data.collections.get(collection_name)
+    bpy.context.scene.mhw_mrl3_toolpanel.exportMrl3Collection = col
     bpy.ops.mhw_mrl3.export_mhw_mrl3(
         filepath=filepath,
-        targetCollection=collection_name,
     )
 
 def _do_export_ctc(filepath, collection_name, export_ccl):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    col = bpy.data.collections.get(collection_name)
+    bpy.context.scene.mhw_ctc_toolpanel.exportCTCCollection = col
     bpy.ops.mhw_ctc.export_mhw_ctc(
         filepath=filepath,
-        targetCollection=collection_name,
         exportCCL=export_ccl,
     )
 
