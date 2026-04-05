@@ -190,39 +190,55 @@ class MODDER_OT_SaveXPreset(bpy.types.Operator):
         settings = context.scene.mhw_preset_editor
         is_x = settings.edit_mode == 'X'
 
-        mappings = {}
+        target_dir = _get_preset_dir(is_x)
+        filename = settings.new_preset_name + ".json"
+        for char in '<>:"/\\|?*':
+            filename = filename.replace(char, '')
+        filepath = os.path.join(target_dir, filename)
+
+        # 若文件已存在，以它为基础更新，保留编辑器不认识的顶级字段（如 exclude）
+        # 以及每个 mapping 条目中 main 列表的多候选
+        if os.path.exists(filepath):
+            try:
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    final_data = json.load(f)
+            except Exception:
+                final_data = {}
+        else:
+            final_data = {}
+
+        # 更新 preset_info（保留原有其他字段）
+        preset_type = "X_PRESET" if is_x else "Y_PRESET"
+        final_data.setdefault("preset_info", {}).update({
+            "name": settings.new_preset_name,
+            "type": preset_type,
+            "version": "2.0",
+        })
+
+        existing_mappings = final_data.get("mappings", {})
         fill_count = 0
         for slot in settings.slots:
             if not slot.source_bone_name and len(slot.aux_bones) == 0:
                 continue
-            entry = {
-                "main": [slot.source_bone_name] if slot.source_bone_name else [],
-                "aux": [aux.name for aux in slot.aux_bones]
+            orig = existing_mappings.get(slot.std_name, {})
+            orig_main = orig.get("main", [])
+            # 保留 main[1:] 多候选，只更新 [0]
+            if slot.source_bone_name:
+                new_main = [slot.source_bone_name] + orig_main[1:]
+            else:
+                new_main = orig_main[1:]  # 清空了第一候选，其余保留
+            existing_mappings[slot.std_name] = {
+                "main": new_main,
+                "aux": [aux.name for aux in slot.aux_bones],
             }
-            mappings[slot.std_name] = entry
             fill_count += 1
 
         if fill_count == 0:
             self.report({'ERROR'}, _("列表为空，未保存"))
             return {'CANCELLED'}
 
-        preset_type = "X_PRESET" if is_x else "Y_PRESET"
-        final_data = {
-            "preset_info": {
-                "name": settings.new_preset_name,
-                "type": preset_type,
-                "version": "2.0",
-                "description": "Created with MHW Modding Toolkit Editor"
-            },
-            "mappings": mappings
-        }
+        final_data["mappings"] = existing_mappings
 
-        target_dir = _get_preset_dir(is_x)
-        filename = settings.new_preset_name + ".json"
-        for char in '<>:"/\\|?*':
-            filename = filename.replace(char, '')
-
-        filepath = os.path.join(target_dir, filename)
         try:
             with open(filepath, 'w', encoding='utf-8') as f:
                 json.dump(final_data, f, indent=2, ensure_ascii=False)

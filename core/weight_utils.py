@@ -4,45 +4,62 @@ def merge_weights_and_delete_bones(armature_obj, bone_pairs):
     """
     bone_pairs: List of (keep_bone_name, delete_bone_name)
     """
+    # 构建辅助结构：被删除骨骼集合，以及子→父映射
+    deleted_set = {delete for _, delete in bone_pairs}
+    child_to_parent = {child: parent for parent, child in bone_pairs}
+
+    def find_final_target(bone_name):
+        """沿父骨链向上，找到第一个不被删除的骨骼（最终存活祖先）。"""
+        visited = set()
+        current = bone_name
+        while current in deleted_set and current not in visited:
+            visited.add(current)
+            parent = child_to_parent.get(current)
+            if parent is None:
+                break
+            current = parent
+        return current
+
+    # 为每个被删除骨骼，直接计算其最终存活祖先（跳过中间已删除的骨骼）
+    merge_map = {delete: find_final_target(parent)
+                 for parent, delete in bone_pairs}
+
     # 1. 找到受该骨架影响的所有网格
     mesh_objects = [o for o in bpy.data.objects
                    if o.type == 'MESH' and
                    any(m.type == 'ARMATURE' and m.object == armature_obj for m in o.modifiers)]
 
-    # 2. 遍历网格处理权重（直接顶点遍历，确保只在 delete 组的顶点也能合并进 keep 组）
+    # 2. 遍历网格，将每个被删除骨骼的权重直接合并到其最终存活祖先
     for obj in mesh_objects:
         vg = obj.vertex_groups
-
-        for keep, delete in bone_pairs:
-            keep_vg = vg.get(keep)
+        for delete, final_target in merge_map.items():
             delete_vg = vg.get(delete)
-            if keep_vg is None or delete_vg is None:
+            if delete_vg is None:
                 continue
-
+            target_vg = vg.get(final_target) or vg.new(name=final_target)
             for vert in obj.data.vertices:
                 try:
                     del_w = delete_vg.weight(vert.index)
                 except RuntimeError:
                     continue
                 try:
-                    keep_w = keep_vg.weight(vert.index)
+                    keep_w = target_vg.weight(vert.index)
                 except RuntimeError:
                     keep_w = 0.0
-                keep_vg.add([vert.index], min(keep_w + del_w, 1.0), 'REPLACE')
-
+                target_vg.add([vert.index], min(keep_w + del_w, 1.0), 'REPLACE')
             vg.remove(delete_vg)
-            
+
     # 3. 删除骨骼
     bpy.context.view_layer.objects.active = armature_obj
     bpy.ops.object.mode_set(mode='EDIT')
     edit_bones = armature_obj.data.edit_bones
-    
+
     deleted_count = 0
     for _, delete in bone_pairs:
         if delete in edit_bones:
             edit_bones.remove(edit_bones[delete])
             deleted_count += 1
-            
+
     bpy.ops.object.mode_set(mode='OBJECT')
     print(f"Deleted {deleted_count} bones.")
     
@@ -156,3 +173,25 @@ def build_bone_chains(selected_names, arm_obj):
         traverse(root, [])
 
     return chains
+
+
+def build_chain_from_head(head_name, arm_obj):
+    """
+    从 head_name 骨骼向下遍历，返回骨骼名列表（从根到末）。
+    遇到分叉（多个子骨）时截断，不进入任何分支。
+    需在 EDIT 模式下调用。
+    """
+    bones = arm_obj.data.edit_bones
+    chain = []
+    current = head_name
+    while current:
+        bone = bones.get(current)
+        if bone is None:
+            break
+        chain.append(current)
+        children = bone.children
+        if len(children) == 1:
+            current = children[0].name
+        else:
+            break
+    return chain

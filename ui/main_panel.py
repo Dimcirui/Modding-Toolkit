@@ -201,6 +201,7 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
             ('MIRROR_X',      "镜像对齐 X",   "以 X+ 为基准镜像对齐 X- 骨骼"),
             ('SIMPLIFY_CHAIN',"骨链简化",     "按链结构两两配对删减骨骼并合并权重，自动跳过尾骨"),
             ('MERGE_TO_ACTIVE',"合并到激活骨","将其余选中骨骼的权重全部合并到激活骨（最后点击的那根），并删除其余骨骼"),
+            ('MERGE_CHAINS',  "合并链到激活链","选中多条链的链首，将其余链按位置逐骨合并到激活骨所在链，超出部分合并到链末"),
             ('ALIGN_FULL',    "骨架对齐 (完全)","按骨骼名完全对齐两个骨架 (head+tail)，需选中两个骨架"),
             ('ALIGN_POS',     "骨架对齐 (位置)","按骨骼名对齐 head 位置，保持骨骼方向，需选中两个骨架"),
         ]
@@ -316,6 +317,71 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
             weight_utils.merge_weights_and_delete_bones(arm_obj, pairs)
             self.report({'INFO'}, _("已将 %d 根骨骼并入 [%s]") % (len(pairs), active_name))
 
+        elif self.action == 'MERGE_CHAINS':
+            # 获取激活骨名和选中骨名（兼容 EDIT 和 POSE 模式）
+            if context.mode == 'EDIT':
+                active = context.active_bone
+                selected_names = [b.name for b in context.selected_editable_bones]
+            elif context.mode == 'POSE':
+                active = context.active_pose_bone
+                selected_names = [b.name for b in context.selected_pose_bones]
+            else:
+                bpy.ops.object.mode_set(mode='EDIT')
+                active = context.active_bone
+                selected_names = [b.name for b in context.selected_editable_bones]
+
+            if not active:
+                self.report({'ERROR'}, _("请确保有激活骨骼（最后点击的那根为保留目标）"))
+                return {'CANCELLED'}
+
+            active_name = active.name
+            selected_set = set(selected_names)
+
+            # 过滤出非激活的候选链首：去除祖先也在选中集合中的骨骼
+            if context.mode != 'EDIT':
+                bpy.ops.object.mode_set(mode='EDIT')
+
+            edit_bones = arm_obj.data.edit_bones
+            candidate_heads = []
+            for name in selected_names:
+                if name == active_name:
+                    continue
+                bone = edit_bones.get(name)
+                if bone is None:
+                    continue
+                # 向上遍历父骨，若父骨在选中集合中则跳过（非链首）
+                is_descendant = False
+                parent = bone.parent
+                while parent:
+                    if parent.name in selected_set:
+                        is_descendant = True
+                        break
+                    parent = parent.parent
+                if not is_descendant:
+                    candidate_heads.append(name)
+
+            if not candidate_heads:
+                self.report({'WARNING'}, _("未找到有效的待合并链首（请选中其他链的链首骨骼）"))
+                return {'CANCELLED'}
+
+            # 构建激活链和各源链，生成配对列表
+            active_chain = weight_utils.build_chain_from_head(active_name, arm_obj)
+            pairs = []
+            chain_count = 0
+            for head in candidate_heads:
+                src_chain = weight_utils.build_chain_from_head(head, arm_obj)
+                chain_count += 1
+                for i, src_bone in enumerate(src_chain):
+                    if i < len(active_chain):
+                        keep = active_chain[i]
+                    else:
+                        keep = active_chain[-1]
+                    pairs.append((keep, src_bone))
+
+            bpy.ops.object.mode_set(mode='OBJECT')
+            weight_utils.merge_weights_and_delete_bones(arm_obj, pairs)
+            self.report({'INFO'}, _("已将 %d 条链合并到 [%s]，共处理 %d 对骨骼") % (chain_count, active_name, len(pairs)))
+
         elif self.action in ('ALIGN_FULL', 'ALIGN_POS'):
             selected_arms = [o for o in context.selected_objects if o.type == 'ARMATURE']
             if len(selected_arms) != 2:
@@ -374,6 +440,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row.operator("mhw.general_tools", text=_("镜像对齐 X")).action = 'MIRROR_X'
             col.operator("mhw.general_tools", text=_("骨链简化")).action = 'SIMPLIFY_CHAIN'
             col.operator("mhw.general_tools", text=_("合并到激活骨")).action = 'MERGE_TO_ACTIVE'
+            col.operator("mhw.general_tools", text=_("合并链到激活链")).action = 'MERGE_CHAINS'
             row = col.row(align=True)
             row.operator("mhw.general_tools", text=_("对齐 (完全)")).action = 'ALIGN_FULL'
             row.operator("mhw.general_tools", text=_("对齐 (位置)")).action = 'ALIGN_POS'
@@ -534,6 +601,19 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             box.label(text="MHWI Tools", icon='ARMATURE_DATA')
             col = box.column(align=True)
             col.operator("mhwi.align_non_physics", text=_("对齐非物理骨骼"), icon='BONE_DATA')
+
+            col.separator()
+            col.label(text=_("规范化:"), icon='BONE_DATA')
+            col.operator("mhwi.split_physics_bones", text=_("拆分物理骨"), icon='BONE_DATA')
+            col.operator("mhwi.batch_rename_physics_bones", text=_("一键重命名"), icon='SORTALPHA')
+
+            col.separator()
+            has_mhw_ctc = hasattr(bpy.ops, 'mhw_ctc') and hasattr(bpy.ops.mhw_ctc, 'create_chain_from_bone')
+            row = col.row()
+            row.enabled = has_mhw_ctc
+            row.operator("mhwi.auto_create_chains", text=_("一键创建 Chain"), icon='LINKED')
+            if not has_mhw_ctc:
+                col.label(text="需要 MHW Model Editor!", icon='ERROR')
 
             col.separator()
             has_mhw_model = hasattr(bpy.ops, 'mhw_mod3') and hasattr(bpy.ops.mhw_mod3, 'export_mhw_mod3')
