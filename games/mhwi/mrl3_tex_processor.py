@@ -354,6 +354,11 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                                  for pt in PBR_CHANNEL_SELECTABLE}
                 normal_flip_g = mat_item.pbr.normal_flip_g
 
+                color_path    = pbr_paths.get('color', '')
+                emissive_path = pbr_paths.get('emissive', '')
+                share_emi     = bool(color_path and emissive_path and color_path == emissive_path)
+                bml_value_out = None
+
                 for slot in mat_item.slots:
                     if slot.mode == 'SKIP':
                         skip_count += 1
@@ -376,6 +381,14 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                             skip_count += 1
                         continue
 
+                    if (slot.mode == 'COMPOSE'
+                            and slot.texture_type == 'EmissiveMap'
+                            and share_emi and bml_value_out):
+                        map_item.value = bml_value_out
+                        print(f"[MHWI Tex] EMI reuse BML: {bml_value_out}")
+                        export_count += 1
+                        continue
+
                     # COMPOSE or DIRECT
                     try:
                         if slot.mode == 'COMPOSE':
@@ -391,9 +404,14 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                                 normal_flip_g=normal_flip_g,
                             )
                             if src_img is None:
-                                print(f"[MHWI Tex] SKIP  {slot.texture_type}: "
-                                      "无 PBR 输入图片")
-                                skip_count += 1
+                                null_val = MHWI_NULL_TEX.get(slot.texture_type)
+                                if null_val:
+                                    map_item.value = null_val
+                                    print(f"[MHWI Tex] NULL (empty inputs) {slot.texture_type}: {null_val}")
+                                    export_count += 1
+                                else:
+                                    print(f"[MHWI Tex] SKIP  {slot.texture_type}: 无 PBR 输入图片")
+                                    skip_count += 1
                                 continue
                         else:  # DIRECT
                             src_img = bpy.path.abspath(slot.direct_image)
@@ -435,6 +453,8 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
 
                         map_item.value = _mhwi_tex_binding(
                             base_path, tex_name, slot.texture_type)
+                        if slot.texture_type == 'AlbedoMap':
+                            bml_value_out = map_item.value
                         print(f"[MHWI Tex] OK    {slot.texture_type} -> "
                               f"{os.path.basename(disk_path)}")
                         export_count += 1
