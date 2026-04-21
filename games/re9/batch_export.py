@@ -165,6 +165,9 @@ class RE9_OT_BatchExport(bpy.types.Operator):
         export_count = 0
         fail_count = 0
         skip_count = 0
+        
+        # Cache for identical exports: (func_name, target) -> exported_filepath
+        export_cache = {}
 
         def make_full(rel, bp_override=None):
             bp = (bp_override or base_path).replace("/", os.sep)
@@ -186,9 +189,24 @@ class RE9_OT_BatchExport(bpy.types.Operator):
                     print(f"[RE9] SKIP {label}: collection '{target}' not found")
                     skip_count += 1
                     return
+
+            cache_key = (func.__name__, target)
+            if cache_key in export_cache:
+                try:
+                    source_filepath = export_cache[cache_key]
+                    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                    shutil.copy2(source_filepath, filepath)
+                    print(f"[RE9] {label}: {target} [CACHED] -> {os.path.basename(filepath)}")
+                    export_count += 1
+                except Exception as err:
+                    print(f"[RE9] FAILED {label} [CACHE COPY]: {err}")
+                    fail_count += 1
+                return
+
             try:
                 print(f"[RE9] {label}: {target} -> {os.path.basename(filepath)}")
                 func(filepath, target)
+                export_cache[cache_key] = filepath
                 export_count += 1
             except Exception as err:
                 print(f"[RE9] FAILED {label}: {err}")
