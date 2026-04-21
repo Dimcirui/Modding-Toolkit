@@ -327,7 +327,7 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                         "无法加载 MHW Model Editor 贴图转换函数，请确认已安装并启用")
             return {'CANCELLED'}
 
-        ImageListToDDS, _ = _import_tex_utils()
+        ImageListToDDS, __ = _import_tex_utils()
         if ImageListToDDS is None:
             self.report({'WARNING'},
                         "RE Mesh Editor 未安装：PNG/TGA 输入将无法处理，"

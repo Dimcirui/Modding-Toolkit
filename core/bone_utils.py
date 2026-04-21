@@ -118,6 +118,11 @@ def align_armatures_by_name(source_arm, target_arm, mode='POS_ONLY', skip_fn=Non
             b.head = new_head
             b.tail = t_mat_inv @ src_tail
             b.align_roll(t_mat3_inv @ src_x_world)
+        elif mode == 'POS_ROLL':
+            orig_vec = b.tail - b.head
+            b.head = new_head
+            b.tail = new_head + orig_vec
+            b.align_roll(t_mat3_inv @ src_x_world)
         else:
             orig_vec = b.tail - b.head
             b.head = new_head
