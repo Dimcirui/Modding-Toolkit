@@ -16,8 +16,8 @@ def _get_group_toggle_key(character_id, group_name):
 
 def _get_filtered_collections(suffix):
     result = []
-    type_map = {"mesh": "RE_MESH_COLLECTION", "mdf2": "RE_MDF_COLLECTION", "sfur": "RE_SFUR_COLLECTION"}
-    name_sfx_map = {"mesh": ".mesh", "mdf2": ".mdf2", "sfur": ".sfur"}
+    type_map = {"mesh": "RE_MESH_COLLECTION", "mdf2": "RE_MDF_COLLECTION", "sfur": "RE_SFUR_COLLECTION", "chain2": "RE_CHAIN_COLLECTION"}
+    name_sfx_map = {"mesh": ".mesh", "mdf2": ".mdf2", "sfur": ".sfur", "chain2": ".chain"}
     target_type = type_map.get(suffix, "")
     name_sfx = name_sfx_map.get(suffix, "")
     for c in bpy.data.collections:
@@ -139,6 +139,24 @@ class RE9_OT_PickSfurCollection(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class RE9_OT_PickChain2Collection(bpy.types.Operator):
+    bl_idname = "re9.pick_chain2_collection"
+    bl_label = "Pick Chain2 Collection"
+    bl_options = {'INTERNAL'}
+    bl_property = "collection_name"
+    character_id: bpy.props.StringProperty()
+    entry_id: bpy.props.StringProperty()
+    collection_name: bpy.props.EnumProperty(name="Chain2 Collection",
+        items=lambda self, ctx: _get_filtered_collections("chain2"))
+    def invoke(self, context, event):
+        context.window_manager.invoke_search_popup(self)
+        return {'RUNNING_MODAL'}
+    def execute(self, context):
+        if self.collection_name != "NONE":
+            _set_binding(context.scene, self.character_id, self.entry_id, "chain2", self.collection_name)
+        return {'FINISHED'}
+
+
 class RE9_OT_PickArmature(bpy.types.Operator):
     bl_idname = "re9.pick_armature"
     bl_label = "Pick Armature"
@@ -241,6 +259,22 @@ class RE9_OT_PickSimplifiedEmptySfur(bpy.types.Operator):
     def execute(self, context):
         if self.collection_name != "NONE":
             _set_simplified_empty_binding(context.scene, self.character_id, "sfur", self.collection_name)
+        return {'FINISHED'}
+
+class RE9_OT_PickSimplifiedEmptyChain2(bpy.types.Operator):
+    bl_idname = "re9.pick_se_chain2"
+    bl_label = "Pick Empty Chain2"
+    bl_options = {'INTERNAL'}
+    bl_property = "collection_name"
+    character_id: bpy.props.StringProperty()
+    collection_name: bpy.props.EnumProperty(name="Empty Chain2",
+        items=lambda self, ctx: _get_filtered_collections("chain2"))
+    def invoke(self, context, event):
+        context.window_manager.invoke_search_popup(self)
+        return {'RUNNING_MODAL'}
+    def execute(self, context):
+        if self.collection_name != "NONE":
+            _set_simplified_empty_binding(context.scene, self.character_id, "chain2", self.collection_name)
         return {'FINISHED'}
     
 class RE9_OT_ClearSimplifiedGroup(bpy.types.Operator):
@@ -462,6 +496,22 @@ class RE9_OT_BatchExportDialog(bpy.types.Operator):
                                         text=cur if cur else "Select...", icon='DOWNARROW_HLT')
                     op_p.character_id = character_id; op_p.entry_id = entry_id
 
+                if entry.get("chain2"):
+                    row = group_box.row(align=True)
+                    en = _get_enabled(scene, character_id, entry_id, "chain2")
+                    op = row.operator("re9.toggle_entry", text="",
+                                      icon='CHECKBOX_HLT' if en else 'CHECKBOX_DEHLT', emboss=False)
+                    op.character_id = character_id; op.entry_id = entry_id; op.suffix = "chain2"
+                    cur = _get_binding(scene, character_id, entry_id, "chain2")
+                    ic = 'PHYSICS'
+                    if cur and cur in bpy.data.collections:
+                        ct = bpy.data.collections[cur].color_tag
+                        if ct != "NONE": ic = f"COLLECTION_{ct}"
+                    row.label(text="CHAIN2", icon=ic)
+                    op_p = row.operator("re9.pick_chain2_collection",
+                                        text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                    op_p.character_id = character_id; op_p.entry_id = entry_id
+
     def execute(self, context):
         bpy.ops.re9.batch_export()
         return {'FINISHED'}
@@ -474,12 +524,14 @@ classes = [
     RE9_OT_PickMeshCollection,
     RE9_OT_PickMdfCollection,
     RE9_OT_PickSfurCollection,
+    RE9_OT_PickChain2Collection,
     RE9_OT_PickArmature,
     RE9_OT_PickSimplifiedGroupMesh,
     RE9_OT_PickSimplifiedGroupMdf,
     RE9_OT_PickSimplifiedEmptyMesh,
     RE9_OT_PickSimplifiedEmptyMdf,
     RE9_OT_PickSimplifiedEmptySfur,
+    RE9_OT_PickSimplifiedEmptyChain2,
     RE9_OT_BatchExportDialog,
     RE9_OT_ClearSimplifiedGroup,
     RE9_OT_ClearSimplifiedEmpty,

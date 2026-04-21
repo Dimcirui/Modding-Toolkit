@@ -259,6 +259,8 @@ class RE9_OT_BatchExport(bpy.types.Operator):
                                     try_blank("mdf2", make_full(m, grp_bp), f"MDF2 {entry_id}")
                             if entry.get("sfur"):
                                 try_blank("sfur", make_full(entry["sfur"], grp_bp), f"SFUR {entry_id}")
+                            if entry.get("chain2"):
+                                try_blank("chain2", make_full(entry["chain2"], grp_bp), f"CHAIN2 {entry_id}")
                             continue
                         else:
                             mesh_col = _get_simplified_empty_binding(scene, character_id, "mesh")
@@ -273,6 +275,13 @@ class RE9_OT_BatchExport(bpy.types.Operator):
                             try_blank("sfur", make_full(entry["sfur"], grp_bp), f"SFUR {entry_id}")
                         else:
                             sfur_col = _get_simplified_empty_binding(scene, character_id, "sfur")
+
+                    chain2_col = ""
+                    if entry.get("simplified_chain2", "") == "empty" and entry.get("chain2"):
+                        if use_blank:
+                            try_blank("chain2", make_full(entry["chain2"], grp_bp), f"CHAIN2 {entry_id}")
+                        else:
+                            chain2_col = _get_simplified_empty_binding(scene, character_id, "chain2")
 
                     # Export mesh
                     if entry.get("mesh"):
@@ -293,6 +302,9 @@ class RE9_OT_BatchExport(bpy.types.Operator):
                     # Export sfur (collection-bound; blank case handled above)
                     if entry.get("sfur") and sfur_col:
                         try_export(_do_export_sfur, make_full(entry["sfur"], grp_bp), sfur_col, f"SFUR {entry_id}")
+                        
+                    if entry.get("chain2") and chain2_col:
+                        try_export(_do_export_chain2, make_full(entry["chain2"], grp_bp), chain2_col, f"CHAIN2 {entry_id}")
 
                 else:
                     # Normal mode: use per-entry bindings
@@ -321,6 +333,14 @@ class RE9_OT_BatchExport(bpy.types.Operator):
                             try_export(_do_export_sfur, make_full(entry["sfur"], grp_bp), sfur_col, f"SFUR {entry_id}")
                         elif sfur_en and use_blank:
                             try_blank("sfur", make_full(entry["sfur"], grp_bp), f"SFUR {entry_id}")
+
+                    chain2_en = _get_enabled(scene, character_id, entry_id, "chain2")
+                    chain2_col = _get_binding(scene, character_id, entry_id, "chain2")
+                    if entry.get("chain2"):
+                        if chain2_en and chain2_col:
+                            try_export(_do_export_chain2, make_full(entry["chain2"], grp_bp), chain2_col, f"CHAIN2 {entry_id}")
+                        elif chain2_en and use_blank:
+                            try_blank("chain2", make_full(entry["chain2"], grp_bp), f"CHAIN2 {entry_id}")
 
         if fail_count > 0:
             self.report({'WARNING'}, f"Done: {export_count} exported, {fail_count} failed, {skip_count} skipped")
