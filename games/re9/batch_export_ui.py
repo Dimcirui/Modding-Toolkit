@@ -211,6 +211,42 @@ class RE9_OT_PickSimplifiedGroupMdf(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class RE9_OT_PickSimplifiedGroupSfur(bpy.types.Operator):
+    bl_idname = "re9.pick_sg_sfur"
+    bl_label = "Pick Group SFur"
+    bl_options = {'INTERNAL'}
+    bl_property = "collection_name"
+    character_id: bpy.props.StringProperty()
+    group_name: bpy.props.StringProperty()
+    collection_name: bpy.props.EnumProperty(name="SFur",
+        items=lambda self, ctx: _get_filtered_collections("sfur"))
+    def invoke(self, context, event):
+        context.window_manager.invoke_search_popup(self)
+        return {'RUNNING_MODAL'}
+    def execute(self, context):
+        if self.collection_name != "NONE":
+            _set_simplified_group_binding(context.scene, self.character_id, self.group_name, "sfur", self.collection_name)
+        return {'FINISHED'}
+
+
+class RE9_OT_PickSimplifiedGroupChain2(bpy.types.Operator):
+    bl_idname = "re9.pick_sg_chain2"
+    bl_label = "Pick Group Chain2"
+    bl_options = {'INTERNAL'}
+    bl_property = "collection_name"
+    character_id: bpy.props.StringProperty()
+    group_name: bpy.props.StringProperty()
+    collection_name: bpy.props.EnumProperty(name="Chain2",
+        items=lambda self, ctx: _get_filtered_collections("chain2"))
+    def invoke(self, context, event):
+        context.window_manager.invoke_search_popup(self)
+        return {'RUNNING_MODAL'}
+    def execute(self, context):
+        if self.collection_name != "NONE":
+            _set_simplified_group_binding(context.scene, self.character_id, self.group_name, "chain2", self.collection_name)
+        return {'FINISHED'}
+
+
 class RE9_OT_PickSimplifiedEmptyMesh(bpy.types.Operator):
     bl_idname = "re9.pick_se_mesh"
     bl_label = "Pick Empty Mesh"
@@ -416,6 +452,28 @@ class RE9_OT_BatchExportDialog(bpy.types.Operator):
                 op_c = row.operator("re9.clear_sg", text="", icon='X')
                 op_c.character_id = character_id; op_c.group_name = group_name; op_c.suffix = "mdf2"
 
+            # SFUR (only if group has any entries with sfur and simplified != skip)
+            if any(e.get("sfur") and e.get("simplified_sfur", e.get("simplified", "user")) != "skip" for e in group["entries"]):
+                row = box.row(align=True)
+                row.label(text="SFUR:", icon='OUTLINER_OB_CURVES')
+                cur = _get_simplified_group_binding(scene, character_id, group_name, "sfur")
+                op = row.operator("re9.pick_sg_sfur", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                op.character_id = character_id; op.group_name = group_name
+                if cur:
+                    op_c = row.operator("re9.clear_sg", text="", icon='X')
+                    op_c.character_id = character_id; op_c.group_name = group_name; op_c.suffix = "sfur"
+
+            # CHAIN2
+            if any(e.get("chain2") and e.get("simplified_chain2", e.get("simplified", "user")) != "skip" for e in group["entries"]):
+                row = box.row(align=True)
+                row.label(text="CHAIN2:", icon='PHYSICS')
+                cur = _get_simplified_group_binding(scene, character_id, group_name, "chain2")
+                op = row.operator("re9.pick_sg_chain2", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                op.character_id = character_id; op.group_name = group_name
+                if cur:
+                    op_c = row.operator("re9.clear_sg", text="", icon='X')
+                    op_c.character_id = character_id; op_c.group_name = group_name; op_c.suffix = "chain2"
+
             # Show summary
             user_count = sum(1 for e in group["entries"] if e.get("simplified") == "user")
             empty_count = sum(1 for e in group["entries"] if e.get("simplified") == "empty")
@@ -528,6 +586,8 @@ classes = [
     RE9_OT_PickArmature,
     RE9_OT_PickSimplifiedGroupMesh,
     RE9_OT_PickSimplifiedGroupMdf,
+    RE9_OT_PickSimplifiedGroupSfur,
+    RE9_OT_PickSimplifiedGroupChain2,
     RE9_OT_PickSimplifiedEmptyMesh,
     RE9_OT_PickSimplifiedEmptyMdf,
     RE9_OT_PickSimplifiedEmptySfur,
