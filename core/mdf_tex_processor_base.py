@@ -47,6 +47,9 @@ BASE_TEXTURE_TYPE_ABBREV = {
     'NormalRoughnessCavityMap':        'NRRC',
     'EmissiveMap':                     'EMI',
     'AlphaTranslucentOcclusionSSSMap': 'ATOS',
+    'NormalRoughnessMap':              'NRMR',
+    'SSSCavityOcclusionTranslucentMap': 'SCOT',
+    'AlphaCavityOcclusionTranslucentMap': 'ACOT',
 }
 
 # Channel composition maps.  Values may be:
@@ -78,6 +81,12 @@ BASE_SLOT_CHANNEL_MAPS = {
         'B': None,
         'A': ('roughness', 0),
     },
+    'NormalRoughnessMap': {
+        'R': ('normal',    0),
+        'G': ('normal',    1),
+        'B': None,
+        'A': ('roughness', 0),
+    },
     'NormalRoughnessCavityMap': {   # default: same layout as NRRO; RE9 overrides B=1.0
         'R': ('roughness', 0),
         'G': ('normal',    1),
@@ -96,6 +105,18 @@ BASE_SLOT_CHANNEL_MAPS = {
         'B': ('ao',   0),
         'A': None,
     },
+    'SSSCavityOcclusionTranslucentMap': {
+        'R': None,
+        'G': 1.0,
+        'B': ('ao', 0),
+        'A': None,
+    },
+    'AlphaCavityOcclusionTranslucentMap': {
+        'R': ('alpha', 0),
+        'G': 1.0,
+        'B': ('ao', 0),
+        'A': None,
+    },
 }
 
 BASE_COMMON_SLOT_TYPES = {
@@ -104,7 +125,10 @@ BASE_COMMON_SLOT_TYPES = {
     'NormalRoughnessOcclusionMap',
     'NormalRoughnessCavityMap',
     'NormalRoughness',
+    'NormalRoughnessMap',
     'AlphaTranslucentOcclusionSSSMap',
+    'SSSCavityOcclusionTranslucentMap',
+    'AlphaCavityOcclusionTranslucentMap',
     'EmissiveMap',
 }
 
@@ -114,9 +138,12 @@ BASE_NULL_TEX_BY_TYPE = {
     'BaseDielectricMap':             'systems/rendering/NullBlack.tex',
     'NormalRoughnessOcclusionMap':   'systems/rendering/NullNormalRoughnessOcclusion.tex',
     'NormalRoughnessCavityMap':      'systems/rendering/NullNormalRoughnessOcclusion.tex',
+    'NormalRoughnessMap':            'systems/rendering/NullNormalRoughnessOcclusion.tex',
     'EmissiveMap':                   'systems/rendering/NullBlack.tex',
     'FxMap':                         'MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex',
     'AlphaTranslucentOcclusionSSSMap': 'systems/rendering/NullATOS.tex',
+    'SSSCavityOcclusionTranslucentMap': 'systems/rendering/NullATOS.tex',
+    'AlphaCavityOcclusionTranslucentMap': 'systems/rendering/NullATOS.tex',
     'noisemap':                      'MasterMaterial/Textures/bluenoise_msk1.tex',
     'DetailMaskMap':                 'systems/rendering/NullBlack.tex',
     'Detail_ALBD_R':                 'systems/rendering/NullGray.tex',
