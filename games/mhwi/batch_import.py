@@ -114,6 +114,20 @@ def _link_under(child_col, parent_col):
         parent_col.children.link(child_col)
 
 
+def _resolve_target(col_name, parent_col):
+    """
+    如果 parent_col 下有与 col_name 去掉最后一段扩展名后同名的子集合，
+    返回该子集合作为更精确的嵌套目标，否则返回 parent_col 本身。
+    例: f_body070_0000.mrl3 → base=f_body070_0000 → 找到 parent_col 下的 f_body070_0000
+    """
+    base = col_name.rsplit(".", 1)[0] if "." in col_name else None
+    if base:
+        for child in parent_col.children:
+            if child.name == base:
+                return child
+    return parent_col
+
+
 # ── Operators ─────────────────────────────────────────────────────
 
 class MHWI_OT_ScanImportFolder(bpy.types.Operator):
@@ -190,15 +204,24 @@ class MHWI_OT_BatchImport(bpy.types.Operator):
             return {'CANCELLED'}
 
         items   = context.scene.mhwi_import_items
-        enabled = [it for it in items if it.enabled]
+        # 保证 mod3 → mrl3 → ctc 顺序，避免 CTC 在 MOD3 前导入导致物理绑定失败
+        enabled = sorted(
+            (it for it in items if it.enabled),
+            key=lambda x: FT_ORDER.index(x.filetype) if x.filetype in FT_ORDER else 99,
+        )
         if not enabled:
             self.report({'WARNING'}, "没有选中任何项目")
             return {'CANCELLED'}
 
+        def _import(op_func, filepath):
+            directory = os.path.dirname(filepath) + os.sep
+            filename  = os.path.basename(filepath)
+            op_func('EXEC_DEFAULT', directory=directory, files=[{"name": filename}])
+
         import_ops = {
-            "mod3": lambda fp: bpy.ops.mhw_mod3.import_mhw_mod3(filepath=fp),
-            "mrl3": lambda fp: bpy.ops.mhw_mrl3.import_mhw_mrl3(filepath=fp),
-            "ctc":  lambda fp: bpy.ops.mhw_ctc.import_mhw_ctc(filepath=fp),
+            "mod3": lambda fp: _import(bpy.ops.mhw_mod3.import_mhw_mod3, fp),
+            "mrl3": lambda fp: _import(bpy.ops.mhw_mrl3.import_mhw_mrl3, fp),
+            "ctc":  lambda fp: _import(bpy.ops.mhw_ctc.import_mhw_ctc,  fp),
         }
 
         ok = fail = 0
@@ -209,13 +232,18 @@ class MHWI_OT_BatchImport(bpy.types.Operator):
                 continue
             parent_col = _get_or_create_collection(item.group_key)
             try:
-                before = {c.name for c in bpy.data.collections}
+                scene_root = bpy.context.scene.collection
+                before     = {c.name for c in bpy.data.collections}
                 op(item.filepath)
-                after  = {c.name for c in bpy.data.collections}
+                after      = {c.name for c in bpy.data.collections}
+                root_names = {c.name for c in scene_root.children}
                 for name in after - before:
-                    col = bpy.data.collections.get(name)
-                    if col:
-                        _link_under(col, parent_col)
+                    # 只移动落在场景根的顶层集合，importer 自行嵌套好的子集合跳过
+                    if name in root_names:
+                        col    = bpy.data.collections.get(name)
+                        target = _resolve_target(name, parent_col)
+                        if col:
+                            _link_under(col, target)
                 ok += 1
                 print(f"[MHWI] Imported: {os.path.basename(item.filepath)}")
             except Exception as e:

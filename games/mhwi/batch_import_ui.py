@@ -1,8 +1,29 @@
 import bpy
 from collections import defaultdict
 from .batch_import import PART_CODES, PART_NAMES, GENDER_LABELS, FT_ORDER
+from .batch_export import _load_armor_sets, get_armor_entry
 
 IMPORTER_WINDOW_WIDTH = 560
+
+
+def _armor_label(data, group_key):
+    """
+    根据 group_key（扫描到的文件夹名，如 pl042_0500）查找装备名称。
+    SP 幻化的文件夹名无性别前缀，需回退尝试 f_/m_ 前缀。
+    返回 "名称 变体  (id)" 或 "id"（找不到时）。
+    """
+    entry = get_armor_entry(data, group_key)
+    if entry is None:
+        for prefix in ("f_", "m_"):
+            entry = get_armor_entry(data, prefix + group_key)
+            if entry:
+                break
+    if entry is None:
+        return group_key
+    name    = entry.get("name", group_key)
+    variant = entry.get("variant_label", "")
+    eid     = entry["id"]
+    return f"{name} {variant}  ({eid})" if variant else f"{name}  ({eid})"
 
 _FILETYPE_ICONS = {
     "mod3": 'OUTLINER_OB_MESH',
@@ -92,7 +113,8 @@ class MHWI_OT_BatchImportDialog(bpy.types.Operator):
         layout.separator()
 
         # ── 各套装备 ──
-        group_map = _build_group_map(items)
+        group_map  = _build_group_map(items)
+        armor_data = _load_armor_sets(scene.mhw_suite_settings.mhwi_armor_sets_file)
 
         for group in groups:
             gkey     = group.group_key
@@ -100,12 +122,14 @@ class MHWI_OT_BatchImportDialog(bpy.types.Operator):
             total    = sum(len(v) for v in gp_items.values())
             enabled  = sum(1 for its in gp_items.values() for it in its if it.enabled)
 
+            label = _armor_label(armor_data, gkey)
+
             # 组标题行
             hrow = layout.row(align=True)
             icon = 'TRIA_DOWN' if group.expanded else 'TRIA_RIGHT'
             tog_op = hrow.operator(
                 "mhwi.toggle_import_group",
-                text=f"{gkey}  [{enabled}/{total}]",
+                text=f"{label}  [{enabled}/{total}]",
                 icon=icon, emboss=True,
             )
             tog_op.group_key = gkey
