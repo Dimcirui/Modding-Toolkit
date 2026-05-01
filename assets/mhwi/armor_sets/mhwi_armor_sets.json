@@ -1889,6 +1889,38 @@
       "variant_label": "beta",
       "rank": "HR",
       "mask": "11101"
+    },
+    {
+      "id": "f_pl119_0000",
+      "name": "希里",
+      "rank": "SP",
+      "face_id": "f_face003",
+      "hair_id": "hair404",
+      "mask": "11111"
+    },
+    {
+      "id": "f_pl131_0000",
+      "name": "克莱儿",
+      "rank": "SP",
+      "face_id": "f_face004",
+      "hair_id": "hair407",
+      "mask": "11111"
+    },
+    {
+      "id": "m_pl118_0000",
+      "name": "杰洛特",
+      "rank": "SP",
+      "face_id": "m_face004",
+      "hair_id": "hair403",
+      "mask": "11111"
+    },
+    {
+      "id": "f_pl070_0000",
+      "name": "樱",
+      "rank": "SP",
+      "face_id": "f_face002",
+      "hair_id": "hair402",
+      "mask": "11111"
     }
   ]
 }

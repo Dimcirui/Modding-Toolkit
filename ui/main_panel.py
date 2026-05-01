@@ -10,6 +10,7 @@ from ..games.mhwi.batch_export import (
     get_mhwi_armor_sets_callback,
     get_mhwi_hr_armor_callback,
     get_mhwi_mr_armor_callback,
+    get_mhwi_sp_armor_callback,
 )
 from ..core.bone_mapper import BoneMapManager
 
@@ -89,6 +90,7 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         items=[
             ('HR', "上下位", "低位/高位装备"),
             ('MR', "大师位", "冰原大师位装备"),
+            ('SP', "整套幻化", "独立幻化套装（含头部/头发模型）"),
         ],
         default='HR',
     )
@@ -110,6 +112,11 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         name="大师位装备",
         description="选择要导出的大师位装备",
         items=get_mhwi_mr_armor_callback,
+    )
+    mhwi_selected_sp_armor: bpy.props.EnumProperty(
+        name="整套幻化",
+        description="选择要导出的整套幻化",
+        items=get_mhwi_sp_armor_callback,
     )
 
     # MHWs batch export
@@ -634,6 +641,9 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row = col.row()
             row.enabled = has_mhw_model
             row.operator("mhwi.batch_export_dialog", text=_("批量导出装备"), icon='EXPORT')
+            row = col.row()
+            row.enabled = has_mhw_model
+            row.operator("mhwi.batch_import_dialog", text=_("批量导入装备"), icon='IMPORT')
             row = col.row()
             row.enabled = has_mhw_model
             row.operator("mhwi.mrl3_tex_processor_dialog", text=_("MRL3 + Tex 处理器"), icon='TEXTURE')
