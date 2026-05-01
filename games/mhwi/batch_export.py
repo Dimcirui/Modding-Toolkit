@@ -22,6 +22,10 @@ REGULAR_FILE_TYPES = ["mod3", "mrl3", "ctc"]
 # 头盔的文件类型槽位（无物理）
 HELM_FILE_TYPES = ["mod3", "mrl3"]
 
+# SP 独立头部/头发的文件类型槽位（仅模型和材质）
+SP_FACE_FILE_TYPES = ["mod3", "mrl3"]
+SP_HAIR_FILE_TYPES = ["mod3", "mrl3", "ctc"]
+
 # 导出时写入 MOD3 的默认参数
 MOD3_EXPORT_SETTINGS = {
     "autoSolveRepeatedUVs":    True,
@@ -75,6 +79,7 @@ def _load_armor_sets(filename):
 
 _hr_armor_cache = []
 _mr_armor_cache = []
+_sp_armor_cache = []
 
 def get_mhwi_hr_armor_callback(self, context):
     global _hr_armor_cache
@@ -99,6 +104,18 @@ def get_mhwi_mr_armor_callback(self, context):
     if not _mr_armor_cache:
         _mr_armor_cache.append(('NONE', "无装备", "", 0))
     return _mr_armor_cache
+
+def get_mhwi_sp_armor_callback(self, context):
+    global _sp_armor_cache
+    _sp_armor_cache = []
+    data = _load_armor_sets(context.scene.mhw_suite_settings.mhwi_armor_sets_file)
+    if data:
+        for armor in data.get("armor_sets", []):
+            if armor.get("rank") == "SP":
+                _sp_armor_cache.append(_armor_enum_item(armor, len(_sp_armor_cache)))
+    if not _sp_armor_cache:
+        _sp_armor_cache.append(('NONE', "无装备", "", 0))
+    return _sp_armor_cache
 
 def _armor_enum_item(armor, idx):
     model_id  = armor["id"]
@@ -162,6 +179,62 @@ def _make_filepath(natives_root, model_id, gender, part, ext):
         model_id,
         part, "mod",
         f"{gender}_{part}{numeric}.{ext}",
+    )
+    return os.path.join(natives_root, rel)
+
+
+def _get_sp_gender(model_id):
+    """从 SP model_id 的首字符提取性别，如 f_pl119_0000 -> 'f'"""
+    return model_id[0]
+
+
+def _make_sp_armor_filepath(natives_root, model_id, part, ext):
+    """
+    SP 幻化装备路径，model_id 自带性别前缀
+    nativePC/pl/{g}_equip/{dir_id}/{part}/mod/{g}_{part}{numeric}.{ext}
+    例: f_pl119_0000 -> nativePC/pl/f_equip/pl119_0000/arm/mod/f_arm119_0000.mod3
+    """
+    gender  = _get_sp_gender(model_id)   # "f"
+    dir_id  = model_id[2:]               # "pl119_0000"（去掉 "f_"）
+    numeric = model_id[4:]               # "119_0000"（去掉 "f_pl"）
+    rel = os.path.join(
+        "nativePC", "pl",
+        f"{gender}_equip",
+        dir_id,
+        part, "mod",
+        f"{gender}_{part}{numeric}.{ext}",
+    )
+    return os.path.join(natives_root, rel)
+
+
+def _make_sp_face_filepath(natives_root, face_id, ext):
+    """
+    SP 独立头部路径
+    nativePC/pl/{g}_face/{face_num}/mod/{face_id}.{ext}
+    例: nativePC/pl/f_face/face003/mod/f_face003.mod3
+    """
+    gender   = face_id[0]    # "f"
+    face_num = face_id[2:]   # "face003"
+    rel = os.path.join(
+        "nativePC", "pl",
+        f"{gender}_face",
+        face_num, "mod",
+        f"{face_id}.{ext}",
+    )
+    return os.path.join(natives_root, rel)
+
+
+def _make_sp_hair_filepath(natives_root, hair_id, ext):
+    """
+    SP 独立头发路径（不区分性别）
+    nativePC/pl/hair/{hair_id}/mod/{hair_id}.{ext}
+    例: nativePC/pl/hair/hair404/mod/hair404.mod3
+    """
+    rel = os.path.join(
+        "nativePC", "pl",
+        "hair",
+        hair_id, "mod",
+        f"{hair_id}.{ext}",
     )
     return os.path.join(natives_root, rel)
 
@@ -276,6 +349,116 @@ def _write_blank_part(natives_root, model_id, gender, part_code):
             print(f"[MHWI] WARNING: blank.evhl not found at {blank_evhl}")
 
 
+def _write_blank_sp_part(natives_root, model_id, part_code):
+    """SP 空模：仅写 blank.mod3，头盔不写 evhl"""
+    filepath_mod3 = _make_sp_armor_filepath(natives_root, model_id, part_code, "mod3")
+    os.makedirs(os.path.dirname(filepath_mod3), exist_ok=True)
+    blank_mod3 = _get_blank_path("blank.mod3")
+    if os.path.isfile(blank_mod3):
+        shutil.copy2(blank_mod3, filepath_mod3)
+        print(f"[MHWI] BLANK mod3 -> {os.path.basename(filepath_mod3)}")
+    else:
+        print(f"[MHWI] WARNING: blank.mod3 not found at {blank_mod3}")
+
+
+def _export_sp(context, armor_entry, natives_root):
+    """SP 整套幻化导出（固定性别，含独立头部和头发），返回 (export_count, fail_count, skip_count)"""
+    scene     = context.scene
+    model_id  = armor_entry["id"]
+    face_id   = armor_entry["face_id"]
+    hair_id   = armor_entry["hair_id"]
+    mask_str  = armor_entry.get("mask", "11111")
+    mask      = [c == '1' for c in mask_str.ljust(5, '0')]
+
+    export_count = fail_count = skip_count = 0
+
+    # ── 五件护甲部位 ──
+    for part_code, part_name, mask_idx in MHWI_PARTS:
+        if not mask[mask_idx]:
+            continue
+
+        if get_blank(scene, model_id, part_code):
+            _write_blank_sp_part(natives_root, model_id, part_code)
+            export_count += 1
+            continue
+
+        is_helm    = (part_code == HELM_PART)
+        file_types = HELM_FILE_TYPES if is_helm else REGULAR_FILE_TYPES
+
+        for ft in file_types:
+            col   = get_binding(scene, model_id, part_code, ft)
+            label = f"SP/{part_name}/{ft.upper()}"
+
+            if not col:
+                skip_count += 1
+                continue
+            if col not in bpy.data.collections:
+                print(f"[MHWI] SKIP {label}: collection '{col}' not found")
+                skip_count += 1
+                continue
+
+            filepath = _make_sp_armor_filepath(natives_root, model_id, part_code, ft)
+            try:
+                print(f"[MHWI] {label}: {col} -> {os.path.basename(filepath)}")
+                if ft == "ctc":
+                    _do_export_ctc(filepath, col, get_export_ccl(scene, model_id, part_code))
+                else:
+                    _EXPORT_FUNCS[ft](filepath, col)
+                export_count += 1
+            except Exception as err:
+                print(f"[MHWI] FAILED {label}: {err}")
+                fail_count += 1
+
+    # ── 独立头部 ──
+    for ft in SP_FACE_FILE_TYPES:
+        col   = get_binding(scene, face_id, "face", ft)
+        label = f"SP/头部/{ft.upper()}"
+
+        if not col:
+            skip_count += 1
+            continue
+        if col not in bpy.data.collections:
+            print(f"[MHWI] SKIP {label}: collection '{col}' not found")
+            skip_count += 1
+            continue
+
+        filepath = _make_sp_face_filepath(natives_root, face_id, ft)
+        try:
+            print(f"[MHWI] {label}: {col} -> {os.path.basename(filepath)}")
+            _EXPORT_FUNCS[ft](filepath, col)
+            export_count += 1
+        except Exception as err:
+            print(f"[MHWI] FAILED {label}: {err}")
+            fail_count += 1
+
+    # ── 独立头发 ──
+    for ft in SP_HAIR_FILE_TYPES:
+        col   = get_binding(scene, hair_id, "hair", ft)
+        label = f"SP/头发/{ft.upper()}"
+
+        if not col:
+            skip_count += 1
+            continue
+        if col not in bpy.data.collections:
+            print(f"[MHWI] SKIP {label}: collection '{col}' not found")
+            skip_count += 1
+            continue
+
+        filepath = _make_sp_hair_filepath(natives_root, hair_id, ft)
+        try:
+            print(f"[MHWI] {label}: {col} -> {os.path.basename(filepath)}")
+            if ft == "ctc":
+                _do_export_ctc(filepath, col, get_export_ccl(scene, hair_id, "hair"))
+            else:
+                _EXPORT_FUNCS[ft](filepath, col)
+            export_count += 1
+        except Exception as err:
+            print(f"[MHWI] FAILED {label}: {err}")
+            fail_count += 1
+
+    return export_count, fail_count, skip_count
+
+
 # ── Operator ──────────────────────────────────────────────────────
 
 class MHWI_OT_BatchExport(bpy.types.Operator):
@@ -297,9 +480,14 @@ class MHWI_OT_BatchExport(bpy.types.Operator):
             self.report({'ERROR'}, "请先设置 Mod Root 目录（nativePC 的上级文件夹）")
             return {'CANCELLED'}
 
-        rank     = settings.mhwi_rank_tab
-        model_id = (settings.mhwi_selected_hr_armor if rank == 'HR'
-                    else settings.mhwi_selected_mr_armor)
+        rank = settings.mhwi_rank_tab
+        if rank == 'HR':
+            model_id = settings.mhwi_selected_hr_armor
+        elif rank == 'MR':
+            model_id = settings.mhwi_selected_mr_armor
+        else:
+            model_id = settings.mhwi_selected_sp_armor
+
         if not model_id or model_id == 'NONE':
             self.report({'ERROR'}, "请先选择一套装备")
             return {'CANCELLED'}
@@ -310,14 +498,16 @@ class MHWI_OT_BatchExport(bpy.types.Operator):
             self.report({'ERROR'}, f"装备包中未找到: {model_id}")
             return {'CANCELLED'}
 
-        genders = _resolve_genders(settings.mhwi_gender)
-
         total_export = total_fail = total_skip = 0
-        for gender in genders:
-            e, f, s = _export_gender(context, settings, armor_entry, gender, natives_root)
-            total_export += e
-            total_fail   += f
-            total_skip   += s
+        if rank == 'SP':
+            total_export, total_fail, total_skip = _export_sp(context, armor_entry, natives_root)
+        else:
+            genders = _resolve_genders(settings.mhwi_gender)
+            for gender in genders:
+                e, f, s = _export_gender(context, settings, armor_entry, gender, natives_root)
+                total_export += e
+                total_fail   += f
+                total_skip   += s
 
         if total_fail > 0:
             self.report({'WARNING'},

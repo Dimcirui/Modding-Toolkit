@@ -78,7 +78,7 @@ class MODDER_OT_TPoseDirection(bpy.types.Operator):
         count = 0
         
         for std_key, sign in targets:
-            main_name, _ = mapper.get_matches_for_standard(arm_obj, std_key)
+            main_name, __ = mapper.get_matches_for_standard(arm_obj, std_key)
             if not main_name or main_name not in pose_bones:
                 continue
             
@@ -151,7 +151,7 @@ class MODDER_OT_TPoseMatrixZero(bpy.types.Operator):
         bone_names = []
         existing = arm_obj.data.bones.keys()
         for std_key in tpose_std_keys:
-            main_name, _ = mapper.get_matches_for_standard(arm_obj, std_key)
+            main_name, __ = mapper.get_matches_for_standard(arm_obj, std_key)
             if main_name and main_name in existing:
                 bone_names.append(main_name)
         
@@ -368,7 +368,7 @@ def _apply_transform(operator, context, inverse=False):
         # 再建立: std_key -> target_bone_name 的映射
         # 注意: transforms 里的骨骼名来自录制时的骨架, 可能和目标骨架不同
         for std_key in STANDARD_BONE_NAMES:
-            tgt_name, _ = mapper.get_matches_for_standard(arm_obj, std_key)
+            tgt_name, __ = mapper.get_matches_for_standard(arm_obj, std_key)
             if tgt_name:
                 # 检查 transforms 里有没有这个名字
                 if tgt_name in transforms:

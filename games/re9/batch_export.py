@@ -165,6 +165,9 @@ class RE9_OT_BatchExport(bpy.types.Operator):
         export_count = 0
         fail_count = 0
         skip_count = 0
+        
+        # Cache for identical exports: (func_name, target) -> exported_filepath
+        export_cache = {}
 
         def make_full(rel, bp_override=None):
             bp = (bp_override or base_path).replace("/", os.sep)
@@ -186,9 +189,24 @@ class RE9_OT_BatchExport(bpy.types.Operator):
                     print(f"[RE9] SKIP {label}: collection '{target}' not found")
                     skip_count += 1
                     return
+
+            cache_key = (func.__name__, target)
+            if cache_key in export_cache:
+                try:
+                    source_filepath = export_cache[cache_key]
+                    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                    shutil.copy2(source_filepath, filepath)
+                    print(f"[RE9] {label}: {target} [CACHED] -> {os.path.basename(filepath)}")
+                    export_count += 1
+                except Exception as err:
+                    print(f"[RE9] FAILED {label} [CACHE COPY]: {err}")
+                    fail_count += 1
+                return
+
             try:
                 print(f"[RE9] {label}: {target} -> {os.path.basename(filepath)}")
                 func(filepath, target)
+                export_cache[cache_key] = filepath
                 export_count += 1
             except Exception as err:
                 print(f"[RE9] FAILED {label}: {err}")
@@ -241,6 +259,9 @@ class RE9_OT_BatchExport(bpy.types.Operator):
                                     try_blank("mdf2", make_full(m, grp_bp), f"MDF2 {entry_id}")
                             if entry.get("sfur"):
                                 try_blank("sfur", make_full(entry["sfur"], grp_bp), f"SFUR {entry_id}")
+                            if entry.get("chain2"):
+                                for c in (entry["chain2"] if isinstance(entry["chain2"], list) else [entry["chain2"]]):
+                                    try_blank("chain2", make_full(c, grp_bp), f"CHAIN2 {entry_id}")
                             continue
                         else:
                             mesh_col = _get_simplified_empty_binding(scene, character_id, "mesh")
@@ -248,13 +269,52 @@ class RE9_OT_BatchExport(bpy.types.Operator):
                     else:
                         continue
 
-                    # sfur for non-empty entries
+                    # sfur
                     sfur_col = ""
-                    if simp_sfur == "empty" and entry.get("sfur"):
+                    rule_sfur = entry.get("simplified_sfur", simp)
+                    if rule_sfur == "user" and entry.get("sfur"):
+                        sfur_col = _get_simplified_group_binding(scene, character_id, group_name, "sfur")
+                    elif rule_sfur == "empty" and entry.get("sfur"):
                         if use_blank:
                             try_blank("sfur", make_full(entry["sfur"], grp_bp), f"SFUR {entry_id}")
                         else:
                             sfur_col = _get_simplified_empty_binding(scene, character_id, "sfur")
+
+                    # chain2
+                    chain2_col = ""
+                    rule_chain2 = entry.get("simplified_chain2", simp)
+                    if rule_chain2 == "user" and entry.get("chain2"):
+                        chain2_col = _get_simplified_group_binding(scene, character_id, group_name, "chain2")
+                        if chain2_col:
+                            for c in (entry["chain2"] if isinstance(entry["chain2"], list) else [entry["chain2"]]):
+                                try_export(_do_export_chain2, make_full(c, grp_bp), chain2_col, f"CHAIN2 {entry_id}")
+                    elif rule_chain2 == "empty" and entry.get("chain2"):
+                        if use_blank:
+                            for c in (entry["chain2"] if isinstance(entry["chain2"], list) else [entry["chain2"]]):
+                                try_blank("chain2", make_full(c, grp_bp), f"CHAIN2 {entry_id}")
+                        else:
+                            chain2_col = _get_simplified_empty_binding(scene, character_id, "chain2")
+                            if chain2_col:
+                                for c in (entry["chain2"] if isinstance(entry["chain2"], list) else [entry["chain2"]]):
+                                    try_export(_do_export_chain2, make_full(c, grp_bp), chain2_col, f"CHAIN2 {entry_id}")
+
+                    # clsp
+                    clsp_col = ""
+                    rule_clsp = entry.get("simplified_clsp", simp)
+                    if rule_clsp == "user" and entry.get("clsp"):
+                        clsp_col = _get_simplified_group_binding(scene, character_id, group_name, "clsp")
+                        if clsp_col:
+                            for c in (entry["clsp"] if isinstance(entry["clsp"], list) else [entry["clsp"]]):
+                                try_export(_do_export_clsp, make_full(c, grp_bp), clsp_col, f"CLSP {entry_id}")
+                    elif rule_clsp == "empty" and entry.get("clsp"):
+                        if use_blank:
+                            for c in (entry["clsp"] if isinstance(entry["clsp"], list) else [entry["clsp"]]):
+                                try_blank("clsp", make_full(c, grp_bp), f"CLSP {entry_id}")
+                        else:
+                            clsp_col = _get_simplified_empty_binding(scene, character_id, "clsp")
+                            if clsp_col:
+                                for c in (entry["clsp"] if isinstance(entry["clsp"], list) else [entry["clsp"]]):
+                                    try_export(_do_export_clsp, make_full(c, grp_bp), clsp_col, f"CLSP {entry_id}")
 
                     # Export mesh
                     if entry.get("mesh"):
@@ -275,6 +335,12 @@ class RE9_OT_BatchExport(bpy.types.Operator):
                     # Export sfur (collection-bound; blank case handled above)
                     if entry.get("sfur") and sfur_col:
                         try_export(_do_export_sfur, make_full(entry["sfur"], grp_bp), sfur_col, f"SFUR {entry_id}")
+                        
+                    if entry.get("chain2") and chain2_col:
+                        # This section was previously handling part of simplified export logic, 
+                        # but actual export calls for simplified mode should be consolidated.
+                        # (Removed redundant placeholder to avoid double export)
+                        pass
 
                 else:
                     # Normal mode: use per-entry bindings
@@ -303,6 +369,26 @@ class RE9_OT_BatchExport(bpy.types.Operator):
                             try_export(_do_export_sfur, make_full(entry["sfur"], grp_bp), sfur_col, f"SFUR {entry_id}")
                         elif sfur_en and use_blank:
                             try_blank("sfur", make_full(entry["sfur"], grp_bp), f"SFUR {entry_id}")
+
+                    chain2_en = _get_enabled(scene, character_id, entry_id, "chain2")
+                    chain2_col = _get_binding(scene, character_id, entry_id, "chain2")
+                    if entry.get("chain2"):
+                        if chain2_en and chain2_col:
+                            for c in (entry["chain2"] if isinstance(entry["chain2"], list) else [entry["chain2"]]):
+                                try_export(_do_export_chain2, make_full(c, grp_bp), chain2_col, f"CHAIN2 {entry_id}")
+                        elif chain2_en and use_blank:
+                            for c in (entry["chain2"] if isinstance(entry["chain2"], list) else [entry["chain2"]]):
+                                try_blank("chain2", make_full(c, grp_bp), f"CHAIN2 {entry_id}")
+
+                    clsp_en = _get_enabled(scene, character_id, entry_id, "clsp")
+                    clsp_col = _get_binding(scene, character_id, entry_id, "clsp")
+                    if entry.get("clsp"):
+                        if clsp_en and clsp_col:
+                            for c in (entry["clsp"] if isinstance(entry["clsp"], list) else [entry["clsp"]]):
+                                try_export(_do_export_clsp, make_full(c, grp_bp), clsp_col, f"CLSP {entry_id}")
+                        elif clsp_en and use_blank:
+                            for c in (entry["clsp"] if isinstance(entry["clsp"], list) else [entry["clsp"]]):
+                                try_blank("clsp", make_full(c, grp_bp), f"CLSP {entry_id}")
 
         if fail_count > 0:
             self.report({'WARNING'}, f"Done: {export_count} exported, {fail_count} failed, {skip_count} skipped")

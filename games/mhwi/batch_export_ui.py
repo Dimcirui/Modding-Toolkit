@@ -1,6 +1,7 @@
 import bpy
 from .batch_export import (
     MHWI_PARTS, HELM_PART,
+    SP_FACE_FILE_TYPES, SP_HAIR_FILE_TYPES,
     _load_armor_sets, get_armor_entry,
     get_binding, set_binding,
     get_blank, set_blank,
@@ -151,19 +152,23 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
             row.label(text="未设置", icon='ERROR')
 
         # ── 性别 + 位阶标签页 ──
-        row = layout.row(align=True)
-        row.prop(settings, "mhwi_gender", expand=True)
+        rank = settings.mhwi_rank_tab
+        if rank != 'SP':
+            row = layout.row(align=True)
+            row.prop(settings, "mhwi_gender", expand=True)
 
         layout.row().prop(settings, "mhwi_rank_tab", expand=True)
 
         # ── 装备选择 ──
-        rank = settings.mhwi_rank_tab
         if rank == 'HR':
             layout.prop(settings, "mhwi_selected_hr_armor", text="装备")
             model_id = settings.mhwi_selected_hr_armor
-        else:
+        elif rank == 'MR':
             layout.prop(settings, "mhwi_selected_mr_armor", text="装备")
             model_id = settings.mhwi_selected_mr_armor
+        else:
+            layout.prop(settings, "mhwi_selected_sp_armor", text="装备")
+            model_id = settings.mhwi_selected_sp_armor
 
         if not model_id or model_id == 'NONE':
             layout.separator()
@@ -185,9 +190,13 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
         ]
 
         layout.separator()
-        self._draw_parts(layout, scene, model_id, active_parts)
+        if rank == 'SP':
+            self._draw_parts(layout, scene, model_id, active_parts, sp_helm=True)
+            self._draw_sp_standalone(layout, scene, armor_entry)
+        else:
+            self._draw_parts(layout, scene, model_id, active_parts)
 
-    def _draw_parts(self, layout, scene, model_id, active_parts):
+    def _draw_parts(self, layout, scene, model_id, active_parts, sp_helm=False):
         # 表头行
         header = layout.row(align=False)
         header.label(text="")
@@ -203,8 +212,8 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
             row.label(text=part_name)
 
             if is_blank:
-                # 三列用灰色占位，空模按钮显示为按下状态
-                blank_label = "空模+evhl" if is_helm else "空模"
+                # SP 头盔不写 evhl，所以不显示 "+evhl"
+                blank_label = "空模" if (sp_helm or not is_helm) else "空模+evhl"
                 sub = row.row()
                 sub.enabled = False
                 sub.label(text="")
@@ -245,6 +254,44 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
                                icon='FILE_BLANK', depress=False)
             op.model_id = model_id
             op.part     = part_code
+
+    def _draw_sp_standalone(self, layout, scene, armor_entry):
+        """绘制 SP 独立头部与头发的绑定行"""
+        face_id = armor_entry["face_id"]
+        hair_id = armor_entry["hair_id"]
+
+        # ── 独立头部 ──
+        layout.separator()
+        layout.label(text=f"独立头部  ({face_id})", icon='OUTLINER_OB_ARMATURE')
+        header = layout.row(align=False)
+        header.label(text="")
+        for ft in SP_FACE_FILE_TYPES:
+            header.label(text=_FILETYPE_LABELS[ft], icon=_FILETYPE_ICONS[ft], translate=False)
+
+        row = layout.row(align=False)
+        row.label(text="头部")
+        for ft in SP_FACE_FILE_TYPES:
+            self._draw_picker(row, scene, face_id, "face", ft)
+
+        # ── 独立头发 ──
+        layout.separator()
+        layout.label(text=f"独立头发  ({hair_id})", icon='OUTLINER_OB_CURVES')
+        header = layout.row(align=False)
+        header.label(text="")
+        for ft in ("mod3", "mrl3", "ctc"):
+            header.label(text=_FILETYPE_LABELS[ft], icon=_FILETYPE_ICONS[ft], translate=False)
+
+        row = layout.row(align=False)
+        row.label(text="头发")
+        self._draw_picker(row, scene, hair_id, "hair", "mod3")
+        self._draw_picker(row, scene, hair_id, "hair", "mrl3")
+        ctc_sub = row.row(align=True)
+        self._draw_picker(ctc_sub, scene, hair_id, "hair", "ctc")
+        ccl_on = get_export_ccl(scene, hair_id, "hair")
+        ccl_op = ctc_sub.operator("mhwi.toggle_ccl", text="CCL",
+                                  icon='PHYSICS', depress=ccl_on)
+        ccl_op.model_id = hair_id
+        ccl_op.part     = "hair"
 
     def _draw_picker(self, row, scene, model_id, part_code, ft):
         cur = get_binding(scene, model_id, part_code, ft)

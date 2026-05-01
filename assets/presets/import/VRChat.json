@@ -91,7 +91,7 @@
 
     "thigh_L": {
       "main": ["UpperLeg_L", "Left leg"],
-      "aux": ["Hips_L"]
+      "aux": []
     },
     "shin_L": {
       "main": ["LowerLeg_L", "Left knee"],
@@ -116,7 +116,7 @@
 
     "thigh_R": {
       "main": ["UpperLeg_R", "Right leg"],
-      "aux": ["Hips_R"]
+      "aux": []
     },
     "shin_R": {
       "main": ["LowerLeg_R", "Right knee"],

@@ -10,6 +10,7 @@ from ..games.mhwi.batch_export import (
     get_mhwi_armor_sets_callback,
     get_mhwi_hr_armor_callback,
     get_mhwi_mr_armor_callback,
+    get_mhwi_sp_armor_callback,
 )
 from ..core.bone_mapper import BoneMapManager
 
@@ -89,6 +90,7 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         items=[
             ('HR', "上下位", "低位/高位装备"),
             ('MR', "大师位", "冰原大师位装备"),
+            ('SP', "整套幻化", "独立幻化套装（含头部/头发模型）"),
         ],
         default='HR',
     )
@@ -110,6 +112,11 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         name="大师位装备",
         description="选择要导出的大师位装备",
         items=get_mhwi_mr_armor_callback,
+    )
+    mhwi_selected_sp_armor: bpy.props.EnumProperty(
+        name="整套幻化",
+        description="选择要导出的整套幻化",
+        items=get_mhwi_sp_armor_callback,
     )
 
     # MHWs batch export
@@ -201,9 +208,10 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
             ('MIRROR_X',      "镜像对齐 X",   "以 X+ 为基准镜像对齐 X- 骨骼"),
             ('SIMPLIFY_CHAIN',"骨链简化",     "按链结构两两配对删减骨骼并合并权重，自动跳过尾骨"),
             ('MERGE_TO_ACTIVE',"合并到激活骨","将其余选中骨骼的权重全部合并到激活骨（最后点击的那根），并删除其余骨骼"),
+            ('ALIGN_POS',     "对齐 (位置)",    "将目标骨骼 head 对齐到源，不改变长度方向"),
+            ('ALIGN_POS_ROLL',"对齐 (位置+扭转)", "对齐 head 和 roll，不改变长度方向"),
+            ('ALIGN_FULL',    "对齐 (完全)",    "按骨骼名完全对齐两个骨架 (head+tail+roll)"),
             ('MERGE_CHAINS',  "合并链到激活链","选中多条链的链首，将其余链按位置逐骨合并到激活骨所在链，超出部分合并到链末"),
-            ('ALIGN_FULL',    "骨架对齐 (完全)","按骨骼名完全对齐两个骨架 (head+tail)，需选中两个骨架"),
-            ('ALIGN_POS',     "骨架对齐 (位置)","按骨骼名对齐 head 位置，保持骨骼方向，需选中两个骨架"),
         ]
     )
 
@@ -382,7 +390,7 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
             weight_utils.merge_weights_and_delete_bones(arm_obj, pairs)
             self.report({'INFO'}, _("已将 %d 条链合并到 [%s]，共处理 %d 对骨骼") % (chain_count, active_name, len(pairs)))
 
-        elif self.action in ('ALIGN_FULL', 'ALIGN_POS'):
+        elif self.action in ('ALIGN_FULL', 'ALIGN_POS', 'ALIGN_POS_ROLL'):
             selected_arms = [o for o in context.selected_objects if o.type == 'ARMATURE']
             if len(selected_arms) != 2:
                 self.report({'ERROR'}, _("请选中两个骨架（激活的为目标，另一个为源）"))
@@ -391,10 +399,22 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
             source = [o for o in selected_arms if o != target][0]
             if context.mode != 'OBJECT':
                 bpy.ops.object.mode_set(mode='OBJECT')
-            mode = 'FULL' if self.action == 'ALIGN_FULL' else 'POS_ONLY'
+            
+            if self.action == 'ALIGN_FULL':
+                mode = 'FULL'
+            elif self.action == 'ALIGN_POS_ROLL':
+                mode = 'POS_ROLL'
+            else:
+                mode = 'POS_ONLY'
+                
             count = bone_utils.align_armatures_by_name(source, target, mode=mode)
-            label = _("完全对齐") if self.action == 'ALIGN_FULL' else _("位置对齐")
-            self.report({'INFO'}, _("%s: %d 根骨骼") % (label, count))
+            
+            label_map = {
+                'ALIGN_FULL': _("完全对齐"),
+                'ALIGN_POS': _("位置对齐"),
+                'ALIGN_POS_ROLL': _("对齐 (位置+扭转)")
+            }
+            self.report({'INFO'}, _("%s: %d 根骨骼") % (label_map[self.action], count))
 
         return {'FINISHED'}
 
@@ -442,8 +462,9 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             col.operator("mhw.general_tools", text=_("合并到激活骨")).action = 'MERGE_TO_ACTIVE'
             col.operator("mhw.general_tools", text=_("合并链到激活链")).action = 'MERGE_CHAINS'
             row = col.row(align=True)
-            row.operator("mhw.general_tools", text=_("对齐 (完全)")).action = 'ALIGN_FULL'
-            row.operator("mhw.general_tools", text=_("对齐 (位置)")).action = 'ALIGN_POS'
+            row.operator("mhw.general_tools", text=_("位置")).action = 'ALIGN_POS'
+            row.operator("mhw.general_tools", text=_("位置+扭转")).action = 'ALIGN_POS_ROLL'
+            row.operator("mhw.general_tools", text=_("完全")).action = 'ALIGN_FULL'
 
         layout.separator()
 
@@ -620,6 +641,9 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row = col.row()
             row.enabled = has_mhw_model
             row.operator("mhwi.batch_export_dialog", text=_("批量导出装备"), icon='EXPORT')
+            row = col.row()
+            row.enabled = has_mhw_model
+            row.operator("mhwi.batch_import_dialog", text=_("批量导入装备"), icon='IMPORT')
             row = col.row()
             row.enabled = has_mhw_model
             row.operator("mhwi.mrl3_tex_processor_dialog", text=_("MRL3 + Tex 处理器"), icon='TEXTURE')

@@ -16,17 +16,19 @@ def _get_group_toggle_key(character_id, group_name):
 
 def _get_filtered_collections(suffix):
     result = []
-    type_map = {"mesh": "RE_MESH_COLLECTION", "mdf2": "RE_MDF_COLLECTION", "sfur": "RE_SFUR_COLLECTION"}
-    name_sfx_map = {"mesh": ".mesh", "mdf2": ".mdf2", "sfur": ".sfur"}
+    type_map = {"mesh": "RE_MESH_COLLECTION", "mdf2": "RE_MDF_COLLECTION", "sfur": "RE_SFUR_COLLECTION", "chain2": "RE_CHAIN_COLLECTION"}
+    name_sfx_map = {"mesh": ".mesh", "mdf2": ".mdf2", "sfur": ".sfur", "chain2": ".chain", "clsp": ".clsp"}
     target_type = type_map.get(suffix, "")
     name_sfx = name_sfx_map.get(suffix, "")
     for c in bpy.data.collections:
         col_type = c.get("~TYPE", "")
-        if col_type == target_type:
+        # Match by type
+        if target_type and col_type == target_type:
             icon = f"COLLECTION_{c.color_tag}" if c.color_tag != "NONE" else "OUTLINER_COLLECTION"
             result.append((c.name, c.name, "", icon, len(result)))
             continue
-        if not col_type and name_sfx and c.name.endswith(name_sfx):
+        # Match by extension
+        if name_sfx and (c.name.endswith(name_sfx) or f"{name_sfx}." in c.name):
             result.append((c.name, c.name, "", "OUTLINER_COLLECTION", len(result)))
     if not result:
         result.append(("NONE", "No matching collections", "", "ERROR", 0))
@@ -139,6 +141,42 @@ class RE9_OT_PickSfurCollection(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class RE9_OT_PickChain2Collection(bpy.types.Operator):
+    bl_idname = "re9.pick_chain2_collection"
+    bl_label = "Pick Chain2 Collection"
+    bl_options = {'INTERNAL'}
+    bl_property = "collection_name"
+    character_id: bpy.props.StringProperty()
+    entry_id: bpy.props.StringProperty()
+    collection_name: bpy.props.EnumProperty(name="Chain2 Collection",
+        items=lambda self, ctx: _get_filtered_collections("chain2"))
+    def invoke(self, context, event):
+        context.window_manager.invoke_search_popup(self)
+        return {'RUNNING_MODAL'}
+    def execute(self, context):
+        if self.collection_name != "NONE":
+            _set_binding(context.scene, self.character_id, self.entry_id, "chain2", self.collection_name)
+        return {'FINISHED'}
+
+
+class RE9_OT_PickClspCollection(bpy.types.Operator):
+    bl_idname = "re9.pick_clsp_collection"
+    bl_label = "Pick Clsp Collection"
+    bl_options = {'INTERNAL'}
+    bl_property = "collection_name"
+    character_id: bpy.props.StringProperty()
+    entry_id: bpy.props.StringProperty()
+    collection_name: bpy.props.EnumProperty(name="Clsp Collection",
+        items=lambda self, ctx: _get_filtered_collections("clsp"))
+    def invoke(self, context, event):
+        context.window_manager.invoke_search_popup(self)
+        return {'RUNNING_MODAL'}
+    def execute(self, context):
+        if self.collection_name != "NONE":
+            _set_binding(context.scene, self.character_id, self.entry_id, "clsp", self.collection_name)
+        return {'FINISHED'}
+
+
 class RE9_OT_PickArmature(bpy.types.Operator):
     bl_idname = "re9.pick_armature"
     bl_label = "Pick Armature"
@@ -193,6 +231,60 @@ class RE9_OT_PickSimplifiedGroupMdf(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class RE9_OT_PickSimplifiedGroupSfur(bpy.types.Operator):
+    bl_idname = "re9.pick_sg_sfur"
+    bl_label = "Pick Group SFur"
+    bl_options = {'INTERNAL'}
+    bl_property = "collection_name"
+    character_id: bpy.props.StringProperty()
+    group_name: bpy.props.StringProperty()
+    collection_name: bpy.props.EnumProperty(name="SFur",
+        items=lambda self, ctx: _get_filtered_collections("sfur"))
+    def invoke(self, context, event):
+        context.window_manager.invoke_search_popup(self)
+        return {'RUNNING_MODAL'}
+    def execute(self, context):
+        if self.collection_name != "NONE":
+            _set_simplified_group_binding(context.scene, self.character_id, self.group_name, "sfur", self.collection_name)
+        return {'FINISHED'}
+
+
+class RE9_OT_PickSimplifiedGroupChain2(bpy.types.Operator):
+    bl_idname = "re9.pick_sg_chain2"
+    bl_label = "Pick Group Chain2"
+    bl_options = {'INTERNAL'}
+    bl_property = "collection_name"
+    character_id: bpy.props.StringProperty()
+    group_name: bpy.props.StringProperty()
+    collection_name: bpy.props.EnumProperty(name="Chain2",
+        items=lambda self, ctx: _get_filtered_collections("chain2"))
+    def invoke(self, context, event):
+        context.window_manager.invoke_search_popup(self)
+        return {'RUNNING_MODAL'}
+    def execute(self, context):
+        if self.collection_name != "NONE":
+            _set_simplified_group_binding(context.scene, self.character_id, self.group_name, "chain2", self.collection_name)
+        return {'FINISHED'}
+
+
+class RE9_OT_PickSimplifiedGroupClsp(bpy.types.Operator):
+    bl_idname = "re9.pick_sg_clsp"
+    bl_label = "Pick Group Clsp"
+    bl_options = {'INTERNAL'}
+    bl_property = "collection_name"
+    character_id: bpy.props.StringProperty()
+    group_name: bpy.props.StringProperty()
+    collection_name: bpy.props.EnumProperty(name="Clsp",
+        items=lambda self, ctx: _get_filtered_collections("clsp"))
+    def invoke(self, context, event):
+        context.window_manager.invoke_search_popup(self)
+        return {'RUNNING_MODAL'}
+    def execute(self, context):
+        if self.collection_name != "NONE":
+            _set_simplified_group_binding(context.scene, self.character_id, self.group_name, "clsp", self.collection_name)
+        return {'FINISHED'}
+
+
 class RE9_OT_PickSimplifiedEmptyMesh(bpy.types.Operator):
     bl_idname = "re9.pick_se_mesh"
     bl_label = "Pick Empty Mesh"
@@ -242,6 +334,39 @@ class RE9_OT_PickSimplifiedEmptySfur(bpy.types.Operator):
         if self.collection_name != "NONE":
             _set_simplified_empty_binding(context.scene, self.character_id, "sfur", self.collection_name)
         return {'FINISHED'}
+
+class RE9_OT_PickSimplifiedEmptyChain2(bpy.types.Operator):
+    bl_idname = "re9.pick_se_chain2"
+    bl_label = "Pick Empty Chain2"
+    bl_options = {'INTERNAL'}
+    bl_property = "collection_name"
+    character_id: bpy.props.StringProperty()
+    collection_name: bpy.props.EnumProperty(name="Empty Chain2",
+        items=lambda self, ctx: _get_filtered_collections("chain2"))
+    def invoke(self, context, event):
+        context.window_manager.invoke_search_popup(self)
+        return {'RUNNING_MODAL'}
+    def execute(self, context):
+        if self.collection_name != "NONE":
+            _set_simplified_empty_binding(context.scene, self.character_id, "chain2", self.collection_name)
+        return {'FINISHED'}
+
+
+class RE9_OT_PickSimplifiedEmptyClsp(bpy.types.Operator):
+    bl_idname = "re9.pick_se_clsp"
+    bl_label = "Pick Empty Clsp"
+    bl_options = {'INTERNAL'}
+    bl_property = "collection_name"
+    character_id: bpy.props.StringProperty()
+    collection_name: bpy.props.EnumProperty(name="Empty Clsp",
+        items=lambda self, ctx: _get_filtered_collections("clsp"))
+    def invoke(self, context, event):
+        context.window_manager.invoke_search_popup(self)
+        return {'RUNNING_MODAL'}
+    def execute(self, context):
+        if self.collection_name != "NONE":
+            _set_simplified_empty_binding(context.scene, self.character_id, "clsp", self.collection_name)
+        return {'FINISHED'}
     
 class RE9_OT_ClearSimplifiedGroup(bpy.types.Operator):
     bl_idname = "re9.clear_sg"
@@ -254,6 +379,7 @@ class RE9_OT_ClearSimplifiedGroup(bpy.types.Operator):
         _set_simplified_group_binding(context.scene, self.character_id, self.group_name, self.suffix, "")
         return {'FINISHED'}
 
+    
 class RE9_OT_ClearSimplifiedEmpty(bpy.types.Operator):
     bl_idname = "re9.clear_se"
     bl_label = "Clear Empty Binding"
@@ -262,6 +388,53 @@ class RE9_OT_ClearSimplifiedEmpty(bpy.types.Operator):
     suffix: bpy.props.StringProperty()
     def execute(self, context):
         _set_simplified_empty_binding(context.scene, self.character_id, self.suffix, "")
+        return {'FINISHED'}
+
+
+class RE9_OT_ClearNormalBinding(bpy.types.Operator):
+    bl_idname = "re9.clear_normal_binding"
+    bl_label = "Clear"
+    bl_options = {'INTERNAL'}
+    character_id: bpy.props.StringProperty()
+    entry_id: bpy.props.StringProperty()
+    suffix: bpy.props.StringProperty()
+    def execute(self, context):
+        _set_binding(context.scene, self.character_id, self.entry_id, self.suffix, "")
+        return {'FINISHED'}
+
+
+class RE9_OT_ClearAllBindings(bpy.types.Operator):
+    bl_idname = "re9.clear_all_bindings"
+    bl_label = "Clear All Currently Selected"
+    bl_description = "Clear all mesh/mdf/sfur/chain2 bindings for this scheme"
+    bl_options = {'REGISTER', 'UNDO'}
+    scheme_file: bpy.props.StringProperty()
+    def execute(self, context):
+        scheme = _load_scheme(self.scheme_file)
+        if not scheme: return {'CANCELLED'}
+        char_id = scheme["character_id"]
+        scene = context.scene
+
+        # Clear FBXSKEL
+        _set_binding(scene, char_id, "_fbxskel", "fbxskel", "")
+
+        for group in scheme["groups"]:
+            group_name = group["name"]
+            # Clear Simplified Group Bindings
+            for sfx in ["mesh", "mdf2", "sfur", "chain2", "clsp"]:
+                _set_simplified_group_binding(scene, char_id, group_name, sfx, "")
+            
+            # Clear Normal Entry Bindings
+            for entry in group["entries"]:
+                eid = entry["id"]
+                for sfx in ["mesh", "mdf2", "sfur", "chain2", "clsp"]:
+                    _set_binding(scene, char_id, eid, sfx, "")
+        
+        # Clear Simplified Empty Bindings
+        for sfx in ["mesh", "mdf2", "sfur", "chain2", "clsp"]:
+            _set_simplified_empty_binding(scene, char_id, sfx, "")
+
+        self.report({'INFO'}, "All bindings for this scheme cleared")
         return {'FINISHED'}
 
 
@@ -330,8 +503,12 @@ class RE9_OT_BatchExportDialog(bpy.types.Operator):
             op_p = row.operator("re9.pick_armature", text=cur_arm if cur_arm else "Select armature...",
                                 icon='DOWNARROW_HLT')
             op_p.character_id = character_id
-
+        
         layout.separator()
+        row = layout.row()
+        op_c = row.operator("re9.clear_all_bindings", text="Clear All Selected", icon='TRASH')
+        op_c.scheme_file = scheme_file
+
         layout.prop(settings, "re9_use_blank_export", icon='FILE_BLANK')
 
         if use_simplified:
@@ -361,7 +538,17 @@ class RE9_OT_BatchExportDialog(bpy.types.Operator):
                 continue
 
             box = layout.box()
-            box.label(text=f"{group_name}", icon='FILE_FOLDER')
+            group_toggle_key = _get_group_toggle_key(character_id, group_name)
+            is_expanded = scene.get(group_toggle_key, False)
+
+            row = box.row(align=True)
+            op_t = row.operator("re9.toggle_group", text="", 
+                               icon='TRIA_DOWN' if is_expanded else 'TRIA_RIGHT', emboss=False)
+            op_t.character_id = character_id; op_t.group_name = group_name
+            row.label(text=f"{group_name}", icon='FILE_FOLDER')
+
+            if not is_expanded:
+                continue
 
             # User model selectors for this group
             row = box.row(align=True)
@@ -381,6 +568,39 @@ class RE9_OT_BatchExportDialog(bpy.types.Operator):
             if cur:
                 op_c = row.operator("re9.clear_sg", text="", icon='X')
                 op_c.character_id = character_id; op_c.group_name = group_name; op_c.suffix = "mdf2"
+
+            # SFUR (only if group has any entries with sfur and simplified != skip)
+            if any(e.get("sfur") and e.get("simplified_sfur", e.get("simplified", "user")) != "skip" for e in group["entries"]):
+                row = box.row(align=True)
+                row.label(text="SFUR:", icon='OUTLINER_OB_CURVES')
+                cur = _get_simplified_group_binding(scene, character_id, group_name, "sfur")
+                op = row.operator("re9.pick_sg_sfur", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                op.character_id = character_id; op.group_name = group_name
+                if cur:
+                    op_c = row.operator("re9.clear_sg", text="", icon='X')
+                    op_c.character_id = character_id; op_c.group_name = group_name; op_c.suffix = "sfur"
+
+            # CHAIN2
+            if any(e.get("chain2") and e.get("simplified_chain2", e.get("simplified", "user")) != "skip" for e in group["entries"]):
+                row = box.row(align=True)
+                row.label(text="CHAIN2:", icon='PHYSICS')
+                cur = _get_simplified_group_binding(scene, character_id, group_name, "chain2")
+                op = row.operator("re9.pick_sg_chain2", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                op.character_id = character_id; op.group_name = group_name
+                if cur:
+                    op_c = row.operator("re9.clear_sg", text="", icon='X')
+                    op_c.character_id = character_id; op_c.group_name = group_name; op_c.suffix = "chain2"
+
+            # CLSP
+            if any(e.get("clsp") and e.get("simplified_clsp", e.get("simplified", "user")) != "skip" for e in group["entries"]):
+                row = box.row(align=True)
+                row.label(text="CLSP:", icon='PHYSICS')
+                cur = _get_simplified_group_binding(scene, character_id, group_name, "clsp")
+                op = row.operator("re9.pick_sg_clsp", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                op.character_id = character_id; op.group_name = group_name
+                if cur:
+                    op_c = row.operator("re9.clear_sg", text="", icon='X')
+                    op_c.character_id = character_id; op_c.group_name = group_name; op_c.suffix = "clsp"
 
             # Show summary
             user_count = sum(1 for e in group["entries"] if e.get("simplified") == "user")
@@ -416,10 +636,10 @@ class RE9_OT_BatchExportDialog(bpy.types.Operator):
 
                 if entry.get("mesh"):
                     row = group_box.row(align=True)
-                    en = _get_enabled(scene, character_id, entry_id, "mesh")
-                    op = row.operator("re9.toggle_entry", text="",
-                                      icon='CHECKBOX_HLT' if en else 'CHECKBOX_DEHLT', emboss=False)
-                    op.character_id = character_id; op.entry_id = entry_id; op.suffix = "mesh"
+                    # en = _get_enabled(scene, character_id, entry_id, "mesh")
+                    # op = row.operator("re9.toggle_entry", text="",
+                    #                   icon='CHECKBOX_HLT' if en else 'CHECKBOX_DEHLT', emboss=False)
+                    # op.character_id = character_id; op.entry_id = entry_id; op.suffix = "mesh"
                     cur = _get_binding(scene, character_id, entry_id, "mesh")
                     ic = 'OUTLINER_OB_MESH'
                     if cur and cur in bpy.data.collections:
@@ -429,13 +649,16 @@ class RE9_OT_BatchExportDialog(bpy.types.Operator):
                     op_p = row.operator("re9.pick_mesh_collection",
                                         text=cur if cur else "Select...", icon='DOWNARROW_HLT')
                     op_p.character_id = character_id; op_p.entry_id = entry_id
+                    if cur:
+                        op_c = row.operator("re9.clear_normal_binding", text="", icon='X')
+                        op_c.character_id = character_id; op_c.entry_id = entry_id; op_c.suffix = "mesh"
 
                 if entry.get("mdf2"):
                     row = group_box.row(align=True)
-                    en = _get_enabled(scene, character_id, entry_id, "mdf2")
-                    op = row.operator("re9.toggle_entry", text="",
-                                      icon='CHECKBOX_HLT' if en else 'CHECKBOX_DEHLT', emboss=False)
-                    op.character_id = character_id; op.entry_id = entry_id; op.suffix = "mdf2"
+                    # en = _get_enabled(scene, character_id, entry_id, "mdf2")
+                    # op = row.operator("re9.toggle_entry", text="",
+                    #                   icon='CHECKBOX_HLT' if en else 'CHECKBOX_DEHLT', emboss=False)
+                    # op.character_id = character_id; op.entry_id = entry_id; op.suffix = "mdf2"
                     cur = _get_binding(scene, character_id, entry_id, "mdf2")
                     ic = 'MATERIAL'
                     if cur and cur in bpy.data.collections:
@@ -445,13 +668,16 @@ class RE9_OT_BatchExportDialog(bpy.types.Operator):
                     op_p = row.operator("re9.pick_mdf_collection",
                                         text=cur if cur else "Select...", icon='DOWNARROW_HLT')
                     op_p.character_id = character_id; op_p.entry_id = entry_id
+                    if cur:
+                        op_c = row.operator("re9.clear_normal_binding", text="", icon='X')
+                        op_c.character_id = character_id; op_c.entry_id = entry_id; op_c.suffix = "mdf2"
 
                 if entry.get("sfur"):
                     row = group_box.row(align=True)
-                    en = _get_enabled(scene, character_id, entry_id, "sfur")
-                    op = row.operator("re9.toggle_entry", text="",
-                                      icon='CHECKBOX_HLT' if en else 'CHECKBOX_DEHLT', emboss=False)
-                    op.character_id = character_id; op.entry_id = entry_id; op.suffix = "sfur"
+                    # en = _get_enabled(scene, character_id, entry_id, "sfur")
+                    # op = row.operator("re9.toggle_entry", text="",
+                    #                   icon='CHECKBOX_HLT' if en else 'CHECKBOX_DEHLT', emboss=False)
+                    # op.character_id = character_id; op.entry_id = entry_id; op.suffix = "sfur"
                     cur = _get_binding(scene, character_id, entry_id, "sfur")
                     ic = 'OUTLINER_OB_CURVES'
                     if cur and cur in bpy.data.collections:
@@ -461,6 +687,43 @@ class RE9_OT_BatchExportDialog(bpy.types.Operator):
                     op_p = row.operator("re9.pick_sfur_collection",
                                         text=cur if cur else "Select...", icon='DOWNARROW_HLT')
                     op_p.character_id = character_id; op_p.entry_id = entry_id
+                    if cur:
+                         op_c = row.operator("re9.clear_normal_binding", text="", icon='X')
+                         op_c.character_id = character_id; op_c.entry_id = entry_id; op_c.suffix = "sfur"
+
+                if entry.get("chain2"):
+                    row = group_box.row(align=True)
+                    # en = _get_enabled(scene, character_id, entry_id, "chain2")
+                    # op = row.operator("re9.toggle_entry", text="",
+                    #                   icon='CHECKBOX_HLT' if en else 'CHECKBOX_DEHLT', emboss=False)
+                    # op.character_id = character_id; op.entry_id = entry_id; op.suffix = "chain2"
+                    cur = _get_binding(scene, character_id, entry_id, "chain2")
+                    ic = 'PHYSICS'
+                    if cur and cur in bpy.data.collections:
+                        ct = bpy.data.collections[cur].color_tag
+                        if ct != "NONE": ic = f"COLLECTION_{ct}"
+                    row.label(text="CHAIN2", icon=ic)
+                    op_p = row.operator("re9.pick_chain2_collection",
+                                        text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                    op_p.character_id = character_id; op_p.entry_id = entry_id
+                    if cur:
+                        op_c = row.operator("re9.clear_normal_binding", text="", icon='X')
+                        op_c.character_id = character_id; op_c.entry_id = entry_id; op_c.suffix = "chain2"
+
+                if entry.get("clsp"):
+                    row = group_box.row(align=True)
+                    cur = _get_binding(scene, character_id, entry_id, "clsp")
+                    ic = 'PHYSICS'
+                    if cur and cur in bpy.data.collections:
+                        ct = bpy.data.collections[cur].color_tag
+                        if ct != "NONE": ic = f"COLLECTION_{ct}"
+                    row.label(text="CLSP", icon=ic)
+                    op_p = row.operator("re9.pick_clsp_collection",
+                                        text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                    op_p.character_id = character_id; op_p.entry_id = entry_id
+                    if cur:
+                        op_c = row.operator("re9.clear_normal_binding", text="", icon='X')
+                        op_c.character_id = character_id; op_c.entry_id = entry_id; op_c.suffix = "clsp"
 
     def execute(self, context):
         bpy.ops.re9.batch_export()
@@ -474,15 +737,24 @@ classes = [
     RE9_OT_PickMeshCollection,
     RE9_OT_PickMdfCollection,
     RE9_OT_PickSfurCollection,
+    RE9_OT_PickChain2Collection,
+    RE9_OT_PickClspCollection,
     RE9_OT_PickArmature,
     RE9_OT_PickSimplifiedGroupMesh,
     RE9_OT_PickSimplifiedGroupMdf,
+    RE9_OT_PickSimplifiedGroupSfur,
+    RE9_OT_PickSimplifiedGroupChain2,
+    RE9_OT_PickSimplifiedGroupClsp,
     RE9_OT_PickSimplifiedEmptyMesh,
     RE9_OT_PickSimplifiedEmptyMdf,
     RE9_OT_PickSimplifiedEmptySfur,
+    RE9_OT_PickSimplifiedEmptyChain2,
+    RE9_OT_PickSimplifiedEmptyClsp,
     RE9_OT_BatchExportDialog,
     RE9_OT_ClearSimplifiedGroup,
     RE9_OT_ClearSimplifiedEmpty,
+    RE9_OT_ClearNormalBinding,
+    RE9_OT_ClearAllBindings,
 ]
 
 def register():

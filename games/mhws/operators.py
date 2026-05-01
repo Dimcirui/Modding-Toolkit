@@ -141,7 +141,7 @@ class MHWS_OT_EndfieldFaceRename(bpy.types.Operator):
 
 def _transfer_partial(obj, source_names, targets_with_ratios):
     """从源顶点组按比例分配权重到多个目标，源保留剩余"""
-    total_ratio = sum(r for _, r in targets_with_ratios)
+    total_ratio = sum(r for __, r in targets_with_ratios)
     remain_ratio = 1.0 - total_ratio
 
     target_vgs = []
