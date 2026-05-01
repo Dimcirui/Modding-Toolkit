@@ -298,6 +298,24 @@ class RE9_OT_BatchExport(bpy.types.Operator):
                                 for c in (entry["chain2"] if isinstance(entry["chain2"], list) else [entry["chain2"]]):
                                     try_export(_do_export_chain2, make_full(c, grp_bp), chain2_col, f"CHAIN2 {entry_id}")
 
+                    # clsp
+                    clsp_col = ""
+                    rule_clsp = entry.get("simplified_clsp", simp)
+                    if rule_clsp == "user" and entry.get("clsp"):
+                        clsp_col = _get_simplified_group_binding(scene, character_id, group_name, "clsp")
+                        if clsp_col:
+                            for c in (entry["clsp"] if isinstance(entry["clsp"], list) else [entry["clsp"]]):
+                                try_export(_do_export_clsp, make_full(c, grp_bp), clsp_col, f"CLSP {entry_id}")
+                    elif rule_clsp == "empty" and entry.get("clsp"):
+                        if use_blank:
+                            for c in (entry["clsp"] if isinstance(entry["clsp"], list) else [entry["clsp"]]):
+                                try_blank("clsp", make_full(c, grp_bp), f"CLSP {entry_id}")
+                        else:
+                            clsp_col = _get_simplified_empty_binding(scene, character_id, "clsp")
+                            if clsp_col:
+                                for c in (entry["clsp"] if isinstance(entry["clsp"], list) else [entry["clsp"]]):
+                                    try_export(_do_export_clsp, make_full(c, grp_bp), clsp_col, f"CLSP {entry_id}")
+
                     # Export mesh
                     if entry.get("mesh"):
                         if mesh_col:
@@ -361,6 +379,16 @@ class RE9_OT_BatchExport(bpy.types.Operator):
                         elif chain2_en and use_blank:
                             for c in (entry["chain2"] if isinstance(entry["chain2"], list) else [entry["chain2"]]):
                                 try_blank("chain2", make_full(c, grp_bp), f"CHAIN2 {entry_id}")
+
+                    clsp_en = _get_enabled(scene, character_id, entry_id, "clsp")
+                    clsp_col = _get_binding(scene, character_id, entry_id, "clsp")
+                    if entry.get("clsp"):
+                        if clsp_en and clsp_col:
+                            for c in (entry["clsp"] if isinstance(entry["clsp"], list) else [entry["clsp"]]):
+                                try_export(_do_export_clsp, make_full(c, grp_bp), clsp_col, f"CLSP {entry_id}")
+                        elif clsp_en and use_blank:
+                            for c in (entry["clsp"] if isinstance(entry["clsp"], list) else [entry["clsp"]]):
+                                try_blank("clsp", make_full(c, grp_bp), f"CLSP {entry_id}")
 
         if fail_count > 0:
             self.report({'WARNING'}, f"Done: {export_count} exported, {fail_count} failed, {skip_count} skipped")

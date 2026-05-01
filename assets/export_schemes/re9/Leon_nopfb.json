@@ -180,6 +180,9 @@
           "chain2": [
             "20/00/ch0100_20_00.chain2.15"
           ],
+          "clsp": [
+            "20/00/ch0100_20_00.clsp.3"
+          ],
           "simplified": "user"
         }
       ]
@@ -199,6 +202,9 @@
           "chain2": [
             "40/00/ch0100_40_00.chain2.15"
           ],
+          "clsp": [
+            "40/00/ch0100_40_00.clsp.3"
+          ],
           "sfur": "40/00/ch0100_40_00.sfur.5",
           "simplified": "user",
           "simplified_sfur": "empty"
@@ -212,6 +218,9 @@
           "chain2": [
             "40/01/ch0100_40_01.chain2.15"
           ],
+          "clsp": [
+            "40/01/ch0100_40_01.clsp.3"
+          ],
           "simplified": "user"
         },
         {
@@ -223,6 +232,9 @@
           "chain2": [
             "40/02/ch0100_40_02.chain2.15"
           ],
+          "clsp": [
+            "40/02/ch0100_40_02.clsp.3"
+          ],
           "simplified": "user"
         },
         {
@@ -233,6 +245,9 @@
           ],
           "chain2": [
             "40/03/ch0100_40_03.chain2.15"
+          ],
+          "clsp": [
+            "40/03/ch0100_40_03.clsp.3"
           ],
           "simplified": "user"
         },
@@ -326,6 +341,9 @@
           "chain2": [
             "45/00/ch0100_45_00.chain2.15"
           ],
+          "clsp": [
+            "45/00/ch0100_45_00.clsp.3"
+          ],
           "sfur": "45/00/ch0100_45_00.sfur.5",
           "simplified": "user",
           "simplified_sfur": "empty"
@@ -338,6 +356,9 @@
           ],
           "chain2": [
             "45/01/ch0100_45_01.chain2.15"
+          ],
+          "clsp": [
+            "45/01/ch0100_45_01.clsp.3"
           ],
           "sfur": "45/01/ch0100_45_01.sfur.5",
           "simplified": "user",

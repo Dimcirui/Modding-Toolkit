@@ -17,16 +17,18 @@ def _get_group_toggle_key(character_id, group_name):
 def _get_filtered_collections(suffix):
     result = []
     type_map = {"mesh": "RE_MESH_COLLECTION", "mdf2": "RE_MDF_COLLECTION", "sfur": "RE_SFUR_COLLECTION", "chain2": "RE_CHAIN_COLLECTION"}
-    name_sfx_map = {"mesh": ".mesh", "mdf2": ".mdf2", "sfur": ".sfur", "chain2": ".chain"}
+    name_sfx_map = {"mesh": ".mesh", "mdf2": ".mdf2", "sfur": ".sfur", "chain2": ".chain", "clsp": ".clsp"}
     target_type = type_map.get(suffix, "")
     name_sfx = name_sfx_map.get(suffix, "")
     for c in bpy.data.collections:
         col_type = c.get("~TYPE", "")
-        if col_type == target_type:
+        # Match by type
+        if target_type and col_type == target_type:
             icon = f"COLLECTION_{c.color_tag}" if c.color_tag != "NONE" else "OUTLINER_COLLECTION"
             result.append((c.name, c.name, "", icon, len(result)))
             continue
-        if not col_type and name_sfx and c.name.endswith(name_sfx):
+        # Match by extension
+        if name_sfx and (c.name.endswith(name_sfx) or f"{name_sfx}." in c.name):
             result.append((c.name, c.name, "", "OUTLINER_COLLECTION", len(result)))
     if not result:
         result.append(("NONE", "No matching collections", "", "ERROR", 0))
@@ -157,6 +159,24 @@ class RE9_OT_PickChain2Collection(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class RE9_OT_PickClspCollection(bpy.types.Operator):
+    bl_idname = "re9.pick_clsp_collection"
+    bl_label = "Pick Clsp Collection"
+    bl_options = {'INTERNAL'}
+    bl_property = "collection_name"
+    character_id: bpy.props.StringProperty()
+    entry_id: bpy.props.StringProperty()
+    collection_name: bpy.props.EnumProperty(name="Clsp Collection",
+        items=lambda self, ctx: _get_filtered_collections("clsp"))
+    def invoke(self, context, event):
+        context.window_manager.invoke_search_popup(self)
+        return {'RUNNING_MODAL'}
+    def execute(self, context):
+        if self.collection_name != "NONE":
+            _set_binding(context.scene, self.character_id, self.entry_id, "clsp", self.collection_name)
+        return {'FINISHED'}
+
+
 class RE9_OT_PickArmature(bpy.types.Operator):
     bl_idname = "re9.pick_armature"
     bl_label = "Pick Armature"
@@ -247,6 +267,24 @@ class RE9_OT_PickSimplifiedGroupChain2(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class RE9_OT_PickSimplifiedGroupClsp(bpy.types.Operator):
+    bl_idname = "re9.pick_sg_clsp"
+    bl_label = "Pick Group Clsp"
+    bl_options = {'INTERNAL'}
+    bl_property = "collection_name"
+    character_id: bpy.props.StringProperty()
+    group_name: bpy.props.StringProperty()
+    collection_name: bpy.props.EnumProperty(name="Clsp",
+        items=lambda self, ctx: _get_filtered_collections("clsp"))
+    def invoke(self, context, event):
+        context.window_manager.invoke_search_popup(self)
+        return {'RUNNING_MODAL'}
+    def execute(self, context):
+        if self.collection_name != "NONE":
+            _set_simplified_group_binding(context.scene, self.character_id, self.group_name, "clsp", self.collection_name)
+        return {'FINISHED'}
+
+
 class RE9_OT_PickSimplifiedEmptyMesh(bpy.types.Operator):
     bl_idname = "re9.pick_se_mesh"
     bl_label = "Pick Empty Mesh"
@@ -312,6 +350,23 @@ class RE9_OT_PickSimplifiedEmptyChain2(bpy.types.Operator):
         if self.collection_name != "NONE":
             _set_simplified_empty_binding(context.scene, self.character_id, "chain2", self.collection_name)
         return {'FINISHED'}
+
+
+class RE9_OT_PickSimplifiedEmptyClsp(bpy.types.Operator):
+    bl_idname = "re9.pick_se_clsp"
+    bl_label = "Pick Empty Clsp"
+    bl_options = {'INTERNAL'}
+    bl_property = "collection_name"
+    character_id: bpy.props.StringProperty()
+    collection_name: bpy.props.EnumProperty(name="Empty Clsp",
+        items=lambda self, ctx: _get_filtered_collections("clsp"))
+    def invoke(self, context, event):
+        context.window_manager.invoke_search_popup(self)
+        return {'RUNNING_MODAL'}
+    def execute(self, context):
+        if self.collection_name != "NONE":
+            _set_simplified_empty_binding(context.scene, self.character_id, "clsp", self.collection_name)
+        return {'FINISHED'}
     
 class RE9_OT_ClearSimplifiedGroup(bpy.types.Operator):
     bl_idname = "re9.clear_sg"
@@ -366,17 +421,17 @@ class RE9_OT_ClearAllBindings(bpy.types.Operator):
         for group in scheme["groups"]:
             group_name = group["name"]
             # Clear Simplified Group Bindings
-            for sfx in ["mesh", "mdf2", "sfur", "chain2"]:
+            for sfx in ["mesh", "mdf2", "sfur", "chain2", "clsp"]:
                 _set_simplified_group_binding(scene, char_id, group_name, sfx, "")
             
             # Clear Normal Entry Bindings
             for entry in group["entries"]:
                 eid = entry["id"]
-                for sfx in ["mesh", "mdf2", "sfur", "chain2"]:
+                for sfx in ["mesh", "mdf2", "sfur", "chain2", "clsp"]:
                     _set_binding(scene, char_id, eid, sfx, "")
         
         # Clear Simplified Empty Bindings
-        for sfx in ["mesh", "mdf2", "sfur", "chain2"]:
+        for sfx in ["mesh", "mdf2", "sfur", "chain2", "clsp"]:
             _set_simplified_empty_binding(scene, char_id, sfx, "")
 
         self.report({'INFO'}, "All bindings for this scheme cleared")
@@ -536,6 +591,17 @@ class RE9_OT_BatchExportDialog(bpy.types.Operator):
                     op_c = row.operator("re9.clear_sg", text="", icon='X')
                     op_c.character_id = character_id; op_c.group_name = group_name; op_c.suffix = "chain2"
 
+            # CLSP
+            if any(e.get("clsp") and e.get("simplified_clsp", e.get("simplified", "user")) != "skip" for e in group["entries"]):
+                row = box.row(align=True)
+                row.label(text="CLSP:", icon='PHYSICS')
+                cur = _get_simplified_group_binding(scene, character_id, group_name, "clsp")
+                op = row.operator("re9.pick_sg_clsp", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                op.character_id = character_id; op.group_name = group_name
+                if cur:
+                    op_c = row.operator("re9.clear_sg", text="", icon='X')
+                    op_c.character_id = character_id; op_c.group_name = group_name; op_c.suffix = "clsp"
+
             # Show summary
             user_count = sum(1 for e in group["entries"] if e.get("simplified") == "user")
             empty_count = sum(1 for e in group["entries"] if e.get("simplified") == "empty")
@@ -644,6 +710,21 @@ class RE9_OT_BatchExportDialog(bpy.types.Operator):
                         op_c = row.operator("re9.clear_normal_binding", text="", icon='X')
                         op_c.character_id = character_id; op_c.entry_id = entry_id; op_c.suffix = "chain2"
 
+                if entry.get("clsp"):
+                    row = group_box.row(align=True)
+                    cur = _get_binding(scene, character_id, entry_id, "clsp")
+                    ic = 'PHYSICS'
+                    if cur and cur in bpy.data.collections:
+                        ct = bpy.data.collections[cur].color_tag
+                        if ct != "NONE": ic = f"COLLECTION_{ct}"
+                    row.label(text="CLSP", icon=ic)
+                    op_p = row.operator("re9.pick_clsp_collection",
+                                        text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                    op_p.character_id = character_id; op_p.entry_id = entry_id
+                    if cur:
+                        op_c = row.operator("re9.clear_normal_binding", text="", icon='X')
+                        op_c.character_id = character_id; op_c.entry_id = entry_id; op_c.suffix = "clsp"
+
     def execute(self, context):
         bpy.ops.re9.batch_export()
         return {'FINISHED'}
@@ -657,15 +738,18 @@ classes = [
     RE9_OT_PickMdfCollection,
     RE9_OT_PickSfurCollection,
     RE9_OT_PickChain2Collection,
+    RE9_OT_PickClspCollection,
     RE9_OT_PickArmature,
     RE9_OT_PickSimplifiedGroupMesh,
     RE9_OT_PickSimplifiedGroupMdf,
     RE9_OT_PickSimplifiedGroupSfur,
     RE9_OT_PickSimplifiedGroupChain2,
+    RE9_OT_PickSimplifiedGroupClsp,
     RE9_OT_PickSimplifiedEmptyMesh,
     RE9_OT_PickSimplifiedEmptyMdf,
     RE9_OT_PickSimplifiedEmptySfur,
     RE9_OT_PickSimplifiedEmptyChain2,
+    RE9_OT_PickSimplifiedEmptyClsp,
     RE9_OT_BatchExportDialog,
     RE9_OT_ClearSimplifiedGroup,
     RE9_OT_ClearSimplifiedEmpty,
