@@ -312,7 +312,10 @@ def _compose_channels(slot_type, pbr_paths, pbr_channels, temp_dir, tex_name, pb
                 in_ch_i = _CH.get(override, in_ch_i)
         pix = loaded.get(pbr_type)
         if pix is None:
-            result[:, :, out_i] = PBR_DEFAULTS.get(pbr_type, [0.0]*4)[in_ch_i]
+            val = PBR_DEFAULTS.get(pbr_type, [0.0]*4)[in_ch_i]
+            if invert:
+                val = 1.0 - val
+            result[:, :, out_i] = val
         else:
             data = pix[:, :, in_ch_i].copy()
             if invert:
