@@ -93,17 +93,19 @@ def align_armatures_by_name(source_arm, target_arm, mode='POS_ONLY', skip_fn=Non
     返回对齐骨骼数。执行后处于 OBJECT 模式，active 对象为 target_arm。
     """
     s_mat = source_arm.matrix_world
-    s_mat3 = s_mat.to_3x3()
+
+    # 在 EDIT 模式读取源骨架，直接取 roll 数值
+    bpy.context.view_layer.objects.active = source_arm
+    bpy.ops.object.mode_set(mode='EDIT')
     src_data = {}
-    for b in source_arm.data.bones:
-        x_world = (s_mat3 @ b.matrix.col[0].to_3d()).normalized()
-        src_data[b.name] = (s_mat @ b.head_local.copy(), s_mat @ b.tail_local.copy(), x_world)
+    for b in source_arm.data.edit_bones:
+        src_data[b.name] = (s_mat @ b.head, s_mat @ b.tail, b.roll)
+    bpy.ops.object.mode_set(mode='OBJECT')
 
     bpy.context.view_layer.update()
     bpy.context.view_layer.objects.active = target_arm
     bpy.ops.object.mode_set(mode='EDIT')
     t_mat_inv = target_arm.matrix_world.inverted()
-    t_mat3_inv = t_mat_inv.to_3x3()
 
     count = 0
     for b in target_arm.data.edit_bones:
@@ -111,18 +113,19 @@ def align_armatures_by_name(source_arm, target_arm, mode='POS_ONLY', skip_fn=Non
             continue
         if skip_fn and skip_fn(b.name):
             continue
-        src_head, src_tail, src_x_world = src_data[b.name]
+        src_head, src_tail, src_roll = src_data[b.name]
         old_head = b.head.copy()
         new_head = t_mat_inv @ src_head
         if mode == 'FULL':
             b.head = new_head
             b.tail = t_mat_inv @ src_tail
-            b.align_roll(t_mat3_inv @ src_x_world)
+            # head/tail 完全照抄后骨骼方向与源一致，roll 定义基于骨骼方向，直接照抄即可精确对齐
+            b.roll = src_roll
         elif mode == 'POS_ROLL':
             orig_vec = b.tail - b.head
             b.head = new_head
             b.tail = new_head + orig_vec
-            b.align_roll(t_mat3_inv @ src_x_world)
+            b.roll = src_roll
         else:
             orig_vec = b.tail - b.head
             b.head = new_head

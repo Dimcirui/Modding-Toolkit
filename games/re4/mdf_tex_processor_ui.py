@@ -5,7 +5,7 @@ from .mdf_tex_processor import RE4_COMMON_SLOT_TYPES, RE4_NULL_TEX_BY_TYPE
 
 
 class RE4_OT_MdfTexProcessorDialog(MdfTexDialogBase):
-    """RE4 MDF2 + Tex semi-auto texture processor"""
+    """MDF2 处理器 — 在已有 MDF2 材质的基础上处理贴图。需要有现成的已起好名字的 MDF2 集合"""
     bl_idname = "re4.mdf_tex_processor_dialog"
     bl_label  = "MDF2 + Tex Processor"
 

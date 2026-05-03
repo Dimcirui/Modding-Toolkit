@@ -644,9 +644,10 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row = col.row()
             row.enabled = has_mhw_model
             row.operator("mhwi.batch_import_dialog", text=_("批量导入装备"), icon='IMPORT')
-            row = col.row()
-            row.enabled = has_mhw_model
-            row.operator("mhwi.mrl3_tex_processor_dialog", text=_("MRL3 + Tex 处理器"), icon='TEXTURE')
+            sub = col.row(align=True)
+            sub.enabled = has_mhw_model
+            sub.operator("mhwi.mrl3_tex_processor_dialog", text=_("MRL3 处理器"), icon='TEXTURE')
+            sub.operator("mhwi.mrl3_generator_dialog",     text=_("MRL3 生成器"), icon='SHADERFX')
 
         if settings.show_mhws:
             box = layout.box()
@@ -660,9 +661,10 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row = col.row()
             row.enabled = has_re_mesh
             row.operator("mhws.batch_export_dialog", text="MHWs Batch Exporter", icon='EXPORT')
-            row = col.row()
-            row.enabled = has_re_mesh
-            row.operator("mhws.mdf_tex_processor_dialog", text=_("MDF2 + Tex 处理器"), icon='TEXTURE')
+            sub = col.row(align=True)
+            sub.enabled = has_re_mesh
+            sub.operator("mhws.mdf_tex_processor_dialog", text=_("MDF2 处理器"), icon='TEXTURE')
+            sub.operator("mhws.mdf_generator_dialog",     text=_("MDF2 生成器"), icon='SHADERFX')
             if not has_re_mesh:
                 col.label(text="需要 RE Mesh Editor!", icon='ERROR')
 
@@ -693,9 +695,10 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row = col.row()
             row.enabled = has_re_mesh
             row.operator("re4.batch_export_dialog", text="RE4 Batch Exporter", icon='EXPORT')
-            row = col.row()
-            row.enabled = has_re_mesh
-            row.operator("re4.mdf_tex_processor_dialog", text=_("MDF2 + Tex 处理器"), icon='TEXTURE')
+            sub = col.row(align=True)
+            sub.enabled = has_re_mesh
+            sub.operator("re4.mdf_tex_processor_dialog", text=_("MDF2 处理器"), icon='TEXTURE')
+            sub.operator("re4.mdf_generator_dialog",     text=_("MDF2 生成器"), icon='SHADERFX')
 
             col.separator()
             has_re_chain = hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
@@ -716,9 +719,10 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row = col.row()
             row.enabled = has_re_mesh
             row.operator("re9.batch_export_dialog", text="RE9 Batch Exporter", icon='EXPORT')
-            row = col.row()
-            row.enabled = has_re_mesh
-            row.operator("re9.mdf_tex_processor_dialog", text=_("MDF2 + Tex 处理器"), icon='TEXTURE')
+            sub = col.row(align=True)
+            sub.enabled = has_re_mesh
+            sub.operator("re9.mdf_tex_processor_dialog", text=_("MDF2 处理器"), icon='TEXTURE')
+            sub.operator("re9.mdf_generator_dialog",     text=_("MDF2 生成器"), icon='SHADERFX')
             if not has_re_mesh:
                 col.label(text="需要 RE Mesh Editor!", icon='ERROR')
 

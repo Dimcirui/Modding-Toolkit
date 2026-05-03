@@ -213,28 +213,60 @@ class MHWI_OT_BatchImport(bpy.types.Operator):
             self.report({'WARNING'}, "没有选中任何项目")
             return {'CANCELLED'}
 
-        def _import(op_func, filepath):
+        # 构建 (group_key, gender, part) → {filetype: filepath} 的配对映射
+        # 用于将同一部位的 mod3+mrl3 合并为单次 MOD3 联合导入，以正确解析材质名
+        from collections import defaultdict as _dd
+        pair_map = _dd(dict)
+        for it in enabled:
+            pair_map[(it.group_key, it.gender, it.part)][it.filetype] = it.filepath
+
+        # 已配对的 mrl3 路径集合（将随 mod3 联合导入，无需单独导入）
+        paired_mrl3_paths = {
+            ft_map["mrl3"]
+            for ft_map in pair_map.values()
+            if "mod3" in ft_map and "mrl3" in ft_map
+        }
+
+        def _do_import(filepath, mrl3_path=None):
             directory = os.path.dirname(filepath) + os.sep
             filename  = os.path.basename(filepath)
-            op_func('EXEC_DEFAULT', directory=directory, files=[{"name": filename}])
-
-        import_ops = {
-            "mod3": lambda fp: _import(bpy.ops.mhw_mod3.import_mhw_mod3, fp),
-            "mrl3": lambda fp: _import(bpy.ops.mhw_mrl3.import_mhw_mrl3, fp),
-            "ctc":  lambda fp: _import(bpy.ops.mhw_ctc.import_mhw_ctc,  fp),
-        }
+            if mrl3_path:
+                bpy.ops.mhw_mod3.import_mhw_mod3(
+                    'EXEC_DEFAULT',
+                    directory=directory,
+                    files=[{"name": filename}],
+                    loadMrl3Data=True,
+                    mrl3Path=mrl3_path,
+                )
+            else:
+                ext = os.path.splitext(filepath)[1].lower().lstrip(".")
+                op_map = {
+                    "mod3": bpy.ops.mhw_mod3.import_mhw_mod3,
+                    "mrl3": bpy.ops.mhw_mrl3.import_mhw_mrl3,
+                    "ctc":  bpy.ops.mhw_ctc.import_mhw_ctc,
+                }
+                op_func = op_map.get(ext)
+                if op_func:
+                    op_func('EXEC_DEFAULT', directory=directory, files=[{"name": filename}])
 
         ok = fail = 0
         for item in enabled:
-            op = import_ops.get(item.filetype)
-            if op is None:
-                fail += 1
+            # 已通过 mod3 联合导入的 mrl3，跳过
+            if item.filepath in paired_mrl3_paths:
+                ok += 1
+                print(f"[MHWI] Paired (via MOD3): {os.path.basename(item.filepath)}")
                 continue
+
             parent_col = _get_or_create_collection(item.group_key)
+            mrl3_path  = None
+            if item.filetype == "mod3":
+                key = (item.group_key, item.gender, item.part)
+                mrl3_path = pair_map[key].get("mrl3")
+
             try:
                 scene_root = bpy.context.scene.collection
                 before     = {c.name for c in bpy.data.collections}
-                op(item.filepath)
+                _do_import(item.filepath, mrl3_path)
                 after      = {c.name for c in bpy.data.collections}
                 root_names = {c.name for c in scene_root.children}
                 for name in after - before:
@@ -245,7 +277,8 @@ class MHWI_OT_BatchImport(bpy.types.Operator):
                         if col:
                             _link_under(col, target)
                 ok += 1
-                print(f"[MHWI] Imported: {os.path.basename(item.filepath)}")
+                suffix = " (+MRL3)" if mrl3_path else ""
+                print(f"[MHWI] Imported{suffix}: {os.path.basename(item.filepath)}")
             except Exception as e:
                 print(f"[MHWI] Import FAILED {item.filepath}: {e}")
                 fail += 1
