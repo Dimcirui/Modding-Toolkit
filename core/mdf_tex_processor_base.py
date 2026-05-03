@@ -46,6 +46,7 @@ BASE_TEXTURE_TYPE_ABBREV = {
     'NormalRoughness':                 'NRMR',
     'NormalRoughnessCavityMap':        'NRRC',
     'EmissiveMap':                     'EMI',
+    'Emissive_ColorMap':               'EMIC',
     'AlphaTranslucentOcclusionSSSMap': 'ATOS',
     'NormalRoughnessMap':              'NRMR',
     'SSSCavityOcclusionTranslucentMap': 'SCOT',
@@ -99,6 +100,12 @@ BASE_SLOT_CHANNEL_MAPS = {
         'B': ('emissive', 2),
         'A': ('emissive', 3),
     },
+    'Emissive_ColorMap': {
+        'R': ('emissive', 0),
+        'G': ('emissive', 1),
+        'B': ('emissive', 2),
+        'A': ('emissive', 3),
+    },
     'AlphaTranslucentOcclusionSSSMap': {
         'R': ('alpha', 0),
         'G': None,
@@ -130,16 +137,19 @@ BASE_COMMON_SLOT_TYPES = {
     'SSSCavityOcclusionTranslucentMap',
     'AlphaCavityOcclusionTranslucentMap',
     'EmissiveMap',
+    'Emissive_ColorMap',
 }
 
 BASE_NULL_TEX_BY_TYPE = {
     'MP_noise':                      'MasterMaterial/Textures/MP_noise_MSK4.tex',
     'Wind_Effect_VolumeMap':         'RE_ENGINE_LIBRARY/VFX_Library/Texture/TEX_Vectorfield/tex_capcom_vectorfield_0003_MSK4.tex',
     'BaseDielectricMap':             'systems/rendering/NullBlack.tex',
+    'BaseAlphaMap':                  'systems/rendering/NullBlack.tex',
     'NormalRoughnessOcclusionMap':   'systems/rendering/NullNormalRoughnessOcclusion.tex',
     'NormalRoughnessCavityMap':      'systems/rendering/NullNormalRoughnessOcclusion.tex',
     'NormalRoughnessMap':            'systems/rendering/NullNormalRoughnessOcclusion.tex',
     'EmissiveMap':                   'systems/rendering/NullBlack.tex',
+    'Emissive_ColorMap':             'systems/rendering/NullBlack.tex',
     'FxMap':                         'MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex',
     'AlphaTranslucentOcclusionSSSMap': 'systems/rendering/NullATOS.tex',
     'SSSCavityOcclusionTranslucentMap': 'systems/rendering/NullATOS.tex',
@@ -266,8 +276,12 @@ def _compose_channels(slot_type, pbr_paths, pbr_channels, temp_dir, tex_name, pb
     needed_types = {src[0] for src in ch_map.values()
                     if src is not None and isinstance(src, tuple)}
     loaded = {}
-    ref_w = ref_h = 0
 
+    # First pass: load all images and determine the largest size as reference.
+    # Using the largest (not the first) avoids 256×256 SOLID images accidentally
+    # shrinking larger baked or source textures due to non-deterministic set order.
+    raw_imgs = {}
+    ref_w = ref_h = 0
     for pbr_type in needed_types:
         img_path = pbr_paths.get(pbr_type, '')
         if not img_path or not os.path.isfile(img_path):
@@ -279,19 +293,23 @@ def _compose_channels(slot_type, pbr_paths, pbr_channels, temp_dir, tex_name, pb
         img.name = tmp_name
         img.colorspace_settings.name = 'Non-Color'
         iw, ih = img.size
-        if ref_w == 0:
+        if iw > ref_w:
             ref_w, ref_h = iw, ih
-        elif iw != ref_w or ih != ref_h:
-            img.scale(ref_w, ref_h)
-            iw, ih = ref_w, ref_h
-        loaded[pbr_type] = np.array(img.pixels[:], dtype=np.float32).reshape(ih, iw, 4)
-        bpy.data.images.remove(img)
+        raw_imgs[pbr_type] = img
 
-    if not loaded:
+    if not raw_imgs:
         return None
 
     if ref_w == 0:
         ref_w = ref_h = 1024
+
+    # Second pass: scale down any smaller images and convert to numpy arrays.
+    for pbr_type, img in raw_imgs.items():
+        iw, ih = img.size
+        if iw != ref_w or ih != ref_h:
+            img.scale(ref_w, ref_h)
+        loaded[pbr_type] = np.array(img.pixels[:], dtype=np.float32).reshape(ref_h, ref_w, 4)
+        bpy.data.images.remove(img)
 
     result = np.zeros((ref_h, ref_w, 4), dtype=np.float32)
 
