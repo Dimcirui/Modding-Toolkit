@@ -527,6 +527,17 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
                 std_key = src_to_std[src_p_name]
                 if std_key in std_to_tgt_bone:
                     target_parent_name = std_to_tgt_bone[std_key]
+                else:
+                    # 目标骨架没有该标准骨（如 spine_03 在 MHWI/MHWS 中不存在）
+                    # 沿源预设骨父链向上查找第一个有目标映射的祖先
+                    walk = source_arm.data.bones.get(src_p_name)
+                    while walk and walk.parent:
+                        walk = walk.parent
+                        if walk.name in src_to_std:
+                            fallback_key = src_to_std[walk.name]
+                            if fallback_key in std_to_tgt_bone:
+                                target_parent_name = std_to_tgt_bone[fallback_key]
+                                break
 
             if target_parent_name and target_parent_name in edit_bones:
                 eb.parent = edit_bones[target_parent_name]
