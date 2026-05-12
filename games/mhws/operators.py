@@ -395,6 +395,11 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
 
     def execute(self, context):
         col = bpy.data.collections.get(self.chain_collection)
+        # 脚本直调时 chain_collection enum 拿不到值，fallback 到 toolpanel 已设的集合
+        if col is None:
+            toolpanel = getattr(context.scene, 're_chain_toolpanel', None)
+            if toolpanel and toolpanel.chainCollection:
+                col = toolpanel.chainCollection
         if col is None:
             self.report({'ERROR'}, _("找不到集合: %s") % self.chain_collection)
             return {'CANCELLED'}

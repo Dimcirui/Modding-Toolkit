@@ -22,7 +22,7 @@ _STRAT_ICONS = {
 
 
 class MHWI_OT_Mrl3GeneratorDialog(bpy.types.Operator):
-    """MRL3 Generator — 从 Blender 网格材质创建 MRL3 + 贴图。需要有现成的 mesh 集合，并在材质里连好 Principled BSDF"""
+    """MRL3 Generator — 从 Blender 网格材质创建 MRL3 + 贴图。需要有现成的 MOD3 集合，并在材质里连好 Principled BSDF"""
     bl_idname  = "mhwi.mrl3_generator_dialog"
     bl_label   = "MRL3 Generator"
     bl_options = {'REGISTER'}
@@ -43,9 +43,9 @@ class MHWI_OT_Mrl3GeneratorDialog(bpy.types.Operator):
         scene    = context.scene
         settings = scene.mhwi_mrl3_generator
 
-        # ── Mesh collection + refresh ──────────────────────────────────────────
+        # ── Mod3 collection + refresh ──────────────────────────────────────────
         row = layout.row(align=True)
-        row.prop(settings, "mesh_collection", text="Mesh Collection")
+        row.prop(settings, "mesh_collection", text="Mod3 Collection")
         row.operator("mhwi.mrl3_gen_refresh", text="", icon='FILE_REFRESH')
 
         # ── Mod root ───────────────────────────────────────────────────────────
@@ -65,8 +65,8 @@ class MHWI_OT_Mrl3GeneratorDialog(bpy.types.Operator):
         row.prop(settings, "mrl3_collection_name", text="")
         if not settings.mrl3_collection_name.strip() and settings.mesh_collection:
             mc       = settings.mesh_collection.name
-            auto_name = (mc.replace('.mesh', '.mrl3')
-                         if '.mesh' in mc else mc + ".mrl3")
+            auto_name = (mc.replace('.mod3', '.mrl3')
+                         if '.mod3' in mc else mc + ".mrl3")
             layout.row().label(text=f"    自动: {auto_name}", icon='INFO')
 
         # ── Base path ──────────────────────────────────────────────────────────
@@ -88,7 +88,7 @@ class MHWI_OT_Mrl3GeneratorDialog(bpy.types.Operator):
         # ── Material list ──────────────────────────────────────────────────────
         if not settings.material_list:
             layout.separator()
-            layout.label(text="选择网格集合后点击刷新", icon='INFO')
+            layout.label(text="选择 MOD3 集合后点击刷新", icon='INFO')
             return
 
         layout.separator()

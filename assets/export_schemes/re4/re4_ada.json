@@ -1,0 +1,231 @@
+{
+    "character": "Ada (RE4)",
+    "character_id": "re4_ada",
+    "base_path": "STM/_Chainsaw/Character/ch/cha2",
+    "fbxskel": [
+        "_Chainsaw/Character/ch/cha2/cha2.fbxskel.5",
+        "_Mercenaries/Character/ch/cha8/cha800.fbxskel.5"
+    ],
+    "native_skeleton": "ada.fbxskel.5",
+    "groups": [
+        {
+            "name": "本体 身体(00)",
+            "entries": [
+                {
+                    "id": "cha200_00",
+                    "mesh": "cha200/00/cha200_00.mesh.221108797",
+                    "mdf2": [
+                        "cha200/00/cha200_00.mdf2.32"
+                    ],
+                    "chain": "cha200_00.chain.53",
+                    "simplified": "user",
+                    "note": "cha200 身体"
+                }
+            ]
+        },
+        {
+            "name": "DLC 身体(00)",
+            "base_path": "STM/_Mercenaries/Character/ch/cha8",
+            "entries": [
+                {
+                    "id": "cha800_00",
+                    "mesh": "cha800/00/cha800_00.mesh.221108797",
+                    "mdf2": [
+                        "cha800/00/cha800_00.mdf2.32"
+                    ],
+                    "chain": "cha800_00.chain.53",
+                    "simplified": "user",
+                    "note": "cha800 身体"
+                },
+                {
+                    "id": "cha801_00",
+                    "mesh": "cha801/00/cha801_00.mesh.221108797",
+                    "mdf2": [
+                        "cha801/00/cha801_00.mdf2.32"
+                    ],
+                    "chain": "cha801_00.chain.53",
+                    "simplified": "user",
+                    "note": "cha801 身体"
+                },
+                {
+                    "id": "cha801_00_Figure",
+                    "chain": "cha801_00_Figure.chain.53",
+                    "simplified": "user"
+                },
+                {
+                    "id": "cha801_01",
+                    "mesh": "cha801/01/cha801_01.mesh.221108797",
+                    "simplified": "user"
+                },
+                {
+                    "id": "cha801_02",
+                    "mesh": "cha801/02/cha801_02.mesh.221108797",
+                    "simplified": "user"
+                },
+                {
+                    "id": "cha803_00",
+                    "mesh": "cha803/00/cha803_00.mesh.221108797",
+                    "mdf2": [
+                        "cha803/00/cha803_00.mdf2.32"
+                    ],
+                    "chain": "cha803_00.chain.53",
+                    "simplified": "user",
+                    "note": "cha803 身体"
+                },
+                {
+                    "id": "cha803_00_Figure",
+                    "chain": "cha803_00_Figure.chain.53",
+                    "simplified": "user"
+                }
+            ]
+        },
+        {
+            "name": "本体 头部(10)",
+            "entries": [
+                {
+                    "id": "cha200_10",
+                    "mesh": "cha200/10/cha200_10.mesh.221108797",
+                    "mdf2": [
+                        "cha200/10/cha200_10.mdf2.32"
+                    ],
+                    "simplified": "user",
+                    "note": "头部"
+                }
+            ]
+        },
+        {
+            "name": "DLC 头部(10)",
+            "base_path": "STM/_Mercenaries/Character/ch/cha8",
+            "entries": [
+                {
+                    "id": "cha800_10",
+                    "mesh": "cha800/10/cha800_10.mesh.221108797",
+                    "mdf2": [
+                        "cha800/10/cha800_10.mdf2.32",
+                        "cha800/10/cha800_10_event.mdf2.32"
+                    ],
+                    "simplified": "user",
+                    "note": "头部"
+                },
+                {
+                    "id": "cha800_11",
+                    "mesh": "cha800/11/cha800_11.mesh.221108797",
+                    "mdf2": [
+                        "cha800/11/cha800_11.mdf2.32"
+                    ],
+                    "simplified": "user"
+                },
+                {
+                    "id": "cha800_12",
+                    "mesh": "cha800/12/cha800_12.mesh.221108797",
+                    "mdf2": [
+                        "cha800/12/cha800_12.mdf2.32"
+                    ],
+                    "simplified": "empty",
+                    "note": "头部"
+                },
+                {
+                    "id": "cha800_13",
+                    "mesh": "cha800/13/cha800_13.mesh.221108797",
+                    "mdf2": [
+                        "cha800/13/cha800_13.mdf2.32"
+                    ],
+                    "simplified": "user"
+                },
+                {
+                    "id": "cha800_14",
+                    "mdf2": [
+                        "cha800/14/cha800_14_FaceBlend.mdf2.32"
+                    ],
+                    "simplified": "user"
+                },
+                {
+                    "id": "cha801_10",
+                    "mesh": "cha801/10/cha801_10.mesh.221108797",
+                    "mdf2": [
+                        "cha801/10/cha801_10.mdf2.32"
+                    ],
+                    "simplified": "user",
+                    "note": "头部"
+                },
+                {
+                    "id": "cha801_13",
+                    "mesh": "cha801/13/cha801_13.mesh.221108797",
+                    "mdf2": [
+                        "cha801/13/cha801_13.mdf2.32"
+                    ],
+                    "simplified": "user"
+                },
+                {
+                    "id": "cha803_10",
+                    "mesh": "cha803/10/cha803_10.mesh.221108797",
+                    "mdf2": [
+                        "cha803/10/cha803_10.mdf2.32"
+                    ],
+                    "simplified": "user",
+                    "note": "头部"
+                },
+                {
+                    "id": "cha803_13",
+                    "mesh": "cha803/13/cha803_13.mesh.221108797",
+                    "mdf2": [
+                        "cha803/13/cha803_13.mdf2.32"
+                    ],
+                    "simplified": "user",
+                    "note": "头部"
+                }
+            ]
+        },
+        {
+            "name": "本体 头发(20)",
+            "entries": [
+                {
+                    "id": "cha200_20",
+                    "mesh": "cha200/20/cha200_20.mesh.221108797",
+                    "mdf2": [
+                        "cha200/20/cha200_20.mdf2.32"
+                    ],
+                    "chain": "cha200_20.chain.53",
+                    "simplified": "user",
+                    "note": "头发"
+                },
+                {
+                    "id": "cha200_21",
+                    "chain": "cha200_21.chain.53",
+                    "simplified": "user"
+                },
+                {
+                    "id": "cha200_22",
+                    "chain": "cha200_22.chain.53",
+                    "simplified": "user"
+                }
+            ]
+        },
+        {
+            "name": "DLC 头发(20)",
+            "base_path": "STM/_Mercenaries/Character/ch/cha8",
+            "entries": [
+                {
+                    "id": "cha800_20",
+                    "mesh": "cha800/20/cha800_20.mesh.221108797",
+                    "mdf2": [
+                        "cha800/20/cha800_20.mdf2.32"
+                    ],
+                    "chain": "cha800_20.chain.53",
+                    "simplified": "user",
+                    "note": "头发"
+                },
+                {
+                    "id": "cha801_20_Figure",
+                    "chain": "cha801_20_Figure.chain.53",
+                    "simplified": "user"
+                },
+                {
+                    "id": "cha803_20_Figure",
+                    "chain": "cha803_20_Figure.chain.53",
+                    "simplified": "user"
+                }
+            ]
+        }
+    ]
+}

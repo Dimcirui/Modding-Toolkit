@@ -51,6 +51,49 @@ def _find_principled_bsdf(material):
     return None
 
 
+def _find_emission_shader(material):
+    """Return the first Emission shader node in the material, or None."""
+    if not material or not material.use_nodes:
+        return None
+    for node in material.node_tree.nodes:
+        if node.type == 'EMISSION':
+            return node
+    return None
+
+
+_MMD_DEV_NAME_HINTS = ('mmdshaderdev', 'mmd_shader', 'mmd shader')
+_MMD_COLOR_SOCKET   = 'Base Tex'
+_MMD_ALPHA_SOCKET   = 'Base Alpha'
+
+
+def _find_mmd_shader_dev(material):
+    """Return the MMDShaderDev node group if present, or None."""
+    if not material or not material.use_nodes:
+        return None
+    for node in material.node_tree.nodes:
+        if node.type == 'GROUP' and node.node_tree:
+            if any(hint in node.node_tree.name.lower() for hint in _MMD_DEV_NAME_HINTS):
+                return node
+    return None
+
+
+SHADER_PRINCIPLED = 'principled'
+SHADER_EMISSION   = 'emission'
+SHADER_MMD_DEV    = 'mmd_shader_dev'
+SHADER_UNKNOWN    = 'unknown'
+
+
+def detect_shader_type(material):
+    """Return SHADER_* constant for the dominant shader in the material."""
+    if _find_principled_bsdf(material) is not None:
+        return SHADER_PRINCIPLED
+    if _find_emission_shader(material) is not None:
+        return SHADER_EMISSION
+    if _find_mmd_shader_dev(material) is not None:
+        return SHADER_MMD_DEV
+    return SHADER_UNKNOWN
+
+
 def _analyze_principled_input(principled_node, input_name):
     """
     Returns ('DIRECT', filepath) | ('SOLID', value) | ('BAKE', None).
@@ -87,15 +130,47 @@ def _analyze_principled_input(principled_node, input_name):
 def analyze_material_strategies(material):
     """
     Returns dict {pbr_type: (strategy, value_or_path)} for all PBR types.
-    'ao' always returns ('SOLID', 1.0) — Principled BSDF has no AO socket.
+    'ao' always returns ('SOLID', 1.0).
+
+    Handles three shader types:
+      Principled BSDF — full PBR analysis per socket
+      Emission        — color/emissive from Color socket; others SOLID defaults
+      MMDShaderDev    — color from Base Tex, alpha from Base Alpha; others SOLID defaults
+    Both non-Principled types are treated as toon-style emissive shaders.
     """
     principled = _find_principled_bsdf(material)
     result = {}
-    for pbr_type, input_name in PRINCIPLED_INPUT_MAP.items():
-        if principled is None:
-            result[pbr_type] = ('BAKE', None)
-        else:
+
+    if principled is not None:
+        for pbr_type, input_name in PRINCIPLED_INPUT_MAP.items():
             result[pbr_type] = _analyze_principled_input(principled, input_name)
+        result['ao'] = ('SOLID', 1.0)
+        return result
+
+    # Non-Principled defaults (neutral values for unused channels)
+    _NON_PBR_DEFAULTS = {
+        'metallic':  0.0,
+        'roughness': 1.0,
+        'normal':    (0.5, 0.5, 1.0, 1.0),
+        'alpha':     1.0,
+        'emissive':  (0.0, 0.0, 0.0, 1.0),
+        'color':     (0.0, 0.0, 0.0, 1.0),
+    }
+    for pbr_type in PRINCIPLED_INPUT_MAP:
+        result[pbr_type] = ('SOLID', _NON_PBR_DEFAULTS.get(pbr_type, 0.0))
+
+    emission = _find_emission_shader(material)
+    if emission is not None:
+        color_strat        = _analyze_principled_input(emission, 'Color')
+        result['color']    = color_strat
+        result['emissive'] = color_strat
+    else:
+        mmd = _find_mmd_shader_dev(material)
+        if mmd is not None:
+            result['color']    = _analyze_principled_input(mmd, _MMD_COLOR_SOCKET)
+            result['alpha']    = _analyze_principled_input(mmd, _MMD_ALPHA_SOCKET)
+            result['emissive'] = result['color']
+
     result['ao'] = ('SOLID', 1.0)
     return result
 
@@ -254,13 +329,19 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context):
     Returns path to the saved PNG, or None on failure.
 
     Special handling:
-      metallic  — temporarily routes Metallic link → Roughness, bakes as ROUGHNESS
-      alpha     — temporarily routes Alpha link → Emission Color, bakes as EMIT
+      metallic    — temporarily routes Metallic link → Roughness, bakes as ROUGHNESS
+      alpha       — temporarily routes Alpha link → Emission Color, bakes as EMIT
+      emission/MMDShaderDev color/emissive — bakes as EMIT directly (no Principled needed)
     """
     tree = material.node_tree
     principled = _find_principled_bsdf(material)
+
     if principled is None:
-        return None
+        # Emission shader: can bake color/emissive channels as EMIT pass
+        if pbr_type not in ('color', 'emissive'):
+            return None
+        if _find_emission_shader(material) is None and _find_mmd_shader_dev(material) is None:
+            return None
 
     img_name = f"__gen_bake_{pbr_type}"
     if img_name in bpy.data.images:
@@ -280,55 +361,56 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context):
     try:
         context.scene.render.engine = 'CYCLES'
 
-        bake_type   = 'DIFFUSE'
+        bake_type   = 'EMIT' if principled is None else 'DIFFUSE'
         bake_kwargs = {}
 
-        if pbr_type == 'color':
-            bake_type   = 'DIFFUSE'
-            bake_kwargs = {'pass_filter': {'COLOR'}}
-            # Zero metallic temporarily so it doesn't darken the diffuse bake
-            m_sock = principled.inputs.get('Metallic')
-            if m_sock and not m_sock.is_linked:
-                orig_val = m_sock.default_value
-                m_sock.default_value = 0.0
-                tmp_restore.append(('default', m_sock, orig_val))
+        if principled is not None:
+            if pbr_type == 'color':
+                bake_type   = 'DIFFUSE'
+                bake_kwargs = {'pass_filter': {'COLOR'}}
+                # Zero metallic temporarily so it doesn't darken the diffuse bake
+                m_sock = principled.inputs.get('Metallic')
+                if m_sock and not m_sock.is_linked:
+                    orig_val = m_sock.default_value
+                    m_sock.default_value = 0.0
+                    tmp_restore.append(('default', m_sock, orig_val))
 
-        elif pbr_type == 'normal':
-            bake_type = 'NORMAL'
+            elif pbr_type == 'normal':
+                bake_type = 'NORMAL'
 
-        elif pbr_type == 'roughness':
-            bake_type = 'ROUGHNESS'
+            elif pbr_type == 'roughness':
+                bake_type = 'ROUGHNESS'
 
-        elif pbr_type == 'metallic':
-            # Route Metallic source → Roughness socket, bake as ROUGHNESS
-            bake_type   = 'ROUGHNESS'
-            m_sock = principled.inputs.get('Metallic')
-            r_sock = principled.inputs.get('Roughness')
-            if m_sock and r_sock and m_sock.is_linked:
-                metal_from = m_sock.links[0].from_socket
-                if r_sock.is_linked:
-                    rough_from = r_sock.links[0].from_socket
-                    tmp_restore.append(('link', rough_from, r_sock))
-                    tree.links.remove(r_sock.links[0])
-                lnk = tree.links.new(metal_from, r_sock)
-                tmp_remove.append(lnk)
+            elif pbr_type == 'metallic':
+                # Route Metallic source → Roughness socket, bake as ROUGHNESS
+                bake_type   = 'ROUGHNESS'
+                m_sock = principled.inputs.get('Metallic')
+                r_sock = principled.inputs.get('Roughness')
+                if m_sock and r_sock and m_sock.is_linked:
+                    metal_from = m_sock.links[0].from_socket
+                    if r_sock.is_linked:
+                        rough_from = r_sock.links[0].from_socket
+                        tmp_restore.append(('link', rough_from, r_sock))
+                        tree.links.remove(r_sock.links[0])
+                    lnk = tree.links.new(metal_from, r_sock)
+                    tmp_remove.append(lnk)
 
-        elif pbr_type == 'alpha':
-            # Route Alpha source → Emission Color socket, bake as EMIT
-            bake_type = 'EMIT'
-            a_sock  = principled.inputs.get('Alpha')
-            e_sock  = principled.inputs.get('Emission Color')
-            if a_sock and e_sock and a_sock.is_linked:
-                alpha_from = a_sock.links[0].from_socket
-                if e_sock.is_linked:
-                    emit_from = e_sock.links[0].from_socket
-                    tmp_restore.append(('link', emit_from, e_sock))
-                    tree.links.remove(e_sock.links[0])
-                lnk = tree.links.new(alpha_from, e_sock)
-                tmp_remove.append(lnk)
+            elif pbr_type == 'alpha':
+                # Route Alpha source → Emission Color socket, bake as EMIT
+                bake_type = 'EMIT'
+                a_sock  = principled.inputs.get('Alpha')
+                e_sock  = principled.inputs.get('Emission Color')
+                if a_sock and e_sock and a_sock.is_linked:
+                    alpha_from = a_sock.links[0].from_socket
+                    if e_sock.is_linked:
+                        emit_from = e_sock.links[0].from_socket
+                        tmp_restore.append(('link', emit_from, e_sock))
+                        tree.links.remove(e_sock.links[0])
+                    lnk = tree.links.new(alpha_from, e_sock)
+                    tmp_remove.append(lnk)
 
-        elif pbr_type == 'emissive':
-            bake_type = 'EMIT'
+            elif pbr_type == 'emissive':
+                bake_type = 'EMIT'
 
         # Activate the target mesh
         prev_active   = context.view_layer.objects.active
@@ -690,7 +772,8 @@ class MdfGenRefreshBase(bpy.types.Operator):
             if not mat:
                 continue
 
-            strategies = analyze_material_strategies(mat)
+            strategies   = analyze_material_strategies(mat)
+            shader_type  = detect_shader_type(mat)
             item = settings.material_list.add()
             item.blender_material = mat_name
 
@@ -699,6 +782,13 @@ class MdfGenRefreshBase(bpy.types.Operator):
                 item.material_preset = best
             except Exception:
                 pass
+
+            # Auto-enable toon for emissive-style shaders
+            if shader_type in (SHADER_EMISSION, SHADER_MMD_DEV):
+                try:
+                    item.use_toon = True
+                except Exception:
+                    pass
 
             # Strategy summary shown in collapsed view
             parts = []
