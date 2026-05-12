@@ -46,19 +46,21 @@ class MhwiGenMaterialEntry(bpy.types.PropertyGroup):
     )
 
 
-def _mhwi_mesh_col_poll(self, col):
-    return col.get("~TYPE") == "RE_MESH_COLLECTION" or col.name.endswith(".mesh")
+def _mhwi_mod3_col_poll(self, col):
+    # MHWI 走的是 MHW Model Editor 的 MOD3 体系，不是 RE Engine 的 .mesh
+    return col.get("~TYPE") == "MHW_MOD3_COLLECTION" or col.name.endswith(".mod3")
 
 
 class MhwiGenSettings(bpy.types.PropertyGroup):
+    # 属性名保留 mesh_collection 以兼容 MdfGenRefreshBase；MHWI 实际填的是 MOD3 集合
     mesh_collection: bpy.props.PointerProperty(
-        name="Mesh Collection",
+        name="Mod3 Collection",
         type=bpy.types.Collection,
-        poll=_mhwi_mesh_col_poll,
+        poll=_mhwi_mod3_col_poll,
     )
     mrl3_collection_name: bpy.props.StringProperty(
         name="MRL3 Collection Name",
-        description="留空则自动从网格集合名推断",
+        description="留空则自动从 MOD3 集合名推断",
         default="",
     )
     texture_base_path: bpy.props.StringProperty(
@@ -102,9 +104,9 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
             self.report({'ERROR'}, "请先设置 Mod Root 目录")
             return {'CANCELLED'}
 
-        mesh_col = settings.mesh_collection
-        if not mesh_col:
-            self.report({'ERROR'}, "请先选择网格集合")
+        mod3_col = settings.mesh_collection
+        if not mod3_col:
+            self.report({'ERROR'}, "请先选择 MOD3 集合")
             return {'CANCELLED'}
 
         base_path = settings.texture_base_path.strip()
@@ -127,7 +129,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
             self.report({'ERROR'}, "无法加载 RE Mesh Editor 贴图工具，请确认已安装并启用")
             return {'CANCELLED'}
 
-        mrl3_col = self._get_or_create_mrl3_collection(context, mesh_col, settings)
+        mrl3_col = self._get_or_create_mrl3_collection(context, mod3_col, settings)
 
         temp_dir = tempfile.mkdtemp(prefix="mhwi_mrl3_gen_")
         export_count = fail_count = 0
@@ -138,7 +140,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                     self._process_one_material(
                         context, mat_entry, settings, mrl3_col,
                         natives_root, base_path, temp_dir,
-                        ImageListToDDS, ConvertDDSToTex, mesh_col,
+                        ImageListToDDS, ConvertDDSToTex, mod3_col,
                     )
                     export_count += 1
                     print(f"[{self._log_tag}] OK: {mat_entry.blender_material}")
@@ -151,7 +153,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
             shutil.rmtree(temp_dir, ignore_errors=True)
 
         try:
-            _separate_mesh_by_material(context, mesh_col)
+            _separate_mesh_by_material(context, mod3_col)
         except Exception as e:
             print(f"[{self._log_tag}] Mesh separate/rename warning: {e}")
 
@@ -161,19 +163,20 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
             self.report({'INFO'}, f"完成: 成功生成 {export_count} 个材质的 MRL3 + 贴图")
         return {'FINISHED'}
 
-    def _get_or_create_mrl3_collection(self, context, mesh_col, settings):
+    def _get_or_create_mrl3_collection(self, context, mod3_col, settings):
         mrl3_name = settings.mrl3_collection_name.strip()
         if not mrl3_name:
-            mrl3_name = (mesh_col.name.replace('.mesh', '.mrl3')
-                         if '.mesh' in mesh_col.name
-                         else mesh_col.name + ".mrl3")
+            # MHWI 的源集合后缀是 .mod3（MHW Model Editor 体系），不是 .mesh
+            mrl3_name = (mod3_col.name.replace('.mod3', '.mrl3')
+                         if '.mod3' in mod3_col.name
+                         else mod3_col.name + ".mrl3")
 
         if mrl3_name in bpy.data.collections:
             return bpy.data.collections[mrl3_name]
 
         parent = next(
             (c for c in bpy.data.collections
-             if mesh_col.name in [ch.name for ch in c.children]),
+             if mod3_col.name in [ch.name for ch in c.children]),
             None,
         )
 
@@ -193,7 +196,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
 
     def _process_one_material(self, context, mat_entry, settings, mrl3_col,
                                natives_root, base_path, temp_dir,
-                               ImageListToDDS, ConvertDDSToTex, mesh_col):
+                               ImageListToDDS, ConvertDDSToTex, mod3_col):
         mat_name = mat_entry.blender_material
         mat = bpy.data.materials.get(mat_name)
         if not mat:
@@ -206,7 +209,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
             raise FileNotFoundError(f"Preset not found: {preset_path}")
 
         mesh_obj = next(
-            (obj for obj in mesh_col.all_objects
+            (obj for obj in mod3_col.all_objects
              if obj.type == 'MESH'
              and any(m and m.name == mat_name for m in obj.data.materials)),
             None,
