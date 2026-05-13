@@ -457,6 +457,17 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context):
         context.scene.render.engine = orig_engine
 
 
+def _detect_max_tex_size(material):
+    """扫描节点树，返回所有已加载图像中的最大边长；无贴图时返回 BAKE_SIZE_DEFAULT。"""
+    max_size = 0
+    if material and material.use_nodes:
+        for node in material.node_tree.nodes:
+            if node.type == 'TEX_IMAGE' and node.image:
+                w, h = node.image.size
+                max_size = max(max_size, w, h)
+    return max_size if max_size > 0 else BAKE_SIZE_DEFAULT
+
+
 def _get_pbr_paths(material, strategies, tmp_dir, bake_size, context, mesh_obj):
     """
     Resolve each PBR strategy to a file path.
@@ -949,8 +960,9 @@ class MdfGenProcessBase(bpy.types.Operator):
         )
 
         strategies = analyze_material_strategies(mat)
+        bake_size  = max(_detect_max_tex_size(mat), cls._bake_size)
         pbr_paths  = _get_pbr_paths(
-            mat, strategies, temp_dir, cls._bake_size, context, mesh_obj)
+            mat, strategies, temp_dir, bake_size, context, mesh_obj)
 
         tex_name = _slugify(_strip_blender_suffix(mat_name))
 

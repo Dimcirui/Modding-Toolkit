@@ -51,6 +51,7 @@ BASE_TEXTURE_TYPE_ABBREV = {
     'NormalRoughnessMap':              'NRMR',
     'SSSCavityOcclusionTranslucentMap': 'SCOT',
     'AlphaCavityOcclusionTranslucentMap': 'ACOT',
+    'AlphaTranslucentOcclusionCavityMap': 'ATOC',
 }
 
 # Channel composition maps.  Values may be:
@@ -124,6 +125,12 @@ BASE_SLOT_CHANNEL_MAPS = {
         'B': ('ao', 0),
         'A': None,
     },
+    'AlphaTranslucentOcclusionCavityMap': {
+        'R': ('alpha', 0),
+        'G': None,
+        'B': ('ao', 0),
+        'A': None,
+    },
 }
 
 BASE_COMMON_SLOT_TYPES = {
@@ -138,6 +145,7 @@ BASE_COMMON_SLOT_TYPES = {
     'AlphaCavityOcclusionTranslucentMap',
     'EmissiveMap',
     'Emissive_ColorMap',
+    'AlphaTranslucentOcclusionCavityMap'
 }
 
 BASE_NULL_TEX_BY_TYPE = {
@@ -152,6 +160,7 @@ BASE_NULL_TEX_BY_TYPE = {
     'Emissive_ColorMap':             'systems/rendering/NullBlack.tex',
     'FxMap':                         'MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex',
     'AlphaTranslucentOcclusionSSSMap': 'systems/rendering/NullATOS.tex',
+    'AlphaTranslucentOcclusionCavityMap': 'systems/rendering/NullATOS.tex',
     'SSSCavityOcclusionTranslucentMap': 'systems/rendering/NullATOS.tex',
     'AlphaCavityOcclusionTranslucentMap': 'systems/rendering/NullATOS.tex',
     'noisemap':                      'MasterMaterial/Textures/bluenoise_msk1.tex',
