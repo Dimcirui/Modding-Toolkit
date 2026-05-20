@@ -5,6 +5,7 @@
     "version": "1.0",
     "description": "Merges HJ helpers, split spines, and muscle bones."
   },
+  "exclude": ["COG", "root", "Cage", "Cage_L"],
   "mappings": {
     "pelvis": {
       "main": [
@@ -14,8 +15,6 @@
         "Spine_0",
         "Hip_HJ_00",
         "Spine_0_HJ_00",
-        "COG",
-        "root",
         "Hip_WpConst"
       ]
     },

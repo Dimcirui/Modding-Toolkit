@@ -109,27 +109,27 @@ BASE_SLOT_CHANNEL_MAPS = {
     },
     'AlphaTranslucentOcclusionSSSMap': {
         'R': ('alpha', 0),
-        'G': None,
+        'G': 1.0,
         'B': ('ao',   0),
-        'A': None,
+        'A': 1.0,
     },
     'SSSCavityOcclusionTranslucentMap': {
-        'R': None,
+        'R': 1.0,
         'G': 1.0,
         'B': ('ao', 0),
-        'A': None,
+        'A': 1.0,
     },
     'AlphaCavityOcclusionTranslucentMap': {
         'R': ('alpha', 0),
         'G': 1.0,
         'B': ('ao', 0),
-        'A': None,
+        'A': 1.0,
     },
     'AlphaTranslucentOcclusionCavityMap': {
         'R': ('alpha', 0),
-        'G': None,
+        'G': 1.0,
         'B': ('ao', 0),
-        'A': None,
+        'A': 1.0,
     },
 }
 
