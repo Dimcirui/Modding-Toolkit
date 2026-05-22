@@ -19,7 +19,7 @@ import shutil
 
 from .mdf_tex_processor_base import (
     BASE_SLOT_CHANNEL_MAPS, BASE_NULL_TEX_BY_TYPE, BASE_TEXTURE_TYPE_ABBREV,
-    SRGB_SLOT_TYPES, PBR_DEFAULTS,
+    SRGB_SLOT_TYPES, PBR_DEFAULTS, PBR_CHANNEL_SELECTABLE, _CH,
     _import_tex_utils, _compose_channels,
     make_mdf_path, make_disk_path,
 )
@@ -96,9 +96,11 @@ def detect_shader_type(material):
 
 def _analyze_principled_input(principled_node, input_name):
     """
-    Returns ('DIRECT', filepath) | ('SOLID', value) | ('BAKE', None).
+    Returns ('DIRECT', filepath, source_channel) | ('SOLID', value) | ('BAKE', None).
 
     DIRECT:  Image Texture directly connected, or via a Normal Map node.
+             Third element is 'R' (Color output) or 'A' (Alpha output) to
+             indicate which source channel should be read during composition.
     SOLID:   Socket unlinked — use default_value as a constant solid texture.
     BAKE:    Complex node chain — Cycles bake required.
     """
@@ -113,7 +115,9 @@ def _analyze_principled_input(principled_node, input_name):
     if src.type == 'TEX_IMAGE' and src.image:
         path = bpy.path.abspath(src.image.filepath)
         if path and os.path.isfile(path):
-            return ('DIRECT', path)
+            from_sock = socket.links[0].from_socket
+            src_ch = 'A' if from_sock.name == 'Alpha' else 'R'
+            return ('DIRECT', path, src_ch)
 
     elif src.type == 'NORMAL_MAP':
         nm_color = src.inputs.get('Color')
@@ -122,7 +126,7 @@ def _analyze_principled_input(principled_node, input_name):
             if nm_src.type == 'TEX_IMAGE' and nm_src.image:
                 path = bpy.path.abspath(nm_src.image.filepath)
                 if path and os.path.isfile(path):
-                    return ('DIRECT', path)
+                    return ('DIRECT', path, 'R')
 
     return ('BAKE', None)
 
@@ -321,6 +325,93 @@ def _generate_solid_texture_path(value, tmp_dir, name_hint, size=SOLID_SIZE):
     return out_path
 
 
+# ── Composition cache helpers ───────────────────────────────────────────────────
+
+def _make_source_id(strat_val):
+    """Return a hashable identifier for a PBR source, or None if uncacheable (BAKE).
+
+    DIRECT → ('DIRECT', normalised_path)
+    SOLID  → ('SOLID', (r, g, b, a))
+    BAKE   → None
+    """
+    if not strat_val:
+        return None
+    strategy = strat_val[0]
+    value    = strat_val[1]
+    if strategy == 'DIRECT':
+        return ('DIRECT', os.path.normpath(value))
+    if strategy == 'SOLID':
+        if isinstance(value, (int, float)):
+            v = round(float(value), 6)
+            return ('SOLID', (v, v, v, 1.0))
+        else:
+            vals = [round(float(max(0.0, min(1.0, c))), 6) for c in list(value)[:4]]
+            while len(vals) < 4:
+                vals.append(1.0)
+            return ('SOLID', tuple(vals))
+    return None
+
+
+def _resolve_solid_rgba(strat_val):
+    """Return the 4-channel pixel value from a SOLID strategy, or None."""
+    if not strat_val or strat_val[0] != 'SOLID':
+        return None
+    value = strat_val[1]
+    if isinstance(value, (int, float)):
+        v = float(max(0.0, min(1.0, value)))
+        return (v, v, v, 1.0)
+    else:
+        vals = [float(max(0.0, min(1.0, c))) for c in list(value)[:4]]
+        while len(vals) < 4:
+            vals.append(1.0)
+        return tuple(vals)
+
+
+def _try_downgrade_slot(slot_type, strategies, pbr_channels, channel_maps):
+    """If every PBR source used by *slot_type* is a constant, return the
+    resulting RGBA pixel value as a 4-tuple; otherwise return None."""
+    ch_map = channel_maps.get(slot_type)
+    if ch_map is None:
+        return None
+
+    rgba = [0.0, 0.0, 0.0, 0.0]
+    for out_ch_name, src in ch_map.items():
+        out_i = _CH.get(out_ch_name)
+        if out_i is None:
+            return None
+
+        if src is None:
+            rgba[out_i] = 0.0
+        elif isinstance(src, (int, float)):
+            rgba[out_i] = float(src)
+        elif isinstance(src, tuple):
+            pbr_type = src[0]
+            in_ch_i  = src[1]
+            invert   = len(src) > 2 and src[2] is True
+
+            strat_val = strategies.get(pbr_type)
+            if strat_val is None or strat_val[0] != 'SOLID':
+                return None
+
+            solid_rgba = _resolve_solid_rgba(strat_val)
+            if solid_rgba is None:
+                return None
+
+            if pbr_type in PBR_CHANNEL_SELECTABLE:
+                override = pbr_channels.get(pbr_type)
+                if override:
+                    in_ch_i = _CH.get(override, in_ch_i)
+
+            val = solid_rgba[in_ch_i]
+            if invert:
+                val = 1.0 - val
+            rgba[out_i] = val
+        else:
+            return None
+
+    return tuple(rgba)
+
+
 # ── Cycles baking ──────────────────────────────────────────────────────────────
 
 def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context):
@@ -474,7 +565,9 @@ def _get_pbr_paths(material, strategies, tmp_dir, bake_size, context, mesh_obj):
     Returns dict {pbr_type: path_or_None}.
     """
     paths = {}
-    for pbr_type, (strategy, value) in strategies.items():
+    for pbr_type, strat_val in strategies.items():
+        strategy = strat_val[0]
+        value    = strat_val[1]
         if strategy == 'DIRECT':
             paths[pbr_type] = value
 
@@ -804,14 +897,14 @@ class MdfGenRefreshBase(bpy.types.Operator):
             # Strategy summary shown in collapsed view
             parts = []
             for pt in ('color', 'normal', 'roughness', 'metallic', 'alpha', 'emissive'):
-                s, _ = strategies.get(pt, ('?', None))
-                parts.append(f"{pt[0].upper()}:{strategy_label(s)}")
+                sv = strategies.get(pt, ('?', None))
+                parts.append(f"{pt[0].upper()}:{strategy_label(sv[0])}")
             item.strategy_display = '  '.join(parts)
 
             # Per-channel strategy labels (for expanded view)
             for pt in ('color', 'metallic', 'roughness', 'normal', 'alpha', 'emissive'):
-                s, _ = strategies.get(pt, ('?', None))
-                setattr(item, f"strat_{pt}", strategy_label(s))
+                sv = strategies.get(pt, ('?', None))
+                setattr(item, f"strat_{pt}", strategy_label(sv[0]))
 
         self.report({'INFO'}, f"已扫描 {len(settings.material_list)} 个材质")
         return {'FINISHED'}
@@ -874,6 +967,7 @@ class MdfGenProcessBase(bpy.types.Operator):
         mdf_col = self._get_or_create_mdf_collection(context, mesh_col, settings)
 
         temp_dir = tempfile.mkdtemp(prefix="mdf_gen_")
+        comp_cache = {}  # (slot_type, source_ids, pbr_channels) → (composed, disk, mdf)
         export_count = fail_count = 0
 
         try:
@@ -883,6 +977,7 @@ class MdfGenProcessBase(bpy.types.Operator):
                         context, mat_entry, settings, mdf_col,
                         natives_root, base_path, temp_dir,
                         ImageListToDDS, DDSToTex, readPresetJSON, cls, mesh_col,
+                        comp_cache,
                     )
                     export_count += 1
                     print(f"[{cls._log_tag}] OK: {mat_entry.blender_material}")
@@ -939,7 +1034,8 @@ class MdfGenProcessBase(bpy.types.Operator):
 
     def _process_one_material(self, context, mat_entry, settings, mdf_col,
                                natives_root, base_path, temp_dir,
-                               ImageListToDDS, DDSToTex, readPresetJSON, cls, mesh_col):
+                               ImageListToDDS, DDSToTex, readPresetJSON, cls, mesh_col,
+                               comp_cache):
         mat_name = mat_entry.blender_material
         mat = bpy.data.materials.get(mat_name)
         if not mat:
@@ -963,6 +1059,14 @@ class MdfGenProcessBase(bpy.types.Operator):
         bake_size  = max(_detect_max_tex_size(mat), cls._bake_size)
         pbr_paths  = _get_pbr_paths(
             mat, strategies, temp_dir, bake_size, context, mesh_obj)
+
+        # Build source-channel overrides from DIRECT strategies where the
+        # Image Texture's Alpha output (not Color) was connected — this
+        # ensures alpha data is read from the A channel instead of R.
+        pbr_channels = {}
+        for pbr_type, strat_val in strategies.items():
+            if strat_val[0] == 'DIRECT' and len(strat_val) > 2 and strat_val[2] != 'R':
+                pbr_channels[pbr_type] = strat_val[2]
 
         tex_name = _slugify(_strip_blender_suffix(mat_name))
 
@@ -989,38 +1093,103 @@ class MdfGenProcessBase(bpy.types.Operator):
                         slot_mdf_paths[slot_type] = null
                     continue
 
-            if slot_type in cls._channel_maps:
-                composed = _compose_channels(
-                    slot_type, pbr_paths, {}, temp_dir, tex_name,
-                    channel_maps=cls._channel_maps,
-                )
-                if composed:
-                    dds_fmt   = ('BC7_UNORM_SRGB' if slot_type in SRGB_SLOT_TYPES
-                                 else 'BC7_UNORM')
-                    disk_path = make_disk_path(
-                        natives_root, base_path, tex_name, slot_type,
-                        cls._abbrev_map, cls._tex_version, cls._use_art_prefix,
-                    )
-                    os.makedirs(os.path.dirname(disk_path), exist_ok=True)
+            if slot_type not in cls._channel_maps:
+                null = cls._null_tex_by_type.get(slot_type)
+                if null:
+                    slot_mdf_paths[slot_type] = null
+                continue
 
-                    dds_stem = os.path.splitext(os.path.basename(composed))[0]
-                    dds_path = os.path.join(temp_dir, dds_stem + '.dds')
-                    ImageListToDDS([(composed, dds_fmt)], temp_dir,
-                                   settings.generate_mipmaps)
-                    if not os.path.isfile(dds_path):
-                        raise FileNotFoundError(
-                            f"texconv output not found: {dds_path}")
-                    DDSToTex([dds_path], cls._tex_version, disk_path)
-
-                    slot_mdf_paths[slot_type] = make_mdf_path(
-                        base_path, tex_name, slot_type,
-                        cls._abbrev_map, cls._use_art_prefix,
-                    )
-                    print(f"[{cls._log_tag}]   {slot_type} -> {os.path.basename(disk_path)}")
+            # --- cache key construction ---
+            ch_map = cls._channel_maps[slot_type]
+            needed_pt = {src[0] for src in ch_map.values()
+                         if src is not None and isinstance(src, tuple)}
+            key_parts = []
+            cache_ok = True
+            for pt in sorted(needed_pt):
+                sv = strategies.get(pt)
+                if sv:
+                    sid = _make_source_id(sv)
+                    if sid is not None:
+                        key_parts.append((pt, sid))
+                    else:
+                        cache_ok = False
+                        break
                 else:
-                    null = cls._null_tex_by_type.get(slot_type)
-                    if null:
-                        slot_mdf_paths[slot_type] = null
+                    cache_ok = False
+                    break
+
+            cache_key = None
+            if cache_ok:
+                ch_ov = frozenset((k, v) for k, v in pbr_channels.items() if k in needed_pt)
+                cache_key = (slot_type, tuple(key_parts), ch_ov)
+                cached = comp_cache.get(cache_key)
+                if cached is not None:
+                    slot_mdf_paths[slot_type] = cached[2]
+                    continue
+
+                # Only attempt downgrade for cacheable slots (no BAKE involved)
+                rgba = _try_downgrade_slot(slot_type, strategies, pbr_channels, cls._channel_maps)
+                if rgba is not None:
+                    hint = f"{tex_name}_{slot_type.lower()}_dg"
+                    composed = _generate_solid_texture_path(rgba, temp_dir, hint, size=256)
+                    if composed:
+                        dds_fmt = ('BC7_UNORM_SRGB' if slot_type in SRGB_SLOT_TYPES
+                                   else 'BC7_UNORM')
+                        disk_path = make_disk_path(
+                            natives_root, base_path, tex_name, slot_type,
+                            cls._abbrev_map, cls._tex_version, cls._use_art_prefix,
+                        )
+                        os.makedirs(os.path.dirname(disk_path), exist_ok=True)
+
+                        dds_stem = os.path.splitext(os.path.basename(composed))[0]
+                        dds_path = os.path.join(temp_dir, dds_stem + '.dds')
+                        ImageListToDDS([(composed, dds_fmt)], temp_dir,
+                                       settings.generate_mipmaps)
+                        if not os.path.isfile(dds_path):
+                            raise FileNotFoundError(
+                                f"texconv output not found: {dds_path}")
+                        DDSToTex([dds_path], cls._tex_version, disk_path)
+
+                        mdf_path = make_mdf_path(
+                            base_path, tex_name, slot_type,
+                            cls._abbrev_map, cls._use_art_prefix,
+                        )
+                        slot_mdf_paths[slot_type] = mdf_path
+                        comp_cache[cache_key] = (composed, disk_path, mdf_path)
+                        continue
+
+            # --- full composition path ---
+            composed = _compose_channels(
+                slot_type, pbr_paths, pbr_channels, temp_dir, tex_name,
+                channel_maps=cls._channel_maps,
+            )
+            if composed:
+                dds_fmt   = ('BC7_UNORM_SRGB' if slot_type in SRGB_SLOT_TYPES
+                             else 'BC7_UNORM')
+                disk_path = make_disk_path(
+                    natives_root, base_path, tex_name, slot_type,
+                    cls._abbrev_map, cls._tex_version, cls._use_art_prefix,
+                )
+                os.makedirs(os.path.dirname(disk_path), exist_ok=True)
+
+                dds_stem = os.path.splitext(os.path.basename(composed))[0]
+                dds_path = os.path.join(temp_dir, dds_stem + '.dds')
+                ImageListToDDS([(composed, dds_fmt)], temp_dir,
+                               settings.generate_mipmaps)
+                if not os.path.isfile(dds_path):
+                    raise FileNotFoundError(
+                        f"texconv output not found: {dds_path}")
+                DDSToTex([dds_path], cls._tex_version, disk_path)
+
+                mdf_path = make_mdf_path(
+                    base_path, tex_name, slot_type,
+                    cls._abbrev_map, cls._use_art_prefix,
+                )
+                slot_mdf_paths[slot_type] = mdf_path
+
+                if cache_key is not None:
+                    comp_cache[cache_key] = (composed, disk_path, mdf_path)
+                print(f"[{cls._log_tag}]   {slot_type} -> {os.path.basename(disk_path)}")
             else:
                 null = cls._null_tex_by_type.get(slot_type)
                 if null:

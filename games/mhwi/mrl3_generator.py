@@ -9,6 +9,7 @@ from ...core.mdf_generator_base import (
     analyze_material_strategies,
     _get_pbr_paths, _slugify, _strip_blender_suffix, _separate_mesh_by_material,
     _emissive_strength_is_zero, _is_emissive_slot, _is_albedo_slot,
+    _make_source_id, _try_downgrade_slot, _generate_solid_texture_path,
     load_mhwi_preset_enum_items,
     _import_mhwi_tex_convert, _call_mhwi_read_preset, _import_mhwi_create_collection,
     BAKE_SIZE_DEFAULT,
@@ -132,6 +133,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
         mrl3_col = self._get_or_create_mrl3_collection(context, mod3_col, settings)
 
         temp_dir = tempfile.mkdtemp(prefix="mhwi_mrl3_gen_")
+        comp_cache = {}  # (slot_type, source_ids, pbr_channels) → (composed, disk, binding)
         export_count = fail_count = 0
 
         try:
@@ -141,6 +143,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                         context, mat_entry, settings, mrl3_col,
                         natives_root, base_path, temp_dir,
                         ImageListToDDS, ConvertDDSToTex, mod3_col,
+                        comp_cache,
                     )
                     export_count += 1
                     print(f"[{self._log_tag}] OK: {mat_entry.blender_material}")
@@ -196,7 +199,8 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
 
     def _process_one_material(self, context, mat_entry, settings, mrl3_col,
                                natives_root, base_path, temp_dir,
-                               ImageListToDDS, ConvertDDSToTex, mod3_col):
+                               ImageListToDDS, ConvertDDSToTex, mod3_col,
+                               comp_cache):
         mat_name = mat_entry.blender_material
         mat = bpy.data.materials.get(mat_name)
         if not mat:
@@ -218,6 +222,11 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
         strategies = analyze_material_strategies(mat)
         pbr_paths  = _get_pbr_paths(
             mat, strategies, temp_dir, self._bake_size, context, mesh_obj)
+
+        pbr_channels = {}
+        for pbr_type, strat_val in strategies.items():
+            if strat_val[0] == 'DIRECT' and len(strat_val) > 2 and strat_val[2] != 'R':
+                pbr_channels[pbr_type] = strat_val[2]
 
         tex_name = _slugify(_strip_blender_suffix(mat_name))
 
@@ -249,8 +258,63 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                     slot_binding_values[slot_type] = null
                 continue
 
+            # --- cache key construction ---
+            ch_map = MHWI_SLOT_CHANNEL_MAPS[slot_type]
+            needed_pt = {src[0] for src in ch_map.values()
+                         if src is not None and isinstance(src, tuple)}
+            key_parts = []
+            cache_ok = True
+            for pt in sorted(needed_pt):
+                sv = strategies.get(pt)
+                if sv:
+                    sid = _make_source_id(sv)
+                    if sid is not None:
+                        key_parts.append((pt, sid))
+                    else:
+                        cache_ok = False
+                        break
+                else:
+                    cache_ok = False
+                    break
+
+            cache_key = None
+            if cache_ok:
+                ch_ov = frozenset((k, v) for k, v in pbr_channels.items() if k in needed_pt)
+                cache_key = (slot_type, tuple(key_parts), ch_ov)
+                cached = comp_cache.get(cache_key)
+                if cached is not None:
+                    slot_binding_values[slot_type] = cached[2]
+                    continue
+
+                # Only attempt downgrade for cacheable slots (no BAKE involved)
+                rgba = _try_downgrade_slot(slot_type, strategies, pbr_channels, MHWI_SLOT_CHANNEL_MAPS)
+                if rgba is not None:
+                    hint = f"{tex_name}_{slot_type.lower()}_dg"
+                    composed = _generate_solid_texture_path(rgba, temp_dir, hint, size=256)
+                    if composed:
+                        dds_fmt = (
+                            'BC7_UNORM_SRGB' if slot_type in MHWI_SRGB_SLOT_TYPES else
+                            'BC5_UNORM'      if slot_type in MHWI_BC5_SLOT_TYPES  else
+                            'BC7_UNORM'
+                        )
+                        disk_path = _mhwi_disk_path(natives_root, base_path, tex_name, slot_type)
+                        os.makedirs(os.path.dirname(disk_path), exist_ok=True)
+
+                        dds_stem = os.path.splitext(os.path.basename(composed))[0]
+                        dds_path = os.path.join(temp_dir, dds_stem + '.dds')
+                        ImageListToDDS([(composed, dds_fmt)], temp_dir, settings.generate_mipmaps)
+                        if not os.path.isfile(dds_path):
+                            raise FileNotFoundError(f"texconv output not found: {dds_path}")
+                        ConvertDDSToTex([dds_path], disk_path)
+
+                        binding = _mhwi_tex_binding(base_path, tex_name, slot_type)
+                        slot_binding_values[slot_type] = binding
+                        comp_cache[cache_key] = (composed, disk_path, binding)
+                        continue
+
+            # --- full composition path ---
             composed = _compose_channels(
-                slot_type, pbr_paths, {}, temp_dir, tex_name,
+                slot_type, pbr_paths, pbr_channels, temp_dir, tex_name,
                 channel_maps=MHWI_SLOT_CHANNEL_MAPS,
             )
 
@@ -270,8 +334,11 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                     raise FileNotFoundError(f"texconv output not found: {dds_path}")
                 ConvertDDSToTex([dds_path], disk_path)
 
-                slot_binding_values[slot_type] = _mhwi_tex_binding(
-                    base_path, tex_name, slot_type)
+                binding = _mhwi_tex_binding(base_path, tex_name, slot_type)
+                slot_binding_values[slot_type] = binding
+
+                if cache_key is not None:
+                    comp_cache[cache_key] = (composed, disk_path, binding)
                 print(f"[{self._log_tag}]   {slot_type} -> {os.path.basename(disk_path)}")
             else:
                 null = MHWI_NULL_TEX.get(slot_type)
