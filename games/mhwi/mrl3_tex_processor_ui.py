@@ -58,8 +58,6 @@ class MHWI_OT_Mrl3TexProcessorDialog(bpy.types.Operator):
         if not settings.texture_base_path.strip():
             layout.label(text="    例：pl/f_equip/pl042_0500/helm/tex", icon='INFO')
 
-        layout.prop(settings, "generate_mipmaps")
-
         if not settings.materials:
             layout.separator()
             layout.label(text="选择 MRL3 集合并点击 Refresh", icon='INFO')
@@ -132,6 +130,11 @@ class MHWI_OT_Mrl3TexProcessorDialog(bpy.types.Operator):
 
             if not mat.slots:
                 continue
+
+            # Per-material texture options
+            opt_row = box.row(align=True)
+            opt_row.prop(mat, "generate_mipmaps")
+            opt_row.prop(mat, "skip_textures")
 
             # ── Texture slots ──
             box.label(text="Texture Slots", icon='RENDERLAYERS')

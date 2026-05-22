@@ -241,7 +241,6 @@ class Mrl3TexProcessorSettings(bpy.types.PropertyGroup):
         description="nativePC/ 下的贴图目录，例：pl/f_equip/pl042_0500/helm/tex",
         default="",
     )
-    generate_mipmaps:       bpy.props.BoolProperty(name="生成 MipMaps", default=True)
     materials:              bpy.props.CollectionProperty(type=MdfTexMaterialItem)
     materials_index:        bpy.props.IntProperty()
     clipboard_json:         bpy.props.StringProperty(default="")
@@ -392,6 +391,11 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                     # COMPOSE or DIRECT
                     try:
                         if slot.mode == 'COMPOSE':
+                            if mat_item.skip_textures:
+                                map_item.value = _mhwi_tex_binding(
+                                    base_path, tex_name, slot.texture_type)
+                                export_count += 1
+                                continue
                             if slot.texture_type not in MHWI_PBR_SLOT_TYPES:
                                 print(f"[MHWI Tex] SKIP  {slot.texture_type}: "
                                       "非 PBR 合成槽位，请改用 DIRECT 模式")
@@ -414,6 +418,11 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                                     skip_count += 1
                                 continue
                         else:  # DIRECT
+                            if mat_item.skip_textures:
+                                map_item.value = _mhwi_tex_binding(
+                                    base_path, tex_name, slot.texture_type)
+                                export_count += 1
+                                continue
                             src_img = bpy.path.abspath(slot.direct_image)
                             if not src_img or not os.path.isfile(src_img):
                                 print(f"[MHWI Tex] SKIP  {slot.texture_type}: "
@@ -445,7 +454,7 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                             dds_path = os.path.join(temp_dir, dds_stem + '.dds')
                             ImageListToDDS(
                                 [(src_img, dds_fmt)], temp_dir,
-                                settings.generate_mipmaps)
+                                mat_item.generate_mipmaps)
                             if not os.path.isfile(dds_path):
                                 raise FileNotFoundError(
                                     f"texconv 输出未找到: {dds_path}")

@@ -72,8 +72,6 @@ class RE4_OT_MdfGeneratorDialog(bpy.types.Operator):
         if not settings.texture_base_path.strip():
             layout.row().label(text="    e.g. Author/CharacterName/", icon='INFO')
 
-        layout.prop(settings, "generate_mipmaps")
-
         preset_dir = get_preset_dir_for_game(RE4_GEN_GAME)
         if not preset_dir:
             layout.separator()
@@ -110,6 +108,8 @@ class RE4_OT_MdfGeneratorDialog(bpy.types.Operator):
 
             if preset_has_emissive_slots(mat_entry.material_preset):
                 box.prop(mat_entry, "use_toon")
+            box.prop(mat_entry, "generate_mipmaps")
+            box.prop(mat_entry, "skip_textures")
 
 
 classes = [RE4_OT_MdfGeneratorDialog]

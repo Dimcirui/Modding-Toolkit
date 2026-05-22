@@ -41,7 +41,6 @@ class MdfTexProcessorSettings(bpy.types.PropertyGroup):
         description="Path under natives/STM/Art/ (e.g. Dimcirui/ShinanoPB)",
         default="",
     )
-    generate_mipmaps: bpy.props.BoolProperty(name="Generate MipMaps", default=True)
     materials:             bpy.props.CollectionProperty(type=MdfTexMaterialItem)
     materials_index:       bpy.props.IntProperty()
     clipboard_json:        bpy.props.StringProperty(default="")

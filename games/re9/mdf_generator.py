@@ -42,6 +42,12 @@ class RE9GenMaterialEntry(bpy.types.PropertyGroup):
         description="跳过自发光贴图处理，将自发光槽位路径设为与基础色槽位相同",
         default=False,
     )
+    generate_mipmaps: bpy.props.BoolProperty(name="生成 MipMaps", default=True)
+    skip_textures:    bpy.props.BoolProperty(
+        name="仅生成材质",
+        description="跳过贴图合成与转换，仅创建材质定义并填入贴图路径",
+        default=False,
+    )
 
 
 class RE9GenSettings(bpy.types.PropertyGroup):
@@ -60,7 +66,6 @@ class RE9GenSettings(bpy.types.PropertyGroup):
         default="",
         description="Path under natives/STM/ (e.g. character/cha102_00/)",
     )
-    generate_mipmaps:  bpy.props.BoolProperty(name="Generate MipMaps", default=True)
     material_list:     bpy.props.CollectionProperty(type=RE9GenMaterialEntry)
     material_list_idx: bpy.props.IntProperty()
 

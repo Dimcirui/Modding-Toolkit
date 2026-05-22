@@ -452,12 +452,18 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
         # 5.2 第二轮：检测末端并创建 _End 骨骼
         # (此时所有基础物理骨已创建，位置对应 Source Head)
 
+        # 收集源骨架的绑定网格对象，用于尾骨权重检测
+        mesh_objects = [o for o in bpy.data.objects
+                        if o.type == 'MESH'
+                        and any(m.type == 'ARMATURE' and m.object == source_arm
+                                for m in o.modifiers)]
+
         for p_name in physics_bones_names:
             src_bone = source_arm.data.bones.get(p_name)
 
-            # 需要 _End 的两种情况：
-            # A. 叶骨：在物理骨集合中没有子级
-            # B. 无主链延伸的分叉骨：有 ≥2 个物理子骨，但没有子骨标记为 main_continue
+            # 需要 _End 的情况：
+            # A. 分叉骨：有 ≥2 个物理子骨，但没有子骨标记为 main_continue
+            # B. 叶骨：在物理骨集合中没有子级 且 有顶点权重（无权重视为已到尾骨）
             #    线性链（恰好一个物理子骨）不需要 _End
             physics_children = [c for c in src_bone.children if c.name in physics_bones_set]
             is_leaf = len(physics_children) == 0
@@ -467,7 +473,12 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
                 source_arm.pose.bones[c.name].get("chain_role") == "main_continue"
                 for c in physics_children
             )
-            needs_end = is_leaf or (is_fork and not has_main_continue_child)
+            if is_leaf:
+                needs_end = weight_utils.bone_has_weights(p_name, mesh_objects)
+            elif is_fork and not has_main_continue_child:
+                needs_end = True
+            else:
+                needs_end = False
 
             if needs_end:
                 # 这是一个末端骨骼，需要生成 _End

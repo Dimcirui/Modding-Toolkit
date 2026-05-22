@@ -45,6 +45,12 @@ class MhwiGenMaterialEntry(bpy.types.PropertyGroup):
         description="跳过自发光贴图处理，将自发光槽位路径设为与基础色槽位相同",
         default=False,
     )
+    generate_mipmaps: bpy.props.BoolProperty(name="生成 MipMaps", default=True)
+    skip_textures:    bpy.props.BoolProperty(
+        name="仅生成材质",
+        description="跳过贴图合成与转换，仅创建材质定义并填入贴图路径",
+        default=False,
+    )
 
 
 def _mhwi_mod3_col_poll(self, col):
@@ -69,7 +75,6 @@ class MhwiGenSettings(bpy.types.PropertyGroup):
         description="nativePC/ 下的贴图目录，例：pl/f_equip/pl042_0500/helm/tex",
         default="",
     )
-    generate_mipmaps: bpy.props.BoolProperty(name="生成 MipMaps", default=True)
     material_list:    bpy.props.CollectionProperty(type=MhwiGenMaterialEntry)
 
 
@@ -258,6 +263,12 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                     slot_binding_values[slot_type] = null
                 continue
 
+            # --- skip_textures: just compute the binding path ---
+            if getattr(mat_entry, 'skip_textures', False):
+                slot_binding_values[slot_type] = _mhwi_tex_binding(
+                    base_path, tex_name, slot_type)
+                continue
+
             # --- cache key construction ---
             ch_map = MHWI_SLOT_CHANNEL_MAPS[slot_type]
             needed_pt = {src[0] for src in ch_map.values()
@@ -302,7 +313,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
 
                         dds_stem = os.path.splitext(os.path.basename(composed))[0]
                         dds_path = os.path.join(temp_dir, dds_stem + '.dds')
-                        ImageListToDDS([(composed, dds_fmt)], temp_dir, settings.generate_mipmaps)
+                        ImageListToDDS([(composed, dds_fmt)], temp_dir, mat_entry.generate_mipmaps)
                         if not os.path.isfile(dds_path):
                             raise FileNotFoundError(f"texconv output not found: {dds_path}")
                         ConvertDDSToTex([dds_path], disk_path)
@@ -329,7 +340,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
 
                 dds_stem = os.path.splitext(os.path.basename(composed))[0]
                 dds_path = os.path.join(temp_dir, dds_stem + '.dds')
-                ImageListToDDS([(composed, dds_fmt)], temp_dir, settings.generate_mipmaps)
+                ImageListToDDS([(composed, dds_fmt)], temp_dir, mat_entry.generate_mipmaps)
                 if not os.path.isfile(dds_path):
                     raise FileNotFoundError(f"texconv output not found: {dds_path}")
                 ConvertDDSToTex([dds_path], disk_path)

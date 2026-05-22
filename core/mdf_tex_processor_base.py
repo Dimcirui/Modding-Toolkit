@@ -512,6 +512,12 @@ class MdfTexMaterialItem(bpy.types.PropertyGroup):
     expanded:          bpy.props.BoolProperty(default=False)
     pbr_expanded:      bpy.props.BoolProperty(default=False)
     other_expanded:    bpy.props.BoolProperty(default=False)
+    generate_mipmaps:  bpy.props.BoolProperty(name="生成 MipMaps", default=True)
+    skip_textures:     bpy.props.BoolProperty(
+        name="仅生成材质",
+        description="跳过贴图合成与转换，仅更新材质定义中的贴图路径",
+        default=False,
+    )
     pbr:   bpy.props.PointerProperty(type=MdfTexPBRInputs)
     slots: bpy.props.CollectionProperty(type=MdfTexSlotItem)
 
@@ -788,6 +794,12 @@ class MdfTexProcessBase(bpy.types.Operator):
 
                     try:
                         if slot.mode == 'COMPOSE':
+                            if mat_item.skip_textures:
+                                binding.path = mdf_path
+                                if slot.texture_type == 'BaseDielectricMap':
+                                    albd_path_out = mdf_path
+                                export_count += 1
+                                continue
                             src_img = _compose_channels(
                                 slot.texture_type, pbr_paths, pbr_channels,
                                 temp_dir, tex_name, pbr_inv,
@@ -804,6 +816,10 @@ class MdfTexProcessBase(bpy.types.Operator):
                                     skip_count += 1
                                 continue
                         else:  # DIRECT
+                            if mat_item.skip_textures:
+                                binding.path = mdf_path
+                                export_count += 1
+                                continue
                             src_img = bpy.path.abspath(slot.direct_image)
                             if not src_img or not os.path.isfile(src_img):
                                 print(f"[{cls._log_tag}] SKIP direct {slot.texture_type}: not found")
@@ -829,7 +845,7 @@ class MdfTexProcessBase(bpy.types.Operator):
                             dds_stem = os.path.splitext(src_name)[0]
                             dds_path = os.path.join(temp_dir, dds_stem + '.dds')
                             ImageListToDDS([(src_img, dds_fmt)], temp_dir,
-                                           settings.generate_mipmaps)
+                                           mat_item.generate_mipmaps)
                             if not os.path.isfile(dds_path):
                                 raise FileNotFoundError(
                                     f"texconv output not found: {dds_path}")

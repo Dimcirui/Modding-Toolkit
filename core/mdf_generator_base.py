@@ -449,8 +449,39 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context):
 
     orig_engine = context.scene.render.engine
 
+    # ── Save Cycles GPU / device state ──────────────────────────────────────
+    cycles_scene = context.scene.cycles
+    orig_device  = cycles_scene.device
+    orig_compute_device_type = None
+    orig_dev_use = {}
+    try:
+        cprefs = bpy.context.preferences.addons['cycles'].preferences
+        orig_compute_device_type = cprefs.compute_device_type
+        for d in cprefs.devices:
+            orig_dev_use[d.name] = d.use
+    except Exception:
+        pass
+
     try:
         context.scene.render.engine = 'CYCLES'
+
+        # ── Force GPU compute ───────────────────────────────────────────────
+        try:
+            cycles_scene.device = 'GPU'
+            cprefs = bpy.context.preferences.addons['cycles'].preferences
+            # Pick the first available GPU backend
+            for dt in ('OPTIX', 'CUDA', 'HIP', 'METAL'):
+                try:
+                    cprefs.compute_device_type = dt
+                    cprefs.get_devices()
+                    if any(d.type == dt for d in cprefs.devices):
+                        break
+                except Exception:
+                    continue
+            for d in cprefs.devices:
+                d.use = (d.type == cprefs.compute_device_type)
+        except Exception:
+            pass
 
         bake_type   = 'EMIT' if principled is None else 'DIFFUSE'
         bake_kwargs = {}
@@ -546,6 +577,21 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context):
         if img_name in bpy.data.images:
             bpy.data.images.remove(bpy.data.images[img_name])
         context.scene.render.engine = orig_engine
+        # Restore Cycles GPU / device state
+        try:
+            cycles_scene.device = orig_device
+        except Exception:
+            pass
+        if orig_compute_device_type is not None:
+            try:
+                cprefs = bpy.context.preferences.addons['cycles'].preferences
+                cprefs.compute_device_type = orig_compute_device_type
+                cprefs.get_devices()
+                for d in cprefs.devices:
+                    if d.name in orig_dev_use:
+                        d.use = orig_dev_use[d.name]
+            except Exception:
+                pass
 
 
 def _detect_max_tex_size(material):
@@ -1099,6 +1145,14 @@ class MdfGenProcessBase(bpy.types.Operator):
                     slot_mdf_paths[slot_type] = null
                 continue
 
+            # --- skip_textures: just compute the binding path ---
+            if getattr(mat_entry, 'skip_textures', False):
+                slot_mdf_paths[slot_type] = make_mdf_path(
+                    base_path, tex_name, slot_type,
+                    cls._abbrev_map, cls._use_art_prefix,
+                )
+                continue
+
             # --- cache key construction ---
             ch_map = cls._channel_maps[slot_type]
             needed_pt = {src[0] for src in ch_map.values()
@@ -1144,7 +1198,7 @@ class MdfGenProcessBase(bpy.types.Operator):
                         dds_stem = os.path.splitext(os.path.basename(composed))[0]
                         dds_path = os.path.join(temp_dir, dds_stem + '.dds')
                         ImageListToDDS([(composed, dds_fmt)], temp_dir,
-                                       settings.generate_mipmaps)
+                                       mat_entry.generate_mipmaps)
                         if not os.path.isfile(dds_path):
                             raise FileNotFoundError(
                                 f"texconv output not found: {dds_path}")
@@ -1175,7 +1229,7 @@ class MdfGenProcessBase(bpy.types.Operator):
                 dds_stem = os.path.splitext(os.path.basename(composed))[0]
                 dds_path = os.path.join(temp_dir, dds_stem + '.dds')
                 ImageListToDDS([(composed, dds_fmt)], temp_dir,
-                               settings.generate_mipmaps)
+                               mat_entry.generate_mipmaps)
                 if not os.path.isfile(dds_path):
                     raise FileNotFoundError(
                         f"texconv output not found: {dds_path}")

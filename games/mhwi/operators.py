@@ -310,6 +310,31 @@ def _assign_next_id(used_ids, id_range):
     return None
 
 
+def _count_rename_failures(armature, physics_bones_ordered, id_range):
+    """预检重命名会失败的骨骼数量（不实际改名）。
+    返回 (成功数, 失败数)。"""
+    used_ids = set()
+    for b in armature.data.bones:
+        if b.name.startswith("MhBone_"):
+            try:
+                idx = int(b.name.split("_")[-1])
+                if id_range[0] <= idx <= id_range[1]:
+                    used_ids.add(idx)
+            except (ValueError, IndexError):
+                pass
+    success = 0
+    fail = 0
+    edit_bones = armature.data.edit_bones
+    for name in physics_bones_ordered:
+        new_id = _assign_next_id(used_ids, id_range)
+        if new_id is None or edit_bones.get(name) is None:
+            fail += 1
+            continue
+        used_ids.add(new_id)
+        success += 1
+    return success, fail
+
+
 def _rename_physics_bones(armature, physics_bones_ordered, id_range):
     """将 physics_bones_ordered（骨骼名列表）重命名为 MhBone_xxx，使用 id_range 范围。
     返回 (成功数, 失败数)。"""
@@ -528,6 +553,11 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
         # 快速路径 + 直接重命名：一步到位
         if self.is_fast_path and self.fast_mode == 'DIRECT':
             context.view_layer.objects.active = armature
+            s, f = _count_rename_failures(armature, physics_bones, _SLOT_ID_RANGE['body'])
+            if f > 0:
+                self.report({'ERROR'},
+                    _("当前超出了 %d 个骨骼（ID 范围不足），请改用拆分模式") % f)
+                return {'CANCELLED'}
             success, fail = _rename_physics_bones(armature, physics_bones, _SLOT_ID_RANGE['body'])
             self.report({'INFO'}, _("重命名完成：成功 %d 根，失败 %d 根") % (success, fail))
             return {'FINISHED'}
@@ -593,6 +623,8 @@ class MHWI_OT_BatchRenamePhysicsBones(bpy.types.Operator):
     bl_label = "一键重命名"
     bl_options = {'REGISTER', 'UNDO'}
 
+    _fail_count: bpy.props.IntProperty(default=0, options={'HIDDEN'})
+
     @classmethod
     def poll(cls, context):
         return any(obj.type == 'ARMATURE' for obj in context.selected_objects)
@@ -602,7 +634,51 @@ class MHWI_OT_BatchRenamePhysicsBones(bpy.types.Operator):
         base = name[:-5] if name.endswith('.mod3') else name
         return base.endswith('_body')
 
-    def execute(self, context):
+    @staticmethod
+    def _count_failures_for_armature(mapper, arm_obj):
+        """预检单个骨架的失败数，但不实际改名。"""
+        preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
+        physics = _collect_physics_bones(arm_obj, preset_bones)
+        if not physics:
+            return 0
+
+        if MHWI_OT_BatchRenamePhysicsBones._is_body_slot(arm_obj.name):
+            _, f = _count_rename_failures(arm_obj, physics, _SLOT_ID_RANGE['body'])
+            return f
+        else:
+            physics_set = set(physics)
+            non_tail = [n for n in physics
+                        if not _is_tail_bone(arm_obj.data.bones[n], physics_set)]
+            tail = [n for n in physics
+                    if _is_tail_bone(arm_obj.data.bones[n], physics_set)]
+            _, f1 = _count_rename_failures(arm_obj, non_tail, (150, 200))
+            _, f2 = _count_rename_failures(arm_obj, tail, (201, 245))
+            return f1 + f2
+
+    def invoke(self, context, _event):
+        mapper = BoneMapManager()
+        if not mapper.load_preset("怪猎世界.json", is_import_x=True):
+            self.report({'ERROR'}, _("无法加载怪猎世界预设"))
+            return {'CANCELLED'}
+
+        armatures = [obj for obj in context.selected_objects if obj.type == 'ARMATURE']
+        total_fail = 0
+        for arm_obj in armatures:
+            total_fail += self._count_failures_for_armature(mapper, arm_obj)
+
+        if total_fail == 0:
+            return self.execute(context)
+
+        self._fail_count = total_fail
+        return context.window_manager.invoke_props_dialog(self, width=360)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text=_("警告"), icon='ERROR')
+        layout.separator()
+        layout.label(
+            text=_("当前超出了 %d 个骨骼，建议先简化骨骼后再进行命名。") % self._fail_count)
+        layout.label(text=_("确定仍然进行重命名？"))
         mapper = BoneMapManager()
         if not mapper.load_preset("怪猎世界.json", is_import_x=True):
             self.report({'ERROR'}, _("无法加载怪猎世界预设"))
