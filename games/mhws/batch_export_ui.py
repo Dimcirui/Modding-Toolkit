@@ -1,7 +1,8 @@
 import bpy
 from .batch_export import (
     MHWS_PARTS, MHWS_VARIANTS, DEFAULT_FILE_TYPES,
-    _load_scheme, _resolve_part_file_types, get_binding, set_binding,
+    _load_scheme, _resolve_part_file_types, _canonical_order_file_types,
+    get_binding, set_binding,
 )
 
 EXPORTER_WINDOW_WIDTH = 580
@@ -147,11 +148,13 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
         per_part_fts = {}
         all_file_types = []
         for part_id, part_name in active_parts:
-            fts = _resolve_part_file_types(armor_set, part_id) if armor_set else DEFAULT_FILE_TYPES
+            fts = _canonical_order_file_types(
+                _resolve_part_file_types(armor_set, part_id)) if armor_set else DEFAULT_FILE_TYPES
             per_part_fts[part_id] = fts
             for ft in fts:
                 if ft not in all_file_types:
                     all_file_types.append(ft)
+        all_file_types = _canonical_order_file_types(all_file_types)
 
         layout.separator()
 

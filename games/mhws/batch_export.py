@@ -37,6 +37,15 @@ MHWS_VARIANTS = [
 # { "id": "...", "file_types": ["mesh", "mdf2"] }  ← 只有 mesh 和 mdf2，无物理
 DEFAULT_FILE_TYPES = ["mesh", "mdf2", "chain2", "clsp"]
 
+# 规范导出顺序，确保不管 JSON 数据怎么存都按此顺序处理
+_CANONICAL_FILE_TYPE_ORDER = ["mesh", "mdf2", "chain2", "clsp", "gpuc"]
+_CANONICAL_FILE_TYPE_INDEX = {ft: i for i, ft in enumerate(_CANONICAL_FILE_TYPE_ORDER)}
+
+
+def _canonical_order_file_types(fts):
+    """将 file_types 列表按规范顺序排列，未知类型追加到末尾"""
+    return sorted(fts, key=lambda ft: _CANONICAL_FILE_TYPE_INDEX.get(ft, len(_CANONICAL_FILE_TYPE_ORDER)))
+
 _EXPORT_FUNCS = {
     "mesh":   _do_export_mesh,
     "mdf2":   _do_export_mdf2,
@@ -337,7 +346,8 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
         for part_id, part_name in MHWS_PARTS:
             if not (parts_mask & (1 << (int(part_id) - 1))):
                 continue
-            part_fts = _resolve_part_file_types(armor_set, part_id)
+            part_fts = _canonical_order_file_types(
+                _resolve_part_file_types(armor_set, part_id))
             for filetype in part_fts:
                 filepath = _make_filepath(natives_root, base_path, part_id, variant_armor_id, filetype)
                 label = f"{part_name} {filetype.upper()}"
