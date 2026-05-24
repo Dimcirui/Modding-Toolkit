@@ -731,6 +731,8 @@ class MdfTexProcessBase(bpy.types.Operator):
             self.report({'ERROR'}, "请先点击 Refresh 加载材质")
             return {'CANCELLED'}
 
+        print(f"[{cls._log_tag}] {'='*40}", flush=True)
+
         _t_import = time.time()
         ImageListToDDS, DDSToTex = _import_tex_utils()
         # print(f"[{cls._log_tag}] 加载外部模块: {time.time() - _t_import:.2f}s", flush=True)
@@ -874,12 +876,12 @@ class MdfTexProcessBase(bpy.types.Operator):
                         print(f"[{cls._log_tag}] FAIL {slot.texture_type}: {err}")
                         fail_count += 1
 
-            # print(f"[{cls._log_tag}] 材质耗时: {mat_item.material_name} {time.time() - _t_mat:.2f}s", flush=True)
+            print(f"[{cls._log_tag}] 材质耗时: {mat_item.material_name} {time.time() - _t_mat:.2f}s", flush=True)
 
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
 
-        # print(f"[{cls._log_tag}] ★ 总耗时: {time.time() - _t_total:.2f}s ★", flush=True)
+        print(f"[{cls._log_tag}] ★ 总耗时: {time.time() - _t_total:.2f}s ★", flush=True)
 
         if fail_count > 0:
             self.report({'WARNING'},

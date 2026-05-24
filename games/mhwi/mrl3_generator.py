@@ -148,6 +148,8 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
             self.report({'ERROR'}, "请先点击 Refresh 加载材质")
             return {'CANCELLED'}
 
+        print(f"[{self._log_tag}] {'='*40}", flush=True)
+
         _t_import = time.time()
         ConvertDDSToTex = _import_mhwi_tex_convert()
         # print(f"[{self._log_tag}] 加载 MHW Model Editor 模块: {time.time() - _t_import:.2f}s", flush=True)
@@ -192,11 +194,11 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
         _t_sep = time.time()
         try:
             _separate_mesh_by_material(context, mod3_col)
-            # print(f"[{self._log_tag}] 分离网格: {time.time() - _t_sep:.2f}s", flush=True)
+            print(f"[{self._log_tag}] 分离网格: {time.time() - _t_sep:.2f}s", flush=True)
         except Exception as e:
             print(f"[{self._log_tag}] Mesh separate/rename warning: {e}")
 
-        # print(f"[{self._log_tag}] ★ 总耗时: {time.time() - _t_total:.2f}s ★", flush=True)
+        print(f"[{self._log_tag}] ★ 总耗时: {time.time() - _t_total:.2f}s ★", flush=True)
         if fail_count:
             self.report({'WARNING'}, f"完成: 成功 {export_count}, 失败 {fail_count}")
         else:

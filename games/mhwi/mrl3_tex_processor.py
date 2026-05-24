@@ -322,6 +322,8 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
             self.report({'ERROR'}, "请先点击 Refresh 加载材质")
             return {'CANCELLED'}
 
+        print("[MHWI Tex] ========================================", flush=True)
+
         _t_import = time.time()
         ConvertDDSToTex = _import_mhwtex_convert()
         # print(f"[MHWI Tex] 加载 MHW Model Editor 模块: {time.time() - _t_import:.2f}s", flush=True)
@@ -487,12 +489,12 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                         print(f"[MHWI Tex] FAIL  {slot.texture_type}: {err}")
                         fail_count += 1
 
-            # print(f"[MHWI Tex] 材质耗时: {mat_item.material_name} {time.time() - _t_mat:.2f}s", flush=True)
+            print(f"[MHWI Tex] 材质耗时: {mat_item.material_name} {time.time() - _t_mat:.2f}s", flush=True)
 
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
 
-        # print(f"[MHWI Tex] ★ 总耗时: {time.time() - _t_total:.2f}s ★", flush=True)
+        print(f"[MHWI Tex] ★ 总耗时: {time.time() - _t_total:.2f}s ★", flush=True)
 
         if fail_count > 0:
             self.report({'WARNING'},

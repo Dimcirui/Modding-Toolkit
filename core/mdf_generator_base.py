@@ -672,7 +672,7 @@ def _get_pbr_paths(material, strategies, tmp_dir, bake_size, context, mesh_obj):
                 _t_bake = time.time()
                 paths[pbr_type] = _bake_pbr_channel(
                     material, pbr_type, mesh_obj, bake_size, tmp_dir, context)
-                # print(f"[MDF Gen]   烘培 {pbr_type}: {time.time() - _t_bake:.2f}s", flush=True)
+                print(f"[MDF Gen]   烘培 {pbr_type}: {time.time() - _t_bake:.2f}s", flush=True)
             else:
                 print(f"[MDF Gen] No mesh found for baking {material.name}/{pbr_type}, skipping")
                 paths[pbr_type] = None
@@ -1048,6 +1048,8 @@ class MdfGenProcessBase(bpy.types.Operator):
             self.report({'ERROR'}, "请先点击 Refresh 加载材质")
             return {'CANCELLED'}
 
+        print(f"[{cls._log_tag}] {'='*40}", flush=True)
+
         _t_import = time.time()
         ImageListToDDS, DDSToTex = _import_tex_utils()
         # print(f"[{cls._log_tag}] 加载 RE Mesh Editor 模块: {time.time() - _t_import:.2f}s", flush=True)
@@ -1091,11 +1093,11 @@ class MdfGenProcessBase(bpy.types.Operator):
         _t_sep = time.time()
         try:
             _separate_mesh_by_material(context, mesh_col)
-            # print(f"[{cls._log_tag}] 分离网格: {time.time() - _t_sep:.2f}s", flush=True)
+            print(f"[{cls._log_tag}] 分离网格: {time.time() - _t_sep:.2f}s", flush=True)
         except Exception as e:
             print(f"[{cls._log_tag}] Mesh separate/rename warning: {e}")
 
-        # print(f"[{cls._log_tag}] ★ 总耗时: {time.time() - _t_total:.2f}s ★", flush=True)
+        print(f"[{cls._log_tag}] ★ 总耗时: {time.time() - _t_total:.2f}s ★", flush=True)
         if fail_count:
             self.report({'WARNING'}, f"完成: 成功 {export_count}, 失败 {fail_count}")
         else:
