@@ -16,10 +16,11 @@ import json
 import re
 import tempfile
 import shutil
+import time
 
 from .mdf_tex_processor_base import (
     BASE_SLOT_CHANNEL_MAPS, BASE_NULL_TEX_BY_TYPE, BASE_TEXTURE_TYPE_ABBREV,
-    SRGB_SLOT_TYPES, PBR_DEFAULTS,
+    SRGB_SLOT_TYPES, PBR_DEFAULTS, PBR_CHANNEL_SELECTABLE, _CH,
     _import_tex_utils, _compose_channels,
     make_mdf_path, make_disk_path,
 )
@@ -94,36 +95,70 @@ def detect_shader_type(material):
     return SHADER_UNKNOWN
 
 
-def _analyze_principled_input(principled_node, input_name):
+def _analyze_principled_input(principled_node, input_name, mat_name=None, pbr_type=None):
     """
-    Returns ('DIRECT', filepath) | ('SOLID', value) | ('BAKE', None).
+    Returns ('DIRECT', filepath, source_channel) | ('SOLID', value) | ('BAKE', None).
 
     DIRECT:  Image Texture directly connected, or via a Normal Map node.
+             Third element is 'R' (Color output) or 'A' (Alpha output) to
+             indicate which source channel should be read during composition.
     SOLID:   Socket unlinked — use default_value as a constant solid texture.
     BAKE:    Complex node chain — Cycles bake required.
     """
+    _tag = f"[MDF Gen]   STRATEGY {mat_name}/{pbr_type}" if mat_name and pbr_type else "[MDF Gen]"
+
     socket = principled_node.inputs.get(input_name)
     if socket is None:
+        # print(f"{_tag}: 输入端 '{input_name}' 不存在 → SOLID(0.0)", flush=True)
         return ('SOLID', 0.0)
     if not socket.is_linked:
+        # print(f"{_tag}: '{input_name}' 未连接 → SOLID", flush=True)
         return ('SOLID', socket.default_value)
 
     src = socket.links[0].from_node
 
-    if src.type == 'TEX_IMAGE' and src.image:
+    if src.type == 'TEX_IMAGE':
+        if not src.image:
+            # print(f"{_tag}: TEX_IMAGE({src.name}) 无图片数据 → BAKE", flush=True)
+            return ('BAKE', None)
         path = bpy.path.abspath(src.image.filepath)
-        if path and os.path.isfile(path):
-            return ('DIRECT', path)
+        if not path:
+            # print(f"{_tag}: TEX_IMAGE({src.name}) 路径为空 → BAKE", flush=True)
+            return ('BAKE', None)
+        if not os.path.isfile(path):
+            # print(f"{_tag}: TEX_IMAGE({src.name}) 文件不存在 → BAKE (路径: {path})", flush=True)
+            return ('BAKE', None)
+        from_sock = socket.links[0].from_socket
+        src_ch = 'A' if from_sock.name == 'Alpha' else 'R'
+        # print(f"{_tag}: TEX_IMAGE({src.name}) 文件有效 → DIRECT(ch={src_ch})", flush=True)
+        return ('DIRECT', path, src_ch)
 
-    elif src.type == 'NORMAL_MAP':
+    if src.type == 'NORMAL_MAP':
         nm_color = src.inputs.get('Color')
-        if nm_color and nm_color.is_linked:
-            nm_src = nm_color.links[0].from_node
-            if nm_src.type == 'TEX_IMAGE' and nm_src.image:
-                path = bpy.path.abspath(nm_src.image.filepath)
-                if path and os.path.isfile(path):
-                    return ('DIRECT', path)
+        if not nm_color:
+            # print(f"{_tag}: Normal Map({src.name}) 无 Color 输入端 → SOLID (默认法线 0.5,0.5,1.0)", flush=True)
+            return ('SOLID', (0.5, 0.5, 1.0, 1.0))
+        if not nm_color.is_linked:
+            # print(f"{_tag}: Normal Map({src.name}) Color 未连接 → SOLID (默认法线 0.5,0.5,1.0)", flush=True)
+            return ('SOLID', (0.5, 0.5, 1.0, 1.0))
+        nm_src = nm_color.links[0].from_node
+        if nm_src.type == 'TEX_IMAGE':
+            if not nm_src.image:
+                # print(f"{_tag}: Normal Map({src.name}) → TEX_IMAGE({nm_src.name}) 无图片数据 → BAKE", flush=True)
+                return ('BAKE', None)
+            path = bpy.path.abspath(nm_src.image.filepath)
+            if not path:
+                # print(f"{_tag}: Normal Map({src.name}) → TEX_IMAGE({nm_src.name}) 路径为空 → BAKE", flush=True)
+                return ('BAKE', None)
+            if not os.path.isfile(path):
+                # print(f"{_tag}: Normal Map({src.name}) → TEX_IMAGE({nm_src.name}) 文件不存在: {path} → BAKE", flush=True)
+                return ('BAKE', None)
+            # print(f"{_tag}: Normal Map({src.name}) → TEX_IMAGE({nm_src.name}) → DIRECT(ch=R)", flush=True)
+            return ('DIRECT', path, 'R')
+        # print(f"{_tag}: Normal Map({src.name}) Color ← {nm_src.type}({nm_src.name}) → BAKE", flush=True)
+        return ('BAKE', None)
 
+    # print(f"{_tag}: '{input_name}' ← 未识别节点类型 '{src.type}'({src.name}) → BAKE", flush=True)
     return ('BAKE', None)
 
 
@@ -143,7 +178,7 @@ def analyze_material_strategies(material):
 
     if principled is not None:
         for pbr_type, input_name in PRINCIPLED_INPUT_MAP.items():
-            result[pbr_type] = _analyze_principled_input(principled, input_name)
+            result[pbr_type] = _analyze_principled_input(principled, input_name, material.name, pbr_type)
         result['ao'] = ('SOLID', 1.0)
         return result
 
@@ -161,14 +196,14 @@ def analyze_material_strategies(material):
 
     emission = _find_emission_shader(material)
     if emission is not None:
-        color_strat        = _analyze_principled_input(emission, 'Color')
+        color_strat        = _analyze_principled_input(emission, 'Color', material.name, 'emissive')
         result['color']    = color_strat
         result['emissive'] = color_strat
     else:
         mmd = _find_mmd_shader_dev(material)
         if mmd is not None:
-            result['color']    = _analyze_principled_input(mmd, _MMD_COLOR_SOCKET)
-            result['alpha']    = _analyze_principled_input(mmd, _MMD_ALPHA_SOCKET)
+            result['color']    = _analyze_principled_input(mmd, _MMD_COLOR_SOCKET, material.name, 'color')
+            result['alpha']    = _analyze_principled_input(mmd, _MMD_ALPHA_SOCKET, material.name, 'alpha')
             result['emissive'] = result['color']
 
     result['ao'] = ('SOLID', 1.0)
@@ -321,6 +356,93 @@ def _generate_solid_texture_path(value, tmp_dir, name_hint, size=SOLID_SIZE):
     return out_path
 
 
+# ── Composition cache helpers ───────────────────────────────────────────────────
+
+def _make_source_id(strat_val):
+    """Return a hashable identifier for a PBR source, or None if uncacheable (BAKE).
+
+    DIRECT → ('DIRECT', normalised_path)
+    SOLID  → ('SOLID', (r, g, b, a))
+    BAKE   → None
+    """
+    if not strat_val:
+        return None
+    strategy = strat_val[0]
+    value    = strat_val[1]
+    if strategy == 'DIRECT':
+        return ('DIRECT', os.path.normpath(value))
+    if strategy == 'SOLID':
+        if isinstance(value, (int, float)):
+            v = round(float(value), 6)
+            return ('SOLID', (v, v, v, 1.0))
+        else:
+            vals = [round(float(max(0.0, min(1.0, c))), 6) for c in list(value)[:4]]
+            while len(vals) < 4:
+                vals.append(1.0)
+            return ('SOLID', tuple(vals))
+    return None
+
+
+def _resolve_solid_rgba(strat_val):
+    """Return the 4-channel pixel value from a SOLID strategy, or None."""
+    if not strat_val or strat_val[0] != 'SOLID':
+        return None
+    value = strat_val[1]
+    if isinstance(value, (int, float)):
+        v = float(max(0.0, min(1.0, value)))
+        return (v, v, v, 1.0)
+    else:
+        vals = [float(max(0.0, min(1.0, c))) for c in list(value)[:4]]
+        while len(vals) < 4:
+            vals.append(1.0)
+        return tuple(vals)
+
+
+def _try_downgrade_slot(slot_type, strategies, pbr_channels, channel_maps):
+    """If every PBR source used by *slot_type* is a constant, return the
+    resulting RGBA pixel value as a 4-tuple; otherwise return None."""
+    ch_map = channel_maps.get(slot_type)
+    if ch_map is None:
+        return None
+
+    rgba = [0.0, 0.0, 0.0, 0.0]
+    for out_ch_name, src in ch_map.items():
+        out_i = _CH.get(out_ch_name)
+        if out_i is None:
+            return None
+
+        if src is None:
+            rgba[out_i] = 0.0
+        elif isinstance(src, (int, float)):
+            rgba[out_i] = float(src)
+        elif isinstance(src, tuple):
+            pbr_type = src[0]
+            in_ch_i  = src[1]
+            invert   = len(src) > 2 and src[2] is True
+
+            strat_val = strategies.get(pbr_type)
+            if strat_val is None or strat_val[0] != 'SOLID':
+                return None
+
+            solid_rgba = _resolve_solid_rgba(strat_val)
+            if solid_rgba is None:
+                return None
+
+            if pbr_type in PBR_CHANNEL_SELECTABLE:
+                override = pbr_channels.get(pbr_type)
+                if override:
+                    in_ch_i = _CH.get(override, in_ch_i)
+
+            val = solid_rgba[in_ch_i]
+            if invert:
+                val = 1.0 - val
+            rgba[out_i] = val
+        else:
+            return None
+
+    return tuple(rgba)
+
+
 # ── Cycles baking ──────────────────────────────────────────────────────────────
 
 def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context):
@@ -357,9 +479,49 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context):
     tmp_restore = []   # (kind, ...) tuples describing what to undo
 
     orig_engine = context.scene.render.engine
+    # print(f"[MDF Gen]   烘培 {material.name}/{pbr_type}: 原始引擎={orig_engine}", flush=True)
+
+    # ── Save Cycles GPU / device state ──────────────────────────────────────
+    cycles_scene = context.scene.cycles
+    orig_device  = cycles_scene.device
+    orig_samples = cycles_scene.samples
+    orig_compute_device_type = None
+    orig_dev_use = {}
+    try:
+        cprefs = bpy.context.preferences.addons['cycles'].preferences
+        orig_compute_device_type = cprefs.compute_device_type
+        for d in cprefs.devices:
+            orig_dev_use[d.name] = d.use
+#         print(f"[MDF Gen]   烘培 {material.name}/{pbr_type}: 原始GPU后端={orig_compute_device_type}, "
+#               f"活跃设备={[d.name for d in cprefs.devices if d.use]}", flush=True)
+    except Exception:
+        pass
 
     try:
         context.scene.render.engine = 'CYCLES'
+        # print(f"[MDF Gen]   烘培 {material.name}/{pbr_type}: 切换后引擎={context.scene.render.engine}", flush=True)
+
+        # ── Force GPU compute ───────────────────────────────────────────────
+        try:
+            cycles_scene.device = 'GPU'
+            cycles_scene.samples = 1
+            cprefs = bpy.context.preferences.addons['cycles'].preferences
+            # Pick the first available GPU backend
+            for dt in ('OPTIX', 'CUDA', 'HIP', 'METAL'):
+                try:
+                    cprefs.compute_device_type = dt
+                    cprefs.get_devices()
+                    if any(d.type == dt for d in cprefs.devices):
+                        break
+                except Exception:
+                    continue
+            for d in cprefs.devices:
+                d.use = (d.type == cprefs.compute_device_type)
+#             print(f"[MDF Gen]   烘培 {material.name}/{pbr_type}: "
+#                   f"GPU后端={cprefs.compute_device_type}, "
+#                   f"已启用={[d.name for d in cprefs.devices if d.use]}", flush=True)
+        except Exception:
+            pass
 
         bake_type   = 'EMIT' if principled is None else 'DIFFUSE'
         bake_kwargs = {}
@@ -420,6 +582,7 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context):
         mesh_obj.select_set(True)
         context.view_layer.objects.active = mesh_obj
 
+        # print(f"[MDF Gen]   烘培 {material.name}/{pbr_type}: 开始 (type={bake_type}, size={size}, samples={cycles_scene.samples})", flush=True)
         bpy.ops.object.bake(type=bake_type, **bake_kwargs)
 
         out_path = os.path.join(tmp_dir, f"_baked_{_slugify(material.name)}_{pbr_type}.png")
@@ -455,6 +618,25 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context):
         if img_name in bpy.data.images:
             bpy.data.images.remove(bpy.data.images[img_name])
         context.scene.render.engine = orig_engine
+        # print(f"[MDF Gen]   烘培 {material.name}/{pbr_type}: 已恢复引擎={context.scene.render.engine}", flush=True)
+        # Restore Cycles GPU / device state
+        try:
+            cycles_scene.device = orig_device
+            cycles_scene.samples = orig_samples
+        except Exception:
+            pass
+        if orig_compute_device_type is not None:
+            try:
+                cprefs = bpy.context.preferences.addons['cycles'].preferences
+                cprefs.compute_device_type = orig_compute_device_type
+                cprefs.get_devices()
+                for d in cprefs.devices:
+                    if d.name in orig_dev_use:
+                        d.use = orig_dev_use[d.name]
+#                 print(f"[MDF Gen]   烘培 {material.name}/{pbr_type}: "
+#                       f"已恢复GPU后端={orig_compute_device_type}", flush=True)
+            except Exception:
+                pass
 
 
 def _detect_max_tex_size(material):
@@ -474,7 +656,9 @@ def _get_pbr_paths(material, strategies, tmp_dir, bake_size, context, mesh_obj):
     Returns dict {pbr_type: path_or_None}.
     """
     paths = {}
-    for pbr_type, (strategy, value) in strategies.items():
+    for pbr_type, strat_val in strategies.items():
+        strategy = strat_val[0]
+        value    = strat_val[1]
         if strategy == 'DIRECT':
             paths[pbr_type] = value
 
@@ -485,8 +669,10 @@ def _get_pbr_paths(material, strategies, tmp_dir, bake_size, context, mesh_obj):
 
         elif strategy == 'BAKE':
             if mesh_obj:
+                _t_bake = time.time()
                 paths[pbr_type] = _bake_pbr_channel(
                     material, pbr_type, mesh_obj, bake_size, tmp_dir, context)
+                print(f"[MDF Gen]   烘培 {pbr_type}: {time.time() - _t_bake:.2f}s", flush=True)
             else:
                 print(f"[MDF Gen] No mesh found for baking {material.name}/{pbr_type}, skipping")
                 paths[pbr_type] = None
@@ -804,14 +990,14 @@ class MdfGenRefreshBase(bpy.types.Operator):
             # Strategy summary shown in collapsed view
             parts = []
             for pt in ('color', 'normal', 'roughness', 'metallic', 'alpha', 'emissive'):
-                s, _ = strategies.get(pt, ('?', None))
-                parts.append(f"{pt[0].upper()}:{strategy_label(s)}")
+                sv = strategies.get(pt, ('?', None))
+                parts.append(f"{pt[0].upper()}:{strategy_label(sv[0])}")
             item.strategy_display = '  '.join(parts)
 
             # Per-channel strategy labels (for expanded view)
             for pt in ('color', 'metallic', 'roughness', 'normal', 'alpha', 'emissive'):
-                s, _ = strategies.get(pt, ('?', None))
-                setattr(item, f"strat_{pt}", strategy_label(s))
+                sv = strategies.get(pt, ('?', None))
+                setattr(item, f"strat_{pt}", strategy_label(sv[0]))
 
         self.report({'INFO'}, f"已扫描 {len(settings.material_list)} 个材质")
         return {'FINISHED'}
@@ -836,6 +1022,7 @@ class MdfGenProcessBase(bpy.types.Operator):
     _bake_size         = BAKE_SIZE_DEFAULT
 
     def execute(self, context):
+        _t_total = time.time()
         cls      = type(self)
         settings = getattr(context.scene, cls._settings_attr)
 
@@ -861,12 +1048,18 @@ class MdfGenProcessBase(bpy.types.Operator):
             self.report({'ERROR'}, "请先点击 Refresh 加载材质")
             return {'CANCELLED'}
 
+        print(f"[{cls._log_tag}] {'='*40}", flush=True)
+
+        _t_import = time.time()
         ImageListToDDS, DDSToTex = _import_tex_utils()
+        # print(f"[{cls._log_tag}] 加载 RE Mesh Editor 模块: {time.time() - _t_import:.2f}s", flush=True)
         if ImageListToDDS is None:
             self.report({'ERROR'}, "无法加载 RE Mesh Editor 贴图工具，请确认已安装并启用")
             return {'CANCELLED'}
 
+        _t_import = time.time()
         readPresetJSON = _import_read_preset_json()
+        # print(f"[{cls._log_tag}] 加载 Preset 模块: {time.time() - _t_import:.2f}s", flush=True)
         if readPresetJSON is None:
             self.report({'ERROR'}, "无法加载 RE Mesh Editor Preset 工具")
             return {'CANCELLED'}
@@ -874,18 +1067,21 @@ class MdfGenProcessBase(bpy.types.Operator):
         mdf_col = self._get_or_create_mdf_collection(context, mesh_col, settings)
 
         temp_dir = tempfile.mkdtemp(prefix="mdf_gen_")
+        comp_cache = {}  # (slot_type, source_ids, pbr_channels) → (composed, disk, mdf)
         export_count = fail_count = 0
 
         try:
             for mat_entry in settings.material_list:
                 try:
+                    _t_mat = time.time()
                     self._process_one_material(
                         context, mat_entry, settings, mdf_col,
                         natives_root, base_path, temp_dir,
                         ImageListToDDS, DDSToTex, readPresetJSON, cls, mesh_col,
+                        comp_cache,
                     )
                     export_count += 1
-                    print(f"[{cls._log_tag}] OK: {mat_entry.blender_material}")
+                    print(f"[{cls._log_tag}] OK: {mat_entry.blender_material} ({time.time() - _t_mat:.2f}s)")
                 except Exception as e:
                     import traceback
                     print(f"[{cls._log_tag}] FAIL {mat_entry.blender_material}: {e}")
@@ -894,16 +1090,19 @@ class MdfGenProcessBase(bpy.types.Operator):
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
 
+        _t_sep = time.time()
         try:
             _separate_mesh_by_material(context, mesh_col)
+            print(f"[{cls._log_tag}] 分离网格: {time.time() - _t_sep:.2f}s", flush=True)
         except Exception as e:
             print(f"[{cls._log_tag}] Mesh separate/rename warning: {e}")
 
+        print(f"[{cls._log_tag}] ★ 总耗时: {time.time() - _t_total:.2f}s ★", flush=True)
         if fail_count:
             self.report({'WARNING'}, f"完成: 成功 {export_count}, 失败 {fail_count}")
         else:
             self.report({'INFO'}, f"完成: 成功生成 {export_count} 个材质的 MDF2 + 贴图")
-        return {'FINISHED'}
+        return {'FINISHED'}  # MdfGenProcessBase
 
     # ── helpers ────────────────────────────────────────────────────────────────
 
@@ -939,7 +1138,8 @@ class MdfGenProcessBase(bpy.types.Operator):
 
     def _process_one_material(self, context, mat_entry, settings, mdf_col,
                                natives_root, base_path, temp_dir,
-                               ImageListToDDS, DDSToTex, readPresetJSON, cls, mesh_col):
+                               ImageListToDDS, DDSToTex, readPresetJSON, cls, mesh_col,
+                               comp_cache):
         mat_name = mat_entry.blender_material
         mat = bpy.data.materials.get(mat_name)
         if not mat:
@@ -959,16 +1159,39 @@ class MdfGenProcessBase(bpy.types.Operator):
             None,
         )
 
+        _t = time.time()
         strategies = analyze_material_strategies(mat)
+        # print(f"[{cls._log_tag}]   分析材质节点: {time.time() - _t:.2f}s", flush=True)
         bake_size  = max(_detect_max_tex_size(mat), cls._bake_size)
+        _t = time.time()
         pbr_paths  = _get_pbr_paths(
             mat, strategies, temp_dir, bake_size, context, mesh_obj)
+        # print(f"[{cls._log_tag}]   解析PBR路径 (含烘培): {time.time() - _t:.2f}s", flush=True)
+
+        # User-provided AO override (Blender has no built-in AO node)
+        if getattr(mat_entry, 'use_ao', False):
+            ao_path_raw = getattr(mat_entry, 'ao_image', '')
+            if ao_path_raw:
+                ao_path = bpy.path.abspath(ao_path_raw)
+                if ao_path and os.path.isfile(ao_path):
+                    strategies['ao'] = ('DIRECT', ao_path, 'R')
+                    pbr_paths['ao'] = ao_path
+
+        # Build source-channel overrides from DIRECT strategies where the
+        # Image Texture's Alpha output (not Color) was connected — this
+        # ensures alpha data is read from the A channel instead of R.
+        pbr_channels = {}
+        for pbr_type, strat_val in strategies.items():
+            if strat_val[0] == 'DIRECT' and len(strat_val) > 2 and strat_val[2] != 'R':
+                pbr_channels[pbr_type] = strat_val[2]
 
         tex_name = _slugify(_strip_blender_suffix(mat_name))
 
         # Determine which slot types the preset expects
+        _t = time.time()
         with open(preset_path, encoding='utf-8') as f:
             preset_data = json.load(f)
+        # print(f"[{cls._log_tag}]   加载Preset JSON: {time.time() - _t:.2f}s", flush=True)
         slot_types = [b["Texture Type"] for b in preset_data.get("Texture Bindings", [])]
 
         use_toon         = getattr(mat_entry, 'use_toon', False)
@@ -989,38 +1212,123 @@ class MdfGenProcessBase(bpy.types.Operator):
                         slot_mdf_paths[slot_type] = null
                     continue
 
-            if slot_type in cls._channel_maps:
-                composed = _compose_channels(
-                    slot_type, pbr_paths, {}, temp_dir, tex_name,
-                    channel_maps=cls._channel_maps,
+            if slot_type not in cls._channel_maps:
+                null = cls._null_tex_by_type.get(slot_type)
+                if null:
+                    slot_mdf_paths[slot_type] = null
+                continue
+
+            # --- skip_textures: just compute the binding path ---
+            if getattr(mat_entry, 'skip_textures', False):
+                slot_mdf_paths[slot_type] = make_mdf_path(
+                    base_path, tex_name, slot_type,
+                    cls._abbrev_map, cls._use_art_prefix,
                 )
-                if composed:
-                    dds_fmt   = ('BC7_UNORM_SRGB' if slot_type in SRGB_SLOT_TYPES
-                                 else 'BC7_UNORM')
-                    disk_path = make_disk_path(
-                        natives_root, base_path, tex_name, slot_type,
-                        cls._abbrev_map, cls._tex_version, cls._use_art_prefix,
-                    )
-                    os.makedirs(os.path.dirname(disk_path), exist_ok=True)
+                continue
 
-                    dds_stem = os.path.splitext(os.path.basename(composed))[0]
-                    dds_path = os.path.join(temp_dir, dds_stem + '.dds')
-                    ImageListToDDS([(composed, dds_fmt)], temp_dir,
-                                   settings.generate_mipmaps)
-                    if not os.path.isfile(dds_path):
-                        raise FileNotFoundError(
-                            f"texconv output not found: {dds_path}")
-                    DDSToTex([dds_path], cls._tex_version, disk_path)
-
-                    slot_mdf_paths[slot_type] = make_mdf_path(
-                        base_path, tex_name, slot_type,
-                        cls._abbrev_map, cls._use_art_prefix,
-                    )
-                    print(f"[{cls._log_tag}]   {slot_type} -> {os.path.basename(disk_path)}")
+            # --- cache key construction ---
+            ch_map = cls._channel_maps[slot_type]
+            needed_pt = {src[0] for src in ch_map.values()
+                         if src is not None and isinstance(src, tuple)}
+            key_parts = []
+            cache_ok = True
+            for pt in sorted(needed_pt):
+                sv = strategies.get(pt)
+                if sv:
+                    sid = _make_source_id(sv)
+                    if sid is not None:
+                        key_parts.append((pt, sid))
+                    else:
+                        cache_ok = False
+                        break
                 else:
-                    null = cls._null_tex_by_type.get(slot_type)
-                    if null:
-                        slot_mdf_paths[slot_type] = null
+                    cache_ok = False
+                    break
+
+            cache_key = None
+            if cache_ok:
+                ch_ov = frozenset((k, v) for k, v in pbr_channels.items() if k in needed_pt)
+                cache_key = (slot_type, tuple(key_parts), ch_ov)
+                cached = comp_cache.get(cache_key)
+                if cached is not None:
+                    slot_mdf_paths[slot_type] = cached[2]
+                    continue
+
+                # Only attempt downgrade for cacheable slots (no BAKE involved)
+                rgba = _try_downgrade_slot(slot_type, strategies, pbr_channels, cls._channel_maps)
+                if rgba is not None:
+                    hint = f"{tex_name}_{slot_type.lower()}_dg"
+                    composed = _generate_solid_texture_path(rgba, temp_dir, hint, size=256)
+                    if composed:
+                        dds_fmt = ('BC7_UNORM_SRGB' if slot_type in SRGB_SLOT_TYPES
+                                   else 'BC7_UNORM')
+                        disk_path = make_disk_path(
+                            natives_root, base_path, tex_name, slot_type,
+                            cls._abbrev_map, cls._tex_version, cls._use_art_prefix,
+                        )
+                        os.makedirs(os.path.dirname(disk_path), exist_ok=True)
+
+                        dds_stem = os.path.splitext(os.path.basename(composed))[0]
+                        dds_path = os.path.join(temp_dir, dds_stem + '.dds')
+                        _t_dds = time.time()
+                        ImageListToDDS([(composed, dds_fmt)], temp_dir,
+                                       mat_entry.generate_mipmaps)
+                        # print(f"[{cls._log_tag}]   PNG→DDS {slot_type} (优化): {time.time() - _t_dds:.2f}s", flush=True)
+                        if not os.path.isfile(dds_path):
+                            raise FileNotFoundError(
+                                f"texconv output not found: {dds_path}")
+                        _t_tex = time.time()
+                        DDSToTex([dds_path], cls._tex_version, disk_path)
+                        # print(f"[{cls._log_tag}]   DDS→TEX {slot_type} (优化): {time.time() - _t_tex:.2f}s", flush=True)
+
+                        mdf_path = make_mdf_path(
+                            base_path, tex_name, slot_type,
+                            cls._abbrev_map, cls._use_art_prefix,
+                        )
+                        slot_mdf_paths[slot_type] = mdf_path
+                        comp_cache[cache_key] = (composed, disk_path, mdf_path)
+                        continue
+
+            # --- full composition path ---
+            _t_comp = time.time()
+            normal_flip_g = getattr(settings, 'flip_normal_g', False)
+            composed = _compose_channels(
+                slot_type, pbr_paths, pbr_channels, temp_dir, tex_name,
+                channel_maps=cls._channel_maps,
+                normal_flip_g=normal_flip_g,
+            )
+            # print(f"[{cls._log_tag}]   合成通道 {slot_type}: {time.time() - _t_comp:.2f}s", flush=True)
+            if composed:
+                dds_fmt   = ('BC7_UNORM_SRGB' if slot_type in SRGB_SLOT_TYPES
+                             else 'BC7_UNORM')
+                disk_path = make_disk_path(
+                    natives_root, base_path, tex_name, slot_type,
+                    cls._abbrev_map, cls._tex_version, cls._use_art_prefix,
+                )
+                os.makedirs(os.path.dirname(disk_path), exist_ok=True)
+
+                dds_stem = os.path.splitext(os.path.basename(composed))[0]
+                dds_path = os.path.join(temp_dir, dds_stem + '.dds')
+                _t_dds = time.time()
+                ImageListToDDS([(composed, dds_fmt)], temp_dir,
+                               mat_entry.generate_mipmaps)
+                # print(f"[{cls._log_tag}]   PNG→DDS {slot_type}: {time.time() - _t_dds:.2f}s", flush=True)
+                if not os.path.isfile(dds_path):
+                    raise FileNotFoundError(
+                        f"texconv output not found: {dds_path}")
+                _t_tex = time.time()
+                DDSToTex([dds_path], cls._tex_version, disk_path)
+                # print(f"[{cls._log_tag}]   DDS→TEX {slot_type}: {time.time() - _t_tex:.2f}s", flush=True)
+
+                mdf_path = make_mdf_path(
+                    base_path, tex_name, slot_type,
+                    cls._abbrev_map, cls._use_art_prefix,
+                )
+                slot_mdf_paths[slot_type] = mdf_path
+
+                if cache_key is not None:
+                    comp_cache[cache_key] = (composed, disk_path, mdf_path)
+                print(f"[{cls._log_tag}]   {slot_type} -> {os.path.basename(disk_path)}")
             else:
                 null = cls._null_tex_by_type.get(slot_type)
                 if null:
@@ -1041,7 +1349,9 @@ class MdfGenProcessBase(bpy.types.Operator):
                         slot_mdf_paths[st] = null
 
         # Create MDF2 material from preset and update texture binding paths
+        _t = time.time()
         mat_obj = readPresetJSON(preset_path, mdf_col)
+        # print(f"[{cls._log_tag}]   创建MDF2材质: {time.time() - _t:.2f}s", flush=True)
         if mat_obj is None:
             raise RuntimeError(f"readPresetJSON returned None for '{mat_name}'")
 

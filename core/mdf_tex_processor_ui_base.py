@@ -71,8 +71,6 @@ class MdfTexDialogBase(bpy.types.Operator):
             hint = layout.row()
             hint.label(text=f"    {cls._path_hint}", icon='INFO')
 
-        layout.prop(settings, "generate_mipmaps")
-
         if not settings.materials:
             layout.separator()
             layout.label(text="Select MDF collection and click refresh", icon='INFO')
@@ -145,6 +143,11 @@ class MdfTexDialogBase(bpy.types.Operator):
 
             if not mat.slots:
                 continue
+
+            # Per-material texture options
+            opt_row = box.row(align=True)
+            opt_row.prop(mat, "generate_mipmaps")
+            opt_row.prop(mat, "skip_textures")
 
             common_slots = [(si, s) for si, s in enumerate(mat.slots)
                             if s.texture_type in cls._common_slot_types]

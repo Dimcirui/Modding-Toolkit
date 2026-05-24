@@ -20,6 +20,37 @@
                     "armor_id": "ch03_001_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/001/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "gpuc",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -42,6 +73,38 @@
                     "armor_id": "ch03_003_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/003/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -64,6 +127,28 @@
                     "armor_id": "ch03_003_501",
                     "base_path": "natives/STM/Art/Model/Character/ch03/003/501"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -86,6 +171,38 @@
                     "armor_id": "ch03_004_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/004/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -108,6 +225,34 @@
                     "armor_id": "ch03_005_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/005/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -130,6 +275,36 @@
                     "armor_id": "ch03_006_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/006/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -153,6 +328,29 @@
                     "armor_id": "ch03_007_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/007/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -175,6 +373,38 @@
                     "armor_id": "ch03_008_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/008/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -197,6 +427,37 @@
                     "armor_id": "ch03_009_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/009/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -219,6 +480,36 @@
                     "armor_id": "ch03_010_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/010/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -242,6 +533,30 @@
                     "armor_id": "ch03_011_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/011/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -264,6 +579,38 @@
                     "armor_id": "ch03_012_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/012/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -286,6 +633,37 @@
                     "armor_id": "ch03_013_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/013/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -308,6 +686,36 @@
                     "armor_id": "ch03_014_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/014/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -330,6 +738,36 @@
                     "armor_id": "ch03_015_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/015/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -353,6 +791,29 @@
                     "armor_id": "ch03_016_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/016/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -375,6 +836,38 @@
                     "armor_id": "ch03_017_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/017/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -397,6 +890,28 @@
                     "armor_id": "ch03_017_301",
                     "base_path": "natives/STM/Art/Model/Character/ch03/017/301"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -419,6 +934,37 @@
                     "armor_id": "ch03_018_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/018/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -441,6 +987,38 @@
                     "armor_id": "ch03_019_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/019/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -464,6 +1042,29 @@
                     "armor_id": "ch03_020_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/020/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -486,6 +1087,36 @@
                     "armor_id": "ch03_021_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/021/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -508,6 +1139,33 @@
                     "armor_id": "ch03_021_301",
                     "base_path": "natives/STM/Art/Model/Character/ch03/021/301"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -530,6 +1188,34 @@
                     "armor_id": "ch03_022_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/022/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -552,6 +1238,36 @@
                     "armor_id": "ch03_023_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/023/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -574,6 +1290,36 @@
                     "armor_id": "ch03_024_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/024/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -596,6 +1342,35 @@
                     "armor_id": "ch03_025_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/025/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -619,6 +1394,30 @@
                     "armor_id": "ch03_026_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/026/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -641,6 +1440,34 @@
                     "armor_id": "ch03_027_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/027/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "gpuc",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -663,6 +1490,33 @@
                     "armor_id": "ch03_027_301",
                     "base_path": "natives/STM/Art/Model/Character/ch03/027/301"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -685,6 +1539,33 @@
                     "armor_id": "ch03_028_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/028/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -707,6 +1588,35 @@
                     "armor_id": "ch03_029_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/029/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -751,6 +1661,38 @@
                     "armor_id": "ch03_030_601",
                     "base_path": "natives/STM/Art/Model/Character/ch03/030/601"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -773,6 +1715,36 @@
                     "armor_id": "ch03_031_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/031/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -795,6 +1767,36 @@
                     "armor_id": "ch03_032_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/032/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "gpuc",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -839,6 +1841,36 @@
                     "armor_id": "ch03_032_501",
                     "base_path": "natives/STM/Art/Model/Character/ch03/032/501"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "gpuc",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -862,6 +1894,30 @@
                     "armor_id": "ch03_033_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/033/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -884,6 +1940,38 @@
                     "armor_id": "ch03_034_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/034/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -906,6 +1994,36 @@
                     "armor_id": "ch03_035_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/035/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -928,6 +2046,36 @@
                     "armor_id": "ch03_036_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/036/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -950,6 +2098,35 @@
                     "armor_id": "ch03_036_501",
                     "base_path": "natives/STM/Art/Model/Character/ch03/036/501"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -972,6 +2149,36 @@
                     "armor_id": "ch03_037_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/037/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "gpuc",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -994,6 +2201,35 @@
                     "armor_id": "ch03_038_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/038/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1016,6 +2252,36 @@
                     "armor_id": "ch03_039_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/039/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1038,6 +2304,36 @@
                     "armor_id": "ch03_040_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/040/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1060,6 +2356,38 @@
                     "armor_id": "ch03_041_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/041/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1082,6 +2410,36 @@
                     "armor_id": "ch03_042_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/042/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "gpuc",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1104,6 +2462,37 @@
                     "armor_id": "ch03_043_601",
                     "base_path": "natives/STM/Art/Model/Character/ch03/043/601"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1127,6 +2516,29 @@
                     "armor_id": "ch03_044_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/044/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1150,6 +2562,29 @@
                     "armor_id": "ch03_045_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/045/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1232,6 +2667,36 @@
                     "armor_id": "ch03_050_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/050/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1254,6 +2719,38 @@
                     "armor_id": "ch03_051_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/051/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1277,6 +2774,29 @@
                     "armor_id": "ch03_052_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/052/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1299,6 +2819,37 @@
                     "armor_id": "ch03_053_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/053/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1321,6 +2872,37 @@
                     "armor_id": "ch03_054_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/054/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1343,6 +2925,35 @@
                     "armor_id": "ch03_055_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/055/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1365,6 +2976,36 @@
                     "armor_id": "ch03_056_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/056/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1387,6 +3028,38 @@
                     "armor_id": "ch03_057_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/057/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1409,6 +3082,36 @@
                     "armor_id": "ch03_058_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/058/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1431,6 +3134,37 @@
                     "armor_id": "ch03_059_011",
                     "base_path": "natives/STM/Art/Model/Character/ch03/059/011"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "gpuc",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1524,6 +3258,29 @@
                     "armor_id": "ch03_065_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/065/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1546,6 +3303,37 @@
                     "armor_id": "ch03_066_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/066/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "gpuc",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1596,6 +3384,36 @@
                     "armor_id": "ch03_069_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/069/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "gpuc",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1632,6 +3450,34 @@
                     "armor_id": "ch03_071_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/071/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1654,6 +3500,29 @@
                     "armor_id": "ch03_072_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/072/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1690,6 +3559,36 @@
                     "armor_id": "ch03_074_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/074/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "gpuc",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1712,6 +3611,37 @@
                     "armor_id": "ch03_075_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/075/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1758,6 +3688,30 @@
                     "armor_id": "ch03_076_101",
                     "base_path": "natives/STM/Art/Model/Character/ch03/076/101"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1781,6 +3735,28 @@
                     "armor_id": "ch03_077_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/077/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1832,6 +3808,36 @@
                     "armor_id": "ch03_080_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/080/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1854,6 +3860,38 @@
                     "armor_id": "ch03_081_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/081/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1904,6 +3942,38 @@
                     "armor_id": "ch03_085_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/085/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1926,6 +3996,38 @@
                     "armor_id": "ch03_086_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/086/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -1949,6 +4051,28 @@
                     "armor_id": "ch03_087_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/087/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -2137,6 +4261,30 @@
                     "armor_id": "ch03_090_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/090/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -2195,6 +4343,35 @@
                     "armor_id": "ch03_093_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/093/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "gpuc",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -2232,6 +4409,30 @@
                     "armor_id": "ch03_095_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/095/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -2299,6 +4500,37 @@
                     "armor_id": "ch03_099_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/099/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -2321,6 +4553,36 @@
                     "armor_id": "ch03_100_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/100/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -2359,6 +4621,29 @@
                     "armor_id": "ch03_101_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/101/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -2382,6 +4667,30 @@
                     "armor_id": "ch03_102_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/102/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -2418,6 +4727,33 @@
                     "armor_id": "ch03_104_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/104/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "chain2",
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "chain2",
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "chain2",
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "chain2",
+                    "mdf2",
+                    "mesh"
+                ]
             }
         },
         {
@@ -2440,6 +4776,30 @@
                     "armor_id": "ch03_105_001",
                     "base_path": "natives/STM/Art/Model/Character/ch03/105/001"
                 }
+            },
+            "parts_file_types": {
+                "3": [
+                    "chain2",
+                    "clsp",
+                    "mdf2",
+                    "mesh"
+                ],
+                "2": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "1": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "5": [
+                    "mdf2",
+                    "mesh"
+                ],
+                "4": [
+                    "mdf2",
+                    "mesh"
+                ]
             }
         }
     ]

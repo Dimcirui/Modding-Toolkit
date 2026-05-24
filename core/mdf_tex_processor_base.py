@@ -3,6 +3,7 @@ import os
 import json
 import tempfile
 import shutil
+import time
 
 # ── PBR Constants ──────────────────────────────────────────────────────────────
 
@@ -109,27 +110,27 @@ BASE_SLOT_CHANNEL_MAPS = {
     },
     'AlphaTranslucentOcclusionSSSMap': {
         'R': ('alpha', 0),
-        'G': None,
+        'G': 1.0,
         'B': ('ao',   0),
-        'A': None,
+        'A': 1.0,
     },
     'SSSCavityOcclusionTranslucentMap': {
-        'R': None,
+        'R': 1.0,
         'G': 1.0,
         'B': ('ao', 0),
-        'A': None,
+        'A': 1.0,
     },
     'AlphaCavityOcclusionTranslucentMap': {
         'R': ('alpha', 0),
         'G': 1.0,
         'B': ('ao', 0),
-        'A': None,
+        'A': 1.0,
     },
     'AlphaTranslucentOcclusionCavityMap': {
         'R': ('alpha', 0),
-        'G': None,
+        'G': 1.0,
         'B': ('ao', 0),
-        'A': None,
+        'A': 1.0,
     },
 }
 
@@ -512,6 +513,12 @@ class MdfTexMaterialItem(bpy.types.PropertyGroup):
     expanded:          bpy.props.BoolProperty(default=False)
     pbr_expanded:      bpy.props.BoolProperty(default=False)
     other_expanded:    bpy.props.BoolProperty(default=False)
+    generate_mipmaps:  bpy.props.BoolProperty(name="生成 MipMaps", default=True)
+    skip_textures:     bpy.props.BoolProperty(
+        name="仅生成材质",
+        description="跳过贴图合成与转换，仅更新材质定义中的贴图路径",
+        default=False,
+    )
     pbr:   bpy.props.PointerProperty(type=MdfTexPBRInputs)
     slots: bpy.props.CollectionProperty(type=MdfTexSlotItem)
 
@@ -702,6 +709,7 @@ class MdfTexProcessBase(bpy.types.Operator):
     _log_tag          = "MDF Tex"
 
     def execute(self, context):
+        _t_total = time.time()
         scene    = context.scene
         cls      = type(self)
         settings = getattr(scene, cls._settings_attr)
@@ -723,7 +731,11 @@ class MdfTexProcessBase(bpy.types.Operator):
             self.report({'ERROR'}, "请先点击 Refresh 加载材质")
             return {'CANCELLED'}
 
+        print(f"[{cls._log_tag}] {'='*40}", flush=True)
+
+        _t_import = time.time()
         ImageListToDDS, DDSToTex = _import_tex_utils()
+        # print(f"[{cls._log_tag}] 加载外部模块: {time.time() - _t_import:.2f}s", flush=True)
         if ImageListToDDS is None or DDSToTex is None:
             self.report({'ERROR'}, "无法加载 RE Mesh Editor 贴图工具，请确认已安装并启用")
             return {'CANCELLED'}
@@ -733,6 +745,7 @@ class MdfTexProcessBase(bpy.types.Operator):
 
         try:
             for mat_item in settings.materials:
+                _t_mat = time.time()
                 mat_obj = settings.mdf_collection.objects.get(mat_item.material_obj_name)
                 if mat_obj is None:
                     continue
@@ -788,11 +801,19 @@ class MdfTexProcessBase(bpy.types.Operator):
 
                     try:
                         if slot.mode == 'COMPOSE':
+                            if mat_item.skip_textures:
+                                binding.path = mdf_path
+                                if slot.texture_type == 'BaseDielectricMap':
+                                    albd_path_out = mdf_path
+                                export_count += 1
+                                continue
+                            _t_comp = time.time()
                             src_img = _compose_channels(
                                 slot.texture_type, pbr_paths, pbr_channels,
                                 temp_dir, tex_name, pbr_inv,
                                 channel_maps=cls._channel_maps,
                                 normal_flip_g=normal_flip_g)
+                            # print(f"[{cls._log_tag}]   合成通道 {slot.texture_type}: {time.time() - _t_comp:.2f}s", flush=True)
                             if src_img is None:
                                 null_rel = cls._null_tex_by_type.get(slot.texture_type)
                                 if null_rel:
@@ -804,6 +825,10 @@ class MdfTexProcessBase(bpy.types.Operator):
                                     skip_count += 1
                                 continue
                         else:  # DIRECT
+                            if mat_item.skip_textures:
+                                binding.path = mdf_path
+                                export_count += 1
+                                continue
                             src_img = bpy.path.abspath(slot.direct_image)
                             if not src_img or not os.path.isfile(src_img):
                                 print(f"[{cls._log_tag}] SKIP direct {slot.texture_type}: not found")
@@ -824,16 +849,22 @@ class MdfTexProcessBase(bpy.types.Operator):
                         if '.tex' in src_name.lower():
                             shutil.copy2(src_img, disk_path)
                         elif src_lower.endswith('.dds'):
+                            _t_tex = time.time()
                             DDSToTex([src_img], cls._tex_version, disk_path)
+                            # print(f"[{cls._log_tag}]   DDS→TEX {slot.texture_type}: {time.time() - _t_tex:.2f}s", flush=True)
                         else:
                             dds_stem = os.path.splitext(src_name)[0]
                             dds_path = os.path.join(temp_dir, dds_stem + '.dds')
+                            _t_dds = time.time()
                             ImageListToDDS([(src_img, dds_fmt)], temp_dir,
-                                           settings.generate_mipmaps)
+                                           mat_item.generate_mipmaps)
+                            # print(f"[{cls._log_tag}]   PNG→DDS {slot.texture_type}: {time.time() - _t_dds:.2f}s", flush=True)
                             if not os.path.isfile(dds_path):
                                 raise FileNotFoundError(
                                     f"texconv output not found: {dds_path}")
+                            _t_tex = time.time()
                             DDSToTex([dds_path], cls._tex_version, disk_path)
+                            # print(f"[{cls._log_tag}]   DDS→TEX {slot.texture_type}: {time.time() - _t_tex:.2f}s", flush=True)
 
                         binding.path = mdf_path
                         if slot.texture_type == 'BaseDielectricMap':
@@ -845,8 +876,12 @@ class MdfTexProcessBase(bpy.types.Operator):
                         print(f"[{cls._log_tag}] FAIL {slot.texture_type}: {err}")
                         fail_count += 1
 
+            print(f"[{cls._log_tag}] 材质耗时: {mat_item.material_name} {time.time() - _t_mat:.2f}s", flush=True)
+
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
+
+        print(f"[{cls._log_tag}] ★ 总耗时: {time.time() - _t_total:.2f}s ★", flush=True)
 
         if fail_count > 0:
             self.report({'WARNING'},

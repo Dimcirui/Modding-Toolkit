@@ -12,6 +12,7 @@ MHWS_EXTS = {
     "mdf2":   "mdf2.45",
     "chain2": "chain2.14",
     "clsp":   "clsp.3",
+    "gpuc":   "gpuc.241111760",
 }
 
 # 5个固定部位
@@ -35,6 +36,15 @@ MHWS_VARIANTS = [
 # 未来可在 armor_set JSON 中通过 "file_types" 字段覆盖，例如:
 # { "id": "...", "file_types": ["mesh", "mdf2"] }  ← 只有 mesh 和 mdf2，无物理
 DEFAULT_FILE_TYPES = ["mesh", "mdf2", "chain2", "clsp"]
+
+# 规范导出顺序，确保不管 JSON 数据怎么存都按此顺序处理
+_CANONICAL_FILE_TYPE_ORDER = ["mesh", "mdf2", "chain2", "clsp", "gpuc"]
+_CANONICAL_FILE_TYPE_INDEX = {ft: i for i, ft in enumerate(_CANONICAL_FILE_TYPE_ORDER)}
+
+
+def _canonical_order_file_types(fts):
+    """将 file_types 列表按规范顺序排列，未知类型追加到末尾"""
+    return sorted(fts, key=lambda ft: _CANONICAL_FILE_TYPE_INDEX.get(ft, len(_CANONICAL_FILE_TYPE_ORDER)))
 
 _EXPORT_FUNCS = {
     "mesh":   _do_export_mesh,
@@ -110,6 +120,18 @@ def _get_blank_path(filetype):
     """Return the path to the built-in blank file for the given filetype."""
     addon_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     return os.path.join(addon_dir, "assets", "blank_files", "mhws", f"blank.{filetype}")
+
+
+def _resolve_part_file_types(armor_set, part_id):
+    """Resolve which file types apply to a specific part.
+    Priority: armor_set.parts_file_types[part_id] >
+              armor_set.file_types >
+              DEFAULT_FILE_TYPES
+    """
+    parts_fts = armor_set.get("parts_file_types")
+    if parts_fts and part_id in parts_fts:
+        return parts_fts[part_id]
+    return armor_set.get("file_types", DEFAULT_FILE_TYPES)
 
 
 def _make_filepath(natives_root, base_path, part_id, armor_id, filetype):
@@ -314,7 +336,6 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
 
         variant_armor_id = variant_data["armor_id"]
         base_path = variant_data["base_path"].replace("\\", "/")
-        file_types = armor_set.get("file_types", DEFAULT_FILE_TYPES)
         parts_mask = armor_set.get("parts_mask", 0b11111)
 
         export_count = 0
@@ -325,10 +346,27 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
         for part_id, part_name in MHWS_PARTS:
             if not (parts_mask & (1 << (int(part_id) - 1))):
                 continue
-            for filetype in file_types:
-                col = get_binding(scene, armor_id, variant, part_id, filetype)
+            part_fts = _canonical_order_file_types(
+                _resolve_part_file_types(armor_set, part_id))
+            for filetype in part_fts:
                 filepath = _make_filepath(natives_root, base_path, part_id, variant_armor_id, filetype)
                 label = f"{part_name} {filetype.upper()}"
+
+                # gpuc: always copy blank, unconditionally (no collection binding)
+                # gpuc files break mods when other files are edited, so must be replaced with blank
+                if filetype == "gpuc":
+                    blank_src = _get_blank_path("gpuc")
+                    if os.path.isfile(blank_src):
+                        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                        shutil.copy2(blank_src, filepath)
+                        print(f"[MHWs] {label}: BLANK -> {os.path.basename(filepath)}")
+                        export_count += 1
+                    else:
+                        print(f"[MHWs] SKIP gpuc (blank not found): {blank_src}")
+                        skip_count += 1
+                    continue
+
+                col = get_binding(scene, armor_id, variant, part_id, filetype)
                 if not col:
                     if use_blank:
                         blank_src = _get_blank_path(filetype)

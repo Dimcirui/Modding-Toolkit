@@ -78,7 +78,7 @@ class MHWS_OT_MdfGeneratorDialog(bpy.types.Operator):
         if not settings.texture_base_path.strip():
             layout.row().label(text="    e.g. Author/CharacterName/", icon='INFO')
 
-        layout.prop(settings, "generate_mipmaps")
+        layout.prop(settings, "flip_normal_g")
 
         # ── Preset dir status ──────────────────────────────────────────────────
         preset_dir = get_preset_dir_for_game(MHWS_GEN_GAME)
@@ -121,6 +121,11 @@ class MHWS_OT_MdfGeneratorDialog(bpy.types.Operator):
 
             if preset_has_emissive_slots(mat_entry.material_preset):
                 box.prop(mat_entry, "use_toon")
+            box.prop(mat_entry, "generate_mipmaps")
+            box.prop(mat_entry, "skip_textures")
+            box.prop(mat_entry, "use_ao")
+            if mat_entry.use_ao:
+                box.prop(mat_entry, "ao_image")
 
 
 classes = [MHWS_OT_MdfGeneratorDialog]

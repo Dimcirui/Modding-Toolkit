@@ -1,7 +1,8 @@
 import bpy
 from .batch_export import (
     MHWS_PARTS, MHWS_VARIANTS, DEFAULT_FILE_TYPES,
-    _load_scheme, get_binding, set_binding,
+    _load_scheme, _resolve_part_file_types, _canonical_order_file_types,
+    get_binding, set_binding,
 )
 
 EXPORTER_WINDOW_WIDTH = 580
@@ -18,6 +19,7 @@ _FILETYPE_LABELS = {
     "mdf2":   "MDF2",
     "chain2": "CHAIN2",
     "clsp":   "CLSP",
+    "gpuc":   "GPUC",
 }
 
 
@@ -128,36 +130,58 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
             layout.label(text="请选择装备以配置绑定", icon='INFO')
             return
 
-        # Get file_types for this armor set
+        # Get armor_set data
         scheme_file = settings.mhws_armor_scheme
         scheme = _load_scheme(scheme_file) if scheme_file and scheme_file != 'NONE' else None
         if scheme:
             armor_set = next(
                 (a for a in scheme.get("armor_sets", []) if a["id"] == armor_id), None
             )
-            file_types = armor_set.get("file_types", DEFAULT_FILE_TYPES) if armor_set else DEFAULT_FILE_TYPES
         else:
-            file_types = DEFAULT_FILE_TYPES
+            armor_set = None
 
         parts_mask = armor_set.get("parts_mask", 0b11111) if armor_set else 0b11111
         active_parts = [(pid, pname) for pid, pname in MHWS_PARTS
                         if parts_mask & (1 << (int(pid) - 1))]
+
+        # Compute per-part file types and the union across all parts
+        per_part_fts = {}
+        all_file_types = []
+        for part_id, part_name in active_parts:
+            fts = _canonical_order_file_types(
+                _resolve_part_file_types(armor_set, part_id)) if armor_set else DEFAULT_FILE_TYPES
+            per_part_fts[part_id] = fts
+            for ft in fts:
+                if ft not in all_file_types:
+                    all_file_types.append(ft)
+        all_file_types = _canonical_order_file_types(all_file_types)
 
         layout.separator()
 
         # ── Header row ──
         header = layout.row(align=False)
         header.label(text="")  # part name column placeholder
-        for ft in file_types:
-            header.label(text=_FILETYPE_LABELS[ft], icon=_FILETYPE_ICONS[ft])
+        for ft in all_file_types:
+            header.label(text=_FILETYPE_LABELS.get(ft, ft.upper()), icon=_FILETYPE_ICONS.get(ft, 'DOT'))
 
         # ── Part rows ──
         for part_id, part_name in active_parts:
             row = layout.row(align=False)
             row.label(text=f"{part_id}  {part_name}")
-            for ft in file_types:
-                cur = get_binding(scene, armor_id, variant, part_id, ft)
+            part_fts = per_part_fts[part_id]
+            for ft in all_file_types:
                 sub = row.row(align=True)
+                if ft not in part_fts:
+                    # This file type does not apply to this part
+                    sub.label(text="")
+                    continue
+
+                if ft == "gpuc":
+                    # gpuc is always blank-copied, no collection binding
+                    sub.label(text="AUTO", icon='FILE_BLANK')
+                    continue
+
+                cur = get_binding(scene, armor_id, variant, part_id, ft)
                 op = sub.operator(
                     "mhws.pick_collection",
                     text=cur if cur else "—",

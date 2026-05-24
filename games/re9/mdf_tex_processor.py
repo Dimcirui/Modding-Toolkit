@@ -68,7 +68,6 @@ class RE9MdfTexProcessorSettings(bpy.types.PropertyGroup):
         description="Path under natives/STM/ (e.g. character/cha102_00)",
         default="",
     )
-    generate_mipmaps: bpy.props.BoolProperty(name="Generate MipMaps", default=True)
     materials:             bpy.props.CollectionProperty(type=MdfTexMaterialItem)
     materials_index:       bpy.props.IntProperty()
     clipboard_json:        bpy.props.StringProperty(default="")

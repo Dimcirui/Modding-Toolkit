@@ -42,6 +42,27 @@ class RE4GenMaterialEntry(bpy.types.PropertyGroup):
         description="跳过自发光贴图处理，将自发光槽位路径设为与基础色槽位相同",
         default=False,
     )
+    generate_mipmaps: bpy.props.BoolProperty(name="生成 MipMaps", default=True)
+    skip_textures:    bpy.props.BoolProperty(
+        name="仅生成材质",
+        description="跳过贴图合成与转换，仅创建材质定义并填入贴图路径",
+        default=False,
+    )
+    use_ao:           bpy.props.BoolProperty(
+        name="添加 AO",
+        description="手动指定 AO 贴图 (Blender 无内置 AO 节点)",
+        default=False,
+    )
+    ao_image:         bpy.props.StringProperty(
+        name="AO",
+        description="AO 贴图路径",
+        subtype='FILE_PATH',
+    )
+
+
+def _on_re4_mesh_collection_update(self, context):
+    if self.mesh_collection:
+        bpy.ops.re4.mdf_gen_refresh()
 
 
 class RE4GenSettings(bpy.types.PropertyGroup):
@@ -49,6 +70,7 @@ class RE4GenSettings(bpy.types.PropertyGroup):
         name="Mesh Collection",
         type=bpy.types.Collection,
         description="Source mesh collection containing objects with Blender materials",
+        update=_on_re4_mesh_collection_update,
     )
     mdf_collection_name: bpy.props.StringProperty(
         name="MDF Collection",
@@ -60,9 +82,14 @@ class RE4GenSettings(bpy.types.PropertyGroup):
         default="",
         description="Path appended to natives/STM/_Chainsaw/Character/ch/ (e.g. Author/Name/)",
     )
-    generate_mipmaps:  bpy.props.BoolProperty(name="Generate MipMaps", default=True)
     material_list:     bpy.props.CollectionProperty(type=RE4GenMaterialEntry)
     material_list_idx: bpy.props.IntProperty()
+    flip_normal_g:     bpy.props.BoolProperty(
+        name="法线 OpenGL → DirectX",
+        description="启用后，将连接的 OpenGL 法线贴图直接转为 DX 格式，"
+                    "不再需要在着色器内手动进行 G 通道反相",
+        default=False,
+    )
 
 
 # ── Operators ──────────────────────────────────────────────────────────────────

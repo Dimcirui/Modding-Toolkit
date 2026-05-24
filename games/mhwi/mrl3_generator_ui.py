@@ -77,7 +77,7 @@ class MHWI_OT_Mrl3GeneratorDialog(bpy.types.Operator):
             layout.row().label(
                 text="    e.g. pl/f_equip/pl042_0500/helm/tex", icon='INFO')
 
-        layout.prop(settings, "generate_mipmaps")
+        layout.prop(settings, "flip_normal_g")
 
         # ── Preset dir status ──────────────────────────────────────────────────
         preset_dir = get_mhwi_preset_dir()
@@ -118,6 +118,11 @@ class MHWI_OT_Mrl3GeneratorDialog(bpy.types.Operator):
 
             if preset_has_emissive_slots(mat_entry.material_preset, is_mrl3=True):
                 box.prop(mat_entry, "use_toon")
+            box.prop(mat_entry, "generate_mipmaps")
+            box.prop(mat_entry, "skip_textures")
+            box.prop(mat_entry, "use_ao")
+            if mat_entry.use_ao:
+                box.prop(mat_entry, "ao_image")
 
 
 classes = [MHWI_OT_Mrl3GeneratorDialog]
