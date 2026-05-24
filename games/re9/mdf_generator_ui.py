@@ -72,6 +72,8 @@ class RE9_OT_MdfGeneratorDialog(bpy.types.Operator):
         if not settings.texture_base_path.strip():
             layout.row().label(text="    e.g. character/cha102_00/", icon='INFO')
 
+        layout.prop(settings, "flip_normal_g")
+
         preset_dir = get_preset_dir_for_game(RE9_GEN_GAME)
         if not preset_dir:
             layout.separator()
@@ -110,6 +112,9 @@ class RE9_OT_MdfGeneratorDialog(bpy.types.Operator):
                 box.prop(mat_entry, "use_toon")
             box.prop(mat_entry, "generate_mipmaps")
             box.prop(mat_entry, "skip_textures")
+            box.prop(mat_entry, "use_ao")
+            if mat_entry.use_ao:
+                box.prop(mat_entry, "ao_image")
 
 
 classes = [RE9_OT_MdfGeneratorDialog]

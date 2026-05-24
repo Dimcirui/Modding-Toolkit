@@ -48,6 +48,21 @@ class MhwsGenMaterialEntry(bpy.types.PropertyGroup):
         description="跳过贴图合成与转换，仅创建材质定义并填入贴图路径",
         default=False,
     )
+    use_ao:           bpy.props.BoolProperty(
+        name="添加 AO",
+        description="手动指定 AO 贴图 (Blender 无内置 AO 节点)",
+        default=False,
+    )
+    ao_image:         bpy.props.StringProperty(
+        name="AO",
+        description="AO 贴图路径",
+        subtype='FILE_PATH',
+    )
+
+
+def _on_mhws_mesh_collection_update(self, context):
+    if self.mesh_collection:
+        bpy.ops.mhws.mdf_gen_refresh()
 
 
 class MhwsGenSettings(bpy.types.PropertyGroup):
@@ -55,6 +70,7 @@ class MhwsGenSettings(bpy.types.PropertyGroup):
         name="Mesh Collection",
         type=bpy.types.Collection,
         description="Source mesh collection containing objects with Blender materials",
+        update=_on_mhws_mesh_collection_update,
     )
     mdf_collection_name: bpy.props.StringProperty(
         name="MDF Collection",
@@ -68,6 +84,12 @@ class MhwsGenSettings(bpy.types.PropertyGroup):
     )
     material_list:     bpy.props.CollectionProperty(type=MhwsGenMaterialEntry)
     material_list_idx: bpy.props.IntProperty()
+    flip_normal_g:     bpy.props.BoolProperty(
+        name="法线 OpenGL → DirectX",
+        description="启用后，将连接的 OpenGL 法线贴图直接转为 DX 格式，"
+                    "不再需要在着色器内手动进行 G 通道反相",
+        default=False,
+    )
 
 
 # ── Operators ──────────────────────────────────────────────────────────────────

@@ -52,11 +52,26 @@ class MhwiGenMaterialEntry(bpy.types.PropertyGroup):
         description="跳过贴图合成与转换，仅创建材质定义并填入贴图路径",
         default=False,
     )
+    use_ao:           bpy.props.BoolProperty(
+        name="添加 AO",
+        description="手动指定 AO 贴图 (Blender 无内置 AO 节点)",
+        default=False,
+    )
+    ao_image:         bpy.props.StringProperty(
+        name="AO",
+        description="AO 贴图路径",
+        subtype='FILE_PATH',
+    )
 
 
 def _mhwi_mod3_col_poll(self, col):
     # MHWI 走的是 MHW Model Editor 的 MOD3 体系，不是 RE Engine 的 .mesh
     return col.get("~TYPE") == "MHW_MOD3_COLLECTION" or col.name.endswith(".mod3")
+
+
+def _on_mhwi_mesh_collection_update(self, context):
+    if self.mesh_collection:
+        bpy.ops.mhwi.mrl3_gen_refresh()
 
 
 class MhwiGenSettings(bpy.types.PropertyGroup):
@@ -65,6 +80,7 @@ class MhwiGenSettings(bpy.types.PropertyGroup):
         name="Mod3 Collection",
         type=bpy.types.Collection,
         poll=_mhwi_mod3_col_poll,
+        update=_on_mhwi_mesh_collection_update,
     )
     mrl3_collection_name: bpy.props.StringProperty(
         name="MRL3 Collection Name",
@@ -77,6 +93,12 @@ class MhwiGenSettings(bpy.types.PropertyGroup):
         default="",
     )
     material_list:    bpy.props.CollectionProperty(type=MhwiGenMaterialEntry)
+    flip_normal_g:    bpy.props.BoolProperty(
+        name="法线 OpenGL → DirectX",
+        description="启用后，将连接的 OpenGL 法线贴图直接转为 DX 格式，"
+                    "不再需要在着色器内手动进行 G 通道反相",
+        default=False,
+    )
 
 
 # ── Refresh operator ───────────────────────────────────────────────────────────
@@ -128,7 +150,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
 
         _t_import = time.time()
         ConvertDDSToTex = _import_mhwi_tex_convert()
-        print(f"[{self._log_tag}] 加载 MHW Model Editor 模块: {time.time() - _t_import:.2f}s", flush=True)
+        # print(f"[{self._log_tag}] 加载 MHW Model Editor 模块: {time.time() - _t_import:.2f}s", flush=True)
         if ConvertDDSToTex is None:
             self.report({'ERROR'},
                         "无法加载 MHW Model Editor 贴图转换函数，请确认已安装并启用")
@@ -136,7 +158,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
 
         _t_import = time.time()
         ImageListToDDS, _ddstotex = _import_tex_utils()
-        print(f"[{self._log_tag}] 加载 RE Mesh Editor 模块: {time.time() - _t_import:.2f}s", flush=True)
+        # print(f"[{self._log_tag}] 加载 RE Mesh Editor 模块: {time.time() - _t_import:.2f}s", flush=True)
         if ImageListToDDS is None:
             self.report({'ERROR'}, "无法加载 RE Mesh Editor 贴图工具，请确认已安装并启用")
             return {'CANCELLED'}
@@ -170,11 +192,11 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
         _t_sep = time.time()
         try:
             _separate_mesh_by_material(context, mod3_col)
-            print(f"[{self._log_tag}] 分离网格: {time.time() - _t_sep:.2f}s", flush=True)
+            # print(f"[{self._log_tag}] 分离网格: {time.time() - _t_sep:.2f}s", flush=True)
         except Exception as e:
             print(f"[{self._log_tag}] Mesh separate/rename warning: {e}")
 
-        print(f"[{self._log_tag}] ★ 总耗时: {time.time() - _t_total:.2f}s ★", flush=True)
+        # print(f"[{self._log_tag}] ★ 总耗时: {time.time() - _t_total:.2f}s ★", flush=True)
         if fail_count:
             self.report({'WARNING'}, f"完成: 成功 {export_count}, 失败 {fail_count}")
         else:
@@ -236,11 +258,20 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
 
         _t = time.time()
         strategies = analyze_material_strategies(mat)
-        print(f"[{self._log_tag}]   分析材质节点: {time.time() - _t:.2f}s", flush=True)
+        # print(f"[{self._log_tag}]   分析材质节点: {time.time() - _t:.2f}s", flush=True)
         _t = time.time()
         pbr_paths  = _get_pbr_paths(
             mat, strategies, temp_dir, self._bake_size, context, mesh_obj)
-        print(f"[{self._log_tag}]   解析PBR路径 (含烘培): {time.time() - _t:.2f}s", flush=True)
+        # print(f"[{self._log_tag}]   解析PBR路径 (含烘培): {time.time() - _t:.2f}s", flush=True)
+
+        # User-provided AO override (Blender has no built-in AO node)
+        if getattr(mat_entry, 'use_ao', False):
+            ao_path_raw = getattr(mat_entry, 'ao_image', '')
+            if ao_path_raw:
+                ao_path = bpy.path.abspath(ao_path_raw)
+                if ao_path and os.path.isfile(ao_path):
+                    strategies['ao'] = ('DIRECT', ao_path, 'R')
+                    pbr_paths['ao'] = ao_path
 
         pbr_channels = {}
         for pbr_type, strat_val in strategies.items():
@@ -252,7 +283,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
         _t = time.time()
         with open(preset_path, encoding='utf-8') as f:
             preset_data = json.load(f)
-        print(f"[{self._log_tag}]   加载Preset JSON: {time.time() - _t:.2f}s", flush=True)
+        # print(f"[{self._log_tag}]   加载Preset JSON: {time.time() - _t:.2f}s", flush=True)
         slot_types = [entry["name"] for entry in preset_data.get("Map List", [])]
 
         use_toon       = getattr(mat_entry, 'use_toon', False)
@@ -331,12 +362,12 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                         dds_path = os.path.join(temp_dir, dds_stem + '.dds')
                         _t_dds = time.time()
                         ImageListToDDS([(composed, dds_fmt)], temp_dir, mat_entry.generate_mipmaps)
-                        print(f"[{self._log_tag}]   PNG→DDS {slot_type} (优化): {time.time() - _t_dds:.2f}s", flush=True)
+                        # print(f"[{self._log_tag}]   PNG→DDS {slot_type} (优化): {time.time() - _t_dds:.2f}s", flush=True)
                         if not os.path.isfile(dds_path):
                             raise FileNotFoundError(f"texconv output not found: {dds_path}")
                         _t_tex = time.time()
                         ConvertDDSToTex([dds_path], disk_path)
-                        print(f"[{self._log_tag}]   DDS→TEX {slot_type} (优化): {time.time() - _t_tex:.2f}s", flush=True)
+                        # print(f"[{self._log_tag}]   DDS→TEX {slot_type} (优化): {time.time() - _t_tex:.2f}s", flush=True)
 
                         binding = _mhwi_tex_binding(base_path, tex_name, slot_type)
                         slot_binding_values[slot_type] = binding
@@ -345,11 +376,13 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
 
             # --- full composition path ---
             _t_comp = time.time()
+            normal_flip_g = getattr(settings, 'flip_normal_g', False)
             composed = _compose_channels(
                 slot_type, pbr_paths, pbr_channels, temp_dir, tex_name,
                 channel_maps=MHWI_SLOT_CHANNEL_MAPS,
+                normal_flip_g=normal_flip_g,
             )
-            print(f"[{self._log_tag}]   合成通道 {slot_type}: {time.time() - _t_comp:.2f}s", flush=True)
+            # print(f"[{self._log_tag}]   合成通道 {slot_type}: {time.time() - _t_comp:.2f}s", flush=True)
 
             if composed:
                 dds_fmt = (
@@ -364,12 +397,12 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                 dds_path = os.path.join(temp_dir, dds_stem + '.dds')
                 _t_dds = time.time()
                 ImageListToDDS([(composed, dds_fmt)], temp_dir, mat_entry.generate_mipmaps)
-                print(f"[{self._log_tag}]   PNG→DDS {slot_type}: {time.time() - _t_dds:.2f}s", flush=True)
+                # print(f"[{self._log_tag}]   PNG→DDS {slot_type}: {time.time() - _t_dds:.2f}s", flush=True)
                 if not os.path.isfile(dds_path):
                     raise FileNotFoundError(f"texconv output not found: {dds_path}")
                 _t_tex = time.time()
                 ConvertDDSToTex([dds_path], disk_path)
-                print(f"[{self._log_tag}]   DDS→TEX {slot_type}: {time.time() - _t_tex:.2f}s", flush=True)
+                # print(f"[{self._log_tag}]   DDS→TEX {slot_type}: {time.time() - _t_tex:.2f}s", flush=True)
 
                 binding = _mhwi_tex_binding(base_path, tex_name, slot_type)
                 slot_binding_values[slot_type] = binding
@@ -398,7 +431,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
 
         _t = time.time()
         mat_obj = _call_mhwi_read_preset(preset_path, mrl3_col)
-        print(f"[{self._log_tag}]   创建MRL3材质: {time.time() - _t:.2f}s", flush=True)
+        # print(f"[{self._log_tag}]   创建MRL3材质: {time.time() - _t:.2f}s", flush=True)
         mat_obj.mhw_mrl3_material.materialName = tex_name
         for map_item in mat_obj.mhw_mrl3_material.mapList_items:
             if map_item.name in slot_binding_values:

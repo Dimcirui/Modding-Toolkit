@@ -733,7 +733,7 @@ class MdfTexProcessBase(bpy.types.Operator):
 
         _t_import = time.time()
         ImageListToDDS, DDSToTex = _import_tex_utils()
-        print(f"[{cls._log_tag}] 加载外部模块: {time.time() - _t_import:.2f}s", flush=True)
+        # print(f"[{cls._log_tag}] 加载外部模块: {time.time() - _t_import:.2f}s", flush=True)
         if ImageListToDDS is None or DDSToTex is None:
             self.report({'ERROR'}, "无法加载 RE Mesh Editor 贴图工具，请确认已安装并启用")
             return {'CANCELLED'}
@@ -811,7 +811,7 @@ class MdfTexProcessBase(bpy.types.Operator):
                                 temp_dir, tex_name, pbr_inv,
                                 channel_maps=cls._channel_maps,
                                 normal_flip_g=normal_flip_g)
-                            print(f"[{cls._log_tag}]   合成通道 {slot.texture_type}: {time.time() - _t_comp:.2f}s", flush=True)
+                            # print(f"[{cls._log_tag}]   合成通道 {slot.texture_type}: {time.time() - _t_comp:.2f}s", flush=True)
                             if src_img is None:
                                 null_rel = cls._null_tex_by_type.get(slot.texture_type)
                                 if null_rel:
@@ -849,20 +849,20 @@ class MdfTexProcessBase(bpy.types.Operator):
                         elif src_lower.endswith('.dds'):
                             _t_tex = time.time()
                             DDSToTex([src_img], cls._tex_version, disk_path)
-                            print(f"[{cls._log_tag}]   DDS→TEX {slot.texture_type}: {time.time() - _t_tex:.2f}s", flush=True)
+                            # print(f"[{cls._log_tag}]   DDS→TEX {slot.texture_type}: {time.time() - _t_tex:.2f}s", flush=True)
                         else:
                             dds_stem = os.path.splitext(src_name)[0]
                             dds_path = os.path.join(temp_dir, dds_stem + '.dds')
                             _t_dds = time.time()
                             ImageListToDDS([(src_img, dds_fmt)], temp_dir,
                                            mat_item.generate_mipmaps)
-                            print(f"[{cls._log_tag}]   PNG→DDS {slot.texture_type}: {time.time() - _t_dds:.2f}s", flush=True)
+                            # print(f"[{cls._log_tag}]   PNG→DDS {slot.texture_type}: {time.time() - _t_dds:.2f}s", flush=True)
                             if not os.path.isfile(dds_path):
                                 raise FileNotFoundError(
                                     f"texconv output not found: {dds_path}")
                             _t_tex = time.time()
                             DDSToTex([dds_path], cls._tex_version, disk_path)
-                            print(f"[{cls._log_tag}]   DDS→TEX {slot.texture_type}: {time.time() - _t_tex:.2f}s", flush=True)
+                            # print(f"[{cls._log_tag}]   DDS→TEX {slot.texture_type}: {time.time() - _t_tex:.2f}s", flush=True)
 
                         binding.path = mdf_path
                         if slot.texture_type == 'BaseDielectricMap':
@@ -874,12 +874,12 @@ class MdfTexProcessBase(bpy.types.Operator):
                         print(f"[{cls._log_tag}] FAIL {slot.texture_type}: {err}")
                         fail_count += 1
 
-            print(f"[{cls._log_tag}] 材质耗时: {mat_item.material_name} {time.time() - _t_mat:.2f}s", flush=True)
+            # print(f"[{cls._log_tag}] 材质耗时: {mat_item.material_name} {time.time() - _t_mat:.2f}s", flush=True)
 
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
 
-        print(f"[{cls._log_tag}] ★ 总耗时: {time.time() - _t_total:.2f}s ★", flush=True)
+        # print(f"[{cls._log_tag}] ★ 总耗时: {time.time() - _t_total:.2f}s ★", flush=True)
 
         if fail_count > 0:
             self.report({'WARNING'},

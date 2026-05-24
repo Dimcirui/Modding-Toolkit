@@ -324,7 +324,7 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
 
         _t_import = time.time()
         ConvertDDSToTex = _import_mhwtex_convert()
-        print(f"[MHWI Tex] 加载 MHW Model Editor 模块: {time.time() - _t_import:.2f}s", flush=True)
+        # print(f"[MHWI Tex] 加载 MHW Model Editor 模块: {time.time() - _t_import:.2f}s", flush=True)
         if ConvertDDSToTex is None:
             self.report({'ERROR'},
                         "无法加载 MHW Model Editor 贴图转换函数，请确认已安装并启用")
@@ -332,7 +332,7 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
 
         _t_import = time.time()
         ImageListToDDS, __ = _import_tex_utils()
-        print(f"[MHWI Tex] 加载 RE Mesh Editor 模块: {time.time() - _t_import:.2f}s", flush=True)
+        # print(f"[MHWI Tex] 加载 RE Mesh Editor 模块: {time.time() - _t_import:.2f}s", flush=True)
         if ImageListToDDS is None:
             self.report({'WARNING'},
                         "RE Mesh Editor 未安装：PNG/TGA 输入将无法处理，"
@@ -415,7 +415,7 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                                 channel_maps=MHWI_SLOT_CHANNEL_MAPS,
                                 normal_flip_g=normal_flip_g,
                             )
-                            print(f"[MHWI Tex]   合成通道 {slot.texture_type}: {time.time() - _t_comp:.2f}s", flush=True)
+                            # print(f"[MHWI Tex]   合成通道 {slot.texture_type}: {time.time() - _t_comp:.2f}s", flush=True)
                             if src_img is None:
                                 null_val = MHWI_NULL_TEX.get(slot.texture_type)
                                 if null_val:
@@ -451,7 +451,7 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                         elif src_lower.endswith('.dds'):
                             _t_tex = time.time()
                             ConvertDDSToTex([src_img], disk_path)
-                            print(f"[MHWI Tex]   DDS→TEX {slot.texture_type}: {time.time() - _t_tex:.2f}s", flush=True)
+                            # print(f"[MHWI Tex]   DDS→TEX {slot.texture_type}: {time.time() - _t_tex:.2f}s", flush=True)
                         else:
                             if ImageListToDDS is None:
                                 raise RuntimeError(
@@ -467,13 +467,13 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                             ImageListToDDS(
                                 [(src_img, dds_fmt)], temp_dir,
                                 mat_item.generate_mipmaps)
-                            print(f"[MHWI Tex]   PNG→DDS {slot.texture_type}: {time.time() - _t_dds:.2f}s", flush=True)
+                            # print(f"[MHWI Tex]   PNG→DDS {slot.texture_type}: {time.time() - _t_dds:.2f}s", flush=True)
                             if not os.path.isfile(dds_path):
                                 raise FileNotFoundError(
                                     f"texconv 输出未找到: {dds_path}")
                             _t_tex = time.time()
                             ConvertDDSToTex([dds_path], disk_path)
-                            print(f"[MHWI Tex]   DDS→TEX {slot.texture_type}: {time.time() - _t_tex:.2f}s", flush=True)
+                            # print(f"[MHWI Tex]   DDS→TEX {slot.texture_type}: {time.time() - _t_tex:.2f}s", flush=True)
 
                         map_item.value = _mhwi_tex_binding(
                             base_path, tex_name, slot.texture_type)
@@ -487,12 +487,12 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                         print(f"[MHWI Tex] FAIL  {slot.texture_type}: {err}")
                         fail_count += 1
 
-            print(f"[MHWI Tex] 材质耗时: {mat_item.material_name} {time.time() - _t_mat:.2f}s", flush=True)
+            # print(f"[MHWI Tex] 材质耗时: {mat_item.material_name} {time.time() - _t_mat:.2f}s", flush=True)
 
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
 
-        print(f"[MHWI Tex] ★ 总耗时: {time.time() - _t_total:.2f}s ★", flush=True)
+        # print(f"[MHWI Tex] ★ 总耗时: {time.time() - _t_total:.2f}s ★", flush=True)
 
         if fail_count > 0:
             self.report({'WARNING'},
