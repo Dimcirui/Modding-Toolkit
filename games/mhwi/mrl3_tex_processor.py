@@ -2,6 +2,7 @@ import bpy
 import os
 import tempfile
 import shutil
+import time
 
 from ...core.mdf_tex_processor_base import (
     PBR_TYPES, PBR_CHANNEL_SELECTABLE,
@@ -302,6 +303,7 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
+        _t_total = time.time()
         scene    = context.scene
         settings = scene.mhwi_mrl3_tex_processor
 
@@ -320,13 +322,17 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
             self.report({'ERROR'}, "请先点击 Refresh 加载材质")
             return {'CANCELLED'}
 
+        _t_import = time.time()
         ConvertDDSToTex = _import_mhwtex_convert()
+        print(f"[MHWI Tex] 加载 MHW Model Editor 模块: {time.time() - _t_import:.2f}s", flush=True)
         if ConvertDDSToTex is None:
             self.report({'ERROR'},
                         "无法加载 MHW Model Editor 贴图转换函数，请确认已安装并启用")
             return {'CANCELLED'}
 
+        _t_import = time.time()
         ImageListToDDS, __ = _import_tex_utils()
+        print(f"[MHWI Tex] 加载 RE Mesh Editor 模块: {time.time() - _t_import:.2f}s", flush=True)
         if ImageListToDDS is None:
             self.report({'WARNING'},
                         "RE Mesh Editor 未安装：PNG/TGA 输入将无法处理，"
@@ -337,6 +343,7 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
 
         try:
             for mat_item in settings.materials:
+                _t_mat = time.time()
                 mat_obj = settings.mrl3_collection.all_objects.get(
                     mat_item.material_obj_name)
                 if mat_obj is None:
@@ -401,12 +408,14 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                                       "非 PBR 合成槽位，请改用 DIRECT 模式")
                                 skip_count += 1
                                 continue
+                            _t_comp = time.time()
                             src_img = _compose_channels(
                                 slot.texture_type, pbr_paths, pbr_channels,
                                 temp_dir, tex_name, pbr_inv,
                                 channel_maps=MHWI_SLOT_CHANNEL_MAPS,
                                 normal_flip_g=normal_flip_g,
                             )
+                            print(f"[MHWI Tex]   合成通道 {slot.texture_type}: {time.time() - _t_comp:.2f}s", flush=True)
                             if src_img is None:
                                 null_val = MHWI_NULL_TEX.get(slot.texture_type)
                                 if null_val:
@@ -440,7 +449,9 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                         if '.tex' in src_name.lower():
                             shutil.copy2(src_img, disk_path)
                         elif src_lower.endswith('.dds'):
+                            _t_tex = time.time()
                             ConvertDDSToTex([src_img], disk_path)
+                            print(f"[MHWI Tex]   DDS→TEX {slot.texture_type}: {time.time() - _t_tex:.2f}s", flush=True)
                         else:
                             if ImageListToDDS is None:
                                 raise RuntimeError(
@@ -452,13 +463,17 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                             )
                             dds_stem = os.path.splitext(src_name)[0]
                             dds_path = os.path.join(temp_dir, dds_stem + '.dds')
+                            _t_dds = time.time()
                             ImageListToDDS(
                                 [(src_img, dds_fmt)], temp_dir,
                                 mat_item.generate_mipmaps)
+                            print(f"[MHWI Tex]   PNG→DDS {slot.texture_type}: {time.time() - _t_dds:.2f}s", flush=True)
                             if not os.path.isfile(dds_path):
                                 raise FileNotFoundError(
                                     f"texconv 输出未找到: {dds_path}")
+                            _t_tex = time.time()
                             ConvertDDSToTex([dds_path], disk_path)
+                            print(f"[MHWI Tex]   DDS→TEX {slot.texture_type}: {time.time() - _t_tex:.2f}s", flush=True)
 
                         map_item.value = _mhwi_tex_binding(
                             base_path, tex_name, slot.texture_type)
@@ -472,8 +487,12 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                         print(f"[MHWI Tex] FAIL  {slot.texture_type}: {err}")
                         fail_count += 1
 
+            print(f"[MHWI Tex] 材质耗时: {mat_item.material_name} {time.time() - _t_mat:.2f}s", flush=True)
+
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
+
+        print(f"[MHWI Tex] ★ 总耗时: {time.time() - _t_total:.2f}s ★", flush=True)
 
         if fail_count > 0:
             self.report({'WARNING'},
