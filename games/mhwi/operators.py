@@ -726,6 +726,8 @@ class MHWI_OT_BatchRenamePhysicsBones(bpy.types.Operator):
         layout.label(
             text=_("当前超出了 %d 个骨骼，建议先简化骨骼后再进行命名。") % self._fail_count)
         layout.label(text=_("确定仍然进行重命名？"))
+
+    def execute(self, context):
         mapper = BoneMapManager()
         if not mapper.load_preset("怪猎世界.json", is_import_x=True):
             self.report({'ERROR'}, _("无法加载怪猎世界预设"))

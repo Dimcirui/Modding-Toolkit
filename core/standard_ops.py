@@ -1,6 +1,6 @@
 import bpy, mathutils
 from bpy.app.translations import pgettext as _
-from .bone_mapper import BoneMapManager, STANDARD_BONE_NAMES, _normalize_bone_name
+from .bone_mapper import BoneMapManager, STANDARD_BONE_NAMES, _normalize_bone_name, auto_detect_preset
 from . import weight_utils, bone_utils
 
 
@@ -851,15 +851,27 @@ class MODDER_OT_RefreshPhysicsBoneColors(bpy.types.Operator):
             return {'CANCELLED'}
         settings = context.scene.mhw_suite_settings
         mapper = BoneMapManager()
-        if not mapper.load_preset(settings.import_preset_enum, is_import_x=True):
-            self.report({'ERROR'}, _("无法加载 X 预设"))
-            return {'CANCELLED'}
+
+        detected = auto_detect_preset(arm_obj, is_import_x=True)
+        if detected:
+            if not mapper.load_preset(detected, is_import_x=True):
+                self.report({'ERROR'}, _("无法加载自动识别的预设"))
+                return {'CANCELLED'}
+        else:
+            if not mapper.load_preset(settings.import_preset_enum, is_import_x=True):
+                self.report({'ERROR'}, _("无法加载 X 预设"))
+                return {'CANCELLED'}
+            self.report({'WARNING'}, _("未能自动识别目标游戏预设，回退至来源预设 [%s]，建议手动切换") % settings.import_preset_enum)
+
         preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
         bpy.context.view_layer.objects.active = arm_obj
         bpy.ops.object.mode_set(mode='POSE')
         _detect_chain_roles(arm_obj, preset_bones)
         _apply_physics_bone_colors(arm_obj, preset_bones)
-        self.report({'INFO'}, _("骨骼颜色已刷新"))
+        if detected:
+            self.report({'INFO'}, _("骨骼颜色已刷新（自动识别预设：%s）") % detected)
+        else:
+            self.report({'INFO'}, _("骨骼颜色已刷新"))
         return {'FINISHED'}
 
 

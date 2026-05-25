@@ -551,7 +551,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
                 row = exp_col.row(align=True)
                 row.operator("modder.mark_as_main_continue", text=_("标记为主链延伸"), icon='HANDLE_ALIGNED')
                 row.operator("modder.clear_chain_role", text=_("清除标记"), icon='X')
-                exp_col.operator("modder.refresh_physics_bone_colors", text=_("刷新骨骼颜色 [X]"), icon='COLOR')
+                exp_col.operator("modder.refresh_physics_bone_colors", text=_("刷新骨骼颜色"), icon='COLOR')
                 exp_col.separator()
                 row = exp_col.row(align=True)
                 row.label(text="骨骼显示 [X]:", icon='HIDE_OFF')
