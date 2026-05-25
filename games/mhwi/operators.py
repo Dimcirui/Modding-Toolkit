@@ -1,9 +1,24 @@
+import sys
+import time
 import bpy
 import re
 from bpy.app.translations import pgettext as _
 from ...core import bone_utils
 from ...core.bone_mapper import BoneMapManager
 from ...core.standard_ops import _build_fuzzy_preset_bones
+
+
+def _patch_chain_cleanup(disable=True):
+    saved = []
+    for mod in sys.modules.values():
+        has_align = hasattr(mod, 'alignChains') and callable(mod.alignChains)
+        has_color = hasattr(mod, 'setChainBoneColor') and callable(mod.setChainBoneColor)
+        if has_align and has_color:
+            saved.append((mod, mod.alignChains, mod.setChainBoneColor))
+            if disable:
+                mod.alignChains = lambda: None
+                mod.setChainBoneColor = lambda x: None
+    return saved
 
 
 def _is_mhwi_physics(name):
@@ -134,6 +149,8 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
         self.layout.prop(self, "ctc_collection")
 
     def execute(self, context):
+        t_total = time.perf_counter()
+
         col = bpy.data.collections.get(self.ctc_collection)
         if col is None:
             self.report({'ERROR'}, _("找不到集合: %s") % self.ctc_collection)
@@ -169,29 +186,59 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
             self.report({'WARNING'}, _("未找到链首骨骼（chain_role=head/branch_head），请先刷新骨骼颜色"))
             return {'CANCELLED'}
 
+        print(f"[ChainGen CTC] {len(chain_heads)} heads -> {len(chain_heads)} chains (linear only)",
+              file=sys.stderr)
+
+        # monkey-patch MHW Model Editor 的 alignChains() / setChainBoneColor()
+        _patches = _patch_chain_cleanup(disable=True)
+
         created = 0
         skipped_existing = 0
         skipped_branch = []
 
-        for head_pb in chain_heads:
-            if head_pb.name in existing_heads:
-                skipped_existing += 1
-                continue
+        t_loop = time.perf_counter()
+        try:
+            for idx, head_pb in enumerate(chain_heads, 1):
+                if head_pb.name in existing_heads:
+                    skipped_existing += 1
+                    continue
 
-            if _has_branch(head_pb, physics_bones, armature):
-                skipped_branch.append(head_pb.name)
-                continue
+                if _has_branch(head_pb, physics_bones, armature):
+                    skipped_branch.append(head_pb.name)
+                    print(f"[ChainGen CTC] Chain {idx:3d}/{len(chain_heads)}  skipped (branch)  head={head_pb.name}",
+                          file=sys.stderr)
+                    continue
 
-            # 选中链头骨骼并调用 CTC chain 创建算子
-            bpy.ops.pose.select_all(action='DESELECT')
-            head_pb.bone.select = True
-            armature.data.bones.active = head_pb.bone
+                # 选中链头骨骼并调用 CTC chain 创建算子
+                bpy.ops.pose.select_all(action='DESELECT')
+                head_pb.bone.select = True
+                armature.data.bones.active = head_pb.bone
 
-            result = bpy.ops.mhw_ctc.create_chain_from_bone()
-            if result == {'FINISHED'}:
-                created += 1
-            else:
-                skipped_branch.append(head_pb.name)  # 创建失败也归入跳过
+                t0 = time.perf_counter()
+                result = bpy.ops.mhw_ctc.create_chain_from_bone()
+                t_chain = time.perf_counter() - t0
+
+                if result == {'FINISHED'}:
+                    created += 1
+                else:
+                    skipped_branch.append(head_pb.name)
+
+                bones = sum(1 for _ in armature.pose.bones.get(head_pb.name).children_recursive) + 1 if armature.pose.bones.get(head_pb.name) else "?"
+                print(f"[ChainGen CTC] Chain {idx:3d}/{len(chain_heads)}  "
+                      f"create={t_chain:.4f}s  bones~{bones}  head={head_pb.name}",
+                      file=sys.stderr)
+        finally:
+            _patch_chain_cleanup(disable=False)
+            if _patches and created > 0:
+                mod, _align, _color = _patches[0]
+                _align()
+                _color(armature)
+
+        t_loop = time.perf_counter() - t_loop
+        t_total = time.perf_counter() - t_total
+        print(f"[ChainGen CTC] --- loop: {t_loop:.4f}s  total: {t_total:.4f}s  "
+              f"created={created}  skipped_existing={skipped_existing}  skipped_branch={len(skipped_branch)} ---",
+              file=sys.stderr)
 
         # 汇报结果
         msg_parts = [_("已创建 %d 条链") % created]
