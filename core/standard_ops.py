@@ -867,6 +867,13 @@ class MODDER_OT_RefreshPhysicsBoneColors(bpy.types.Operator):
         bpy.context.view_layer.objects.active = arm_obj
         bpy.ops.object.mode_set(mode='POSE')
         _detect_chain_roles(arm_obj, preset_bones)
+        for b in arm_obj.data.bones:
+            if b.name in preset_bones:
+                pb = arm_obj.pose.bones.get(b.name)
+                if pb:
+                    if "chain_role" in pb:
+                        del pb["chain_role"]
+                    pb.color.palette = 'DEFAULT'
         _apply_physics_bone_colors(arm_obj, preset_bones)
         if detected:
             self.report({'INFO'}, _("骨骼颜色已刷新（自动识别预设：%s）") % detected)
