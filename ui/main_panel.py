@@ -17,6 +17,32 @@ from ..core.bone_mapper import BoneMapManager
 # 映射详情预览缓存：{(x_preset, y_preset): (mapper_x, mapper_y)}
 _mapping_detail_cache = {}
 
+def _on_auto_preset_update(self, context, is_import_x):
+    """选中 'AUTO' 时自动检测最匹配的预设，直接替换枚举值"""
+    attr = 'import_preset_enum' if is_import_x else 'target_preset_enum'
+    if getattr(self, attr) != 'AUTO':
+        return
+    arm = context.active_object
+    if not arm or arm.type != 'ARMATURE':
+        self.report({'WARNING'}, "自动识别需要选中骨架")
+        return
+    from ..core.bone_mapper import auto_detect_preset
+    result = auto_detect_preset(arm, is_import_x)
+    if result:
+        setattr(self, attr, result)
+    else:
+        self.report({'WARNING'}, "自动识别失败，未找到完全覆盖骨架的预设，请手动选择")
+
+def _on_auto_import_update(self, context):
+    _on_auto_preset_update(self, context, True)
+
+def _on_auto_target_update(self, context):
+    _on_auto_preset_update(self, context, False)
+
+def _on_auto_pose_update(self, context):
+    _on_auto_preset_update(self, context, True)
+
+
 class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     # 顶部开关
     show_mhwi: bpy.props.BoolProperty(name="MHWI", default=False)
@@ -35,13 +61,15 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     import_preset_enum: bpy.props.EnumProperty(
         name="来源预设 (X)",
         description="选择导入模型的骨架结构",
-        items=get_import_presets_callback
+        items=get_import_presets_callback,
+        update=_on_auto_import_update
     )
     
     target_preset_enum: bpy.props.EnumProperty(
         name="目标游戏 (Y)",
         description="选择要导出的目标游戏",
-        items=get_target_presets_callback
+        items=get_target_presets_callback,
+        update=_on_auto_target_update
     )
     
     show_mapping_details: bpy.props.BoolProperty(name="显示映射细节", default=False)
@@ -62,7 +90,8 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     pose_import_preset_enum: bpy.props.EnumProperty(
         name="骨架预设",
         description="用于识别骨骼名称的预设",
-        items=get_import_presets_callback
+        items=get_import_presets_callback,
+        update=_on_auto_pose_update
     )
     
     # 姿态记录文件选择

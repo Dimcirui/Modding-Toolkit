@@ -146,3 +146,52 @@ class BoneMapManager:
     def get_standard_from_game(self, game_bone_name):
         """输入 MhBone_013 -> 返回 pelvis"""
         return self.reverse_mapping.get(game_bone_name, None)
+
+
+def _list_preset_files(is_import_x):
+    """返回预设目录下所有 .json 文件名列表"""
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    root_dir = os.path.dirname(current_dir)
+    sub_dir = os.path.join("presets", "import" if is_import_x else "bone")
+    preset_dir = os.path.join(root_dir, "assets", sub_dir)
+    if not os.path.exists(preset_dir):
+        return []
+    return sorted(f for f in os.listdir(preset_dir) if f.endswith('.json'))
+
+
+def auto_detect_preset(armature_obj, is_import_x):
+    """遍历所有预设文件，对每个预设做模糊骨骼匹配，返回覆盖率最高的文件名。
+    覆盖率 >= 95% 才视为匹配成功，否则返回 None。"""
+    all_bones = {b.name for b in armature_obj.data.bones}
+    if not all_bones:
+        return None
+
+    best_preset = None
+    best_ratio = 0.0
+
+    for filename in _list_preset_files(is_import_x):
+        mapper = BoneMapManager()
+        if not mapper.load_preset(filename, is_import_x):
+            continue
+
+        preset_bones = set()
+        for std_key in mapper.mapping_data:
+            main_actual, aux_actuals = mapper.get_matches_for_standard(armature_obj, std_key)
+            if main_actual:
+                preset_bones.add(main_actual)
+            preset_bones.update(aux_actuals)
+        preset_bones.update(mapper.exclude_bones & all_bones)
+
+        exclude_in_arm = mapper.exclude_bones & all_bones
+        total = len(all_bones - exclude_in_arm)
+        matched = len(preset_bones - exclude_in_arm)
+        if total == 0:
+            continue
+        ratio = matched / total
+        if ratio > best_ratio:
+            best_ratio = ratio
+            best_preset = filename
+        if ratio >= 1.0:
+            break
+
+    return best_preset if best_ratio >= 0.95 else None
