@@ -146,3 +146,49 @@ class BoneMapManager:
     def get_standard_from_game(self, game_bone_name):
         """输入 MhBone_013 -> 返回 pelvis"""
         return self.reverse_mapping.get(game_bone_name, None)
+
+
+def _list_preset_files(is_import_x):
+    """返回预设目录下所有 .json 文件名列表"""
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    root_dir = os.path.dirname(current_dir)
+    sub_dir = os.path.join("presets", "import" if is_import_x else "bone")
+    preset_dir = os.path.join(root_dir, "assets", sub_dir)
+    if not os.path.exists(preset_dir):
+        return []
+    return sorted(f for f in os.listdir(preset_dir) if f.endswith('.json'))
+
+
+def auto_detect_preset(armature_obj, is_import_x):
+    """遍历所有预设文件，对每个预设在骨架的 47 个标准骨骼上做匹配测试，
+    返回覆盖率最高的文件名。覆盖率 >= 95% 才视为匹配成功，否则返回 None。"""
+    from .ui_config import OPTIONAL_BONES
+
+    best_preset = None
+    best_ratio = 0.0
+
+    for filename in _list_preset_files(is_import_x):
+        mapper = BoneMapManager()
+        if not mapper.load_preset(filename, is_import_x):
+            continue
+
+        total = 0
+        matched = 0
+        for std_key in STANDARD_BONE_NAMES:
+            if std_key in OPTIONAL_BONES:
+                continue
+            total += 1
+            main, _ = mapper.get_matches_for_standard(armature_obj, std_key)
+            if main:
+                matched += 1
+
+        if total == 0:
+            continue
+        ratio = matched / total
+        if ratio > best_ratio:
+            best_ratio = ratio
+            best_preset = filename
+        if ratio >= 1.0:
+            break
+
+    return best_preset if best_ratio >= 0.95 else None

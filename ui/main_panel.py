@@ -1,4 +1,5 @@
 import bpy
+import os
 from bpy.app.translations import pgettext as _
 from ..core import bone_utils, weight_utils, ui_config
 from ..core.bone_utils import get_import_presets_callback, get_target_presets_callback
@@ -16,6 +17,28 @@ from ..core.bone_mapper import BoneMapManager
 
 # 映射详情预览缓存：{(x_preset, y_preset): (mapper_x, mapper_y)}
 _mapping_detail_cache = {}
+
+def _on_auto_preset_update(self, context, is_import_x, attr_name):
+    """选中 'AUTO' 时自动检测最匹配的预设，直接替换枚举值"""
+    if getattr(self, attr_name) != 'AUTO':
+        return
+    arm = context.active_object
+    if not arm or arm.type != 'ARMATURE':
+        return
+    from ..core.bone_mapper import auto_detect_preset
+    result = auto_detect_preset(arm, is_import_x)
+    if result:
+        setattr(self, attr_name, result)
+
+def _on_auto_import_update(self, context):
+    _on_auto_preset_update(self, context, True, 'import_preset_enum')
+
+def _on_auto_target_update(self, context):
+    _on_auto_preset_update(self, context, False, 'target_preset_enum')
+
+def _on_auto_pose_update(self, context):
+    _on_auto_preset_update(self, context, True, 'pose_import_preset_enum')
+
 
 class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     # 顶部开关
@@ -35,13 +58,15 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     import_preset_enum: bpy.props.EnumProperty(
         name="来源预设 (X)",
         description="选择导入模型的骨架结构",
-        items=get_import_presets_callback
+        items=get_import_presets_callback,
+        update=_on_auto_import_update
     )
     
     target_preset_enum: bpy.props.EnumProperty(
         name="目标游戏 (Y)",
         description="选择要导出的目标游戏",
-        items=get_target_presets_callback
+        items=get_target_presets_callback,
+        update=_on_auto_target_update
     )
     
     show_mapping_details: bpy.props.BoolProperty(name="显示映射细节", default=False)
@@ -62,7 +87,8 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     pose_import_preset_enum: bpy.props.EnumProperty(
         name="骨架预设",
         description="用于识别骨骼名称的预设",
-        items=get_import_presets_callback
+        items=get_import_presets_callback,
+        update=_on_auto_pose_update
     )
     
     # 姿态记录文件选择
@@ -480,8 +506,16 @@ class MHW_PT_MainPanel(bpy.types.Panel):
 
         if settings.show_std_converter:
             col = main_box.column(align=True)
-            col.prop(settings, "import_preset_enum", icon='IMPORT')
-            col.prop(settings, "target_preset_enum", icon='EXPORT')
+            row = col.row(align=True)
+            row.prop(settings, "import_preset_enum", icon='IMPORT')
+            op = row.operator("modder.auto_detect_preset", text="", icon='VIEWZOOM')
+            op.attr_name = 'import_preset_enum'
+            op.is_import_x = True
+            row = col.row(align=True)
+            row.prop(settings, "target_preset_enum", icon='EXPORT')
+            op = row.operator("modder.auto_detect_preset", text="", icon='VIEWZOOM')
+            op.attr_name = 'target_preset_enum'
+            op.is_import_x = False
             
             col.separator()
             
@@ -590,7 +624,11 @@ class MHW_PT_MainPanel(bpy.types.Panel):
         if settings.show_pose_convert:
             col = pose_box.column(align=True)
             
-            col.prop(settings, "pose_import_preset_enum", text="骨架预设", icon='IMPORT')
+            row = col.row(align=True)
+            row.prop(settings, "pose_import_preset_enum", text="骨架预设", icon='IMPORT')
+            op = row.operator("modder.auto_detect_preset", text="", icon='VIEWZOOM')
+            op.attr_name = 'pose_import_preset_enum'
+            op.is_import_x = True
             
             col.separator()
             col.label(text="简易工具:")
@@ -743,6 +781,36 @@ classes = [
     MHW_OT_GeneralTools,
     MHW_PT_MainPanel,
 ]
+
+
+class MODDER_OT_AutoDetectPreset(bpy.types.Operator):
+    """检测当前选中骨架的骨骼覆盖率，自动匹配最合适的预设"""
+    bl_idname = "modder.auto_detect_preset"
+    bl_label = "识别预设"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    attr_name: bpy.props.StringProperty()
+    is_import_x: bpy.props.BoolProperty(default=True)
+
+    def execute(self, context):
+        arm = context.active_object
+        if not arm or arm.type != 'ARMATURE':
+            self.report({'WARNING'}, "请先选中骨架")
+            return {'CANCELLED'}
+
+        from ..core.bone_mapper import auto_detect_preset
+        result = auto_detect_preset(arm, self.is_import_x)
+        if result:
+            settings = context.scene.mhw_suite_settings
+            setattr(settings, self.attr_name, result)
+            display = os.path.splitext(result)[0]
+            self.report({'INFO'}, f"已识别: {display}")
+        else:
+            self.report({'WARNING'}, "未找到覆盖率 >= 95% 的预设，请手动选择")
+        return {'FINISHED'}
+
+
+classes.append(MODDER_OT_AutoDetectPreset)
 
 def register():
     for cls in classes:

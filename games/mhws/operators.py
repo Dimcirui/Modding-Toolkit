@@ -1,3 +1,5 @@
+import sys
+import time
 import bpy
 from bpy.app.translations import pgettext as _
 from ...core import weight_utils
@@ -338,6 +340,23 @@ def _get_chain_col_items(self, context):
     return _chain_col_items
 
 
+def _patch_chain_cleanup(disable=True):
+    """搜索 sys.modules 中所有持有 alignChains + setChainBoneColor 可调用函数的模块，
+    批量替换为 no-op（disable=True）或恢复原始函数（disable=False）。
+    RE-Chain-Editor 里 re_chain_operators 通过 from import 持有副本引用，
+    单 patch 一个模块不够，必须批量覆盖所有引用点。"""
+    saved = []
+    for mod in sys.modules.values():
+        has_align = hasattr(mod, 'alignChains') and callable(mod.alignChains)
+        has_color = hasattr(mod, 'setChainBoneColor') and callable(mod.setChainBoneColor)
+        if has_align and has_color:
+            saved.append((mod, mod.alignChains, mod.setChainBoneColor))
+            if disable:
+                mod.alignChains = lambda: None
+                mod.setChainBoneColor = lambda x: None
+    return saved
+
+
 class MHWS_OT_AutoCreateChains(bpy.types.Operator):
     """在姿态模式下，根据物理骨骼的 chain_role 属性自动为每条链创建 Chain Settings 和 Chain Group。
 支持分叉物理链，分叉链使用实验模式生成，线性链使用默认模式生成。
@@ -357,7 +376,7 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
             ('SEPARATE', "各自独立", "每条链拥有独立的 Chain Settings"),
             ('SHARED',   "共享同一", "所有链共用同一个 Chain Settings"),
         ],
-        default='SEPARATE',
+        default='SHARED',
     )
 
     @classmethod
@@ -394,6 +413,8 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
         layout.prop(self, "settings_mode", expand=True)
 
     def execute(self, context):
+        t_total = time.perf_counter()
+
         col = bpy.data.collections.get(self.chain_collection)
         # 脚本直调时 chain_collection enum 拿不到值，fallback 到 toolpanel 已设的集合
         if col is None:
@@ -436,11 +457,16 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
         physics_bones = {b.name for b in armature.data.bones if b.name not in preset_bones}
 
         # 将所有链头分解为线性路径：[(head_pb, paths, path), ...]
+        t_decompose = time.perf_counter()
         all_entries = []
         for head_pb in chain_heads:
             paths = _decompose_chains(head_pb, armature, physics_bones)
             for path in paths:
                 all_entries.append((head_pb, paths, path))
+        t_decompose = time.perf_counter() - t_decompose
+        print(f"[ChainGen] _decompose_chains: {t_decompose:.4f}s  "
+              f"({len(chain_heads)} heads -> {len(all_entries)} paths)",
+              file=sys.stderr)
 
         created = 0
         skipped = 0
@@ -451,38 +477,58 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
                 return {'CANCELLED'}
 
         saved_experimental = getattr(toolpanel, 'experimentalPoseModeOptions', False)
+
+        # monkey-patch RE-Chain-Editor 的 alignChains() / setChainBoneColor()
+        # 批量替换所有引用点为 no-op，避免每条链创建后 O(n) 扫描全体对象
+        _patches = _patch_chain_cleanup(disable=True)
+
+        t_loop = time.perf_counter()
         try:
-            for head_pb, head_paths, path in all_entries:
+            for idx, (head_pb, head_paths, path) in enumerate(all_entries, 1):
+                t_settings = 0.0
                 if self.settings_mode == 'SEPARATE':
+                    t0 = time.perf_counter()
                     if bpy.ops.re_chain.create_chain_settings() != {'FINISHED'}:
                         skipped += 1
                         continue
+                    t_settings = time.perf_counter() - t0
 
                 bpy.ops.pose.select_all(action='DESELECT')
-                use_experimental = len(head_paths) > 1
+                # _decompose_chains 已提供精确的物理骨骼路径，统一走 exp 模式
+                # 避免 norm 模式的 children_recursive 扫到非物理子骨分叉导致失败
+                for bone_name in path:
+                    pb2 = armature.pose.bones.get(bone_name)
+                    if pb2:
+                        pb2.bone.select = True
+                first_pb = armature.pose.bones.get(path[0]) if path else None
+                if first_pb:
+                    armature.data.bones.active = first_pb.bone
+                toolpanel.experimentalPoseModeOptions = True
 
-                if use_experimental:
-                    # 分支链：实验模式，选中路径上的全部骨骼
-                    for bone_name in path:
-                        pb2 = armature.pose.bones.get(bone_name)
-                        if pb2:
-                            pb2.bone.select = True
-                    first_pb = armature.pose.bones.get(path[0]) if path else None
-                    if first_pb:
-                        armature.data.bones.active = first_pb.bone
-                    toolpanel.experimentalPoseModeOptions = True
-                else:
-                    # 线性链：默认模式，只选链头
-                    head_pb.bone.select = True
-                    armature.data.bones.active = head_pb.bone
-                    toolpanel.experimentalPoseModeOptions = False
-
+                t0 = time.perf_counter()
                 if bpy.ops.re_chain.chain_from_bone() == {'FINISHED'}:
                     created += 1
                 else:
                     skipped += 1
+                t_chain = time.perf_counter() - t0
+
+                print(f"[ChainGen] Chain {idx:3d}/{len(all_entries)}  "
+                      f"settings={t_settings:.4f}s  create={t_chain:.4f}s  "
+                      f"bones={len(path):2d}",
+                      file=sys.stderr)
         finally:
+            _patch_chain_cleanup(disable=False)
+            if _patches and created > 0:
+                mod, _align, _color = _patches[0]
+                _align()
+                _color(armature)
             toolpanel.experimentalPoseModeOptions = saved_experimental
+
+        t_loop = time.perf_counter() - t_loop
+        t_total = time.perf_counter() - t_total
+        print(f"[ChainGen] --- loop: {t_loop:.4f}s  total: {t_total:.4f}s  "
+              f"created={created}  skipped={skipped} ---",
+              file=sys.stderr)
 
         self.report({'INFO'}, _("已创建 %d 条链，跳过 %d 条") % (created, skipped))
         return {'FINISHED'}

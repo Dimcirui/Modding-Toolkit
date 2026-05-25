@@ -225,10 +225,12 @@ def get_preset_items(subdir):
 
 def get_import_presets_callback(self, context):
     _import_preset_cache.clear()
+    _import_preset_cache.append(("AUTO", "自动识别", "根据骨架骨骼覆盖率自动选择最匹配的预设"))
     _import_preset_cache.extend(get_preset_items("presets/import"))
     return _import_preset_cache
 
 def get_target_presets_callback(self, context):
     _target_preset_cache.clear()
+    _target_preset_cache.append(("AUTO", "自动识别", "根据骨架骨骼覆盖率自动选择最匹配的预设"))
     _target_preset_cache.extend(get_preset_items("presets/bone"))
     return _target_preset_cache
