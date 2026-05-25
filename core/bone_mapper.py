@@ -160,11 +160,9 @@ def _list_preset_files(is_import_x):
 
 
 def auto_detect_preset(armature_obj, is_import_x):
-    """遍历所有预设文件，对每个预设做模糊骨骼匹配，返回覆盖率最高的文件名。
-    覆盖率 >= 95% 才视为匹配成功，否则返回 None。"""
-    all_bones = {b.name for b in armature_obj.data.bones}
-    if not all_bones:
-        return None
+    """遍历所有预设文件，对每个预设在骨架的 47 个标准骨骼上做匹配测试，
+    返回覆盖率最高的文件名。覆盖率 >= 95% 才视为匹配成功，否则返回 None。"""
+    from .ui_config import OPTIONAL_BONES
 
     best_preset = None
     best_ratio = 0.0
@@ -174,17 +172,16 @@ def auto_detect_preset(armature_obj, is_import_x):
         if not mapper.load_preset(filename, is_import_x):
             continue
 
-        preset_bones = set()
-        for std_key in mapper.mapping_data:
-            main_actual, aux_actuals = mapper.get_matches_for_standard(armature_obj, std_key)
-            if main_actual:
-                preset_bones.add(main_actual)
-            preset_bones.update(aux_actuals)
-        preset_bones.update(mapper.exclude_bones & all_bones)
+        total = 0
+        matched = 0
+        for std_key in STANDARD_BONE_NAMES:
+            if std_key in OPTIONAL_BONES:
+                continue
+            total += 1
+            main, _ = mapper.get_matches_for_standard(armature_obj, std_key)
+            if main:
+                matched += 1
 
-        exclude_in_arm = mapper.exclude_bones & all_bones
-        total = len(all_bones - exclude_in_arm)
-        matched = len(preset_bones - exclude_in_arm)
         if total == 0:
             continue
         ratio = matched / total
