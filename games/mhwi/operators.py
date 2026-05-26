@@ -371,10 +371,10 @@ def _count_rename_failures(armature, physics_bones_ordered, id_range):
                 pass
     success = 0
     fail = 0
-    edit_bones = armature.data.edit_bones
+    existing_names = {b.name for b in armature.data.bones}
     for name in physics_bones_ordered:
         new_id = _assign_next_id(used_ids, id_range)
-        if new_id is None or edit_bones.get(name) is None:
+        if new_id is None or name not in existing_names:
             fail += 1
             continue
         used_ids.add(new_id)
