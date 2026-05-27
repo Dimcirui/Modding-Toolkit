@@ -2,6 +2,7 @@ import bpy
 import os
 from bpy.app.translations import pgettext as _
 from . import data_maps
+from ...core.re_chain_utils import REChainConfig, auto_create_re_chains
 
 _FINGER_INITIALS = {
     'Index': 'I', 'Thumb': 'T', 'Middle': 'M',
@@ -385,8 +386,83 @@ class RE4_OT_FakeBone_OneClick(bpy.types.Operator):
             return {'CANCELLED'}
 
 
+class RE4_OT_AutoCreateChains(bpy.types.Operator):
+    """一键创建 RE Chain（RE4 默认 .chain 格式）。"""
+    bl_idname = "re4.auto_create_chains"
+    bl_label = "一键创建 RE Chain"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    settings_mode: bpy.props.EnumProperty(
+        name="Settings 模式",
+        items=[
+            ('SEPARATE', "各自独立", "每条链拥有独立的 Chain Settings"),
+            ('SHARED',   "共享同一", "所有链共用同一个 Chain Settings"),
+        ],
+        default='SHARED',
+    )
+    auto_create_collection: bpy.props.BoolProperty(
+        name="自动创建集合",
+        default=False,
+    )
+    collection_name: bpy.props.StringProperty(
+        name="集合名称",
+        default="",
+    )
+    chain_format: bpy.props.EnumProperty(
+        name="Chain 格式",
+        items=[
+            (".chain", "Chain", "旧格式，用于 RE4 等早期游戏"),
+            (".chain2", "Chain2", "新格式，用于 MHWilds / RE9"),
+        ],
+        default='.chain',
+    )
+
+    @classmethod
+    def poll(cls, context):
+        return (context.mode == 'POSE'
+                and context.active_object is not None
+                and context.active_object.type == 'ARMATURE'
+                and hasattr(bpy.ops, 're_chain')
+                and hasattr(bpy.ops.re_chain, 'create_chain_settings'))
+
+    def invoke(self, context, event):
+        if not self.collection_name:
+            col_name = context.scene.get("REMeshLastImportedCollection", "")
+            if col_name and ".mesh" in col_name:
+                self.collection_name = col_name.split(".mesh")[0]
+        return context.window_manager.invoke_props_dialog(self, width=360)
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.prop(self, "auto_create_collection", text="自动创建集合")
+        if self.auto_create_collection:
+            layout.prop(self, "collection_name")
+            layout.prop(self, "chain_format", expand=True)
+        layout.prop(self, "settings_mode", expand=True)
+
+    def execute(self, context):
+        config = REChainConfig(
+            chain_format=self.chain_format,
+            chain_file_type="chain",
+            auto_create_collection=self.auto_create_collection,
+            collection_name=self.collection_name,
+            tuning=None,
+            settings_mode=self.settings_mode,
+            selected_collection="",
+        )
+        armature = context.active_object
+        status = auto_create_re_chains(context, armature, config)
+        if status == {'CANCELLED'}:
+            self.report({'ERROR'}, _("创建 RE Chain 失败"))
+            return {'CANCELLED'}
+        self.report({'INFO'}, _("RE Chain 创建完成"))
+        return {'FINISHED'}
+
+
 classes = [
     RE4_OT_FakeBone_OneClick,
+    RE4_OT_AutoCreateChains,
 ]
 
 def register():

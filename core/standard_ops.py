@@ -1,6 +1,6 @@
 import bpy, mathutils
 from bpy.app.translations import pgettext as _
-from .bone_mapper import BoneMapManager, STANDARD_BONE_NAMES, _normalize_bone_name, auto_detect_preset
+from .bone_mapper import BoneMapManager, STANDARD_BONE_NAMES, _normalize_bone_name, auto_detect_preset, resolve_preset
 from . import weight_utils, bone_utils
 
 
@@ -55,12 +55,17 @@ class MODDER_OT_ApplyStandardX(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        settings = context.scene.mhw_suite_settings 
+        settings = context.scene.mhw_suite_settings
         arm_obj = context.active_object
-        
+
+        x_preset, err = resolve_preset(settings.import_preset_enum, arm_obj, True)
+        if x_preset is None:
+            self.report({'WARNING'}, err)
+            return {'CANCELLED'}
+
         # 1. 加载预设
         mapper = BoneMapManager()
-        if not mapper.load_preset(settings.import_preset_enum, is_import_x=True):
+        if not mapper.load_preset(x_preset, is_import_x=True):
             self.report({'ERROR'}, _("预设加载失败"))
             return {'CANCELLED'}
 
@@ -112,9 +117,14 @@ class MODDER_OT_ApplyStandardY(bpy.types.Operator):
     def execute(self, context):
         settings = context.scene.mhw_suite_settings
         arm_obj = context.active_object
-        
+
+        y_preset, err = resolve_preset(settings.target_preset_enum, arm_obj, False)
+        if y_preset is None:
+            self.report({'WARNING'}, err)
+            return {'CANCELLED'}
+
         mapper = BoneMapManager()
-        if not mapper.load_preset(settings.target_preset_enum, is_import_x=False):
+        if not mapper.load_preset(y_preset, is_import_x=False):
             self.report({'ERROR'}, _("无法加载 Y 预设"))
             return {'CANCELLED'}
 
@@ -137,22 +147,38 @@ class MODDER_OT_DirectConvert(bpy.types.Operator):
 
     def execute(self, context):
         settings = context.scene.mhw_suite_settings
-        
+
         # 1. 获取选中的所有网格对象
         selected_meshes = [o for o in context.selected_objects if o.type == 'MESH']
-        
+
         if not selected_meshes:
             self.report({'ERROR'}, _("请至少选中一个网格 (Mesh)"))
             return {'CANCELLED'}
 
+        if settings.import_preset_enum == 'AUTO' and settings.target_preset_enum == 'AUTO':
+            self.report({'WARNING'}, _("重命名顶点组 (X+Y) 无法同时自动识别两个预设，因为操作对象为网格，没有独立的目标骨架来识别 Y 预设。请手动选择其中一个预设"))
+            return {'CANCELLED'}
+
+        arm_for_detect = next((m.find_armature() for m in selected_meshes if m.find_armature()), None)
+
+        x_preset, err = resolve_preset(settings.import_preset_enum, arm_for_detect, True)
+        if x_preset is None:
+            self.report({'WARNING'}, _("来源预设 (X): ") + err)
+            return {'CANCELLED'}
+
+        y_preset, err = resolve_preset(settings.target_preset_enum, arm_for_detect, False)
+        if y_preset is None:
+            self.report({'WARNING'}, _("目标预设 (Y): ") + err)
+            return {'CANCELLED'}
+
         # 2. 加载映射表
         mapper_x = BoneMapManager()
-        if not mapper_x.load_preset(settings.import_preset_enum, is_import_x=True):
+        if not mapper_x.load_preset(x_preset, is_import_x=True):
             self.report({'ERROR'}, _("无法加载 X 预设"))
             return {'CANCELLED'}
 
         mapper_y = BoneMapManager()
-        if not mapper_y.load_preset(settings.target_preset_enum, is_import_x=False):
+        if not mapper_y.load_preset(y_preset, is_import_x=False):
             self.report({'ERROR'}, _("无法加载 Y 预设"))
             return {'CANCELLED'}
 
@@ -259,16 +285,26 @@ class MODDER_OT_UniversalSnap(bpy.types.Operator):
             return {'CANCELLED'}
             
         target_arm = context.active_object  # 活动的是目标 (Y, 如 MHWI)
-        source_arm = [o for o in selected_objs if o != target_arm][0] # 另一个是源 (X, 如 VRC)
-        
+        source_arm = [o for o in selected_objs if o != target_arm][0]  # 另一个是源 (X, 如 VRC)
+
+        x_preset, err = resolve_preset(settings.import_preset_enum, source_arm, True)
+        if x_preset is None:
+            self.report({'WARNING'}, _("来源预设 (X): ") + err)
+            return {'CANCELLED'}
+
+        y_preset, err = resolve_preset(settings.target_preset_enum, target_arm, False)
+        if y_preset is None:
+            self.report({'WARNING'}, _("目标预设 (Y): ") + err)
+            return {'CANCELLED'}
+
         # 2. 加载映射表
         mapper_x = BoneMapManager()
-        if not mapper_x.load_preset(settings.import_preset_enum, is_import_x=True):
+        if not mapper_x.load_preset(x_preset, is_import_x=True):
             self.report({'ERROR'}, _("无法加载 X 预设"))
             return {'CANCELLED'}
 
         mapper_y = BoneMapManager()
-        if not mapper_y.load_preset(settings.target_preset_enum, is_import_x=False):
+        if not mapper_y.load_preset(y_preset, is_import_x=False):
             self.report({'ERROR'}, _("无法加载 Y 预设"))
             return {'CANCELLED'}
 
@@ -373,13 +409,23 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
         from .bone_mapper import BoneMapManager
         settings = context.scene.mhw_suite_settings
 
+        x_preset, err = resolve_preset(settings.import_preset_enum, source_arm, True)
+        if x_preset is None:
+            self.report({'WARNING'}, _("来源预设 (X): ") + err)
+            return {'CANCELLED'}
+
+        y_preset, err = resolve_preset(settings.target_preset_enum, target_arm, False)
+        if y_preset is None:
+            self.report({'WARNING'}, _("目标预设 (Y): ") + err)
+            return {'CANCELLED'}
+
         src_mapper = BoneMapManager()
-        if not src_mapper.load_preset(settings.import_preset_enum, is_import_x=True):
+        if not src_mapper.load_preset(x_preset, is_import_x=True):
             self.report({'ERROR'}, _("无法加载源预设 (In)"))
             return {'CANCELLED'}
 
         tgt_mapper = BoneMapManager()
-        if not tgt_mapper.load_preset(settings.target_preset_enum, is_import_x=False):
+        if not tgt_mapper.load_preset(y_preset, is_import_x=False):
             self.report({'ERROR'}, _("无法加载目标预设 (Out)"))
             return {'CANCELLED'}
 
@@ -584,7 +630,7 @@ class MODDER_OT_MergePhysicsWeights(bpy.types.Operator):
         if not selected_meshes:
             self.report({'ERROR'}, _("请至少选中一个网格"))
             return {'CANCELLED'}
-        
+
         # 需要一个骨架来分析骨骼层级
         arm_obj = None
         for mesh_obj in selected_meshes:
@@ -592,14 +638,19 @@ class MODDER_OT_MergePhysicsWeights(bpy.types.Operator):
             if arm:
                 arm_obj = arm
                 break
-        
+
         if not arm_obj:
             self.report({'ERROR'}, _("选中的网格没有绑定骨架"))
             return {'CANCELLED'}
-        
+
+        x_preset, err = resolve_preset(settings.import_preset_enum, arm_obj, True)
+        if x_preset is None:
+            self.report({'WARNING'}, err)
+            return {'CANCELLED'}
+
         # 加载 X 预设，判断哪些是基础骨骼
         mapper = BoneMapManager()
-        if not mapper.load_preset(settings.import_preset_enum, is_import_x=True):
+        if not mapper.load_preset(x_preset, is_import_x=True):
             self.report({'ERROR'}, _("无法加载 X 预设"))
             return {'CANCELLED'}
 
@@ -667,17 +718,31 @@ class MODDER_OT_RenameBonesToTarget(bpy.types.Operator):
             self.report({'ERROR'}, _("请先选中一个骨架"))
             return {'CANCELLED'}
 
+        if settings.import_preset_enum == 'AUTO' and settings.target_preset_enum == 'AUTO':
+            self.report({'WARNING'}, _("基础骨骼改名 (X+Y) 无法同时自动识别两个预设，因为操作对象为单一骨架，无法区分 X 和 Y。请手动选择其中一个预设"))
+            return {'CANCELLED'}
+
+        x_preset, err = resolve_preset(settings.import_preset_enum, arm_obj, True)
+        if x_preset is None:
+            self.report({'WARNING'}, _("来源预设 (X): ") + err)
+            return {'CANCELLED'}
+
+        y_preset, err = resolve_preset(settings.target_preset_enum, arm_obj, False)
+        if y_preset is None:
+            self.report({'WARNING'}, _("目标预设 (Y): ") + err)
+            return {'CANCELLED'}
+
         # 加载 X 和 Y 预设
         mapper_x = BoneMapManager()
-        if not mapper_x.load_preset(settings.import_preset_enum, is_import_x=True):
+        if not mapper_x.load_preset(x_preset, is_import_x=True):
             self.report({'ERROR'}, _("无法加载 X 预设"))
             return {'CANCELLED'}
 
         mapper_y = BoneMapManager()
-        if not mapper_y.load_preset(settings.target_preset_enum, is_import_x=False):
+        if not mapper_y.load_preset(y_preset, is_import_x=False):
             self.report({'ERROR'}, _("无法加载 Y 预设"))
             return {'CANCELLED'}
-        
+
         # 通过标准键桥接: X 实际骨骼名 -> 标准键 -> Y 目标骨骼名
         rename_map = {}  # {当前骨骼名: 目标骨骼名}
         
@@ -728,13 +793,18 @@ class MODDER_OT_RemoveNonBaseBones(bpy.types.Operator):
     def execute(self, context):
         settings = context.scene.mhw_suite_settings
         arm_obj = context.active_object
-        
+
         if not arm_obj or arm_obj.type != 'ARMATURE':
             self.report({'ERROR'}, _("请先选中一个骨架"))
             return {'CANCELLED'}
 
+        x_preset, err = resolve_preset(settings.import_preset_enum, arm_obj, True)
+        if x_preset is None:
+            self.report({'WARNING'}, err)
+            return {'CANCELLED'}
+
         mapper = BoneMapManager()
-        if not mapper.load_preset(settings.import_preset_enum, is_import_x=True):
+        if not mapper.load_preset(x_preset, is_import_x=True):
             self.report({'ERROR'}, _("无法加载 X 预设"))
             return {'CANCELLED'}
         
@@ -786,8 +856,12 @@ class MODDER_OT_SetBoneVisibility(bpy.types.Operator):
 
         preset_bones = set()
         if self.mode != 'ALL':
+            x_preset, err = resolve_preset(settings.import_preset_enum, arm_obj, True)
+            if x_preset is None:
+                self.report({'WARNING'}, err)
+                return {'CANCELLED'}
             mapper = BoneMapManager()
-            if not mapper.load_preset(settings.import_preset_enum, is_import_x=True):
+            if not mapper.load_preset(x_preset, is_import_x=True):
                 self.report({'ERROR'}, _("预设加载失败"))
                 return {'CANCELLED'}
             preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
@@ -858,10 +932,14 @@ class MODDER_OT_RefreshPhysicsBoneColors(bpy.types.Operator):
                 self.report({'ERROR'}, _("无法加载自动识别的预设"))
                 return {'CANCELLED'}
         else:
-            if not mapper.load_preset(settings.import_preset_enum, is_import_x=True):
+            fallback = settings.import_preset_enum
+            if fallback == 'AUTO':
+                self.report({'WARNING'}, _("未能自动识别预设，请手动选择 X 预设"))
+                return {'CANCELLED'}
+            if not mapper.load_preset(fallback, is_import_x=True):
                 self.report({'ERROR'}, _("无法加载 X 预设"))
                 return {'CANCELLED'}
-            self.report({'WARNING'}, _("未能自动识别目标游戏预设，回退至来源预设 [%s]，建议手动切换") % settings.import_preset_enum)
+            self.report({'WARNING'}, _("未能自动识别目标游戏预设，回退至来源预设 [%s]，建议手动切换") % fallback)
 
         preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
         bpy.context.view_layer.objects.active = arm_obj
@@ -985,7 +1063,8 @@ class MODDER_OT_MergeIntoParent(bpy.types.Operator):
 
         settings = context.scene.mhw_suite_settings
         mapper = BoneMapManager()
-        if mapper.load_preset(settings.import_preset_enum, is_import_x=True):
+        _x, _ = resolve_preset(settings.import_preset_enum, arm_obj, True)
+        if _x and mapper.load_preset(_x, is_import_x=True):
             preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
             bpy.context.view_layer.objects.active = arm_obj
             bpy.ops.object.mode_set(mode='POSE')

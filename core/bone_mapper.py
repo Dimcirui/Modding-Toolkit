@@ -59,7 +59,7 @@ class BoneMapManager:
         """
         加载预设
         """
-        if not filename or filename == "NONE":
+        if not filename or filename in ("NONE", "AUTO"):
             return False
         
         real_filename = os.path.basename(unquote(filename))
@@ -192,3 +192,17 @@ def auto_detect_preset(armature_obj, is_import_x):
             break
 
     return best_preset if best_ratio >= 0.95 else None
+
+
+def resolve_preset(preset_value, arm_obj, is_import_x):
+    """若 preset_value 为 'AUTO'，则对 arm_obj 执行自动检测并返回匹配的预设文件名。
+    返回 (resolved_filename_or_None, error_msg_or_None)。
+    非 AUTO 值直接透传；AUTO 检测失败时 resolved 为 None，error_msg 说明原因。"""
+    if preset_value != 'AUTO':
+        return preset_value, None
+    if not arm_obj or arm_obj.type != 'ARMATURE':
+        return None, "自动识别需要骨架对象，但未找到可用骨架"
+    result = auto_detect_preset(arm_obj, is_import_x)
+    if result:
+        return result, None
+    return None, "自动识别未找到覆盖率 ≥ 95% 的匹配预设，请手动选择预设或新建预设"

@@ -299,7 +299,7 @@ def _compose_channels(slot_type, pbr_paths, pbr_channels, temp_dir, tex_name, pb
         tmp_name = f"__mdf_compose_tmp_{pbr_type}"
         if tmp_name in bpy.data.images:
             bpy.data.images.remove(bpy.data.images[tmp_name])
-        img = bpy.data.images.load(img_path)
+        img = bpy.data.images.load(img_path, check_existing=False)
         img.name = tmp_name
         img.colorspace_settings.name = 'Non-Color'
         iw, ih = img.size

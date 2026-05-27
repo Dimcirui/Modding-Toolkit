@@ -11,6 +11,7 @@ from ...core.mdf_generator_base import (
     _get_pbr_paths, _slugify, _strip_blender_suffix, _separate_mesh_by_material,
     _emissive_strength_is_zero, _is_emissive_slot, _is_albedo_slot,
     _make_source_id, _try_downgrade_slot, _generate_solid_texture_path,
+    _detect_max_tex_size,
     load_mhwi_preset_enum_items,
     _import_mhwi_tex_convert, _call_mhwi_read_preset, _import_mhwi_create_collection,
     BAKE_SIZE_DEFAULT,
@@ -261,9 +262,10 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
         _t = time.time()
         strategies = analyze_material_strategies(mat)
         # print(f"[{self._log_tag}]   分析材质节点: {time.time() - _t:.2f}s", flush=True)
+        bake_size  = max(_detect_max_tex_size(mat), self._bake_size)
         _t = time.time()
         pbr_paths  = _get_pbr_paths(
-            mat, strategies, temp_dir, self._bake_size, context, mesh_obj)
+            mat, strategies, temp_dir, bake_size, context, mesh_obj)
         # print(f"[{self._log_tag}]   解析PBR路径 (含烘培): {time.time() - _t:.2f}s", flush=True)
 
         # User-provided AO override (Blender has no built-in AO node)

@@ -16,7 +16,7 @@ import os
 import copy
 import mathutils
 from bpy.app.translations import pgettext as _
-from .bone_mapper import BoneMapManager, STANDARD_BONE_NAMES
+from .bone_mapper import BoneMapManager, STANDARD_BONE_NAMES, resolve_preset
 from .bone_utils import get_import_presets_callback
 
 
@@ -59,13 +59,18 @@ class MODDER_OT_TPoseDirection(bpy.types.Operator):
     def execute(self, context):
         settings = context.scene.mhw_suite_settings
         arm_obj = context.active_object
-        
+
         if not arm_obj or arm_obj.type != 'ARMATURE':
             self.report({'ERROR'}, _("请先选中一个骨架"))
             return {'CANCELLED'}
 
+        pose_preset, err = resolve_preset(settings.pose_import_preset_enum, arm_obj, True)
+        if pose_preset is None:
+            self.report({'WARNING'}, err)
+            return {'CANCELLED'}
+
         mapper = BoneMapManager()
-        if not mapper.load_preset(settings.pose_import_preset_enum, is_import_x=True):
+        if not mapper.load_preset(pose_preset, is_import_x=True):
             self.report({'ERROR'}, _("无法加载骨架预设"))
             return {'CANCELLED'}
 
@@ -121,13 +126,18 @@ class MODDER_OT_TPoseMatrixZero(bpy.types.Operator):
     def execute(self, context):
         settings = context.scene.mhw_suite_settings
         arm_obj = context.active_object
-        
+
         if not arm_obj or arm_obj.type != 'ARMATURE':
             self.report({'ERROR'}, _("请先选中一个骨架"))
             return {'CANCELLED'}
 
+        pose_preset, err = resolve_preset(settings.pose_import_preset_enum, arm_obj, True)
+        if pose_preset is None:
+            self.report({'WARNING'}, err)
+            return {'CANCELLED'}
+
         mapper = BoneMapManager()
-        if not mapper.load_preset(settings.pose_import_preset_enum, is_import_x=True):
+        if not mapper.load_preset(pose_preset, is_import_x=True):
             self.report({'ERROR'}, _("无法加载骨架预设"))
             return {'CANCELLED'}
 
@@ -362,7 +372,8 @@ def _apply_transform(operator, context, inverse=False):
     mapper = BoneMapManager()
     bone_mapping = {}  # {target_bone_name: transform_bone_name}
     
-    if mapper.load_preset(settings.pose_import_preset_enum, is_import_x=True):
+    _pose_preset, _ = resolve_preset(settings.pose_import_preset_enum, arm_obj, True)
+    if _pose_preset and mapper.load_preset(_pose_preset, is_import_x=True):
         # 通过预设的标准键做桥接
         # 先建立: transform_bone_name -> std_key 的映射
         # 再建立: std_key -> target_bone_name 的映射

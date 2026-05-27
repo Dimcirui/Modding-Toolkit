@@ -4,21 +4,9 @@ import bpy
 import re
 from bpy.app.translations import pgettext as _
 from ...core import bone_utils
-from ...core.bone_mapper import BoneMapManager
+from ...core.bone_mapper import BoneMapManager, resolve_preset
 from ...core.standard_ops import _build_fuzzy_preset_bones
-
-
-def _patch_chain_cleanup(disable=True):
-    saved = []
-    for mod in sys.modules.values():
-        has_align = hasattr(mod, 'alignChains') and callable(mod.alignChains)
-        has_color = hasattr(mod, 'setChainBoneColor') and callable(mod.setChainBoneColor)
-        if has_align and has_color:
-            saved.append((mod, mod.alignChains, mod.setChainBoneColor))
-            if disable:
-                mod.alignChains = lambda: None
-                mod.setChainBoneColor = lambda x: None
-    return saved
+from ...core.re_chain_utils import _patch_chain_cleanup
 
 
 def _is_mhwi_physics(name):
@@ -122,6 +110,16 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
         description="选择要写入的 CTC Collection",
         items=_get_ctc_col_items,
     )
+    auto_create_collection: bpy.props.BoolProperty(
+        name="自动创建集合",
+        description="勾选后自动创建 CTC Collection 及 Header，无需预先手动准备",
+        default=False,
+    )
+    collection_name: bpy.props.StringProperty(
+        name="集合名称",
+        description="新创建的 CTC Collection 名称（不含扩展名）",
+        default="",
+    )
 
     @classmethod
     def poll(cls, context):
@@ -140,44 +138,57 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
             for col in bpy.data.collections
             if _is_valid_ctc_collection(col)
         ]
-        if not _ctc_col_items:
-            self.report({'ERROR'}, _("未找到有效的 CTC Collection（需含 CTC_HEADER 空物体）"))
-            return {'CANCELLED'}
+
+        if not self.collection_name:
+            toolpanel = getattr(context.scene, 'mhw_mod3_toolpanel', None)
+            mod3_col = toolpanel.get("lastImportCollection") if toolpanel else None
+            if mod3_col and ".mod3" in mod3_col:
+                self.collection_name = mod3_col.split(".mod3")[0]
+
         return context.window_manager.invoke_props_dialog(self, width=320)
 
     def draw(self, _context):
-        self.layout.prop(self, "ctc_collection")
+        layout = self.layout
+        row = layout.row()
+        row.prop(self, "auto_create_collection", text="自动创建集合")
+        if self.auto_create_collection:
+            layout.prop(self, "collection_name")
+        else:
+            layout.prop(self, "ctc_collection")
 
     def execute(self, context):
         t_total = time.perf_counter()
 
-        col = bpy.data.collections.get(self.ctc_collection)
-        if col is None:
-            self.report({'ERROR'}, _("找不到集合: %s") % self.ctc_collection)
-            return {'CANCELLED'}
-
-        # 设置 MHW CTC 工具面板的目标集合
-        toolpanel = getattr(context.scene, 'mhw_ctc_toolpanel', None)
-        if toolpanel is None:
-            self.report({'ERROR'}, _("未找到 MHW CTC 场景属性，请确认 MHW Model Editor 已正确加载"))
-            return {'CANCELLED'}
-        toolpanel.ctcCollection = col
+        if self.auto_create_collection:
+            result = bpy.ops.mhw_ctc.create_ctc_collection(collectionName=self.collection_name)
+            if result != {'FINISHED'}:
+                self.report({'ERROR'}, _("自动创建 CTC Collection 失败"))
+                return {'CANCELLED'}
+        else:
+            col = bpy.data.collections.get(self.ctc_collection)
+            if col is None:
+                self.report({'ERROR'}, _("找不到集合: %s") % self.ctc_collection)
+                return {'CANCELLED'}
+            toolpanel = getattr(context.scene, 'mhw_ctc_toolpanel', None)
+            if toolpanel is None:
+                self.report({'ERROR'}, _("未找到 MHW CTC 场景属性，请确认 MHW Model Editor 已正确加载"))
+                return {'CANCELLED'}
+            toolpanel.ctcCollection = col
 
         armature = context.active_object
 
-        # 构建物理骨骼集合
         settings = context.scene.mhw_suite_settings
         mapper = BoneMapManager()
-        if mapper.load_preset(settings.import_preset_enum, is_import_x=True):
+        _x, _ = resolve_preset(settings.import_preset_enum, armature, True)
+        if _x and mapper.load_preset(_x, is_import_x=True):
             preset_bones = _build_fuzzy_preset_bones(mapper, armature)
         else:
             preset_bones = set()
         physics_bones = {b.name for b in armature.data.bones if b.name not in preset_bones}
 
-        # 幂等性：收集已存在的链头骨骼名
+        col = context.scene.mhw_ctc_toolpanel.ctcCollection
         existing_heads = _get_existing_chain_heads(col)
 
-        # 找所有链头
         chain_heads = [
             pb for pb in armature.pose.bones
             if pb.get("chain_role") in ("head", "branch_head")
@@ -189,7 +200,6 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
         print(f"[ChainGen CTC] {len(chain_heads)} heads -> {len(chain_heads)} chains (linear only)",
               file=sys.stderr)
 
-        # monkey-patch MHW Model Editor 的 alignChains() / setChainBoneColor()
         _patches = _patch_chain_cleanup(disable=True)
 
         created = 0
@@ -209,7 +219,6 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
                           file=sys.stderr)
                     continue
 
-                # 选中链头骨骼并调用 CTC chain 创建算子
                 bpy.ops.pose.select_all(action='DESELECT')
                 head_pb.bone.select = True
                 armature.data.bones.active = head_pb.bone
@@ -240,7 +249,6 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
               f"created={created}  skipped_existing={skipped_existing}  skipped_branch={len(skipped_branch)} ---",
               file=sys.stderr)
 
-        # 汇报结果
         msg_parts = [_("已创建 %d 条链") % created]
         if skipped_existing:
             msg_parts.append(_("已存在跳过 %d 条") % skipped_existing)
@@ -250,6 +258,8 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# ==========================================
+# 3. 物理骨骼规范化（拆分 + 重命名）
 # ==========================================
 # 3. 物理骨骼规范化（拆分 + 重命名）
 # ==========================================

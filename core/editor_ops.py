@@ -176,7 +176,7 @@ def _get_preset_dir(is_x):
 def _get_selected_filename(context, is_x):
     suite = context.scene.mhw_suite_settings
     raw = suite.import_preset_enum if is_x else suite.target_preset_enum
-    if not raw or raw == "NONE":
+    if not raw or raw in ("NONE", "AUTO"):
         return None
     return os.path.basename(raw)
 

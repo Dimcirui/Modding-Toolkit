@@ -471,6 +471,7 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context):
     bake_img = bpy.data.images.new(img_name, width=size, height=size,
                                    alpha=False, float_buffer=True)
 
+    orig_active_node = tree.nodes.active
     bake_node = tree.nodes.new('ShaderNodeTexImage')
     bake_node.image = bake_img
     tree.nodes.active = bake_node
@@ -615,9 +616,17 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context):
                 _, sock, val = item
                 sock.default_value = val
         tree.nodes.remove(bake_node)
+        try:
+            tree.nodes.active = orig_active_node
+        except Exception:
+            pass
         if img_name in bpy.data.images:
             bpy.data.images.remove(bpy.data.images[img_name])
         context.scene.render.engine = orig_engine
+        try:
+            material.node_tree.update_tag()
+        except Exception:
+            pass
         # print(f"[MDF Gen]   烘培 {material.name}/{pbr_type}: 已恢复引擎={context.scene.render.engine}", flush=True)
         # Restore Cycles GPU / device state
         try:
