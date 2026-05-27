@@ -682,13 +682,9 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             has_mbt = hasattr(bpy.ops, 'mbt') and hasattr(bpy.ops.mbt, 'import_mhwilds_fmesh')
             row = col.row()
             row.enabled = has_mbt
-            row.operator("mhws.preprocess_model", text=_("一键模型预处理"), icon='ARMATURE_DATA')
+            row.operator("mhws.preprocess_model", text=_("一键导入并对齐荒野模型"), icon='ARMATURE_DATA')
             if not has_mbt:
                 col.label(text="需要 Modder Batch Tool!", icon='ERROR')
-
-            col.separator()
-            col.operator("mhws.endfield_face_rename", text=_("Endfield 面部改名"), icon='SORTALPHA')
-            col.operator("mhws.face_weight_simplify", text=_("面部权重简化"), icon='MOD_VERTEX_WEIGHT')
 
             col.separator()
             has_re_mesh = hasattr(bpy.ops, 're_mesh') and hasattr(bpy.ops.re_mesh, 'exportfile')

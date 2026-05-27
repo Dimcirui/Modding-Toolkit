@@ -391,7 +391,7 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
 
 
 # ============================================================
-# 一键模型预处理 (MHWs)
+# 一键导入并对齐荒野模型 (MHWs)
 # ============================================================
 
 _PREPROCESS_X_CANDIDATES = ("MMD.json", "VRChat.json")
@@ -501,7 +501,7 @@ def _calc_y_offset(source_arm_obj, ref_arm_obj, detected_preset):
 class MHWS_OT_PreprocessModel(bpy.types.Operator):
     """自动识别 MMD/VRChat → 姿态校正 → 导入参考骨架 → 缩放/Y轴偏移校准 → 骨架对齐"""
     bl_idname = "mhws.preprocess_model"
-    bl_label = "一键模型预处理"
+    bl_label = "一键导入并对齐荒野模型"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
