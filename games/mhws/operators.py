@@ -576,11 +576,95 @@ class MHWS_OT_PreprocessModel(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# ============================================================
+# 身体权重转移至辅助权重 (HJ bones)
+# ============================================================
+
+# Pairs of (base_bone, hj_bone). For each pair where the HJ bone exists:
+#   1. Translate the HJ bone so its head aligns with the base bone's head.
+#   2. Rename the base bone's vertex group to the HJ bone's name.
+_HJ_BONE_PAIRS = [
+    ("Neck_1",     "Neck_1_HJ_00"),
+    ("Neck_0",     "Neck_0_HJ_00"),
+    ("L_Shoulder", "L_Shoulder_HJ_00"),
+    ("R_Shoulder", "R_Shoulder_HJ_00"),
+    ("Spine_2",    "Spine_2_HJ_00"),
+    ("Spine_1",    "Spine_1_HJ_00"),
+    ("Spine_0",    "Spine_0_HJ_00"),
+    ("L_Foot",     "L_Foot_HJ_00"),
+    ("L_Shin",     "L_Shin_HJ_00"),
+    ("L_Knee",     "L_Knee_HJ_00"),
+    ("R_Foot",     "R_Foot_HJ_00"),
+    ("R_Shin",     "R_Shin_HJ_00"),
+    ("R_Knee",     "R_Knee_HJ_00"),
+    ("Hip",        "Hip_HJ_00"),
+]
+
+
+class MHWS_OT_BodyWeightToHJ(bpy.types.Operator):
+    """将身体权重转移至对应的辅助权重，通常来讲，这样会让这些部位的运动拥有更自然的表现"""
+    bl_idname = "mhws.body_weight_to_hj"
+    bl_label = "身体权重转移至辅助权重"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return obj is not None and obj.type == 'ARMATURE'
+
+    def execute(self, context):
+        arm_obj = context.active_object
+
+        # --- Step 1: align HJ bone positions in edit mode ---
+        if context.mode != 'EDIT':
+            bpy.ops.object.mode_set(mode='EDIT')
+
+        edit_bones = arm_obj.data.edit_bones
+        active_pairs = []  # pairs where HJ bone actually exists
+
+        for base_name, hj_name in _HJ_BONE_PAIRS:
+            base_bone = edit_bones.get(base_name)
+            hj_bone = edit_bones.get(hj_name)
+            if base_bone is None or hj_bone is None:
+                continue
+            # Translate HJ bone so head coincides with base bone head.
+            offset = base_bone.head - hj_bone.head
+            hj_bone.tail = hj_bone.tail + offset
+            hj_bone.head = base_bone.head.copy()
+            active_pairs.append((base_name, hj_name))
+
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        if not active_pairs:
+            self.report({'INFO'}, "未找到任何 HJ 辅助骨骼，无操作")
+            return {'FINISHED'}
+
+        # --- Step 2: rename vertex groups on all bound meshes ---
+        mesh_objects = [
+            o for o in bpy.data.objects
+            if o.type == 'MESH'
+            and any(m.type == 'ARMATURE' and m.object == arm_obj for m in o.modifiers)
+        ]
+
+        renamed = 0
+        for obj in mesh_objects:
+            for base_name, hj_name in active_pairs:
+                if weight_utils.rename_or_merge_vgroup(obj, base_name, hj_name):
+                    renamed += 1
+
+        self.report(
+            {'INFO'},
+            f"完成：{len(active_pairs)} 根 HJ 骨骼已对齐，{renamed} 个顶点组已重命名"
+        )
+        return {'FINISHED'}
+
+
 classes = [
     MHWS_OT_EndfieldFaceRename,
     MHWS_OT_FaceWeightSimplify,
     MHWS_OT_AutoCreateChains,
     MHWS_OT_PreprocessModel,
+    MHWS_OT_BodyWeightToHJ,
 ]
 
 def register():

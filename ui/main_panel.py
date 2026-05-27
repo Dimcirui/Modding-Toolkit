@@ -23,7 +23,7 @@ _mapping_detail_cache = {}
 class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     # 顶部开关
     show_mhwi: bpy.props.BoolProperty(name="MHWI", default=False)
-    show_mhws: bpy.props.BoolProperty(name="Wilds", default=False)
+    show_mhws: bpy.props.BoolProperty(name="MHWS", default=False)
     show_re4: bpy.props.BoolProperty(name="RE4", default=False)
     show_re9: bpy.props.BoolProperty(name="RE9", default=False)
     
@@ -460,7 +460,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
         # =========================================
         row = layout.row(align=True)
         row.prop(settings, "show_mhwi", toggle=True, text="MHWI")
-        row.prop(settings, "show_mhws", toggle=True, text="Wilds")
+        row.prop(settings, "show_mhws", toggle=True, text="MHWS")
         row.prop(settings, "show_re4", toggle=True, text="RE4")
         row.prop(settings, "show_re9", toggle=True, text="RE9")
         
@@ -708,7 +708,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
 
         if settings.show_mhws:
             box = layout.box()
-            box.label(text="MHWilds Tools", icon='WORLD')
+            box.label(text="MHWS Tools", icon='WORLD')
             col = box.column(align=True)
 
             # 一键模型预处理
@@ -735,6 +735,9 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row.operator("mhws.auto_create_chains", text=_("一键创建 RE Chain"), icon='LINKED')
             if not has_re_chain:
                 col.label(text="需要 RE Chain Editor!", icon='ERROR')
+
+            col.separator()
+            col.operator("mhws.body_weight_to_hj", text=_("身体权重转移至辅助权重"), icon='GROUP_VERTEX')
 
             col.separator()
             row = col.row()
