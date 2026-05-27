@@ -274,6 +274,7 @@ def _merge_end_bones(context, main_arm, end_arm, merge_type):
 
 
 def do_fakebone(context, user_arm_obj, native_fbxskel_path):
+    # Method discovered by: Motoka
     """
     对 user_arm_obj 就地执行完整假骨流程（身体 + 手指）。
     batch export 中请先复制骨架再传入。

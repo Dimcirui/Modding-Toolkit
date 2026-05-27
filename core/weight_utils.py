@@ -123,6 +123,87 @@ def rename_or_merge_vgroup(obj, old_name, new_name):
     return True
 
 
+def shape_key_to_weights(obj, active_kb, basis_kb, ignore_threshold=0.001,
+                         weight_strength=1.0, smooth_factor=0.5,
+                         smooth_iters=10, sync_seams=True):
+    """
+    Convert a shape key to a vertex group using normalized, Laplacian-smoothed weights.
+
+    Weights are normalized so the vertex with the largest displacement always gets 1.0,
+    with others scaled proportionally. Coincident vertices (UV seam duplicates) are
+    synced after each smoothing pass to prevent tearing.
+
+    Returns the number of affected vertices, or None if no valid displacement is found.
+    """
+    vertices = obj.data.vertices
+    v_count = len(vertices)
+    raw_weights = [0.0] * v_count
+    max_dist = 0.0
+    valid_count = 0
+
+    seam_groups = []
+    if sync_seams:
+        coincident = {}
+        for i, v in enumerate(vertices):
+            key = (round(v.co.x, 5), round(v.co.y, 5), round(v.co.z, 5))
+            coincident.setdefault(key, []).append(i)
+        seam_groups = [g for g in coincident.values() if len(g) > 1]
+
+    for i in range(v_count):
+        dist = (active_kb.data[i].co - basis_kb.data[i].co).length
+        if dist > max_dist:
+            max_dist = dist
+        if dist > ignore_threshold:
+            raw_weights[i] = dist
+            valid_count += 1
+
+    if valid_count == 0 or max_dist == 0:
+        return None
+
+    for i in range(v_count):
+        if raw_weights[i] > 0:
+            raw_weights[i] = min(1.0, (raw_weights[i] / max_dist) * weight_strength)
+
+    for group in seam_groups:
+        avg = sum(raw_weights[idx] for idx in group) / len(group)
+        for idx in group:
+            raw_weights[idx] = avg
+
+    if smooth_iters > 0:
+        adj = {i: [] for i in range(v_count)}
+        for edge in obj.data.edges:
+            adj[edge.vertices[0]].append(edge.vertices[1])
+            adj[edge.vertices[1]].append(edge.vertices[0])
+
+        for _ in range(smooth_iters):
+            new_weights = raw_weights.copy()
+            for i in range(v_count):
+                neighbors = adj[i]
+                if not neighbors:
+                    continue
+                avg_n = sum(raw_weights[n] for n in neighbors) / len(neighbors)
+                new_weights[i] = (raw_weights[i] * (1.0 - smooth_factor)
+                                  + avg_n * smooth_factor)
+            if sync_seams:
+                for group in seam_groups:
+                    avg = sum(new_weights[idx] for idx in group) / len(group)
+                    for idx in group:
+                        new_weights[idx] = avg
+            raw_weights = new_weights
+
+    vg_name = active_kb.name
+    existing = obj.vertex_groups.get(vg_name)
+    if existing:
+        obj.vertex_groups.remove(existing)
+    vg = obj.vertex_groups.new(name=vg_name)
+
+    for i, w in enumerate(raw_weights):
+        if w > 0.001:
+            vg.add([i], min(1.0, w), 'REPLACE')
+
+    return valid_count
+
+
 def bone_has_weights(bone_name, mesh_objects):
     """检查骨骼在绑定网格中是否有任何顶点权重（用于尾骨判断）"""
     for obj in mesh_objects:

@@ -1,5 +1,6 @@
 import bpy
 import os
+import re
 from bpy.app.translations import pgettext as _
 from ..core import bone_utils, weight_utils, ui_config
 from ..core.bone_utils import get_import_presets_callback, get_target_presets_callback
@@ -461,17 +462,31 @@ class MHW_PT_MainPanel(bpy.types.Panel):
 
         if settings.show_basic_tools:
             col = basic_box.column(align=True)
-            col.operator("mhw.general_tools", text=_("扭转归零 (Roll=0)")).action = 'ROLL_ZERO'
-            row = col.row(align=True)
-            row.operator("mhw.general_tools", text=_("添加尾骨")).action = 'ADD_TAIL'
-            row.operator("mhw.general_tools", text=_("镜像对齐 X")).action = 'MIRROR_X'
+
+            col.label(text="骨骼合并", icon='AUTOMERGE_ON')
             col.operator("mhw.general_tools", text=_("骨链简化")).action = 'SIMPLIFY_CHAIN'
-            col.operator("mhw.general_tools", text=_("合并到激活骨")).action = 'MERGE_TO_ACTIVE'
-            col.operator("mhw.general_tools", text=_("合并链到激活链")).action = 'MERGE_CHAINS'
+            row = col.row(align=True)
+            row.operator("mhw.general_tools", text=_("合并到激活骨")).action = 'MERGE_TO_ACTIVE'
+            row.operator("mhw.general_tools", text=_("合并链到激活链")).action = 'MERGE_CHAINS'
+
+            col.separator(factor=0.8)
+            col.label(text="骨骼处理", icon='BONE_DATA')
+            row = col.row(align=True)
+            row.operator("mhw.general_tools", text=_("扭转归零")).action = 'ROLL_ZERO'
+            row.operator("mhw.general_tools", text=_("镜像对齐 X")).action = 'MIRROR_X'
+
+            col.separator(factor=0.8)
+            col.label(text="骨架对齐", icon='ORIENTATION_GIMBAL')
             row = col.row(align=True)
             row.operator("mhw.general_tools", text=_("位置")).action = 'ALIGN_POS'
             row.operator("mhw.general_tools", text=_("位置+扭转")).action = 'ALIGN_POS_ROLL'
             row.operator("mhw.general_tools", text=_("完全")).action = 'ALIGN_FULL'
+
+            col.separator(factor=0.8)
+            col.label(text="权重处理", icon='GROUP_VERTEX')
+            row = col.row(align=True)
+            row.operator("mhw.sk_to_weights", text=_("形态键转权重"), icon='SHAPEKEY_DATA')
+            row.operator("mhw.merge_renamed_vgroups", text=_("合并重名顶点组"), icon='AUTOMERGE_ON')
 
         layout.separator()
 
@@ -528,7 +543,9 @@ class MHW_PT_MainPanel(bpy.types.Panel):
                 exp_col.separator()
                 exp_col.label(text="物理链工具:", icon='BONE_DATA')
                 exp_col.operator("modder.smart_graft", text=_("移植物理骨骼 [X+Y, 双骨架]"), icon='BONE_DATA')
-                exp_col.operator("modder.merge_into_parent", text=_("合并到父骨"), icon='SNAP_MIDPOINT')
+                row = exp_col.row(align=True)
+                row.operator("modder.merge_into_parent", text=_("合并到父骨"), icon='SNAP_MIDPOINT')
+                row.operator("mhw.general_tools", text=_("添加尾骨"), icon='RIGID_BODY').action = 'ADD_TAIL'
                 row = exp_col.row(align=True)
                 row.operator("modder.mark_as_main_continue", text=_("标记为主链延伸"), icon='HANDLE_ALIGNED')
                 row.operator("modder.clear_chain_role", text=_("清除标记"), icon='X')
@@ -769,12 +786,170 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row = col.row()
             row.enabled = has_re_mesh
             row.operator("re9.batch_export_dialog", text="RE9 Batch Exporter", icon='EXPORT')
+def _sk_enum_items(self, context):
+    obj = context.active_object
+    if not obj or not obj.data.shape_keys:
+        return [('1', 'No shape keys', '', 1)]
+    items = []
+    for i, kb in enumerate(obj.data.shape_keys.key_blocks):
+        if i == 0:
+            continue
+        items.append((str(i), kb.name, '', i))
+    return items or [('1', 'No shape keys', '', 1)]
+
+
+class MHW_OT_ShapeKeyToWeights(bpy.types.Operator):
+    # Method inspired by: 光之影V, 幽玲乃昕
+    """Convert a shape key to a vertex group (normalized weights + Laplacian smoothing + seam sync)"""
+    bl_idname = "mhw.sk_to_weights"
+    bl_label = "形态键转权重"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    shape_key_enum: bpy.props.EnumProperty(
+        name="形态键",
+        items=_sk_enum_items,
+        description="Shape key to convert (Basis is excluded)",
+    )
+    ignore_threshold: bpy.props.FloatProperty(
+        name="忽略阈值",
+        default=0.001, min=0.0,
+        description="Vertices with displacement smaller than this are ignored",
+    )
+    weight_strength: bpy.props.FloatProperty(
+        name="权重强度",
+        default=1.0, min=0.1, max=5.0,
+        description="Multiplier applied after normalization",
+    )
+    smooth_factor: bpy.props.FloatProperty(
+        name="平滑扩散率",
+        default=0.5, min=0.0, max=1.0,
+        description="How much weight diffuses to neighbors each Laplacian pass",
+    )
+    smooth_iters: bpy.props.IntProperty(
+        name="平滑迭代次数",
+        default=10, min=0, max=100,
+        description="Number of Laplacian smoothing passes",
+    )
+    sync_seams: bpy.props.BoolProperty(
+        name="缝合重合顶点",
+        default=True,
+        description="Force identical weights on spatially coincident vertices to prevent UV seam tearing",
+    )
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return (obj and obj.type == 'MESH'
+                and obj.data.shape_keys
+                and len(obj.data.shape_keys.key_blocks) > 1)
+
+    def invoke(self, context, event):
+        obj = context.active_object
+        idx = obj.active_shape_key_index
+        if idx > 0:
+            self.shape_key_enum = str(idx)
+        return context.window_manager.invoke_props_dialog(self, width=280)
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column()
+        col.prop(self, "shape_key_enum", text="形态键")
+        col.separator()
+        col.prop(self, "ignore_threshold")
+        col.prop(self, "weight_strength", slider=True)
+        col.prop(self, "smooth_factor", slider=True)
+        col.prop(self, "smooth_iters")
+        col.prop(self, "sync_seams")
+
+    def execute(self, context):
+        obj = context.active_object
+        key_blocks = obj.data.shape_keys.key_blocks
+        idx = int(self.shape_key_enum)
+
+        if idx <= 0 or idx >= len(key_blocks):
+            self.report({'ERROR'}, "请选择一个非 Basis 的形态键")
+            return {'CANCELLED'}
+
+        active_kb = key_blocks[idx]
+        basis_kb = obj.data.shape_keys.reference_key
+
+        if context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+        result = weight_utils.shape_key_to_weights(
+            obj, active_kb, basis_kb,
+            ignore_threshold=self.ignore_threshold,
+            weight_strength=self.weight_strength,
+            smooth_factor=self.smooth_factor,
+            smooth_iters=self.smooth_iters,
+            sync_seams=self.sync_seams,
+        )
+
+        if result is None:
+            self.report({'WARNING'}, f"形态键 '{active_kb.name}' 未检测到有效形变，请调低忽略阈值")
+            return {'CANCELLED'}
+
+        self.report({'INFO'}, f"已生成顶点组 '{active_kb.name}'（{result} 个有效顶点）")
+        return {'FINISHED'}
+
+
+_RENAMED_VG_PATTERN = re.compile(r'^(.+)\.\d{3}$')
+
+
+class MHW_OT_MergeRenamedVGroups(bpy.types.Operator):
+    """Merge vertex groups named 'a.001', 'a.002', etc. into 'a' for all selected meshes.
+Groups whose suffixed name matches a real bone in the bound armature are skipped."""
+    bl_idname = "mhw.merge_renamed_vgroups"
+    bl_label = "合并重名顶点组"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return any(o.type == 'MESH' for o in context.selected_objects)
+
+    def execute(self, context):
+        mesh_objects = [o for o in context.selected_objects if o.type == 'MESH']
+        total_merged = 0
+        total_skipped = 0
+
+        for obj in mesh_objects:
+            bound_arm = next(
+                (mod.object for mod in obj.modifiers
+                 if mod.type == 'ARMATURE' and mod.object),
+                None
+            )
+            arm_bone_names = {b.name for b in bound_arm.data.bones} if bound_arm else set()
+
+            to_merge = {}
+            for vg in obj.vertex_groups:
+                m = _RENAMED_VG_PATTERN.match(vg.name)
+                if not m:
+                    continue
+                if vg.name in arm_bone_names:
+                    total_skipped += 1
+                    continue
+                base = m.group(1)
+                to_merge.setdefault(base, []).append(vg.name)
+
+            for base_name, suffix_names in to_merge.items():
+                weight_utils.merge_vgroups_multi(obj, suffix_names, base_name)
+                total_merged += len(suffix_names)
+
+        self.report(
+            {'INFO'},
+            f"合并完成: {total_merged} 个顶点组已合并，{total_skipped} 个已跳过（对应真实骨骼）"
+        )
+        return {'FINISHED'}
+
+
 # ==========================================
 # 注册/注销
 # ==========================================
 classes = [
     MHW_PT_SuiteSettings,
     MHW_OT_GeneralTools,
+    MHW_OT_ShapeKeyToWeights,
+    MHW_OT_MergeRenamedVGroups,
     MHW_PT_MainPanel,
 ]
 
