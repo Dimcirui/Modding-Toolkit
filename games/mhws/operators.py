@@ -475,8 +475,31 @@ def _calc_arm_scale(source_arm_obj, ref_arm_obj, detected_preset):
     return (sum(ref_z) / len(ref_z)) / (sum(src_z) / len(src_z))
 
 
+def _calc_y_offset(source_arm_obj, ref_arm_obj, detected_preset):
+    """Return mean(ref_y) - mean(src_y) using arm-bone world-Y positions."""
+    mw_ref = ref_arm_obj.matrix_world
+    ref_y = [
+        (mw_ref @ ref_arm_obj.pose.bones[n].head).y
+        for n in _PREPROCESS_REF_ARM_BONES
+        if ref_arm_obj.pose.bones.get(n)
+    ]
+
+    mapper = BoneMapManager()
+    mapper.load_preset(detected_preset, is_import_x=True)
+    mw_src = source_arm_obj.matrix_world
+    src_y = []
+    for slot in _PREPROCESS_ARM_SLOTS:
+        main_name, _ = mapper.get_matches_for_standard(source_arm_obj, slot)
+        if main_name and source_arm_obj.pose.bones.get(main_name):
+            src_y.append((mw_src @ source_arm_obj.pose.bones[main_name].head).y)
+
+    if not ref_y or not src_y:
+        return 0.0
+    return (sum(ref_y) / len(ref_y)) - (sum(src_y) / len(src_y))
+
+
 class MHWS_OT_PreprocessModel(bpy.types.Operator):
-    """自动识别 MMD/VRChat → 姿态校正 → 导入参考骨架 → 缩放校准 → 骨架对齐 → 顶点组重命名"""
+    """自动识别 MMD/VRChat → 姿态校正 → 导入参考骨架 → 缩放/Y轴偏移校准 → 骨架对齐"""
     bl_idname = "mhws.preprocess_model"
     bl_label = "一键模型预处理"
     bl_options = {'REGISTER', 'UNDO'}
@@ -529,21 +552,25 @@ class MHWS_OT_PreprocessModel(bpy.types.Operator):
         bpy.ops.transform.resize(value=(scale, scale, scale))
         bpy.ops.object.transform_apply(scale=True)
 
-        # Step 4: skeleton alignment (source selected, ref as active)
+        # Step 4: Y-axis offset alignment
+        context.view_layer.update()
+        dy = _calc_y_offset(source_arm_obj, ref_arm_obj, detected)
+        if abs(dy) > 1e-4:
+            source_arm_obj.location.y += dy
+            bpy.ops.object.select_all(action='DESELECT')
+            source_arm_obj.select_set(True)
+            for child in source_arm_obj.children:
+                if child.type == 'MESH':
+                    child.select_set(True)
+            context.view_layer.objects.active = source_arm_obj
+            bpy.ops.object.transform_apply(location=True, rotation=False, scale=False)
+
+        # Step 5: skeleton alignment (source selected, ref as active)
         bpy.ops.object.select_all(action='DESELECT')
         source_arm_obj.select_set(True)
         ref_arm_obj.select_set(True)
         context.view_layer.objects.active = ref_arm_obj
         bpy.ops.modder.universal_snap()
-
-        # Step 5: rename vertex groups on all source mesh children
-        meshes = [c for c in source_arm_obj.children if c.type == 'MESH']
-        if meshes:
-            bpy.ops.object.select_all(action='DESELECT')
-            for mesh_obj in meshes:
-                mesh_obj.select_set(True)
-            context.view_layer.objects.active = meshes[0]
-            bpy.ops.modder.direct_convert()
 
         self.report({'INFO'}, _("模型预处理完成"))
         return {'FINISHED'}
