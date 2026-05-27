@@ -1,10 +1,19 @@
+import os
+import re
 import sys
 import time
 import bpy
 from bpy.app.translations import pgettext as _
 from ...core import weight_utils
-from ...core.bone_mapper import BoneMapManager
-from ...core.standard_ops import _build_fuzzy_preset_bones
+from ...core.bone_mapper import BoneMapManager, STANDARD_BONE_NAMES
+from ...core.re_chain_utils import (
+    REChainConfig,
+    _decompose_chains,
+    _is_valid_chain_collection,
+    _patch_chain_cleanup,
+    _build_physics_bones_set,
+    auto_create_re_chains,
+)
 
 # ============================================================
 # Endfield 面部顶点组改名 (Endfield → MHWilds)
@@ -260,107 +269,20 @@ class MHWS_OT_FaceWeightSimplify(bpy.types.Operator):
 _chain_col_items = []
 
 
-def _decompose_chains(head_pb, armature, physics_bones):
-    """将以 head_pb 为根的物理链递归分解为多条线性路径。
-
-    规则：
-    - 在每个分叉处，标记了 chain_role='main_continue' 的子骨继续主路径；
-      其余子骨各自成为独立支链的起点（递归分解）。
-    - 若分叉处无 main_continue 标记，当前骨骼为主链终点，
-      所有物理子骨均视为支链头。
-    - 路径末尾若存在对应的 _End 骨骼，则一并纳入路径。
-
-    physics_bones: 物理骨骼名称集合（由预设骨骼集合排除得到）
-    返回：list of list[str]，每条路径为按顺序排列的骨骼名列表。
-    """
-    paths = []
-
-    def walk(pb, current_path):
-        current_path = current_path + [pb.name]
-
-        bone_data = armature.data.bones.get(pb.name)
-        if not bone_data:
-            paths.append(current_path)
-            return
-
-        # _End 骨骼作为终结符单独处理，不参与子骨遍历
-        physics_children = [
-            armature.pose.bones[c.name]
-            for c in bone_data.children
-            if c.name in physics_bones
-            and armature.pose.bones.get(c.name)
-            and not c.name.endswith('_End')
-        ]
-
-        if not physics_children:
-            # 叶骨：追加 _End 后路径结束
-            end_pb = armature.pose.bones.get(f"{pb.name}_End")
-            if end_pb and end_pb.name in physics_bones:
-                current_path = current_path + [end_pb.name]
-            paths.append(current_path)
-            return
-
-        if len(physics_children) == 1:
-            # 线性链：直接继续，不需要 main_continue
-            walk(physics_children[0], current_path)
-            return
-
-        # 分叉（≥2个物理子骨）：才需要判断 main_continue
-        main_child = next(
-            (c for c in physics_children if c.get("chain_role") == "main_continue"),
-            None
-        )
-
-        if main_child:
-            walk(main_child, current_path)
-            for branch in physics_children:
-                if branch != main_child:
-                    walk(branch, [])
-        else:
-            # 分叉无主链标记：当前骨为主链终点，所有子骨各自开始新支链
-            end_pb = armature.pose.bones.get(f"{pb.name}_End")
-            if end_pb and end_pb.name in physics_bones:
-                current_path = current_path + [end_pb.name]
-            paths.append(current_path)
-            for child in physics_children:
-                walk(child, [])
-
-    walk(head_pb, [])
-    return paths
-
-
-def _is_valid_chain_collection(col):
-    """与 RE Chain Editor 的 filterChainCollection 逻辑一致"""
-    t = col.get("~TYPE", "")
-    return (t in ("RE_CHAIN_COLLECTION", "RE_CLSP_COLLECTION")
-            and (".chain" in col.name or ".clsp" in col.name))
-
-
 def _get_chain_col_items(self, context):
     return _chain_col_items
 
 
-def _patch_chain_cleanup(disable=True):
-    """搜索 sys.modules 中所有持有 alignChains + setChainBoneColor 可调用函数的模块，
-    批量替换为 no-op（disable=True）或恢复原始函数（disable=False）。
-    RE-Chain-Editor 里 re_chain_operators 通过 from import 持有副本引用，
-    单 patch 一个模块不够，必须批量覆盖所有引用点。"""
-    saved = []
-    for mod in sys.modules.values():
-        has_align = hasattr(mod, 'alignChains') and callable(mod.alignChains)
-        has_color = hasattr(mod, 'setChainBoneColor') and callable(mod.setChainBoneColor)
-        if has_align and has_color:
-            saved.append((mod, mod.alignChains, mod.setChainBoneColor))
-            if disable:
-                mod.alignChains = lambda: None
-                mod.setChainBoneColor = lambda x: None
-    return saved
+_MHWS_TUNING = {
+    'calculateMode': '3', 'chainAttrFlags': '4',
+    'calculateStepTime': 2.0, 'modelCollisionSearch': 1,
+    'highFPSCalculateMode': '2',
+    'wilds_unkn1': 1, 'wilds_unkn2': 1,
+}
 
 
 class MHWS_OT_AutoCreateChains(bpy.types.Operator):
-    """在姿态模式下，根据物理骨骼的 chain_role 属性自动为每条链创建 Chain Settings 和 Chain Group。
-支持分叉物理链，分叉链使用实验模式生成，线性链使用默认模式生成。
-需要 RE Chain Editor 插件，且场景中存在已创建 Chain Header 的 Chain Collection。"""
+    """一键创建 RE Chain。支持自动创建集合 + MHWilds 特调 Header。"""
     bl_idname = "mhws.auto_create_chains"
     bl_label = "一键创建 RE Chain"
     bl_options = {'REGISTER', 'UNDO'}
@@ -378,6 +300,29 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
         ],
         default='SHARED',
     )
+    auto_create_collection: bpy.props.BoolProperty(
+        name="自动创建集合",
+        description="勾选后自动创建 Chain Collection 及 Header，无需预先手动准备",
+        default=False,
+    )
+    collection_name: bpy.props.StringProperty(
+        name="集合名称",
+        description="新创建的 Chain Collection 名称（不含扩展名）",
+        default="",
+    )
+    chain_format: bpy.props.EnumProperty(
+        name="Chain 格式",
+        items=[
+            (".chain", "Chain", "旧格式，用于 RE4 等早期游戏"),
+            (".chain2", "Chain2", "新格式，用于 MHWilds / RE9"),
+        ],
+        default='.chain2',
+    )
+    apply_mhwilds_tuning: bpy.props.BoolProperty(
+        name="使用荒野特调Header",
+        description="将 Header 参数覆盖为 MHWilds 校准值（calculateMode=Quality 等）",
+        default=False,
+    )
 
     @classmethod
     def poll(cls, context):
@@ -394,9 +339,12 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
             for col in bpy.data.collections
             if _is_valid_chain_collection(col)
         ]
-        if not _chain_col_items:
-            self.report({'ERROR'}, _("未找到有效的 Chain Collection（需含 ~TYPE=RE_CHAIN_COLLECTION 且名称含 .chain/.clsp）"))
-            return {'CANCELLED'}
+
+        # 预填集合名称：取骨架所属 mod3 集合名
+        if not self.collection_name:
+            col_name = context.scene.get("REMeshLastImportedCollection", "")
+            if col_name and ".mesh" in col_name:
+                self.collection_name = col_name.split(".mesh")[0]
 
         # 预选当前 RE Chain 面板已设置的集合
         toolpanel = getattr(context.scene, 're_chain_toolpanel', None)
@@ -409,128 +357,195 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "chain_collection")
+        row = layout.row()
+        row.prop(self, "auto_create_collection", text="自动创建集合")
+        if self.auto_create_collection:
+            layout.prop(self, "collection_name")
+            layout.prop(self, "chain_format", expand=True)
+            if self.chain_format == '.chain2':
+                layout.prop(self, "apply_mhwilds_tuning")
+        else:
+            layout.prop(self, "chain_collection")
         layout.prop(self, "settings_mode", expand=True)
 
     def execute(self, context):
-        t_total = time.perf_counter()
-
-        col = bpy.data.collections.get(self.chain_collection)
-        # 脚本直调时 chain_collection enum 拿不到值，fallback 到 toolpanel 已设的集合
-        if col is None:
-            toolpanel = getattr(context.scene, 're_chain_toolpanel', None)
-            if toolpanel and toolpanel.chainCollection:
-                col = toolpanel.chainCollection
-        if col is None:
-            self.report({'ERROR'}, _("找不到集合: %s") % self.chain_collection)
-            return {'CANCELLED'}
-
-        toolpanel = getattr(context.scene, 're_chain_toolpanel', None)
-        if toolpanel is None:
-            self.report({'ERROR'}, _("未找到 RE Chain 场景属性，请确认插件已正确加载"))
-            return {'CANCELLED'}
-
-        toolpanel.chainCollection = col
-
-        header = next(
-            (o for o in col.all_objects if o.get("TYPE") == "RE_CHAIN_HEADER"),
-            None
+        config = REChainConfig(
+            chain_format=self.chain_format,
+            chain_file_type="chain2",
+            auto_create_collection=self.auto_create_collection,
+            collection_name=self.collection_name,
+            tuning=_MHWS_TUNING if (self.auto_create_collection and self.apply_mhwilds_tuning) else None,
+            settings_mode=self.settings_mode,
+            selected_collection=self.chain_collection,
         )
-        if header is None:
-            self.report({'ERROR'}, _("集合 '%s' 中未找到 Chain Header，请先创建") % col.name)
-            return {'CANCELLED'}
 
         armature = context.active_object
-        chain_heads = [pb for pb in armature.pose.bones if pb.get("chain_role") in ("head", "branch_head")]
+        status = auto_create_re_chains(context, armature, config)
 
-        if not chain_heads:
-            self.report({'WARNING'}, _("未找到链首骨骼（chain_role=head/branch_head），请先刷新骨骼颜色"))
+        if status == {'CANCELLED'}:
+            self.report({'ERROR'}, _("创建 RE Chain 失败"))
             return {'CANCELLED'}
 
-        # 构建物理骨骼集合（非预设骨骼）
-        settings = context.scene.mhw_suite_settings
+        self.report({'INFO'}, _("RE Chain 创建完成"))
+        return {'FINISHED'}
+
+
+# ============================================================
+# 一键模型预处理 (MHWs)
+# ============================================================
+
+_PREPROCESS_X_CANDIDATES = ("MMD.json", "VRChat.json")
+_PREPROCESS_MIN_RATIO = 0.30
+_PREPROCESS_REF_ARM_PATTERN = re.compile(r"^MHWilds_Female Armature(?:\.(\d+))?$")
+_PREPROCESS_REF_ARM_BONES = (
+    "L_UpperArm", "R_UpperArm",
+    "L_Forearm",  "R_Forearm",
+    "L_Hand",     "R_Hand",
+)
+_PREPROCESS_ARM_SLOTS = (
+    "upperarm_L", "upperarm_R",
+    "forearm_L",  "forearm_R",
+    "hand_L",     "hand_R",
+)
+_PREPROCESS_Y_PRESET = "怪猎荒野.json"
+
+
+def _detect_source_preset(source_arm_obj):
+    """Check MMD.json / VRChat.json coverage; return filename or None."""
+    from ...core.ui_config import OPTIONAL_BONES
+    best_preset = None
+    best_ratio = 0.0
+    for filename in _PREPROCESS_X_CANDIDATES:
         mapper = BoneMapManager()
-        if mapper.load_preset(settings.import_preset_enum, is_import_x=True):
-            preset_bones = _build_fuzzy_preset_bones(mapper, armature)
-        else:
-            preset_bones = set()
-        physics_bones = {b.name for b in armature.data.bones if b.name not in preset_bones}
+        if not mapper.load_preset(filename, is_import_x=True):
+            continue
+        total = matched = 0
+        for std_key in STANDARD_BONE_NAMES:
+            if std_key in OPTIONAL_BONES:
+                continue
+            total += 1
+            main, _ = mapper.get_matches_for_standard(source_arm_obj, std_key)
+            if main:
+                matched += 1
+        if total == 0:
+            continue
+        ratio = matched / total
+        if ratio > best_ratio:
+            best_ratio = ratio
+            best_preset = filename
+    return best_preset if best_ratio >= _PREPROCESS_MIN_RATIO else None
 
-        # 将所有链头分解为线性路径：[(head_pb, paths, path), ...]
-        t_decompose = time.perf_counter()
-        all_entries = []
-        for head_pb in chain_heads:
-            paths = _decompose_chains(head_pb, armature, physics_bones)
-            for path in paths:
-                all_entries.append((head_pb, paths, path))
-        t_decompose = time.perf_counter() - t_decompose
-        print(f"[ChainGen] _decompose_chains: {t_decompose:.4f}s  "
-              f"({len(chain_heads)} heads -> {len(all_entries)} paths)",
-              file=sys.stderr)
 
-        created = 0
-        skipped = 0
+def _find_latest_mhwilds_armature():
+    """Return the highest-suffixed 'MHWilds_Female Armature[.NNN]' object."""
+    best_obj = None
+    best_num = -1
+    for obj in bpy.data.objects:
+        if obj.type != 'ARMATURE':
+            continue
+        m = _PREPROCESS_REF_ARM_PATTERN.match(obj.name)
+        if m:
+            num = int(m.group(1)) if m.group(1) else 0
+            if num > best_num:
+                best_num = num
+                best_obj = obj
+    return best_obj
 
-        if self.settings_mode == 'SHARED':
-            if bpy.ops.re_chain.create_chain_settings() != {'FINISHED'}:
-                self.report({'ERROR'}, _("无法创建 Chain Settings"))
-                return {'CANCELLED'}
 
-        saved_experimental = getattr(toolpanel, 'experimentalPoseModeOptions', False)
+def _calc_arm_scale(source_arm_obj, ref_arm_obj, detected_preset):
+    """Return source/reference arm-bone average world-Z ratio."""
+    mw_ref = ref_arm_obj.matrix_world
+    ref_z = [
+        (mw_ref @ ref_arm_obj.pose.bones[n].head).z
+        for n in _PREPROCESS_REF_ARM_BONES
+        if ref_arm_obj.pose.bones.get(n)
+    ]
 
-        # monkey-patch RE-Chain-Editor 的 alignChains() / setChainBoneColor()
-        # 批量替换所有引用点为 no-op，避免每条链创建后 O(n) 扫描全体对象
-        _patches = _patch_chain_cleanup(disable=True)
+    mapper = BoneMapManager()
+    mapper.load_preset(detected_preset, is_import_x=True)
+    mw_src = source_arm_obj.matrix_world
+    src_z = []
+    for slot in _PREPROCESS_ARM_SLOTS:
+        main_name, _ = mapper.get_matches_for_standard(source_arm_obj, slot)
+        if main_name and source_arm_obj.pose.bones.get(main_name):
+            src_z.append((mw_src @ source_arm_obj.pose.bones[main_name].head).z)
 
-        t_loop = time.perf_counter()
-        try:
-            for idx, (head_pb, head_paths, path) in enumerate(all_entries, 1):
-                t_settings = 0.0
-                if self.settings_mode == 'SEPARATE':
-                    t0 = time.perf_counter()
-                    if bpy.ops.re_chain.create_chain_settings() != {'FINISHED'}:
-                        skipped += 1
-                        continue
-                    t_settings = time.perf_counter() - t0
+    if not ref_z or not src_z:
+        return 1.0
+    return (sum(src_z) / len(src_z)) / (sum(ref_z) / len(ref_z))
 
-                bpy.ops.pose.select_all(action='DESELECT')
-                # _decompose_chains 已提供精确的物理骨骼路径，统一走 exp 模式
-                # 避免 norm 模式的 children_recursive 扫到非物理子骨分叉导致失败
-                for bone_name in path:
-                    pb2 = armature.pose.bones.get(bone_name)
-                    if pb2:
-                        pb2.bone.select = True
-                first_pb = armature.pose.bones.get(path[0]) if path else None
-                if first_pb:
-                    armature.data.bones.active = first_pb.bone
-                toolpanel.experimentalPoseModeOptions = True
 
-                t0 = time.perf_counter()
-                if bpy.ops.re_chain.chain_from_bone() == {'FINISHED'}:
-                    created += 1
-                else:
-                    skipped += 1
-                t_chain = time.perf_counter() - t0
+class MHWS_OT_PreprocessModel(bpy.types.Operator):
+    """自动识别 MMD/VRChat → 姿态校正 → 导入参考骨架 → 缩放校准 → 骨架对齐 → 顶点组重命名"""
+    bl_idname = "mhws.preprocess_model"
+    bl_label = "一键模型预处理"
+    bl_options = {'REGISTER', 'UNDO'}
 
-                print(f"[ChainGen] Chain {idx:3d}/{len(all_entries)}  "
-                      f"settings={t_settings:.4f}s  create={t_chain:.4f}s  "
-                      f"bones={len(path):2d}",
-                      file=sys.stderr)
-        finally:
-            _patch_chain_cleanup(disable=False)
-            if _patches and created > 0:
-                mod, _align, _color = _patches[0]
-                _align()
-                _color(armature)
-            toolpanel.experimentalPoseModeOptions = saved_experimental
+    @classmethod
+    def poll(cls, context):
+        return (
+            hasattr(bpy.ops, 'mbt') and hasattr(bpy.ops.mbt, 'import_mhwilds_fmesh')
+            and context.active_object is not None
+            and context.active_object.type == 'ARMATURE'
+        )
 
-        t_loop = time.perf_counter() - t_loop
-        t_total = time.perf_counter() - t_total
-        print(f"[ChainGen] --- loop: {t_loop:.4f}s  total: {t_total:.4f}s  "
-              f"created={created}  skipped={skipped} ---",
-              file=sys.stderr)
+    def execute(self, context):
+        settings = context.scene.mhw_suite_settings
 
-        self.report({'INFO'}, _("已创建 %d 条链，跳过 %d 条") % (created, skipped))
+        source_arm_obj = context.active_object
+        if not source_arm_obj or source_arm_obj.type != 'ARMATURE':
+            self.report({'WARNING'}, _("请先选中一个骨架"))
+            return {'CANCELLED'}
+
+        # Step 1: auto-detect X preset (MMD / VRChat only)
+        detected = _detect_source_preset(source_arm_obj)
+        if detected is None:
+            self.report({'WARNING'}, _("目前该功能只适用于MMD和VRChat模型！"))
+            return {'CANCELLED'}
+
+        settings.import_preset_enum = detected
+        settings.pose_import_preset_enum = detected
+        settings.target_preset_enum = _PREPROCESS_Y_PRESET
+
+        # Step 2: MMD only — 方向计算
+        if detected == "MMD.json":
+            bpy.ops.object.select_all(action='DESELECT')
+            source_arm_obj.select_set(True)
+            context.view_layer.objects.active = source_arm_obj
+            bpy.ops.modder.tpose_direction()
+
+        # Step 3: import reference skeleton + arm-scale calibration
+        bpy.ops.mbt.import_mhwilds_fmesh(
+            mhwilds_convert_to_tpose=True,
+            mhwilds_merge_facial_bones=True,
+        )
+        ref_arm_obj = _find_latest_mhwilds_armature()
+
+        scale = _calc_arm_scale(source_arm_obj, ref_arm_obj, detected)
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.select_all(action='DESELECT')
+        source_arm_obj.select_set(True)
+        context.view_layer.objects.active = source_arm_obj
+        bpy.ops.transform.resize(value=(scale, scale, scale))
+        bpy.ops.object.transform_apply(scale=True)
+
+        # Step 4: skeleton alignment (source selected, ref as active)
+        bpy.ops.object.select_all(action='DESELECT')
+        source_arm_obj.select_set(True)
+        ref_arm_obj.select_set(True)
+        context.view_layer.objects.active = ref_arm_obj
+        bpy.ops.modder.universal_snap()
+
+        # Step 5: rename vertex groups on all source mesh children
+        meshes = [c for c in source_arm_obj.children if c.type == 'MESH']
+        if meshes:
+            bpy.ops.object.select_all(action='DESELECT')
+            for mesh_obj in meshes:
+                mesh_obj.select_set(True)
+            context.view_layer.objects.active = meshes[0]
+            bpy.ops.modder.direct_convert()
+
+        self.report({'INFO'}, _("模型预处理完成"))
         return {'FINISHED'}
 
 
@@ -538,6 +553,7 @@ classes = [
     MHWS_OT_EndfieldFaceRename,
     MHWS_OT_FaceWeightSimplify,
     MHWS_OT_AutoCreateChains,
+    MHWS_OT_PreprocessModel,
 ]
 
 def register():

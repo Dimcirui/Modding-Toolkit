@@ -18,27 +18,6 @@ from ..core.bone_mapper import BoneMapManager
 # 映射详情预览缓存：{(x_preset, y_preset): (mapper_x, mapper_y)}
 _mapping_detail_cache = {}
 
-def _on_auto_preset_update(self, context, is_import_x, attr_name):
-    """选中 'AUTO' 时自动检测最匹配的预设，直接替换枚举值"""
-    if getattr(self, attr_name) != 'AUTO':
-        return
-    arm = context.active_object
-    if not arm or arm.type != 'ARMATURE':
-        return
-    from ..core.bone_mapper import auto_detect_preset
-    result = auto_detect_preset(arm, is_import_x)
-    if result:
-        setattr(self, attr_name, result)
-
-def _on_auto_import_update(self, context):
-    _on_auto_preset_update(self, context, True, 'import_preset_enum')
-
-def _on_auto_target_update(self, context):
-    _on_auto_preset_update(self, context, False, 'target_preset_enum')
-
-def _on_auto_pose_update(self, context):
-    _on_auto_preset_update(self, context, True, 'pose_import_preset_enum')
-
 
 class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     # 顶部开关
@@ -59,14 +38,12 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         name="来源预设 (X)",
         description="选择导入模型的骨架结构",
         items=get_import_presets_callback,
-        update=_on_auto_import_update
     )
-    
+
     target_preset_enum: bpy.props.EnumProperty(
         name="目标游戏 (Y)",
         description="选择要导出的目标游戏",
         items=get_target_presets_callback,
-        update=_on_auto_target_update
     )
     
     show_mapping_details: bpy.props.BoolProperty(name="显示映射细节", default=False)
@@ -88,7 +65,6 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         name="骨架预设",
         description="用于识别骨骼名称的预设",
         items=get_import_presets_callback,
-        update=_on_auto_pose_update
     )
     
     # 姿态记录文件选择
@@ -196,6 +172,11 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         name="未选项使用空模型",
         description="导出时对未选择集合的栏位，复制内置空文件代替跳过",
         default=False,
+    )
+    mhws_cleanup_before_export: bpy.props.BoolProperty(
+        name="导出前清理网格",
+        description="导出前对所有已绑定的 mesh 集合执行: 删除松散几何、修复重复UV、清除零权重顶点组、限制并归一化权重（需要 RE Mesh Editor）",
+        default=True,
     )
     re9_use_blank_export: bpy.props.BoolProperty(
         name="未选项使用空模型",
@@ -572,40 +553,43 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             
             if settings.show_mapping_details:
                 if arm_obj and arm_obj.type == 'ARMATURE':
-                    cache_key = (settings.import_preset_enum, settings.target_preset_enum)
-                    if cache_key not in _mapping_detail_cache:
-                        m_x = BoneMapManager()
-                        m_y = BoneMapManager()
-                        m_x.load_preset(settings.import_preset_enum, is_import_x=True)
-                        m_y.load_preset(settings.target_preset_enum, is_import_x=False)
-                        _mapping_detail_cache.clear()
-                        _mapping_detail_cache[cache_key] = (m_x, m_y)
-                    mapper, mapper_y = _mapping_detail_cache[cache_key]
-                    
-                    preview_box = col.box()
-                    for group_name, group_data in ui_config.UI_HIERARCHY.items():
-                        g_box = preview_box.box()
-                        g_box.label(text=group_name, icon=group_data['icon'])
-                        
-                        for sub_name, bones in group_data['subsections'].items():
-                            sub_col = g_box.column(align=True)
-                            sub_col.label(text=sub_name)
-                            
-                            for std_key in bones:
-                                if std_key in ui_config.OPTIONAL_BONES:
-                                    if std_key not in mapper_y.mapping_data:
-                                        continue
-                                
-                                main_bone, aux_list = mapper.get_matches_for_standard(arm_obj, std_key)
-                                m_row = sub_col.row(align=True)
-                                m_row.label(text=f"  {ui_config.get_display_name(std_key)}")
-                                
-                                if main_bone:
-                                    status = f"{main_bone}"
-                                    if aux_list: status += f" (+{len(aux_list)})"
-                                    m_row.label(text=status, icon='CHECKMARK')
-                                else:
-                                    m_row.label(text="缺失", icon='CANCEL')
+                    if 'AUTO' in (settings.import_preset_enum, settings.target_preset_enum):
+                        col.label(text="映射详情预览需要选定具体预设（非自动识别）", icon='INFO')
+                    else:
+                        cache_key = (settings.import_preset_enum, settings.target_preset_enum)
+                        if cache_key not in _mapping_detail_cache:
+                            m_x = BoneMapManager()
+                            m_y = BoneMapManager()
+                            m_x.load_preset(settings.import_preset_enum, is_import_x=True)
+                            m_y.load_preset(settings.target_preset_enum, is_import_x=False)
+                            _mapping_detail_cache.clear()
+                            _mapping_detail_cache[cache_key] = (m_x, m_y)
+                        mapper, mapper_y = _mapping_detail_cache[cache_key]
+
+                        preview_box = col.box()
+                        for group_name, group_data in ui_config.UI_HIERARCHY.items():
+                            g_box = preview_box.box()
+                            g_box.label(text=group_name, icon=group_data['icon'])
+
+                            for sub_name, bones in group_data['subsections'].items():
+                                sub_col = g_box.column(align=True)
+                                sub_col.label(text=sub_name)
+
+                                for std_key in bones:
+                                    if std_key in ui_config.OPTIONAL_BONES:
+                                        if std_key not in mapper_y.mapping_data:
+                                            continue
+
+                                    main_bone, aux_list = mapper.get_matches_for_standard(arm_obj, std_key)
+                                    m_row = sub_col.row(align=True)
+                                    m_row.label(text=f"  {ui_config.get_display_name(std_key)}")
+
+                                    if main_bone:
+                                        status = f"{main_bone}"
+                                        if aux_list: status += f" (+{len(aux_list)})"
+                                        m_row.label(text=status, icon='CHECKMARK')
+                                    else:
+                                        m_row.label(text="缺失", icon='CANCEL')
                 else:
                     col.label(text="请选中骨架以预览", icon='INFO')
 
@@ -667,6 +651,13 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             col.operator("mhwi.batch_rename_physics_bones", text=_("一键重命名"), icon='SORTALPHA')
 
             col.separator()
+            has_mhw_model = hasattr(bpy.ops, 'mhw_mod3') and hasattr(bpy.ops.mhw_mod3, 'export_mhw_mod3')
+            sub = col.row(align=True)
+            sub.enabled = has_mhw_model
+            sub.operator("mhwi.mrl3_tex_processor_dialog", text=_("MRL3 处理器"), icon='TEXTURE')
+            sub.operator("mhwi.mrl3_generator_dialog",     text=_("MRL3 生成器"), icon='SHADERFX')
+
+            col.separator()
             has_mhw_ctc = hasattr(bpy.ops, 'mhw_ctc') and hasattr(bpy.ops.mhw_ctc, 'create_chain_from_bone')
             row = col.row()
             row.enabled = has_mhw_ctc
@@ -675,30 +666,32 @@ class MHW_PT_MainPanel(bpy.types.Panel):
                 col.label(text="需要 MHW Model Editor!", icon='ERROR')
 
             col.separator()
-            has_mhw_model = hasattr(bpy.ops, 'mhw_mod3') and hasattr(bpy.ops.mhw_mod3, 'export_mhw_mod3')
             row = col.row()
             row.enabled = has_mhw_model
             row.operator("mhwi.batch_export_dialog", text=_("批量导出装备"), icon='EXPORT')
             row = col.row()
             row.enabled = has_mhw_model
             row.operator("mhwi.batch_import_dialog", text=_("批量导入装备"), icon='IMPORT')
-            sub = col.row(align=True)
-            sub.enabled = has_mhw_model
-            sub.operator("mhwi.mrl3_tex_processor_dialog", text=_("MRL3 处理器"), icon='TEXTURE')
-            sub.operator("mhwi.mrl3_generator_dialog",     text=_("MRL3 生成器"), icon='SHADERFX')
 
         if settings.show_mhws:
             box = layout.box()
             box.label(text="MHWilds Tools", icon='WORLD')
             col = box.column(align=True)
+
+            # 一键模型预处理
+            has_mbt = hasattr(bpy.ops, 'mbt') and hasattr(bpy.ops.mbt, 'import_mhwilds_fmesh')
+            row = col.row()
+            row.enabled = has_mbt
+            row.operator("mhws.preprocess_model", text=_("一键模型预处理"), icon='ARMATURE_DATA')
+            if not has_mbt:
+                col.label(text="需要 Modder Batch Tool!", icon='ERROR')
+
+            col.separator()
             col.operator("mhws.endfield_face_rename", text=_("Endfield 面部改名"), icon='SORTALPHA')
             col.operator("mhws.face_weight_simplify", text=_("面部权重简化"), icon='MOD_VERTEX_WEIGHT')
 
             col.separator()
             has_re_mesh = hasattr(bpy.ops, 're_mesh') and hasattr(bpy.ops.re_mesh, 'exportfile')
-            row = col.row()
-            row.enabled = has_re_mesh
-            row.operator("mhws.batch_export_dialog", text="MHWs Batch Exporter", icon='EXPORT')
             sub = col.row(align=True)
             sub.enabled = has_re_mesh
             sub.operator("mhws.mdf_tex_processor_dialog", text=_("MDF2 处理器"), icon='TEXTURE')
@@ -713,6 +706,11 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row.operator("mhws.auto_create_chains", text=_("一键创建 RE Chain"), icon='LINKED')
             if not has_re_chain:
                 col.label(text="需要 RE Chain Editor!", icon='ERROR')
+
+            col.separator()
+            row = col.row()
+            row.enabled = has_re_mesh
+            row.operator("mhws.batch_export_dialog", text="MHWs Batch Exporter", icon='EXPORT')
 
         if settings.show_re4:
             box = layout.box()
@@ -730,9 +728,6 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             col = box.column(align=True)
             col.separator()
             has_re_mesh = hasattr(bpy.ops, 're_mesh') and hasattr(bpy.ops.re_mesh, 'exportfile')
-            row = col.row()
-            row.enabled = has_re_mesh
-            row.operator("re4.batch_export_dialog", text="RE4 Batch Exporter", icon='EXPORT')
             sub = col.row(align=True)
             sub.enabled = has_re_mesh
             sub.operator("re4.mdf_tex_processor_dialog", text=_("MDF2 处理器"), icon='TEXTURE')
@@ -742,9 +737,14 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             has_re_chain = hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
             row = col.row()
             row.enabled = has_re_chain
-            row.operator("mhws.auto_create_chains", text=_("一键创建 RE Chain"), icon='LINKED')
+            row.operator("re4.auto_create_chains", text=_("一键创建 RE Chain"), icon='LINKED')
             if not has_re_chain:
                 col.label(text="需要 RE Chain Editor!", icon='ERROR')
+
+            col.separator()
+            row = col.row()
+            row.enabled = has_re_mesh
+            row.operator("re4.batch_export_dialog", text="RE4 Batch Exporter", icon='EXPORT')
 
         if settings.show_re9:
             box = layout.box()
@@ -754,9 +754,6 @@ class MHW_PT_MainPanel(bpy.types.Panel):
 
             col.separator()
             has_re_mesh = hasattr(bpy.ops, 're_mesh') and hasattr(bpy.ops.re_mesh, 'exportfile')
-            row = col.row()
-            row.enabled = has_re_mesh
-            row.operator("re9.batch_export_dialog", text="RE9 Batch Exporter", icon='EXPORT')
             sub = col.row(align=True)
             sub.enabled = has_re_mesh
             sub.operator("re9.mdf_tex_processor_dialog", text=_("MDF2 处理器"), icon='TEXTURE')
@@ -768,11 +765,14 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             has_re_chain = hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
             row = col.row()
             row.enabled = has_re_chain
-            row.operator("mhws.auto_create_chains", text=_("一键创建 RE Chain"), icon='LINKED')
+            row.operator("re9.auto_create_chains", text=_("一键创建 RE Chain"), icon='LINKED')
             if not has_re_chain:
                 col.label(text="需要 RE Chain Editor!", icon='ERROR')
 
-
+            col.separator()
+            row = col.row()
+            row.enabled = has_re_mesh
+            row.operator("re9.batch_export_dialog", text="RE9 Batch Exporter", icon='EXPORT')
 # ==========================================
 # 注册/注销
 # ==========================================

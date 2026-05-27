@@ -299,6 +299,49 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
     bl_label = "MHWs Batch Export"
     bl_options = {'REGISTER'}
 
+    def _cleanup_mesh_collections(self, context, scene, settings):
+        """Run RE Mesh cleanup operators on all bound mesh collections before export."""
+        if not (hasattr(bpy.ops, 're_mesh') and hasattr(bpy.ops.re_mesh, 'delete_loose')):
+            self.report({'WARNING'}, "RE Mesh Editor 未安装，跳过导出前清理")
+            return
+
+        armor_id = settings.mhws_selected_armor
+        variant = settings.mhws_armor_variant
+        seen = set()
+        mesh_collections = []
+        for part_id, _ in MHWS_PARTS:
+            col_name = get_binding(scene, armor_id, variant, part_id, "mesh")
+            if col_name and col_name not in seen:
+                col = bpy.data.collections.get(col_name)
+                if col:
+                    mesh_collections.append(col)
+                    seen.add(col_name)
+
+        if not mesh_collections:
+            return
+
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.select_all(action='DESELECT')
+        for col in mesh_collections:
+            for obj in [o for o in col.objects if o.type == 'MESH']:
+                context.view_layer.objects.active = obj
+                obj.select_set(True)
+                try: bpy.ops.re_mesh.delete_loose()
+                except Exception: pass
+                try: bpy.ops.re_mesh.solve_repeated_uvs()
+                except Exception: pass
+                try: bpy.ops.re_mesh.remove_zero_weight_vertex_groups()
+                except Exception: pass
+                try:
+                    bpy.ops.re_mesh.limit_total_normalize(maxWeights='12')
+                except Exception:
+                    try:
+                        bpy.ops.object.vertex_group_limit_total(limit=12)
+                        bpy.ops.object.vertex_group_normalize_all(lock_active=False)
+                    except Exception:
+                        pass
+                obj.select_set(False)
+
     def execute(self, context):
         scene = context.scene
         settings = scene.mhw_suite_settings
@@ -306,6 +349,9 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
         if not hasattr(bpy.ops, 're_mesh') or not hasattr(bpy.ops.re_mesh, 'exportfile'):
             self.report({'ERROR'}, "RE Mesh Editor not installed")
             return {'CANCELLED'}
+
+        if settings.mhws_cleanup_before_export:
+            self._cleanup_mesh_collections(context, scene, settings)
 
         natives_root = scene.get("mhws_natives_root", "")
         if not natives_root or not os.path.isdir(natives_root):
