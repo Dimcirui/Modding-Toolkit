@@ -515,10 +515,10 @@ class MHWS_OT_PreprocessModel(bpy.types.Operator):
             bpy.ops.modder.tpose_direction()
 
         # Step 3: import reference skeleton + arm-scale calibration
-        bpy.ops.mbt.import_mhwilds_fmesh(
-            mhwilds_convert_to_tpose=True,
-            mhwilds_merge_facial_bones=True,
-        )
+        mbt_panel = context.scene.mbt_toolpanel
+        mbt_panel.mhwilds_convert_to_tpose = True
+        mbt_panel.mhwilds_merge_facial_bones = True
+        bpy.ops.mbt.import_mhwilds_fmesh()
         ref_arm_obj = _find_latest_mhwilds_armature()
 
         scale = _calc_arm_scale(source_arm_obj, ref_arm_obj, detected)
