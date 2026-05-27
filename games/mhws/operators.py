@@ -472,7 +472,7 @@ def _calc_arm_scale(source_arm_obj, ref_arm_obj, detected_preset):
 
     if not ref_z or not src_z:
         return 1.0
-    return (sum(src_z) / len(src_z)) / (sum(ref_z) / len(ref_z))
+    return (sum(ref_z) / len(ref_z)) / (sum(src_z) / len(src_z))
 
 
 class MHWS_OT_PreprocessModel(bpy.types.Operator):
