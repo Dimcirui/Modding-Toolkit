@@ -223,6 +223,22 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
         ]
     )
 
+    _ACTION_DESCRIPTIONS = {
+        'ROLL_ZERO':      "递归将选中骨骼及其所有子骨的 Roll 值归零",
+        'ADD_TAIL':       "在每根选中骨骼的末端添加一根垂直向上的尾骨",
+        'MIRROR_X':       "正好选中两根骨骼：以 X+ 侧那根为基准，镜像覆盖 X- 侧那根的位置与扭转",
+        'SIMPLIFY_CHAIN': "按链结构将骨骼两两配对合并权重并删除多余骨骼；链末无权重骨（尾骨）自动跳过不参与配对",
+        'MERGE_TO_ACTIVE':"将其余选中骨骼的权重全部并入激活骨（最后点击的那根），然后删除其余骨骼",
+        'MERGE_CHAINS':   "选中多条链的链首，将其余链按位置逐骨合并到激活骨所在链；源链超出长度的部分并入链末骨",
+        'ALIGN_POS':      "选中两个骨架：将激活骨架中同名骨骼的 head 位置对齐到源骨架，不改变骨骼长度与方向",
+        'ALIGN_POS_ROLL': "选中两个骨架：对齐同名骨骼的 head 位置和 roll 扭转，不改变骨骼长度与方向",
+        'ALIGN_FULL':     "选中两个骨架：按骨骼名完全对齐 head、tail 和 roll（骨骼长度也会跟随源骨架）",
+    }
+
+    @classmethod
+    def description(cls, context, properties):
+        return cls._ACTION_DESCRIPTIONS.get(properties.action, cls.__doc__)
+
     def execute(self, context):
         arm_obj = context.active_object
         if not arm_obj or arm_obj.type != 'ARMATURE':
