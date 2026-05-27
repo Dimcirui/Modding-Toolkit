@@ -591,11 +591,7 @@ _HJ_BONE_PAIRS = [
     ("Spine_2",    "Spine_2_HJ_00"),
     ("Spine_1",    "Spine_1_HJ_00"),
     ("Spine_0",    "Spine_0_HJ_00"),
-    ("L_Foot",     "L_Foot_HJ_00"),
-    ("L_Shin",     "L_Shin_HJ_00"),
     ("L_Knee",     "L_Knee_HJ_00"),
-    ("R_Foot",     "R_Foot_HJ_00"),
-    ("R_Shin",     "R_Shin_HJ_00"),
     ("R_Knee",     "R_Knee_HJ_00"),
     ("Hip",        "Hip_HJ_00"),
 ]
