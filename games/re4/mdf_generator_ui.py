@@ -4,6 +4,7 @@ from .mdf_generator import RE4_GEN_GAME
 from ...core.mdf_generator_base import get_preset_dir_for_game, preset_has_emissive_slots
 
 GENERATOR_WINDOW_WIDTH = 580
+_SETTINGS_ATTR = "re4_mdf_generator"
 
 _STRAT_LABELS = {
     'color':     "基础色",
@@ -102,11 +103,21 @@ class RE4_OT_MdfGeneratorDialog(bpy.types.Operator):
             grid = strat_box.grid_flow(row_major=True, columns=3,
                                        even_columns=True, align=True)
             for pt, label in _STRAT_LABELS.items():
-                strat = getattr(mat_entry, f"strat_{pt}", "?")
-                icon  = _STRAT_ICONS.get(strat, 'QUESTION')
-                cell  = grid.row(align=True)
+                strat       = getattr(mat_entry, f"strat_{pt}", "?")
+                icon        = _STRAT_ICONS.get(strat, 'QUESTION')
+                native_size = getattr(mat_entry, f"native_size_{pt}", 0)
+                override    = getattr(mat_entry, f"bake_size_{pt}", 0)
+                cell = grid.row(align=True)
                 cell.label(text=f"{label}:", icon='BLANK1')
                 cell.label(text=strat, icon=icon)
+                if strat != 'Solid' and native_size > 0:
+                    btn_label = f"→{override}px" if override > 0 and override != native_size else ""
+                    op = cell.operator("mhw.set_channel_size", text=btn_label,
+                                       icon='FULLSCREEN_ENTER', emboss=True)
+                    op.settings_attr = _SETTINGS_ATTR
+                    op.mat_name      = mat_entry.blender_material
+                    op.channel       = pt
+                    op.native_size   = native_size
 
             if preset_has_emissive_slots(mat_entry.material_preset):
                 box.prop(mat_entry, "use_toon")

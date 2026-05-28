@@ -323,6 +323,11 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
         description="将 Header 参数覆盖为 MHWilds 校准值（calculateMode=Quality 等）",
         default=False,
     )
+    straighten_orientation: bpy.props.BoolProperty(
+        name="骨骼方向预处理",
+        description="创建前将所有物理骨骼调整为竖直向上、扭转归零",
+        default=False,
+    )
 
     @classmethod
     def poll(cls, context):
@@ -367,6 +372,7 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
         else:
             layout.prop(self, "chain_collection")
         layout.prop(self, "settings_mode", expand=True)
+        layout.prop(self, "straighten_orientation")
 
     def execute(self, context):
         config = REChainConfig(
@@ -377,6 +383,7 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
             tuning=_MHWS_TUNING if (self.auto_create_collection and self.apply_mhwilds_tuning) else None,
             settings_mode=self.settings_mode,
             selected_collection=self.chain_collection,
+            straighten_orientation=self.straighten_orientation,
         )
 
         armature = context.active_object

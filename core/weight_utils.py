@@ -1,4 +1,5 @@
 import bpy
+from mathutils import Vector
 
 def merge_weights_and_delete_bones(armature_obj, bone_pairs):
     """
@@ -125,7 +126,8 @@ def rename_or_merge_vgroup(obj, old_name, new_name):
 
 def shape_key_to_weights(obj, active_kb, basis_kb, ignore_threshold=0.001,
                          weight_strength=1.0, smooth_factor=0.5,
-                         smooth_iters=10, sync_seams=True):
+                         smooth_iters=10, sync_seams=True, direction=None,
+                         vg_name=None):
     """
     Convert a shape key to a vertex group using normalized, Laplacian-smoothed weights.
 
@@ -133,13 +135,20 @@ def shape_key_to_weights(obj, active_kb, basis_kb, ignore_threshold=0.001,
     with others scaled proportionally. Coincident vertices (UV seam duplicates) are
     synced after each smoothing pass to prevent tearing.
 
+    direction: optional normalized Vector. When set, only vertices whose displacement
+    projects positively onto this axis contribute; weight = dot product magnitude.
+    This lets you split a single shape key (e.g. blink) into per-direction groups
+    (upper eyelid vs lower eyelid) by running the operator twice with opposite signs.
+
     Returns the number of affected vertices, or None if no valid displacement is found.
     """
     vertices = obj.data.vertices
     v_count = len(vertices)
     raw_weights = [0.0] * v_count
-    max_dist = 0.0
+    max_val = 0.0
     valid_count = 0
+
+    filter_dir = Vector(direction).normalized() if direction is not None else None
 
     seam_groups = []
     if sync_seams:
@@ -150,19 +159,26 @@ def shape_key_to_weights(obj, active_kb, basis_kb, ignore_threshold=0.001,
         seam_groups = [g for g in coincident.values() if len(g) > 1]
 
     for i in range(v_count):
-        dist = (active_kb.data[i].co - basis_kb.data[i].co).length
-        if dist > max_dist:
-            max_dist = dist
-        if dist > ignore_threshold:
-            raw_weights[i] = dist
-            valid_count += 1
+        disp = active_kb.data[i].co - basis_kb.data[i].co
+        if filter_dir is not None:
+            val = disp.dot(filter_dir)
+            if val <= ignore_threshold:
+                continue
+        else:
+            val = disp.length
+            if val <= ignore_threshold:
+                continue
+        if val > max_val:
+            max_val = val
+        raw_weights[i] = val
+        valid_count += 1
 
-    if valid_count == 0 or max_dist == 0:
+    if valid_count == 0 or max_val == 0:
         return None
 
     for i in range(v_count):
         if raw_weights[i] > 0:
-            raw_weights[i] = min(1.0, (raw_weights[i] / max_dist) * weight_strength)
+            raw_weights[i] = min(1.0, (raw_weights[i] / max_val) * weight_strength)
 
     for group in seam_groups:
         avg = sum(raw_weights[idx] for idx in group) / len(group)
@@ -191,7 +207,8 @@ def shape_key_to_weights(obj, active_kb, basis_kb, ignore_threshold=0.001,
                         new_weights[idx] = avg
             raw_weights = new_weights
 
-    vg_name = active_kb.name
+    if vg_name is None:
+        vg_name = active_kb.name
     existing = obj.vertex_groups.get(vg_name)
     if existing:
         obj.vertex_groups.remove(existing)

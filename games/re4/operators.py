@@ -417,6 +417,11 @@ class RE4_OT_AutoCreateChains(bpy.types.Operator):
         ],
         default='.chain',
     )
+    straighten_orientation: bpy.props.BoolProperty(
+        name="骨骼方向预处理",
+        description="创建前将所有物理骨骼调整为竖直向上、扭转归零",
+        default=False,
+    )
 
     @classmethod
     def poll(cls, context):
@@ -441,6 +446,7 @@ class RE4_OT_AutoCreateChains(bpy.types.Operator):
             layout.prop(self, "collection_name")
             layout.prop(self, "chain_format", expand=True)
         layout.prop(self, "settings_mode", expand=True)
+        layout.prop(self, "straighten_orientation")
 
     def execute(self, context):
         config = REChainConfig(
@@ -451,6 +457,7 @@ class RE4_OT_AutoCreateChains(bpy.types.Operator):
             tuning=None,
             settings_mode=self.settings_mode,
             selected_collection="",
+            straighten_orientation=self.straighten_orientation,
         )
         armature = context.active_object
         status = auto_create_re_chains(context, armature, config)

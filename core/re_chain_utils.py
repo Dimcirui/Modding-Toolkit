@@ -17,6 +17,7 @@ class REChainConfig:
     settings_mode: str = 'SHARED'
     selected_collection: str = ''
     sync_orientation: bool = False
+    straighten_orientation: bool = False
 
 
 def _patch_chain_cleanup(disable=True):
@@ -93,6 +94,23 @@ def _is_valid_chain_collection(col):
             and (".chain" in col.name or ".clsp" in col.name))
 
 
+def _straighten_chain_orientations(armature, physics_bones):
+    """在 Edit 模式下将所有物理骨骼调整为竖直向上（+Z）、扭转归零。"""
+    from mathutils import Vector
+    bpy.ops.object.mode_set(mode='EDIT')
+    edit_bones = armature.data.edit_bones
+    up = Vector((0.0, 0.0, 1.0))
+    count = 0
+    for eb in edit_bones:
+        if eb.name in physics_bones:
+            length = max(eb.length, 1e-6)
+            eb.tail = eb.head + up * length
+            eb.roll = 0.0
+            count += 1
+    bpy.ops.object.mode_set(mode='POSE')
+    return count
+
+
 def _build_physics_bones_set(context, armature):
     """构建物理骨骼名称集合（排除预设骨）。"""
     settings = context.scene.mhw_suite_settings
@@ -154,6 +172,9 @@ def _auto_create_chain_collection(config: REChainConfig):
         toolpanel.chainFileType = old_file_type
         if old_active and old_active.name in bpy.data.objects:
             bpy.context.view_layer.objects.active = old_active
+            old_active.select_set(True)
+            if old_active.type == 'ARMATURE' and bpy.context.mode != 'POSE':
+                bpy.ops.object.mode_set(mode='POSE')
 
 
 def _sync_chain_orientations(armature, chain_head_names, physics_bones):
@@ -230,8 +251,11 @@ def auto_create_re_chains(context, armature, config: REChainConfig):
         chain_head_names = [pb.name for pb in chain_heads]
         n = _sync_chain_orientations(armature, chain_head_names, physics_bones)
         print(f"[ChainGen] sync_orientation: aligned {n} chain heads", file=sys.stderr)
-        # _sync_chain_orientations leaves us in POSE mode; re-fetch chain_heads
-        # so any pose-bone references remain valid after the mode round-trip.
+        chain_heads = [pb for pb in armature.pose.bones if pb.get("chain_role") in ("head", "branch_head")]
+
+    if config.straighten_orientation:
+        n = _straighten_chain_orientations(armature, physics_bones)
+        print(f"[ChainGen] straighten_orientation: straightened {n} physics bones", file=sys.stderr)
         chain_heads = [pb for pb in armature.pose.bones if pb.get("chain_role") in ("head", "branch_head")]
 
     t_decompose = time.perf_counter()
@@ -269,7 +293,11 @@ def auto_create_re_chains(context, armature, config: REChainConfig):
             for bone_name in path:
                 pb2 = armature.pose.bones.get(bone_name)
                 if pb2:
-                    pb2.bone.select = True
+                    # Blender 4.x: selection lives on Bone data; 5.x: moved to PoseBone
+                    if hasattr(pb2, 'select'):
+                        pb2.select = True
+                    else:
+                        pb2.bone.select = True
             first_pb = armature.pose.bones.get(path[0]) if path else None
             if first_pb:
                 armature.data.bones.active = first_pb.bone

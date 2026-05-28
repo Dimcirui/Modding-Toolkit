@@ -6,7 +6,7 @@ from bpy.app.translations import pgettext as _
 from ...core import bone_utils
 from ...core.bone_mapper import BoneMapManager, resolve_preset
 from ...core.standard_ops import _build_fuzzy_preset_bones
-from ...core.re_chain_utils import _patch_chain_cleanup
+from ...core.re_chain_utils import _patch_chain_cleanup, _straighten_chain_orientations
 
 
 def _is_mhwi_physics(name):
@@ -120,6 +120,11 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
         description="新创建的 CTC Collection 名称（不含扩展名）",
         default="",
     )
+    straighten_orientation: bpy.props.BoolProperty(
+        name="骨骼方向预处理",
+        description="创建前将所有物理骨骼调整为竖直向上、扭转归零",
+        default=False,
+    )
 
     @classmethod
     def poll(cls, context):
@@ -155,15 +160,27 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
             layout.prop(self, "collection_name")
         else:
             layout.prop(self, "ctc_collection")
+        layout.prop(self, "straighten_orientation")
 
     def execute(self, context):
         t_total = time.perf_counter()
+
+        # 在任何可能改变激活对象的操作之前先保存骨架引用
+        armature = context.active_object
+        if not armature or armature.type != 'ARMATURE':
+            self.report({'ERROR'}, _("请先选中一个骨架"))
+            return {'CANCELLED'}
 
         if self.auto_create_collection:
             result = bpy.ops.mhw_ctc.create_ctc_collection(collectionName=self.collection_name)
             if result != {'FINISHED'}:
                 self.report({'ERROR'}, _("自动创建 CTC Collection 失败"))
                 return {'CANCELLED'}
+            # create_ctc_collection 可能改变了激活对象和模式，恢复骨架并进入姿态模式
+            context.view_layer.objects.active = armature
+            armature.select_set(True)
+            if context.mode != 'POSE':
+                bpy.ops.object.mode_set(mode='POSE')
         else:
             col = bpy.data.collections.get(self.ctc_collection)
             if col is None:
@@ -175,16 +192,21 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
                 return {'CANCELLED'}
             toolpanel.ctcCollection = col
 
-        armature = context.active_object
-
         settings = context.scene.mhw_suite_settings
         mapper = BoneMapManager()
-        _x, _ = resolve_preset(settings.import_preset_enum, armature, True)
+        _x, _unused = resolve_preset(settings.import_preset_enum, armature, True)
         if _x and mapper.load_preset(_x, is_import_x=True):
             preset_bones = _build_fuzzy_preset_bones(mapper, armature)
         else:
             preset_bones = set()
         physics_bones = {b.name for b in armature.data.bones if b.name not in preset_bones}
+
+        if self.straighten_orientation:
+            _straighten_chain_orientations(armature, physics_bones)
+            context.view_layer.objects.active = armature
+            armature.select_set(True)
+            if context.mode != 'POSE':
+                bpy.ops.object.mode_set(mode='POSE')
 
         col = context.scene.mhw_ctc_toolpanel.ctcCollection
         existing_heads = _get_existing_chain_heads(col)
@@ -220,7 +242,11 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
                     continue
 
                 bpy.ops.pose.select_all(action='DESELECT')
-                head_pb.bone.select = True
+                # Blender 4.x: selection lives on Bone data; 5.x: moved to PoseBone
+                if hasattr(head_pb, 'select'):
+                    head_pb.select = True
+                else:
+                    head_pb.bone.select = True
                 armature.data.bones.active = head_pb.bone
 
                 t0 = time.perf_counter()
@@ -367,12 +393,21 @@ def _assign_next_id(used_ids, id_range):
     return None
 
 
-def _count_rename_failures(armature, physics_bones_ordered, id_range):
+def _count_rename_failures(armature, physics_bones_ordered, id_range, also_exclude=None):
     """预检重命名会失败的骨骼数量（不实际改名）。
-    返回 (成功数, 失败数)。"""
+    返回 (成功数, 失败数)。
+
+    also_exclude: 额外要从 used_ids 中排除的骨骼名集合。
+    用于多批次顺序重命名时，前一批次的骨骼在执行时已离开当前范围，
+    预检阶段需显式告知本函数忽略这些骨骼的当前 ID。
+    """
+    # 待重命名骨骼即将释放自身 ID，不应计入"已占用"
+    physics_bones_set = set(physics_bones_ordered)
+    if also_exclude:
+        physics_bones_set |= set(also_exclude)
     used_ids = set()
     for b in armature.data.bones:
-        if b.name.startswith("MhBone_"):
+        if b.name.startswith("MhBone_") and b.name not in physics_bones_set:
             try:
                 idx = int(b.name.split("_")[-1])
                 if id_range[0] <= idx <= id_range[1]:
@@ -394,11 +429,17 @@ def _count_rename_failures(armature, physics_bones_ordered, id_range):
 
 def _rename_physics_bones(armature, physics_bones_ordered, id_range):
     """将 physics_bones_ordered（骨骼名列表）重命名为 MhBone_xxx，使用 id_range 范围。
-    返回 (成功数, 失败数)。"""
+    返回 (成功数, 失败数)。
+
+    采用两步改名（临时名 → 正式名）避免同序列内的命名冲突：
+    若直接逐一改名，前面的骨骼抢占了后面骨骼的当前名称对应的 ID，
+    Blender 会自动给被顶替的骨骼追加 .001 后缀，导致后续查找失败。
+    """
+    # 待重命名骨骼即将释放自身 ID，不应计入"已占用"
+    physics_bones_set = set(physics_bones_ordered)
     used_ids = set()
-    # 收集已在范围内的 MhBone ID，避免冲突
     for b in armature.data.bones:
-        if b.name.startswith("MhBone_"):
+        if b.name.startswith("MhBone_") and b.name not in physics_bones_set:
             try:
                 idx = int(b.name.split("_")[-1])
                 if id_range[0] <= idx <= id_range[1]:
@@ -406,23 +447,44 @@ def _rename_physics_bones(armature, physics_bones_ordered, id_range):
             except (ValueError, IndexError):
                 pass
 
-    success = 0
-    fail = 0
-    # 必须在编辑模式下重命名
-    bpy.ops.object.mode_set(mode='EDIT')
-    edit_bones = armature.data.edit_bones
+    # 预先计算每根骨骼的目标名称
+    assignments = []  # [(old_name, new_name | None), ...]
     for name in physics_bones_ordered:
         new_id = _assign_next_id(used_ids, id_range)
         if new_id is None:
+            assignments.append((name, None))
+        else:
+            assignments.append((name, f"MhBone_{new_id:03d}"))
+            used_ids.add(new_id)
+
+    success = 0
+    fail = 0
+    bpy.ops.object.mode_set(mode='EDIT')
+    edit_bones = armature.data.edit_bones
+
+    # 第一步：全部改成临时名，消除新旧名称之间的冲突
+    temp_to_final = {}
+    for i, (old_name, new_name) in enumerate(assignments):
+        if new_name is None:
             fail += 1
             continue
-        eb = edit_bones.get(name)
+        eb = edit_bones.get(old_name)
         if eb is None:
             fail += 1
             continue
-        eb.name = f"MhBone_{new_id:03d}"
-        used_ids.add(new_id)
-        success += 1
+        tmp = f"__tmp_phys_{i}__"
+        eb.name = tmp
+        temp_to_final[tmp] = new_name
+
+    # 第二步：从临时名改为正式名
+    for tmp, final in temp_to_final.items():
+        eb = edit_bones.get(tmp)
+        if eb is not None:
+            eb.name = final
+            success += 1
+        else:
+            fail += 1
+
     bpy.ops.object.mode_set(mode='OBJECT')
     return success, fail
 
@@ -709,7 +771,9 @@ class MHWI_OT_BatchRenamePhysicsBones(bpy.types.Operator):
             tail = [n for n in physics
                     if _is_tail_bone(arm_obj.data.bones[n], physics_set)]
             _, f1 = _count_rename_failures(arm_obj, non_tail, (150, 200))
-            _, f2 = _count_rename_failures(arm_obj, tail, (201, 245))
+            # tail 的预检需排除 non_tail：执行时 non_tail 已先行重命名离开 (201, 245)，
+            # 若 non_tail 当前有 ID 落在该范围，不应计为 tail 的冲突
+            _, f2 = _count_rename_failures(arm_obj, tail, (201, 245), also_exclude=non_tail)
             return f1 + f2
 
     def invoke(self, context, _event):

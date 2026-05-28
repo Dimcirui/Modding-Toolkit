@@ -3,6 +3,7 @@ import os
 import re
 from bpy.app.translations import pgettext as _
 from ..core import bone_utils, weight_utils, ui_config
+from ..core.mdf_generator_base import MHW_OT_SetChannelSize
 from ..core.bone_utils import get_import_presets_callback, get_target_presets_callback
 from ..core.pose_ops import get_pose_presets_callback
 from ..games.re9.batch_export import get_schemes_callback
@@ -699,6 +700,9 @@ class MHW_PT_MainPanel(bpy.types.Panel):
                 col.label(text="需要 MHW Model Editor!", icon='ERROR')
 
             col.separator()
+            col.operator("mhw.mmd_face_weights", text=_("MMD 形态键转表情权重"), icon='SHAPEKEY_DATA').target_game = 'MHWI'
+
+            col.separator()
             row = col.row()
             row.enabled = has_mhw_model
             row.operator("mhwi.batch_export_dialog", text=_("批量导出装备"), icon='EXPORT')
@@ -738,6 +742,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
 
             col.separator()
             col.operator("mhws.body_weight_to_hj", text=_("身体权重转移至辅助权重"), icon='GROUP_VERTEX')
+            col.operator("mhw.mmd_face_weights", text=_("MMD 形态键转表情权重"), icon='SHAPEKEY_DATA').target_game = 'MHWS'
 
             col.separator()
             row = col.row()
@@ -774,6 +779,9 @@ class MHW_PT_MainPanel(bpy.types.Panel):
                 col.label(text="需要 RE Chain Editor!", icon='ERROR')
 
             col.separator()
+            col.operator("mhw.mmd_face_weights", text=_("MMD 形态键转表情权重"), icon='SHAPEKEY_DATA').target_game = 'RE4'
+
+            col.separator()
             row = col.row()
             row.enabled = has_re_mesh
             row.operator("re4.batch_export_dialog", text="RE4 Batch Exporter", icon='EXPORT')
@@ -802,19 +810,31 @@ class MHW_PT_MainPanel(bpy.types.Panel):
                 col.label(text="需要 RE Chain Editor!", icon='ERROR')
 
             col.separator()
+            col.operator("mhw.mmd_face_weights", text=_("MMD 形态键转表情权重"), icon='SHAPEKEY_DATA').target_game = 'RE9'
+
+            col.separator()
             row = col.row()
             row.enabled = has_re_mesh
             row.operator("re9.batch_export_dialog", text="RE9 Batch Exporter", icon='EXPORT')
+# Blender 动态枚举的已知限制：回调返回的列表若为局部变量，Python GC 会回收其中的
+# 字符串，C 层继续持有悬空指针，导致非 ASCII 字符（中/日文等）显示乱码。
+# 解决方法：将列表保存到模块级变量，阻止 GC 回收。
+_sk_enum_cache: list = []
+
+
 def _sk_enum_items(self, context):
+    global _sk_enum_cache
     obj = context.active_object
     if not obj or not obj.data.shape_keys:
-        return [('1', 'No shape keys', '', 1)]
+        _sk_enum_cache = [('1', 'No shape keys', '', 1)]
+        return _sk_enum_cache
     items = []
     for i, kb in enumerate(obj.data.shape_keys.key_blocks):
         if i == 0:
             continue
         items.append((str(i), kb.name, '', i))
-    return items or [('1', 'No shape keys', '', 1)]
+    _sk_enum_cache = items or [('1', 'No shape keys', '', 1)]
+    return _sk_enum_cache
 
 
 class MHW_OT_ShapeKeyToWeights(bpy.types.Operator):
@@ -854,6 +874,21 @@ class MHW_OT_ShapeKeyToWeights(bpy.types.Operator):
         default=True,
         description="Force identical weights on spatially coincident vertices to prevent UV seam tearing",
     )
+    use_direction_filter: bpy.props.BoolProperty(
+        name="方向过滤",
+        default=False,
+        description="Only include vertices whose displacement projects positively onto the chosen axis",
+    )
+    filter_axis: bpy.props.EnumProperty(
+        name="轴",
+        items=[('X', "X", ""), ('Y', "Y", ""), ('Z', "Z", "")],
+        default='Z',
+    )
+    filter_sign: bpy.props.EnumProperty(
+        name="方向",
+        items=[('+', "+（正向）", ""), ('-', "-（负向）", "")],
+        default='+',
+    )
 
     @classmethod
     def poll(cls, context):
@@ -879,6 +914,13 @@ class MHW_OT_ShapeKeyToWeights(bpy.types.Operator):
         col.prop(self, "smooth_factor", slider=True)
         col.prop(self, "smooth_iters")
         col.prop(self, "sync_seams")
+        col.separator()
+        col.prop(self, "use_direction_filter")
+        if self.use_direction_filter:
+            row = col.row(align=True)
+            row.prop(self, "filter_axis", expand=True)
+            row = col.row(align=True)
+            row.prop(self, "filter_sign", expand=True)
 
     def execute(self, context):
         obj = context.active_object
@@ -895,6 +937,11 @@ class MHW_OT_ShapeKeyToWeights(bpy.types.Operator):
         if context.mode != 'OBJECT':
             bpy.ops.object.mode_set(mode='OBJECT')
 
+        direction = None
+        if self.use_direction_filter:
+            sign = 1.0 if self.filter_sign == '+' else -1.0
+            direction = {'X': (sign, 0, 0), 'Y': (0, sign, 0), 'Z': (0, 0, sign)}[self.filter_axis]
+
         result = weight_utils.shape_key_to_weights(
             obj, active_kb, basis_kb,
             ignore_threshold=self.ignore_threshold,
@@ -902,6 +949,7 @@ class MHW_OT_ShapeKeyToWeights(bpy.types.Operator):
             smooth_factor=self.smooth_factor,
             smooth_iters=self.smooth_iters,
             sync_seams=self.sync_seams,
+            direction=direction,
         )
 
         if result is None:
@@ -909,6 +957,120 @@ class MHW_OT_ShapeKeyToWeights(bpy.types.Operator):
             return {'CANCELLED'}
 
         self.report({'INFO'}, f"已生成顶点组 '{active_kb.name}'（{result} 个有效顶点）")
+        return {'FINISHED'}
+
+
+# (shape_key_name, direction_xyz, part_label, mhwi_vg, mhws_vg, re4_vg, re9_vg)
+_MMD_FACE_ENTRIES = [
+    ("ウィンク２",  ( 0,  0,  1), "左眼上眼皮", "MhBone_321", "L_UpEyeLid_LOD01",    "L_U_Eyelid03",  "L_UprLdEdge_02"),
+    ("ウィンク２",  ( 0,  0, -1), "左眼下眼皮", "MhBone_325", "L_LoEyeLid_LOD01",    "L_D_Eyelid03",  "L_LwrLdEdge_02"),
+    ("ｳｨﾝｸ２右",  ( 0,  0,  1), "右眼上眼皮", "MhBone_334", "R_UpEyeLid_LOD01",    "R_U_Eyelid03",  "R_UprLdEdge_02"),
+    ("ｳｨﾝｸ２右",  ( 0,  0, -1), "右眼下眼皮", "MhBone_338", "R_LoEyeLid_LOD01",    "R_D_Eyelid03",  "R_LwrLdEdge_02"),
+    ("あ",          ( 0,  0,  1), "上嘴唇",     "MhBone_381", "C_upLip_T_LOD01",     "C_UpperLip",    "C_UprLp_02"),
+    ("あ",          ( 0,  0, -1), "下嘴唇",     "MhBone_388", "C_loLip_T_LOD01",     "C_LowerLip",    "C_LwrLp_02"),
+    ("あ",          ( 1,  0,  0), "左嘴角",     "MhBone_384", "L_cornerLip_B_LOD01", "L_MouthCorner", "L_LipCorner_02"),
+    ("あ",          (-1,  0,  0), "右嘴角",     "MhBone_385", "R_cornerLip_B_LOD01", "R_MouthCorner", "R_LipCorner_02"),
+]
+_MMD_FACE_GAME_COL = {'MHWI': 3, 'MHWS': 4, 'RE4': 5, 'RE9': 6}
+
+
+class MHW_OT_MMDFaceWeights(bpy.types.Operator):
+    """将 MMD 眼皮/嘴型形态键按方向拆分为目标游戏表情顶点组"""
+    bl_idname = "mhw.mmd_face_weights"
+    bl_label = "MMD 形态键转表情权重"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    target_game: bpy.props.EnumProperty(
+        name="目标游戏",
+        items=[
+            ('MHWI', "MHWI", ""),
+            ('MHWS', "MHWS", ""),
+            ('RE4',  "RE4",  ""),
+            ('RE9',  "RE9",  ""),
+        ],
+    )
+    ignore_threshold: bpy.props.FloatProperty(
+        name="忽略阈值",
+        default=0.001, min=0.0,
+        description="Vertices with displacement smaller than this are ignored",
+    )
+    weight_strength: bpy.props.FloatProperty(
+        name="权重强度",
+        default=1.0, min=0.1, max=5.0,
+    )
+    smooth_factor: bpy.props.FloatProperty(
+        name="平滑扩散率",
+        default=0.5, min=0.0, max=1.0,
+    )
+    smooth_iters: bpy.props.IntProperty(
+        name="平滑迭代次数",
+        default=10, min=0, max=100,
+    )
+    sync_seams: bpy.props.BoolProperty(
+        name="缝合重合顶点",
+        default=True,
+    )
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return (obj and obj.type == 'MESH'
+                and obj.data.shape_keys
+                and len(obj.data.shape_keys.key_blocks) > 1)
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=280)
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column()
+        col.prop(self, "target_game")
+        col.separator()
+        col.prop(self, "ignore_threshold")
+        col.prop(self, "weight_strength", slider=True)
+        col.prop(self, "smooth_factor", slider=True)
+        col.prop(self, "smooth_iters")
+        col.prop(self, "sync_seams")
+
+    def execute(self, context):
+        obj = context.active_object
+        if context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+        key_blocks = obj.data.shape_keys.key_blocks
+        basis_kb = obj.data.shape_keys.reference_key
+        vg_col = _MMD_FACE_GAME_COL[self.target_game]
+
+        done, skipped = [], []
+        for sk_name, direction, part_label, *vg_names in _MMD_FACE_ENTRIES:
+            kb = key_blocks.get(sk_name)
+            if kb is None:
+                skipped.append(part_label)
+                continue
+            target_vg = vg_names[vg_col - 3]
+            result = weight_utils.shape_key_to_weights(
+                obj, kb, basis_kb,
+                ignore_threshold=self.ignore_threshold,
+                weight_strength=self.weight_strength,
+                smooth_factor=self.smooth_factor,
+                smooth_iters=self.smooth_iters,
+                sync_seams=self.sync_seams,
+                direction=direction,
+                vg_name=target_vg,
+            )
+            if result is None:
+                skipped.append(part_label)
+            else:
+                done.append(part_label)
+
+        if not done:
+            self.report({'WARNING'}, "未找到任何有效形态键，请检查 MMD 形态键名称")
+            return {'CANCELLED'}
+
+        msg = f"已生成 {len(done)} 个表情顶点组：{'、'.join(done)}"
+        if skipped:
+            msg += f"；跳过：{'、'.join(skipped)}"
+        self.report({'INFO'}, msg)
         return {'FINISHED'}
 
 
@@ -968,6 +1130,8 @@ classes = [
     MHW_PT_SuiteSettings,
     MHW_OT_GeneralTools,
     MHW_OT_ShapeKeyToWeights,
+    MHW_OT_MMDFaceWeights,
+    MHW_OT_SetChannelSize,
     MHW_OT_MergeRenamedVGroups,
     MHW_PT_MainPanel,
 ]

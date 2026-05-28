@@ -58,6 +58,20 @@ class MhwsGenMaterialEntry(bpy.types.PropertyGroup):
         description="AO 贴图路径",
         subtype='FILE_PATH',
     )
+    # Native pixel sizes detected at refresh (read-only, set by MdfGenRefreshBase)
+    native_size_color:     bpy.props.IntProperty(default=0)
+    native_size_normal:    bpy.props.IntProperty(default=0)
+    native_size_roughness: bpy.props.IntProperty(default=0)
+    native_size_metallic:  bpy.props.IntProperty(default=0)
+    native_size_alpha:     bpy.props.IntProperty(default=0)
+    native_size_emissive:  bpy.props.IntProperty(default=0)
+    # User-set output size overrides (0 = use global bake_size / native)
+    bake_size_color:       bpy.props.IntProperty(default=0)
+    bake_size_normal:      bpy.props.IntProperty(default=0)
+    bake_size_roughness:   bpy.props.IntProperty(default=0)
+    bake_size_metallic:    bpy.props.IntProperty(default=0)
+    bake_size_alpha:       bpy.props.IntProperty(default=0)
+    bake_size_emissive:    bpy.props.IntProperty(default=0)
 
 
 def _on_mhws_mesh_collection_update(self, context):
