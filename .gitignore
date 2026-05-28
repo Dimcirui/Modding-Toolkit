@@ -6,6 +6,7 @@ MHW-Modding-Toolkit.code-workspace
 docs/superpowers/
 tests/
 
+docs/
 # Working data files (armor list source / generation scripts)
 armor_list_summary.md
 *.csv
