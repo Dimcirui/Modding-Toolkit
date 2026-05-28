@@ -1,15 +1,38 @@
 {
   "preset_info": {
-    "name": "Valve",
+    "name": "Valve社",
     "type": "X_PRESET",
     "version": "2.0",
-    "description": "Created with MHW Modding Toolkit Editor"
+    "description": "Created with MHW Modding Toolkit Editor",
+    "category": "通用平台"
   },
   "mappings": {
-    "pelvis": { "main": ["ValveBiped.Bip01_Pelvis"], "aux": ["ValveBiped.Bip01_Spine"] },
-    "spine_01": { "main": ["ValveBiped.Bip01_Spine1"], "aux": [] },
-    "spine_02": { "main": ["ValveBiped.Bip01_Spine2"], "aux": [] },
-    "spine_03": { "main": ["ValveBiped.Bip01_Spine4"], "aux": [] },
+    "pelvis": {
+      "main": [
+        "ValveBiped.Bip01_Pelvis"
+      ],
+      "aux": [
+        "ValveBiped.Bip01_Spine"
+      ]
+    },
+    "spine_01": {
+      "main": [
+        "ValveBiped.Bip01_Spine1"
+      ],
+      "aux": []
+    },
+    "spine_02": {
+      "main": [
+        "ValveBiped.Bip01_Spine2"
+      ],
+      "aux": []
+    },
+    "spine_03": {
+      "main": [
+        "ValveBiped.Bip01_Spine4"
+      ],
+      "aux": []
+    },
     "neck": {
       "main": [
         "ValveBiped.Bip01_Neck1"

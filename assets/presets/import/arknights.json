@@ -1,11 +1,14 @@
 {
   "preset_info": {
-    "name": "Arknights: Endfield",
+    "name": "终末地",
     "type": "X_PRESET",
     "version": "1.0",
-    "description": "Auto-converted from Endfield flat map."
+    "description": "Auto-converted from Endfield flat map.",
+    "category": "其他游戏"
   },
-  "exclude": ["Bip001"],
+  "exclude": [
+    "Bip001"
+  ],
   "mappings": {
     "pelvis": {
       "main": [

@@ -1,341 +1,345 @@
 {
   "preset_info": {
-    "name": "绝地潜兵2",
+    "name": "碧蓝幻想",
     "type": "X_PRESET",
-    "version": "2.0",
-    "description": "Created with MHW Modding Toolkit Editor"
+    "version": "1.0",
+    "description": "Source preset for GBFR models.",
+    "category": "其他游戏"
   },
   "mappings": {
     "pelvis": {
       "main": [
-        "hips"
+        "_000"
       ],
-      "aux": [
-        "hips_culling",
-        "spine1"
-      ]
+      "aux": []
     },
     "spine_01": {
       "main": [
-        "spine2"
+        "_001"
       ],
       "aux": []
     },
     "spine_02": {
       "main": [
-        "chest"
+        "_002"
       ],
-      "aux": [
-        "torso_culling"
-      ]
+      "aux": []
     },
     "neck": {
       "main": [
-        "neck"
+        "_004"
       ],
       "aux": []
     },
     "head": {
       "main": [
-        "head"
+        "_005"
       ],
-      "aux": [
-        "helmet_culling"
-      ]
+      "aux": []
     },
     "clavicle_L": {
       "main": [
-        "l_clavicle"
+        "_a0a"
       ],
       "aux": []
     },
     "upperarm_L": {
       "main": [
-        "l_shoulder"
+        "_a0b"
       ],
       "aux": [
-        "l_shoulder_culling",
-        "l_shoulder_twist"
+        "_00b"
       ]
     },
     "forearm_L": {
       "main": [
-        "l_elbow"
+        "_00c"
       ],
       "aux": [
-        "l_arm_culling",
-        "grp_arm_l"
+        "_a21",
+        "_a38"
       ]
     },
     "hand_L": {
       "main": [
-        "l_hand"
+        "_00d"
       ],
-      "aux": [
-        "l_hand_twist"
-      ]
+      "aux": []
     },
     "clavicle_R": {
       "main": [
-        "r_clavicle"
+        "_a06"
       ],
       "aux": []
     },
     "upperarm_R": {
       "main": [
-        "r_shoulder"
+        "_a07"
       ],
       "aux": [
-        "r_shoulder_culling",
-        "r_shoulder_twist"
+        "_007"
       ]
     },
     "forearm_R": {
       "main": [
-        "r_elbow"
+        "_008"
       ],
       "aux": [
-        "r_arm_culling",
-        "grp_arm_r"
+        "_a31",
+        "_a28"
       ]
     },
     "hand_R": {
       "main": [
-        "r_hand"
-      ],
-      "aux": [
-        "r_hand_twist"
-      ]
-    },
-    "thigh_L": {
-      "main": [
-        "l_thigh"
+        "_009"
       ],
       "aux": []
     },
-    "shin_L": {
+    "thigh_L": {
       "main": [
-        "l_knee"
+        "_a12"
       ],
       "aux": [
-        "l_leg_culling"
+        "_a36"
+      ]
+    },
+    "shin_L": {
+      "main": [
+        "_013"
+      ],
+      "aux": [
+        "_a39"
       ]
     },
     "foot_L": {
       "main": [
-        "l_foot"
+        "_014"
       ],
-      "aux": []
+      "aux": [
+        "_a14"
+      ]
     },
     "toe_L": {
       "main": [
-        "l_ball"
+        "_015"
       ],
       "aux": []
     },
     "thigh_R": {
       "main": [
-        "r_thigh"
+        "_a0e"
       ],
-      "aux": []
+      "aux": [
+        "_a26"
+      ]
     },
     "shin_R": {
       "main": [
-        "r_knee"
+        "_00f"
       ],
       "aux": [
-        "r_leg_culling"
+        "_a29"
       ]
     },
     "foot_R": {
       "main": [
-        "r_foot"
+        "_010"
       ],
-      "aux": []
+      "aux": [
+        "_a10"
+      ]
     },
     "toe_R": {
       "main": [
-        "r_ball"
+        "_011"
       ],
       "aux": []
     },
     "thumb_01_L": {
       "main": [
-        "l_thumb_finger1"
+        "_200"
       ],
       "aux": []
     },
     "thumb_02_L": {
       "main": [
-        "l_thumb_finger2"
+        "_201"
       ],
       "aux": []
     },
     "thumb_03_L": {
       "main": [
-        "l_thumb_finger3"
+        "_202"
       ],
       "aux": []
     },
     "index_01_L": {
       "main": [
-        "l_index_finger1"
+        "_211"
       ],
       "aux": []
     },
     "index_02_L": {
       "main": [
-        "l_index_finger2"
+        "_212"
       ],
       "aux": []
     },
     "index_03_L": {
       "main": [
-        "l_index_finger3"
+        "_213"
       ],
       "aux": []
     },
     "middle_01_L": {
       "main": [
-        "l_middle_finger1"
+        "_221"
       ],
       "aux": []
     },
     "middle_02_L": {
       "main": [
-        "l_middle_finger2"
+        "_222"
       ],
       "aux": []
     },
     "middle_03_L": {
       "main": [
-        "l_middle_finger3"
+        "_223"
       ],
       "aux": []
     },
     "ring_01_L": {
       "main": [
-        "l_ring_finger1"
+        "_231"
       ],
-      "aux": []
+      "aux": [
+        "_230"
+      ]
     },
     "ring_02_L": {
       "main": [
-        "l_ring_finger2"
+        "_232"
       ],
       "aux": []
     },
     "ring_03_L": {
       "main": [
-        "l_ring_finger3"
+        "_233"
       ],
       "aux": []
     },
     "pinky_01_L": {
       "main": [
-        "l_pinky_finger1"
+        "_241"
       ],
-      "aux": []
+      "aux": [
+        "_240"
+      ]
     },
     "pinky_02_L": {
       "main": [
-        "l_pinky_finger2"
+        "_242"
       ],
       "aux": []
     },
     "pinky_03_L": {
       "main": [
-        "l_pinky_finger3"
+        "_243"
       ],
       "aux": []
     },
     "thumb_01_R": {
       "main": [
-        "r_thumb_finger1"
+        "_100"
       ],
       "aux": []
     },
     "thumb_02_R": {
       "main": [
-        "r_thumb_finger2"
+        "_101"
       ],
       "aux": []
     },
     "thumb_03_R": {
       "main": [
-        "r_thumb_finger3"
+        "_102"
       ],
       "aux": []
     },
     "index_01_R": {
       "main": [
-        "r_index_finger1"
+        "_111"
       ],
       "aux": []
     },
     "index_02_R": {
       "main": [
-        "r_index_finger2"
+        "_112"
       ],
       "aux": []
     },
     "index_03_R": {
       "main": [
-        "r_index_finger3"
+        "_113"
       ],
       "aux": []
     },
     "middle_01_R": {
       "main": [
-        "r_middle_finger1"
+        "_121"
       ],
       "aux": []
     },
     "middle_02_R": {
       "main": [
-        "r_middle_finger2"
+        "_122"
       ],
       "aux": []
     },
     "middle_03_R": {
       "main": [
-        "r_middle_finger3"
+        "_123"
       ],
       "aux": []
     },
     "ring_01_R": {
       "main": [
-        "r_ring_finger1"
+        "_131"
       ],
-      "aux": []
+      "aux": [
+        "_130"
+      ]
     },
     "ring_02_R": {
       "main": [
-        "r_ring_finger2"
+        "_132"
       ],
       "aux": []
     },
     "ring_03_R": {
       "main": [
-        "r_ring_finger3"
+        "_133"
       ],
       "aux": []
     },
     "pinky_01_R": {
       "main": [
-        "r_pinky_finger1"
+        "_141"
       ],
-      "aux": []
+      "aux": [
+        "_140"
+      ]
     },
     "pinky_02_R": {
       "main": [
-        "r_pinky_finger2"
+        "_142"
       ],
       "aux": []
     },
     "pinky_03_R": {
       "main": [
-        "r_pinky_finger3"
+        "_143"
       ],
       "aux": []
     }

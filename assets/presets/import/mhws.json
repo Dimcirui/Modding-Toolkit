@@ -1,11 +1,17 @@
 {
   "preset_info": {
-    "name": "Monster Hunter Wilds",
+    "name": "怪猎荒野",
     "type": "X_PRESET",
     "version": "1.0",
-    "description": "Merges HJ helpers, split spines, and muscle bones."
+    "description": "Merges HJ helpers, split spines, and muscle bones.",
+    "category": "怪猎系"
   },
-  "exclude": ["COG", "root", "Cage", "Cage_L"],
+  "exclude": [
+    "COG",
+    "root",
+    "Cage",
+    "Cage_L"
+  ],
   "mappings": {
     "pelvis": {
       "main": [

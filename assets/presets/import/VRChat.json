@@ -1,33 +1,48 @@
 {
   "preset_info": {
-    "name": "VRChat / Unity Humanoid",
+    "name": "VRChat",
     "type": "X_PRESET",
     "version": "1.2",
-    "description": "Standard Unity Humanoid mapping. Separator/case variants handled automatically by fuzzy matching."
+    "description": "Standard Unity Humanoid mapping. Separator/case variants handled automatically by fuzzy matching.",
+    "category": "通用平台"
   },
   "mappings": {
     "pelvis": {
-      "main": ["Hips"],
-      "aux": ["Skirt_root"]
+      "main": [
+        "Hips"
+      ],
+      "aux": [
+        "Skirt_root"
+      ]
     },
     "spine_01": {
-      "main": ["Spine"],
+      "main": [
+        "Spine"
+      ],
       "aux": []
     },
     "spine_02": {
-      "main": ["Chest"],
+      "main": [
+        "Chest"
+      ],
       "aux": []
     },
     "spine_03": {
-      "main": ["UpperChest"],
+      "main": [
+        "UpperChest"
+      ],
       "aux": []
     },
     "neck": {
-      "main": ["Neck"],
+      "main": [
+        "Neck"
+      ],
       "aux": []
     },
     "head": {
-      "main": ["Head"],
+      "main": [
+        "Head"
+      ],
       "aux": [
         "Head_Adj",
         "Jaw",
@@ -38,17 +53,30 @@
         "RightEye_end"
       ]
     },
-
     "clavicle_L": {
-      "main": ["Shoulder_L", "Left shoulder"],
+      "main": [
+        "Shoulder_L",
+        "Left shoulder"
+      ],
       "aux": []
     },
     "upperarm_L": {
-      "main": ["UpperArm_L", "Left arm", "LeftUpperArm"],
-      "aux": ["UpperArm_twist_L", "Upper_arm_support_L"]
+      "main": [
+        "UpperArm_L",
+        "Left arm",
+        "LeftUpperArm"
+      ],
+      "aux": [
+        "UpperArm_twist_L",
+        "Upper_arm_support_L"
+      ]
     },
     "forearm_L": {
-      "main": ["LowerArm_L", "Left elbow", "LeftLowerArm"],
+      "main": [
+        "LowerArm_L",
+        "Left elbow",
+        "LeftLowerArm"
+      ],
       "aux": [
         "LowerArm_twist_L",
         "Lower_arm_support.L",
@@ -60,20 +88,37 @@
       ]
     },
     "hand_L": {
-      "main": ["Hand_L", "Left wrist", "Left Hand"],
+      "main": [
+        "Hand_L",
+        "Left wrist",
+        "Left Hand"
+      ],
       "aux": []
     },
-
     "clavicle_R": {
-      "main": ["Shoulder_R", "Right shoulder"],
+      "main": [
+        "Shoulder_R",
+        "Right shoulder"
+      ],
       "aux": []
     },
     "upperarm_R": {
-      "main": ["UpperArm_R", "Right arm", "RightUpperArm"],
-      "aux": ["UpperArm_twist_R", "Upper_arm_support_R"]
+      "main": [
+        "UpperArm_R",
+        "Right arm",
+        "RightUpperArm"
+      ],
+      "aux": [
+        "UpperArm_twist_R",
+        "Upper_arm_support_R"
+      ]
     },
     "forearm_R": {
-      "main": ["LowerArm_R", "Right elbow", "RightLowerArm"],
+      "main": [
+        "LowerArm_R",
+        "Right elbow",
+        "RightLowerArm"
+      ],
       "aux": [
         "LowerArm_twist_R",
         "Lower_arm_support.R",
@@ -85,90 +130,354 @@
       ]
     },
     "hand_R": {
-      "main": ["Hand_R", "Right wrist", "Right Hand"],
+      "main": [
+        "Hand_R",
+        "Right wrist",
+        "Right Hand"
+      ],
       "aux": []
     },
-
     "thigh_L": {
-      "main": ["UpperLeg_L", "Left leg"],
+      "main": [
+        "UpperLeg_L",
+        "Left leg"
+      ],
       "aux": []
     },
     "shin_L": {
-      "main": ["LowerLeg_L", "Left knee"],
+      "main": [
+        "LowerLeg_L",
+        "Left knee"
+      ],
       "aux": []
     },
     "foot_L": {
-      "main": ["Foot_L", "Left ankle"],
+      "main": [
+        "Foot_L",
+        "Left ankle"
+      ],
       "aux": []
     },
     "toe_L": {
-      "main": ["Toe_L", "Left toe", "Toe_Base_L"],
+      "main": [
+        "Toe_L",
+        "Left toe",
+        "Toe_Base_L"
+      ],
       "aux": [
         "Toe.L_end",
-        "Toe_Little_Proximal_L", "Toe_Little_Intermediate_L", "Toe_Little_Distal_L", "Toe_Little_Distal_L_end",
-        "Toe_Ring_Proximal_L",   "Toe_Ring_Intermediate_L",   "Toe_Ring_Distal_L",   "Toe_Ring_Distal_L_end",
-        "Toe_Middle_Proximal_L", "Toe_Middle_Intermediate_L", "Toe_Middle_Distal_L", "Toe_Middle_Distal_L_end",
-        "Toe_Index_Proximal_L",  "Toe_Index_Intermediate_L",  "Toe_Index_Distal_L",  "Toe_Index_Distal_L_end",
-        "Toe_Thumb_Proximal_L",  "Toe_Thumb_Intermediate_L",  "Toe_Thumb_Distal_L",  "Toe_Thumb_Distal_L_end",
-        "PinkyToe_L", "RingToe_L", "MiddleToe_L", "IndexToe_L", "Hallux_L"
+        "Toe_Little_Proximal_L",
+        "Toe_Little_Intermediate_L",
+        "Toe_Little_Distal_L",
+        "Toe_Little_Distal_L_end",
+        "Toe_Ring_Proximal_L",
+        "Toe_Ring_Intermediate_L",
+        "Toe_Ring_Distal_L",
+        "Toe_Ring_Distal_L_end",
+        "Toe_Middle_Proximal_L",
+        "Toe_Middle_Intermediate_L",
+        "Toe_Middle_Distal_L",
+        "Toe_Middle_Distal_L_end",
+        "Toe_Index_Proximal_L",
+        "Toe_Index_Intermediate_L",
+        "Toe_Index_Distal_L",
+        "Toe_Index_Distal_L_end",
+        "Toe_Thumb_Proximal_L",
+        "Toe_Thumb_Intermediate_L",
+        "Toe_Thumb_Distal_L",
+        "Toe_Thumb_Distal_L_end",
+        "PinkyToe_L",
+        "RingToe_L",
+        "MiddleToe_L",
+        "IndexToe_L",
+        "Hallux_L"
       ]
     },
-
     "thigh_R": {
-      "main": ["UpperLeg_R", "Right leg"],
+      "main": [
+        "UpperLeg_R",
+        "Right leg"
+      ],
       "aux": []
     },
     "shin_R": {
-      "main": ["LowerLeg_R", "Right knee"],
+      "main": [
+        "LowerLeg_R",
+        "Right knee"
+      ],
       "aux": []
     },
     "foot_R": {
-      "main": ["Foot_R", "Right ankle"],
+      "main": [
+        "Foot_R",
+        "Right ankle"
+      ],
       "aux": []
     },
     "toe_R": {
-      "main": ["Toe_R", "Right toe", "Toe_Base_R"],
+      "main": [
+        "Toe_R",
+        "Right toe",
+        "Toe_Base_R"
+      ],
       "aux": [
         "Toe.R_end",
-        "Toe_Little_Proximal_R", "Toe_Little_Intermediate_R", "Toe_Little_Distal_R", "Toe_Little_Distal_R_end",
-        "Toe_Ring_Proximal_R",   "Toe_Ring_Intermediate_R",   "Toe_Ring_Distal_R",   "Toe_Ring_Distal_R_end",
-        "Toe_Middle_Proximal_R", "Toe_Middle_Intermediate_R", "Toe_Middle_Distal_R", "Toe_Middle_Distal_R_end",
-        "Toe_Index_Proximal_R",  "Toe_Index_Intermediate_R",  "Toe_Index_Distal_R",  "Toe_Index_Distal_R_end",
-        "Toe_Thumb_Proximal_R",  "Toe_Thumb_Intermediate_R",  "Toe_Thumb_Distal_R",  "Toe_Thumb_Distal_R_end",
-        "PinkyToe_R", "RingToe_R", "MiddleToe_R", "IndexToe_R", "Hallux_R"
+        "Toe_Little_Proximal_R",
+        "Toe_Little_Intermediate_R",
+        "Toe_Little_Distal_R",
+        "Toe_Little_Distal_R_end",
+        "Toe_Ring_Proximal_R",
+        "Toe_Ring_Intermediate_R",
+        "Toe_Ring_Distal_R",
+        "Toe_Ring_Distal_R_end",
+        "Toe_Middle_Proximal_R",
+        "Toe_Middle_Intermediate_R",
+        "Toe_Middle_Distal_R",
+        "Toe_Middle_Distal_R_end",
+        "Toe_Index_Proximal_R",
+        "Toe_Index_Intermediate_R",
+        "Toe_Index_Distal_R",
+        "Toe_Index_Distal_R_end",
+        "Toe_Thumb_Proximal_R",
+        "Toe_Thumb_Intermediate_R",
+        "Toe_Thumb_Distal_R",
+        "Toe_Thumb_Distal_R_end",
+        "PinkyToe_R",
+        "RingToe_R",
+        "MiddleToe_R",
+        "IndexToe_R",
+        "Hallux_R"
       ]
     },
-
-    "thumb_01_L": { "main": ["ThumbProximal_L",    "Thumb0_L"], "aux": [] },
-    "thumb_02_L": { "main": ["ThumbIntermediate_L", "Thumb1_L"], "aux": [] },
-    "thumb_03_L": { "main": ["ThumbDistal_L",       "Thumb2_L"], "aux": ["Thumb Distal.L_end"] },
-    "index_01_L": { "main": ["IndexProximal_L",     "Index1_L"], "aux": [] },
-    "index_02_L": { "main": ["IndexIntermediate_L", "Index2_L"], "aux": [] },
-    "index_03_L": { "main": ["IndexDistal_L",       "Index3_L"], "aux": ["Index Distal.L_end"] },
-    "middle_01_L": { "main": ["MiddleProximal_L",    "Middle1_L"], "aux": [] },
-    "middle_02_L": { "main": ["MiddleIntermediate_L","Middle2_L"], "aux": [] },
-    "middle_03_L": { "main": ["MiddleDistal_L",      "Middle3_L"], "aux": ["Middle Distal.L_end"] },
-    "ring_01_L":   { "main": ["RingProximal_L",      "Ring1_L"],   "aux": [] },
-    "ring_02_L":   { "main": ["RingIntermediate_L",  "Ring2_L"],   "aux": [] },
-    "ring_03_L":   { "main": ["RingDistal_L",        "Ring3_L"],   "aux": ["Ring Distal.L_end"] },
-    "pinky_01_L":  { "main": ["LittleProximal_L",    "Little1_L"], "aux": [] },
-    "pinky_02_L":  { "main": ["LittleIntermediate_L","Little2_L"], "aux": [] },
-    "pinky_03_L":  { "main": ["LittleDistal_L",      "Little3_L"], "aux": ["Little Distal.L_end"] },
-
-    "thumb_01_R": { "main": ["ThumbProximal_R",    "Thumb0_R"], "aux": [] },
-    "thumb_02_R": { "main": ["ThumbIntermediate_R", "Thumb1_R"], "aux": [] },
-    "thumb_03_R": { "main": ["ThumbDistal_R",       "Thumb2_R"], "aux": ["Thumb Distal.R_end"] },
-    "index_01_R": { "main": ["IndexProximal_R",     "Index1_R"], "aux": [] },
-    "index_02_R": { "main": ["IndexIntermediate_R", "Index2_R"], "aux": [] },
-    "index_03_R": { "main": ["IndexDistal_R",       "Index3_R"], "aux": ["Index Distal.R_end"] },
-    "middle_01_R": { "main": ["MiddleProximal_R",    "Middle1_R"], "aux": [] },
-    "middle_02_R": { "main": ["MiddleIntermediate_R","Middle2_R"], "aux": [] },
-    "middle_03_R": { "main": ["MiddleDistal_R",      "Middle3_R"], "aux": ["Middle Distal.R_end"] },
-    "ring_01_R":   { "main": ["RingProximal_R",      "Ring1_R"],   "aux": [] },
-    "ring_02_R":   { "main": ["RingIntermediate_R",  "Ring2_R"],   "aux": [] },
-    "ring_03_R":   { "main": ["RingDistal_R",        "Ring3_R"],   "aux": ["Ring Distal.R_end"] },
-    "pinky_01_R":  { "main": ["LittleProximal_R",    "Little1_R"], "aux": [] },
-    "pinky_02_R":  { "main": ["LittleIntermediate_R","Little2_R"], "aux": [] },
-    "pinky_03_R":  { "main": ["LittleDistal_R",      "Little3_R"], "aux": ["Little Distal.R_end"] }
+    "thumb_01_L": {
+      "main": [
+        "ThumbProximal_L",
+        "Thumb0_L"
+      ],
+      "aux": []
+    },
+    "thumb_02_L": {
+      "main": [
+        "ThumbIntermediate_L",
+        "Thumb1_L"
+      ],
+      "aux": []
+    },
+    "thumb_03_L": {
+      "main": [
+        "ThumbDistal_L",
+        "Thumb2_L"
+      ],
+      "aux": [
+        "Thumb Distal.L_end"
+      ]
+    },
+    "index_01_L": {
+      "main": [
+        "IndexProximal_L",
+        "Index1_L"
+      ],
+      "aux": []
+    },
+    "index_02_L": {
+      "main": [
+        "IndexIntermediate_L",
+        "Index2_L"
+      ],
+      "aux": []
+    },
+    "index_03_L": {
+      "main": [
+        "IndexDistal_L",
+        "Index3_L"
+      ],
+      "aux": [
+        "Index Distal.L_end"
+      ]
+    },
+    "middle_01_L": {
+      "main": [
+        "MiddleProximal_L",
+        "Middle1_L"
+      ],
+      "aux": []
+    },
+    "middle_02_L": {
+      "main": [
+        "MiddleIntermediate_L",
+        "Middle2_L"
+      ],
+      "aux": []
+    },
+    "middle_03_L": {
+      "main": [
+        "MiddleDistal_L",
+        "Middle3_L"
+      ],
+      "aux": [
+        "Middle Distal.L_end"
+      ]
+    },
+    "ring_01_L": {
+      "main": [
+        "RingProximal_L",
+        "Ring1_L"
+      ],
+      "aux": []
+    },
+    "ring_02_L": {
+      "main": [
+        "RingIntermediate_L",
+        "Ring2_L"
+      ],
+      "aux": []
+    },
+    "ring_03_L": {
+      "main": [
+        "RingDistal_L",
+        "Ring3_L"
+      ],
+      "aux": [
+        "Ring Distal.L_end"
+      ]
+    },
+    "pinky_01_L": {
+      "main": [
+        "LittleProximal_L",
+        "Little1_L"
+      ],
+      "aux": []
+    },
+    "pinky_02_L": {
+      "main": [
+        "LittleIntermediate_L",
+        "Little2_L"
+      ],
+      "aux": []
+    },
+    "pinky_03_L": {
+      "main": [
+        "LittleDistal_L",
+        "Little3_L"
+      ],
+      "aux": [
+        "Little Distal.L_end"
+      ]
+    },
+    "thumb_01_R": {
+      "main": [
+        "ThumbProximal_R",
+        "Thumb0_R"
+      ],
+      "aux": []
+    },
+    "thumb_02_R": {
+      "main": [
+        "ThumbIntermediate_R",
+        "Thumb1_R"
+      ],
+      "aux": []
+    },
+    "thumb_03_R": {
+      "main": [
+        "ThumbDistal_R",
+        "Thumb2_R"
+      ],
+      "aux": [
+        "Thumb Distal.R_end"
+      ]
+    },
+    "index_01_R": {
+      "main": [
+        "IndexProximal_R",
+        "Index1_R"
+      ],
+      "aux": []
+    },
+    "index_02_R": {
+      "main": [
+        "IndexIntermediate_R",
+        "Index2_R"
+      ],
+      "aux": []
+    },
+    "index_03_R": {
+      "main": [
+        "IndexDistal_R",
+        "Index3_R"
+      ],
+      "aux": [
+        "Index Distal.R_end"
+      ]
+    },
+    "middle_01_R": {
+      "main": [
+        "MiddleProximal_R",
+        "Middle1_R"
+      ],
+      "aux": []
+    },
+    "middle_02_R": {
+      "main": [
+        "MiddleIntermediate_R",
+        "Middle2_R"
+      ],
+      "aux": []
+    },
+    "middle_03_R": {
+      "main": [
+        "MiddleDistal_R",
+        "Middle3_R"
+      ],
+      "aux": [
+        "Middle Distal.R_end"
+      ]
+    },
+    "ring_01_R": {
+      "main": [
+        "RingProximal_R",
+        "Ring1_R"
+      ],
+      "aux": []
+    },
+    "ring_02_R": {
+      "main": [
+        "RingIntermediate_R",
+        "Ring2_R"
+      ],
+      "aux": []
+    },
+    "ring_03_R": {
+      "main": [
+        "RingDistal_R",
+        "Ring3_R"
+      ],
+      "aux": [
+        "Ring Distal.R_end"
+      ]
+    },
+    "pinky_01_R": {
+      "main": [
+        "LittleProximal_R",
+        "Little1_R"
+      ],
+      "aux": []
+    },
+    "pinky_02_R": {
+      "main": [
+        "LittleIntermediate_R",
+        "Little2_R"
+      ],
+      "aux": []
+    },
+    "pinky_03_R": {
+      "main": [
+        "LittleDistal_R",
+        "Little3_R"
+      ],
+      "aux": [
+        "Little Distal.R_end"
+      ]
+    }
   }
 }

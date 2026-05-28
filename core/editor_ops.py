@@ -288,7 +288,8 @@ class MODDER_OT_LoadXPreset(bpy.types.Operator):
 
         clean_name = real_filename.rsplit('.', 1)[0]
         editor.new_preset_name = clean_name
-        self.report({'INFO'}, _("成功加载%s预设: %s (%d 个映射)") % ('X' if is_x else 'Y', clean_name, loaded_count))
+        display_name = mapper.preset_info.get('name', clean_name)
+        self.report({'INFO'}, _("成功加载%s预设: %s (%d 个映射)") % ('X' if is_x else 'Y', display_name, loaded_count))
         return {'FINISHED'}
 
 # === 删除预设 ===

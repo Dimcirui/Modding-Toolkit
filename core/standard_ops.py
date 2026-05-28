@@ -939,7 +939,8 @@ class MODDER_OT_RefreshPhysicsBoneColors(bpy.types.Operator):
             if not mapper.load_preset(fallback, is_import_x=True):
                 self.report({'ERROR'}, _("无法加载 X 预设"))
                 return {'CANCELLED'}
-            self.report({'WARNING'}, _("未能自动识别目标游戏预设，回退至来源预设 [%s]，建议手动切换") % fallback)
+            fallback_name = mapper.preset_info.get('name', fallback)
+            self.report({'WARNING'}, _("未能自动识别目标游戏预设，回退至来源预设 [%s]，建议手动切换") % fallback_name)
 
         preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
         bpy.context.view_layer.objects.active = arm_obj
@@ -954,7 +955,8 @@ class MODDER_OT_RefreshPhysicsBoneColors(bpy.types.Operator):
                     pb.color.palette = 'DEFAULT'
         _apply_physics_bone_colors(arm_obj, preset_bones)
         if detected:
-            self.report({'INFO'}, _("骨骼颜色已刷新（自动识别预设：%s）") % detected)
+            detected_name = mapper.preset_info.get('name', detected)
+            self.report({'INFO'}, _("骨骼颜色已刷新（自动识别预设：%s）") % detected_name)
         else:
             self.report({'INFO'}, _("骨骼颜色已刷新"))
         return {'FINISHED'}
@@ -1063,7 +1065,7 @@ class MODDER_OT_MergeIntoParent(bpy.types.Operator):
 
         settings = context.scene.mhw_suite_settings
         mapper = BoneMapManager()
-        _x, _ = resolve_preset(settings.import_preset_enum, arm_obj, True)
+        _x, _unused = resolve_preset(settings.import_preset_enum, arm_obj, True)
         if _x and mapper.load_preset(_x, is_import_x=True):
             preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
             bpy.context.view_layer.objects.active = arm_obj

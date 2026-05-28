@@ -14,9 +14,32 @@ _RENAMES = [
 
 # Deprecated files to remove on update (hardcoded names only, never patterns)
 _DEPRECATED = [
+    # Old physics-transfer presets (removed in earlier version)
     (os.path.join("presets", "import"), "怪猎世界(物理移植用).json"),
     (os.path.join("presets", "import"), "MMD(物理移植用).json"),
     (os.path.join("presets", "import"), "终末地(物理移植用).json"),
+    # Chinese-named presets replaced by ASCII filenames (display name now stored inside JSON)
+    (os.path.join("presets", "bone"),   "怪猎世界.json"),
+    (os.path.join("presets", "bone"),   "怪猎世界(旧插件).json"),
+    (os.path.join("presets", "bone"),   "怪猎崛起.json"),
+    (os.path.join("presets", "bone"),   "怪猎荒野.json"),
+    (os.path.join("presets", "bone"),   "生化危机4.json"),
+    (os.path.join("presets", "bone"),   "生化危机9.json"),
+    (os.path.join("presets", "bone"),   "鬼泣5.json"),
+    (os.path.join("presets", "bone"),   "街霸6.json"),
+    (os.path.join("presets", "bone"),   "绝地潜兵2.json"),
+    (os.path.join("presets", "import"), "怪猎世界.json"),
+    (os.path.join("presets", "import"), "怪猎崛起.json"),
+    (os.path.join("presets", "import"), "怪猎荒野.json"),
+    (os.path.join("presets", "import"), "生化危机4.json"),
+    (os.path.join("presets", "import"), "生化危机9.json"),
+    (os.path.join("presets", "import"), "鬼泣5.json"),
+    (os.path.join("presets", "import"), "街霸6.json"),
+    (os.path.join("presets", "import"), "绝地潜兵2.json"),
+    (os.path.join("presets", "import"), "碧蓝幻想.json"),
+    (os.path.join("presets", "import"), "终末地.json"),
+    (os.path.join("presets", "import"), "赛马娘.json"),
+    (os.path.join("presets", "import"), "Valve社.json"),
 ]
 
 # Top-level .json files in the old export_schemes/ root → export_schemes/re9/
