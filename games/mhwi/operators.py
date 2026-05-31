@@ -5,8 +5,8 @@ import re
 from ...core.i18n import _
 from ...core import bone_utils
 from ...core.bone_mapper import BoneMapManager, resolve_preset
-from ...core.standard_ops import _build_fuzzy_preset_bones
-from ...core.re_chain_utils import _patch_chain_cleanup, _straighten_chain_orientations
+from ...core.standard_ops import _build_fuzzy_preset_bones, _run_bone_color_refresh
+from ...core.re_chain_utils import _patch_chain_cleanup, _straighten_chain_orientations, _build_physics_bones_set
 
 
 def _is_mhwi_physics(name):
@@ -105,6 +105,13 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
     bl_label = "一键创建 CTC Chain"
     bl_options = {'REGISTER', 'UNDO'}
 
+    has_no_markers: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
+    auto_refresh: bpy.props.BoolProperty(
+        name="直接创建（自动刷新骨骼颜色）",
+        description="先自动运行骨骼颜色刷新，再尝试创建。若存在分叉仍会中止",
+        default=False,
+    )
+
     ctc_collection: bpy.props.EnumProperty(
         name="CTC Collection",
         description="选择要写入的 CTC Collection",
@@ -137,6 +144,12 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
         )
 
     def invoke(self, context, _event):
+        arm = context.active_object
+        self.has_no_markers = not any(
+            pb.get("chain_role") in ("head", "branch_head")
+            for pb in (arm.pose.bones if arm and arm.type == 'ARMATURE' else [])
+        )
+
         global _ctc_col_items
         _ctc_col_items = [
             (col.name, col.name, "")
@@ -154,6 +167,16 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
 
     def draw(self, _context):
         layout = self.layout
+        if self.has_no_markers:
+            box = layout.box()
+            box.alert = True
+            col = box.column(align=True)
+            col.label(text=_("当前骨架没有任何标记！"), icon='ERROR')
+            col.label(text=_("建议先使用物理链工具手动标记后再使用此功能。"))
+            layout.prop(self, "auto_refresh")
+            if not self.auto_refresh:
+                return
+            layout.separator()
         row = layout.row()
         row.prop(self, "auto_create_collection", text="自动创建集合")
         if self.auto_create_collection:
@@ -170,6 +193,26 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
         if not armature or armature.type != 'ARMATURE':
             self.report({'ERROR'}, _("请先选中一个骨架"))
             return {'CANCELLED'}
+
+        if self.has_no_markers:
+            if not self.auto_refresh:
+                return {'CANCELLED'}
+            ok, msg = _run_bone_color_refresh(context, armature)
+            if not ok:
+                self.report({'ERROR'}, msg)
+                return {'CANCELLED'}
+            # CTC 不支持分叉链，刷新后做预检，有分叉则中止
+            physics_bones = _build_physics_bones_set(context, armature)
+            refreshed_heads = [pb for pb in armature.pose.bones
+                               if pb.get("chain_role") in ("head", "branch_head")]
+            branched = [pb.name for pb in refreshed_heads
+                        if _has_branch(pb, physics_bones, armature)]
+            if branched:
+                names = ", ".join(branched[:5]) + ("…" if len(branched) > 5 else "")
+                self.report({'ERROR'},
+                    _("检测到 %d 条链存在分叉（%s），CTC 不支持分叉链，"
+                      "请使用"标记为主链延伸"标记分叉方向后重试") % (len(branched), names))
+                return {'CANCELLED'}
 
         if self.auto_create_collection:
             result = bpy.ops.mhw_ctc.create_ctc_collection(collectionName=self.collection_name)

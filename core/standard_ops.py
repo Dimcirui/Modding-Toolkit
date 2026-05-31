@@ -915,6 +915,36 @@ def _detect_chain_roles(arm_obj, preset_bones):
             del pb["chain_role"]
 
 
+def _run_bone_color_refresh(context, arm_obj):
+    """运行骨骼颜色刷新核心逻辑（供其他操作符复用，不含 report）。
+    成功返回 (True, preset_name)，失败返回 (False, error_message)。"""
+    settings = context.scene.mhw_suite_settings
+    mapper = BoneMapManager()
+    detected = auto_detect_preset(arm_obj, is_import_x=True)
+    if detected:
+        if not mapper.load_preset(detected, is_import_x=True):
+            return False, _("无法加载自动识别的预设")
+    else:
+        fallback = settings.import_preset_enum
+        if fallback == 'AUTO':
+            return False, _("未能自动识别预设，请手动选择 X 预设")
+        if not mapper.load_preset(fallback, is_import_x=True):
+            return False, _("无法加载 X 预设")
+    preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
+    bpy.context.view_layer.objects.active = arm_obj
+    bpy.ops.object.mode_set(mode='POSE')
+    _detect_chain_roles(arm_obj, preset_bones)
+    for b in arm_obj.data.bones:
+        if b.name in preset_bones:
+            pb = arm_obj.pose.bones.get(b.name)
+            if pb:
+                if "chain_role" in pb:
+                    del pb["chain_role"]
+                pb.color.palette = 'DEFAULT'
+    _apply_physics_bone_colors(arm_obj, preset_bones)
+    return True, mapper.preset_info.get('name', detected or fallback or "")
+
+
 class MODDER_OT_RefreshPhysicsBoneColors(bpy.types.Operator):
     """根据骨骼的 chain_role 自定义属性刷新物理骨骼的颜色标记"""
     bl_idname = "modder.refresh_physics_bone_colors"

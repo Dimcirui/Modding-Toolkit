@@ -14,6 +14,7 @@ from ...core.re_chain_utils import (
     _build_physics_bones_set,
     auto_create_re_chains,
 )
+from ...core.standard_ops import _run_bone_color_refresh
 
 # ============================================================
 # Endfield 面部顶点组改名 (Endfield → MHWilds)
@@ -328,6 +329,12 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
         description="创建前将所有物理骨骼调整为竖直向上、扭转归零",
         default=False,
     )
+    has_no_markers: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
+    auto_refresh: bpy.props.BoolProperty(
+        name="直接创建（自动刷新骨骼颜色）",
+        description="先自动运行骨骼颜色刷新，再尝试创建",
+        default=False,
+    )
 
     @classmethod
     def poll(cls, context):
@@ -338,6 +345,12 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
                 and hasattr(bpy.ops.re_chain, 'create_chain_settings'))
 
     def invoke(self, context, event):
+        arm = context.active_object
+        self.has_no_markers = not any(
+            pb.get("chain_role") in ("head", "branch_head")
+            for pb in (arm.pose.bones if arm and arm.type == 'ARMATURE' else [])
+        )
+
         global _chain_col_items
         _chain_col_items = [
             (col.name, col.name, "")
@@ -362,6 +375,16 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
+        if self.has_no_markers:
+            box = layout.box()
+            box.alert = True
+            col = box.column(align=True)
+            col.label(text=_("当前骨架没有任何标记！"), icon='ERROR')
+            col.label(text=_("建议先使用物理链工具手动标记后再使用此功能。"))
+            layout.prop(self, "auto_refresh")
+            if not self.auto_refresh:
+                return
+            layout.separator()
         row = layout.row()
         row.prop(self, "auto_create_collection", text="自动创建集合")
         if self.auto_create_collection:
@@ -375,6 +398,15 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
         layout.prop(self, "straighten_orientation")
 
     def execute(self, context):
+        armature = context.active_object
+        if self.has_no_markers:
+            if not self.auto_refresh:
+                return {'CANCELLED'}
+            ok, msg = _run_bone_color_refresh(context, armature)
+            if not ok:
+                self.report({'ERROR'}, msg)
+                return {'CANCELLED'}
+
         config = REChainConfig(
             chain_format=self.chain_format,
             chain_file_type="chain2",
