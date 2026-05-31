@@ -435,10 +435,14 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
 
         if self.apply_angle_ramp:
             try:
+                context.view_layer.objects.active = armature
+                armature.select_set(True)
+                if context.mode != 'POSE':
+                    bpy.ops.object.mode_set(mode='POSE')
                 bpy.ops.re_chain.apply_angle_limit_ramp(
                     maxAngleLimit=1.047198, maxIteration=4)
-            except Exception:
-                self.report({'WARNING'}, _("角度坡度应用失败，请在 RE Chain Editor 中手动设置"))
+            except Exception as e:
+                self.report({'WARNING'}, _("角度坡度应用失败，请在 RE Chain Editor 中手动设置") + f": {e}")
 
         self.report({'INFO'}, _("RE Chain 创建完成"))
         return {'FINISHED'}
