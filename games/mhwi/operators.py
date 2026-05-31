@@ -211,7 +211,7 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
                 names = ", ".join(branched[:5]) + ("…" if len(branched) > 5 else "")
                 self.report({'ERROR'},
                     _("检测到 %d 条链存在分叉（%s），CTC 不支持分叉链，"
-                      "请使用"标记为主链延伸"标记分叉方向后重试") % (len(branched), names))
+                      "请使用【标记为主链延伸】标记分叉方向后重试") % (len(branched), names))
                 return {'CANCELLED'}
 
         if self.auto_create_collection:

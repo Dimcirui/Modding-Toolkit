@@ -126,6 +126,11 @@ class RE9_OT_AutoCreateChains(bpy.types.Operator):
         description="先自动运行骨骼颜色刷新，再尝试创建",
         default=False,
     )
+    apply_angle_ramp: bpy.props.BoolProperty(
+        name="自动应用角度坡度",
+        description="链创建完成后自动调用 apply_angle_limit_ramp（最大60°，4级梯度）",
+        default=False,
+    )
 
     @classmethod
     def poll(cls, context):
@@ -166,6 +171,7 @@ class RE9_OT_AutoCreateChains(bpy.types.Operator):
             layout.prop(self, "chain_format", expand=True)
         layout.prop(self, "settings_mode", expand=True)
         layout.prop(self, "sync_orientation")
+        layout.prop(self, "apply_angle_ramp")
 
     def execute(self, context):
         armature = context.active_object
@@ -190,6 +196,12 @@ class RE9_OT_AutoCreateChains(bpy.types.Operator):
         if status == {'CANCELLED'}:
             self.report({'ERROR'}, _("创建 RE Chain 失败"))
             return {'CANCELLED'}
+        if self.apply_angle_ramp:
+            try:
+                bpy.ops.re_chain.apply_angle_limit_ramp(
+                    maxAngleLimit=1.047198, maxIteration=4)
+            except Exception:
+                self.report({'WARNING'}, _("角度坡度应用失败，请在 RE Chain Editor 中手动设置"))
         self.report({'INFO'}, _("RE Chain 创建完成"))
         return {'FINISHED'}
 
