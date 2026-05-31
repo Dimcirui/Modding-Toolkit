@@ -187,6 +187,8 @@ BASE_NULL_TEX_BY_TYPE = {
     'ColorLayer_DetailMaskMap':      'systems/rendering/NullBlack.tex',
     'Ripple_1Dtex':                  'MasterMaterial/Textures/hagitori_ripple_ALB.tex',
     'Ripple_Texture3D':              'MasterMaterial/Textures/Noise3D_MSK3.tex',
+    'MaskMap':                       'systems/rendering/NullBlack.tex',
+    'DetailMap':                     'systems/rendering/NullGray.tex',
 }
 
 # ── Factory helpers ────────────────────────────────────────────────────────────
