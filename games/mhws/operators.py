@@ -298,6 +298,7 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
         items=[
             ('SEPARATE', "各自独立", "每条链拥有独立的 Chain Settings"),
             ('SHARED',   "共享同一", "所有链共用同一个 Chain Settings"),
+            ('GUESS',    "猜测分组", "根据骨骼名自动分类，同类型共享一组 Chain Settings 并写入推测物理参数；无法识别的归入第一组"),
         ],
         default='SHARED',
     )
@@ -422,6 +423,7 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
             settings_mode=self.settings_mode,
             selected_collection=self.chain_collection,
             straighten_orientation=self.straighten_orientation,
+            collider_filter_path="System/Collision/Filter/Character/Character_Chain.cfil",
         )
 
         armature = context.active_object

@@ -18,6 +18,8 @@ class REChainConfig:
     selected_collection: str = ''
     sync_orientation: bool = False
     straighten_orientation: bool = False
+    # 统一覆写 colliderFilterInfoPath：None=不动；""=留空(RE4/RE9，否则崩溃)；路径=MHWs 标准
+    collider_filter_path: str | None = None
 
 
 def _patch_chain_cleanup(disable=True):
@@ -213,6 +215,137 @@ def _sync_chain_orientations(armature, chain_head_names, physics_bones):
     return synced
 
 
+# 物理参数写入：跳过的元数据键 / 向量键 / 枚举键
+_PARAM_SKIP_KEYS = {"presetVersion", "presetType", "subDataValues", "id",
+                    "unknQuaternion", "unknPos"}
+_PARAM_VECTOR_KEYS = {"gravity"}
+_PARAM_ENUM_KEYS = {"windDelayType", "springCalcType", "motionForceCalcType"}
+
+
+def _apply_params_to_cs(cs_obj, params):
+    """把物理参数写入 ChainSettings 对象的 PropertyGroup，返回未能写入的字段名列表。"""
+    pg = getattr(cs_obj, "re_chain_chainsettings", None)
+    if pg is None:
+        return ["<no re_chain_chainsettings>"]
+    skipped = []
+    for key, val in params.items():
+        if key in _PARAM_SKIP_KEYS:
+            continue
+        if key in _PARAM_VECTOR_KEYS and isinstance(val, list):
+            val = tuple(val)
+        try:
+            setattr(pg, key, val)
+            continue
+        except (AttributeError, TypeError, ValueError):
+            pass
+        # 枚举字段可能要求字符串整数（如 windDelayType）
+        if key in _PARAM_ENUM_KEYS:
+            try:
+                setattr(pg, key, str(int(val)))
+                continue
+            except (AttributeError, TypeError, ValueError):
+                pass
+        skipped.append(key)
+    return skipped
+
+
+def _is_settings_obj(o):
+    return ("SETTING" in str(o.get("TYPE", "")).upper()
+            or "SETTING" in o.name.upper())
+
+
+def _find_new_settings(col, before_names):
+    """create_chain_settings 后，从集合里找出新建的 ChainSettings 对象。"""
+    new_objs = [o for o in col.all_objects if o.name not in before_names]
+    if not new_objs:
+        return None
+    typed = [o for o in new_objs if _is_settings_obj(o)]
+    return typed[0] if typed else new_objs[0]
+
+
+def _apply_collider_filter(col, before_names, path):
+    """对本次新建的所有 ChainSettings 统一设定 colliderFilterInfoPath，返回设定数量。"""
+    n = 0
+    for o in col.all_objects:
+        if o.name in before_names or not _is_settings_obj(o):
+            continue
+        pg = getattr(o, "re_chain_chainsettings", None)
+        if pg is None:
+            continue
+        try:
+            pg.colliderFilterInfoPath = path
+            n += 1
+        except (AttributeError, TypeError, ValueError):
+            pass
+    return n
+
+
+def _make_one_chain(armature, toolpanel, path):
+    """选中 path 上的骨骼并调用 chain_from_bone，返回是否成功。"""
+    bpy.ops.pose.select_all(action='DESELECT')
+    for bone_name in path:
+        pb2 = armature.pose.bones.get(bone_name)
+        if pb2:
+            # Blender 4.x: selection lives on Bone data; 5.x: moved to PoseBone
+            if hasattr(pb2, 'select'):
+                pb2.select = True
+            else:
+                pb2.bone.select = True
+    first_pb = armature.pose.bones.get(path[0]) if path else None
+    if first_pb:
+        armature.data.bones.active = first_pb.bone
+    toolpanel.experimentalPoseModeOptions = True
+    return bpy.ops.re_chain.chain_from_bone() == {'FINISHED'}
+
+
+def _create_chains_guess(armature, toolpanel, col, all_entries, chain_heads, physics_bones):
+    """猜测分组模式：按推测类型分组，每组一个 ChainSettings（含参数），
+    第 0 组（None）收纳无匹配的链，不写参数。返回 (created, skipped)。"""
+    from collections import OrderedDict
+    from .chain_classifier import classify_heads, get_physics_params
+
+    heads = {pb.name: pb.bone for pb in chain_heads}
+    types_by_head = classify_heads(heads, physics_bones)
+
+    groups = OrderedDict()
+    groups[None] = []  # 无匹配组排在最前
+    for entry in all_entries:
+        head_pb = entry[0]
+        t = types_by_head.get(head_pb.name)
+        groups.setdefault(t, []).append(entry)
+
+    created = 0
+    skipped = 0
+    for type_key, entries in groups.items():
+        if not entries:
+            continue
+        label = type_key or "unmatched"
+        before = {o.name for o in col.all_objects}
+        if bpy.ops.re_chain.create_chain_settings() != {'FINISHED'}:
+            skipped += len(entries)
+            continue
+        if type_key is not None:
+            cs = _find_new_settings(col, before)
+            params = get_physics_params(type_key)
+            if cs is not None and params:
+                miss = _apply_params_to_cs(cs, params)
+                if miss:
+                    print(f"[ChainGen GUESS] {label}: skipped params {miss}", file=sys.stderr)
+            elif cs is None:
+                print(f"[ChainGen GUESS] {label}: settings object not found", file=sys.stderr)
+        grp_created = 0
+        for entry in entries:
+            if _make_one_chain(armature, toolpanel, entry[2]):
+                created += 1
+                grp_created += 1
+            else:
+                skipped += 1
+        print(f"[ChainGen GUESS] group={label:24s} chains={grp_created}/{len(entries)}",
+              file=sys.stderr)
+
+    return created, skipped
+
+
 def auto_create_re_chains(context, armature, config: REChainConfig):
     """核心 RE Chain 创建逻辑，按游戏参数化配置。"""
     col = None
@@ -271,6 +404,10 @@ def auto_create_re_chains(context, armature, config: REChainConfig):
     created = 0
     skipped = 0
 
+    # 记录创建前已有的对象，用于事后定位本次新建的 ChainSettings（统一覆写 collider filter）
+    cs_before = {o.name for o in col.all_objects}
+
+    # SHARED：循环外创建唯一 Chain Settings；GUESS 在 _create_chains_guess 内分组创建
     if config.settings_mode == 'SHARED':
         if bpy.ops.re_chain.create_chain_settings() != {'FINISHED'}:
             return {'CANCELLED'}
@@ -280,39 +417,19 @@ def auto_create_re_chains(context, armature, config: REChainConfig):
 
     t_loop = time.perf_counter()
     try:
-        for idx, (_head_pb, _head_paths, path) in enumerate(all_entries, 1):
-            t_settings = 0.0
-            if config.settings_mode == 'SEPARATE':
-                t0 = time.perf_counter()
-                if bpy.ops.re_chain.create_chain_settings() != {'FINISHED'}:
+        if config.settings_mode == 'GUESS':
+            created, skipped = _create_chains_guess(
+                armature, toolpanel, col, all_entries, chain_heads, physics_bones)
+        else:
+            for idx, (_head_pb, _head_paths, path) in enumerate(all_entries, 1):
+                if config.settings_mode == 'SEPARATE':
+                    if bpy.ops.re_chain.create_chain_settings() != {'FINISHED'}:
+                        skipped += 1
+                        continue
+                if _make_one_chain(armature, toolpanel, path):
+                    created += 1
+                else:
                     skipped += 1
-                    continue
-                t_settings = time.perf_counter() - t0
-
-            bpy.ops.pose.select_all(action='DESELECT')
-            for bone_name in path:
-                pb2 = armature.pose.bones.get(bone_name)
-                if pb2:
-                    # Blender 4.x: selection lives on Bone data; 5.x: moved to PoseBone
-                    if hasattr(pb2, 'select'):
-                        pb2.select = True
-                    else:
-                        pb2.bone.select = True
-            first_pb = armature.pose.bones.get(path[0]) if path else None
-            if first_pb:
-                armature.data.bones.active = first_pb.bone
-            toolpanel.experimentalPoseModeOptions = True
-
-            t0 = time.perf_counter()
-            if bpy.ops.re_chain.chain_from_bone() == {'FINISHED'}:
-                created += 1
-            else:
-                skipped += 1
-            t_chain = time.perf_counter() - t0
-
-            print(f"[ChainGen] Chain {idx:3d}/{len(all_entries)}  "
-                  f"settings={t_settings:.4f}s  create={t_chain:.4f}s  "
-                  f"bones={len(path):2d}", file=sys.stderr)
     finally:
         _patch_chain_cleanup(disable=False)
         if _patches and created > 0:
@@ -320,6 +437,12 @@ def auto_create_re_chains(context, armature, config: REChainConfig):
             _align()
             _color(armature)
         toolpanel.experimentalPoseModeOptions = saved_experimental
+
+    # 统一覆写 collider filter：MHWs 用标准路径；RE4/RE9 留空（否则游戏崩溃）
+    if config.collider_filter_path is not None:
+        n = _apply_collider_filter(col, cs_before, config.collider_filter_path)
+        print(f"[ChainGen] collider filter set on {n} settings -> "
+              f"'{config.collider_filter_path}'", file=sys.stderr)
 
     t_loop = time.perf_counter() - t_loop
     print(f"[ChainGen] --- loop: {t_loop:.4f}s  created={created}  skipped={skipped} ---",
