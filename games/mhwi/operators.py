@@ -45,7 +45,7 @@ class MHWI_OT_AlignNonPhysics(bpy.types.Operator):
 
 
 # ==========================================
-# 2. 一键创建 Chain
+# 2. 一键创建 CTC Chain
 # ==========================================
 
 # 供 EnumProperty 回调使用的全局缓存
@@ -102,7 +102,7 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
 存在分叉的链会被跳过并报告，需用户手动处理分叉后再次运行。
 需要 MHW Model Editor 插件。"""
     bl_idname = "mhwi.auto_create_chains"
-    bl_label = "一键创建 Chain"
+    bl_label = "一键创建 CTC Chain"
     bl_options = {'REGISTER', 'UNDO'}
 
     ctc_collection: bpy.props.EnumProperty(
