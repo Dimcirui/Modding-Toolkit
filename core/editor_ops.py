@@ -5,7 +5,7 @@ import re
 import shutil
 import subprocess
 import sys
-from bpy.app.translations import pgettext as _
+from .i18n import _
 from . import ui_config, bone_mapper
 from .bone_mapper import BoneMapManager, STANDARD_BONE_NAMES
 
@@ -176,7 +176,7 @@ def _get_preset_dir(is_x):
 def _get_selected_filename(context, is_x):
     suite = context.scene.mhw_suite_settings
     raw = suite.import_preset_enum if is_x else suite.target_preset_enum
-    if not raw or raw == "NONE":
+    if not raw or raw in ("NONE", "AUTO"):
         return None
     return os.path.basename(raw)
 
@@ -288,7 +288,8 @@ class MODDER_OT_LoadXPreset(bpy.types.Operator):
 
         clean_name = real_filename.rsplit('.', 1)[0]
         editor.new_preset_name = clean_name
-        self.report({'INFO'}, _("成功加载%s预设: %s (%d 个映射)") % ('X' if is_x else 'Y', clean_name, loaded_count))
+        display_name = mapper.preset_info.get('name', clean_name)
+        self.report({'INFO'}, _("成功加载%s预设: %s (%d 个映射)") % ('X' if is_x else 'Y', display_name, loaded_count))
         return {'FINISHED'}
 
 # === 删除预设 ===

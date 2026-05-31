@@ -11,6 +11,7 @@ from ...core.mdf_generator_base import (
     _get_pbr_paths, _slugify, _strip_blender_suffix, _separate_mesh_by_material,
     _emissive_strength_is_zero, _is_emissive_slot, _is_albedo_slot,
     _make_source_id, _try_downgrade_slot, _generate_solid_texture_path,
+    _detect_max_tex_size,
     load_mhwi_preset_enum_items,
     _import_mhwi_tex_convert, _call_mhwi_read_preset, _import_mhwi_create_collection,
     BAKE_SIZE_DEFAULT,
@@ -57,11 +58,28 @@ class MhwiGenMaterialEntry(bpy.types.PropertyGroup):
         description="手动指定 AO 贴图 (Blender 无内置 AO 节点)",
         default=False,
     )
+    hide_snow_overlay: bpy.props.BoolProperty(
+        name="隐藏覆雪效果（解决雪地腿部发黑）",
+        description="将 AlbedoBlendMap 槽位设为完全透明贴图 snow_Col_CMM，消除覆雪混合导致的腿部发黑",
+        default=False,
+    )
     ao_image:         bpy.props.StringProperty(
         name="AO",
         description="AO 贴图路径",
         subtype='FILE_PATH',
     )
+    native_size_color:     bpy.props.IntProperty(default=0)
+    native_size_normal:    bpy.props.IntProperty(default=0)
+    native_size_roughness: bpy.props.IntProperty(default=0)
+    native_size_metallic:  bpy.props.IntProperty(default=0)
+    native_size_alpha:     bpy.props.IntProperty(default=0)
+    native_size_emissive:  bpy.props.IntProperty(default=0)
+    bake_size_color:       bpy.props.IntProperty(default=0)
+    bake_size_normal:      bpy.props.IntProperty(default=0)
+    bake_size_roughness:   bpy.props.IntProperty(default=0)
+    bake_size_metallic:    bpy.props.IntProperty(default=0)
+    bake_size_alpha:       bpy.props.IntProperty(default=0)
+    bake_size_emissive:    bpy.props.IntProperty(default=0)
 
 
 def _mhwi_mod3_col_poll(self, col):
@@ -261,9 +279,10 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
         _t = time.time()
         strategies = analyze_material_strategies(mat)
         # print(f"[{self._log_tag}]   分析材质节点: {time.time() - _t:.2f}s", flush=True)
+        bake_size  = max(_detect_max_tex_size(mat), self._bake_size)
         _t = time.time()
         pbr_paths  = _get_pbr_paths(
-            mat, strategies, temp_dir, self._bake_size, context, mesh_obj)
+            mat, strategies, temp_dir, bake_size, context, mesh_obj)
         # print(f"[{self._log_tag}]   解析PBR路径 (含烘培): {time.time() - _t:.2f}s", flush=True)
 
         # User-provided AO override (Blender has no built-in AO node)
@@ -430,6 +449,38 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                     null = MHWI_NULL_TEX.get(st)
                     if null:
                         slot_binding_values[st] = null
+
+        # Snow overlay: override AlbedoBlendMap with fully-transparent solid texture
+        if getattr(mat_entry, 'hide_snow_overlay', False) and "AlbedoBlendMap" in slot_types:
+            _base_norm = base_path.strip('/\\').replace('/', '\\')
+            slot_binding_values["AlbedoBlendMap"] = f"{_base_norm}\\snow_Col_CMM"
+
+            if not getattr(mat_entry, 'skip_textures', False):
+                snow_disk = os.path.join(
+                    natives_root, 'nativePC',
+                    base_path.strip('/\\').replace('\\', os.sep).replace('/', os.sep),
+                    'snow_Col_CMM.tex',
+                )
+                os.makedirs(os.path.dirname(snow_disk), exist_ok=True)
+                # RGB white + alpha black (fully transparent); must use alpha=True
+                # so the PNG is saved as RGBA rather than RGB-only
+                _snow_img_name = '__gen_solid_snow_Col_CMM'
+                if _snow_img_name in bpy.data.images:
+                    bpy.data.images.remove(bpy.data.images[_snow_img_name])
+                _snow_img = bpy.data.images.new(
+                    _snow_img_name, width=256, height=256, alpha=True)
+                _snow_img.pixels[:] = [1.0, 1.0, 1.0, 0.0] * (256 * 256)
+                snow_png = os.path.join(temp_dir, '_solid_snow_Col_CMM.png')
+                _snow_img.filepath_raw = snow_png
+                _snow_img.file_format  = 'PNG'
+                _snow_img.save()
+                bpy.data.images.remove(_snow_img)
+                snow_dds = os.path.join(temp_dir, '_solid_snow_Col_CMM.dds')
+                ImageListToDDS([(snow_png, 'BC7_UNORM_SRGB')], temp_dir,
+                               mat_entry.generate_mipmaps)
+                if os.path.isfile(snow_dds):
+                    ConvertDDSToTex([snow_dds], snow_disk)
+                    print(f"[{self._log_tag}]   AlbedoBlendMap (snow) -> {os.path.basename(snow_disk)}")
 
         _t = time.time()
         mat_obj = _call_mhwi_read_preset(preset_path, mrl3_col)

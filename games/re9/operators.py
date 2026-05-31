@@ -1,9 +1,16 @@
 import bpy
+from ...core.i18n import _
+from ...core.re_chain_utils import REChainConfig, auto_create_re_chains
+from ...core.bone_mapper import auto_detect_preset, BoneMapManager
+from ...core.standard_ops import _build_fuzzy_preset_bones, _run_bone_color_refresh
 
 
 class RE9_OT_SyncChildOrientation(bpy.types.Operator):
     """Select bones to sync: each selected bone (and its descendants) will align
-to its PARENT's orientation. Do not select a bone AND its descendant at the same time"""
+to its PARENT's orientation. Body bones (detected via preset) are skipped along
+with their subtrees; selecting a body bone as a shared parent will cascade sync
+to all its directly-connected physical chains only.
+Do not select a physical bone AND its physical ancestor at the same time."""
     bl_idname = "re9.sync_child_orientation"
     bl_label = "Sync Child Orientation"
     bl_options = {"REGISTER", "UNDO"}
@@ -29,6 +36,15 @@ to its PARENT's orientation. Do not select a bone AND its descendant at the same
                     return {"CANCELLED"}
                 parent = parent.parent
 
+        # Auto-detect preset to build the body-bone exclusion set.
+        # If detection fails, preset_bones stays empty and behaviour is unchanged.
+        preset_bones = set()
+        detected = auto_detect_preset(obj, is_import_x=True)
+        if detected:
+            mapper = BoneMapManager()
+            if mapper.load_preset(detected, is_import_x=True):
+                preset_bones = _build_fuzzy_preset_bones(mapper, obj)
+
         def align_to_parent(bone):
             parent = bone.parent
             if parent is None:
@@ -38,28 +54,163 @@ to its PARENT's orientation. Do not select a bone AND its descendant at the same
             bone.tail = bone.head + parent_dir * length
             bone.roll = parent.roll
 
-        def recurse(bone):
+        def recurse(bone, is_selected_root=False):
+            if preset_bones and bone.name in preset_bones:
+                if is_selected_root:
+                    # Selected bone is a body bone acting as shared parent:
+                    # don't align it, but cascade into physical children.
+                    for child in bone.children:
+                        recurse(child)
+                # Mid-chain body bone encountered: skip it and its entire subtree.
+                return
             align_to_parent(bone)
             for child in bone.children:
                 recurse(child)
 
+        def count(bone, is_root=False):
+            if preset_bones and bone.name in preset_bones:
+                if is_root:
+                    return sum(count(c) for c in bone.children)
+                return 0
+            return 1 + sum(count(c) for c in bone.children)
+
         total = 0
         for bone in selected:
-            if bone.parent is None:
+            is_body = preset_bones and bone.name in preset_bones
+            if not is_body and bone.parent is None:
                 continue
-            recurse(bone)
-            def count(b):
-                n = 1
-                for c in b.children:
-                    n += count(c)
-                return n
-            total += count(bone)
+            recurse(bone, is_selected_root=True)
+            total += count(bone, is_root=True)
         self.report({"INFO"}, f"Aligned {total} bones")
         return {"FINISHED"}
 
 
+class RE9_OT_AutoCreateChains(bpy.types.Operator):
+    """一键创建 RE Chain（RE9 默认 .chain2 格式）。"""
+    bl_idname = "re9.auto_create_chains"
+    bl_label = "一键创建 RE Chain"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    settings_mode: bpy.props.EnumProperty(
+        name="Settings 模式",
+        items=[
+            ('SEPARATE', "各自独立", "每条链拥有独立的 Chain Settings"),
+            ('SHARED',   "共享同一", "所有链共用同一个 Chain Settings"),
+            ('GUESS',    "猜测分组", "根据骨骼名自动分类，同类型共享一组 Chain Settings 并写入推测物理参数；无法识别的归入第一组"),
+        ],
+        default='SHARED',
+    )
+    auto_create_collection: bpy.props.BoolProperty(
+        name="自动创建集合",
+        default=False,
+    )
+    collection_name: bpy.props.StringProperty(
+        name="集合名称",
+        default="",
+    )
+    chain_format: bpy.props.EnumProperty(
+        name="Chain 格式",
+        items=[
+            (".chain", "Chain", "旧格式，用于 RE4 等早期游戏"),
+            (".chain2", "Chain2", "新格式，用于 MHWilds / RE9"),
+        ],
+        default='.chain2',
+    )
+    sync_orientation: bpy.props.BoolProperty(
+        name="同步链首朝向",
+        description="创建前自动对齐所有物理链首（及其物理子孙）到各自身体父级的朝向和扭转",
+        default=False,
+    )
+    has_no_markers: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
+    auto_refresh: bpy.props.BoolProperty(
+        name="直接创建（自动刷新骨骼颜色）",
+        description="先自动运行骨骼颜色刷新，再尝试创建",
+        default=False,
+    )
+    apply_angle_ramp: bpy.props.BoolProperty(
+        name="自动应用角度坡度",
+        description="链创建完成后自动调用 apply_angle_limit_ramp（最大60°，4级梯度）",
+        default=False,
+    )
+
+    @classmethod
+    def poll(cls, context):
+        return (context.mode == 'POSE'
+                and context.active_object is not None
+                and context.active_object.type == 'ARMATURE'
+                and hasattr(bpy.ops, 're_chain')
+                and hasattr(bpy.ops.re_chain, 'create_chain_settings'))
+
+    def invoke(self, context, event):
+        arm = context.active_object
+        self.has_no_markers = not any(
+            pb.get("chain_role") in ("head", "branch_head")
+            for pb in (arm.pose.bones if arm and arm.type == 'ARMATURE' else [])
+        )
+        if not self.collection_name:
+            col_name = context.scene.get("REMeshLastImportedCollection", "")
+            if col_name and ".mesh" in col_name:
+                self.collection_name = col_name.split(".mesh")[0]
+        return context.window_manager.invoke_props_dialog(self, width=360)
+
+    def draw(self, context):
+        layout = self.layout
+        if self.has_no_markers:
+            box = layout.box()
+            box.alert = True
+            col = box.column(align=True)
+            col.label(text=_("当前骨架没有任何标记！"), icon='ERROR')
+            col.label(text=_("建议先使用物理链工具手动标记后再使用此功能。"))
+            layout.prop(self, "auto_refresh")
+            if not self.auto_refresh:
+                return
+            layout.separator()
+        row = layout.row()
+        row.prop(self, "auto_create_collection", text="自动创建集合")
+        if self.auto_create_collection:
+            layout.prop(self, "collection_name")
+            layout.prop(self, "chain_format", expand=True)
+        layout.prop(self, "settings_mode", expand=True)
+        layout.prop(self, "sync_orientation")
+        layout.prop(self, "apply_angle_ramp")
+
+    def execute(self, context):
+        armature = context.active_object
+        if self.has_no_markers:
+            if not self.auto_refresh:
+                return {'CANCELLED'}
+            ok, msg = _run_bone_color_refresh(context, armature)
+            if not ok:
+                self.report({'ERROR'}, msg)
+                return {'CANCELLED'}
+        config = REChainConfig(
+            chain_format=self.chain_format,
+            chain_file_type="chain2",
+            auto_create_collection=self.auto_create_collection,
+            collection_name=self.collection_name,
+            tuning=None,
+            settings_mode=self.settings_mode,
+            selected_collection="",
+            sync_orientation=self.sync_orientation,
+            collider_filter_path="",
+        )
+        status = auto_create_re_chains(context, armature, config)
+        if status == {'CANCELLED'}:
+            self.report({'ERROR'}, _("创建 RE Chain 失败"))
+            return {'CANCELLED'}
+        if self.apply_angle_ramp:
+            try:
+                bpy.ops.re_chain.apply_angle_limit_ramp(
+                    maxAngleLimit=1.047198, maxIteration=4)
+            except Exception:
+                self.report({'WARNING'}, _("角度坡度应用失败，请在 RE Chain Editor 中手动设置"))
+        self.report({'INFO'}, _("RE Chain 创建完成"))
+        return {'FINISHED'}
+
+
 classes = [
     RE9_OT_SyncChildOrientation,
+    RE9_OT_AutoCreateChains,
 ]
 
 def register():

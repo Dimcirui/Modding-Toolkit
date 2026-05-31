@@ -1,8 +1,9 @@
 import bpy
 
-from ...core.mdf_generator_base import get_mhwi_preset_dir, preset_has_emissive_slots
+from ...core.mdf_generator_base import get_mhwi_preset_dir, preset_has_emissive_slots, preset_has_albedo_blend_map
 
 GENERATOR_WINDOW_WIDTH = 580
+_SETTINGS_ATTR = "mhwi_mrl3_generator"
 
 _STRAT_LABELS = {
     'color':     "基础色",
@@ -110,11 +111,21 @@ class MHWI_OT_Mrl3GeneratorDialog(bpy.types.Operator):
             grid = strat_box.grid_flow(row_major=True, columns=3,
                                        even_columns=True, align=True)
             for pt, label in _STRAT_LABELS.items():
-                strat = getattr(mat_entry, f"strat_{pt}", "?")
-                icon  = _STRAT_ICONS.get(strat, 'QUESTION')
-                cell  = grid.row(align=True)
+                strat       = getattr(mat_entry, f"strat_{pt}", "?")
+                icon        = _STRAT_ICONS.get(strat, 'QUESTION')
+                native_size = getattr(mat_entry, f"native_size_{pt}", 0)
+                override    = getattr(mat_entry, f"bake_size_{pt}", 0)
+                cell = grid.row(align=True)
                 cell.label(text=f"{label}:", icon='BLANK1')
                 cell.label(text=strat, icon=icon)
+                if strat != 'Solid' and native_size > 0:
+                    btn_label = f"→{override}px" if override > 0 and override != native_size else ""
+                    op = cell.operator("mhw.set_channel_size", text=btn_label,
+                                       icon='FULLSCREEN_ENTER', emboss=True)
+                    op.settings_attr = _SETTINGS_ATTR
+                    op.mat_name      = mat_entry.blender_material
+                    op.channel       = pt
+                    op.native_size   = native_size
 
             if preset_has_emissive_slots(mat_entry.material_preset, is_mrl3=True):
                 box.prop(mat_entry, "use_toon")
@@ -123,6 +134,8 @@ class MHWI_OT_Mrl3GeneratorDialog(bpy.types.Operator):
             box.prop(mat_entry, "use_ao")
             if mat_entry.use_ao:
                 box.prop(mat_entry, "ao_image")
+            if preset_has_albedo_blend_map(mat_entry.material_preset):
+                box.prop(mat_entry, "hide_snow_overlay")
 
 
 classes = [MHWI_OT_Mrl3GeneratorDialog]

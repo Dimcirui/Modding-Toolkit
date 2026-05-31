@@ -2,23 +2,11 @@ import sys
 import time
 import bpy
 import re
-from bpy.app.translations import pgettext as _
+from ...core.i18n import _
 from ...core import bone_utils
-from ...core.bone_mapper import BoneMapManager
-from ...core.standard_ops import _build_fuzzy_preset_bones
-
-
-def _patch_chain_cleanup(disable=True):
-    saved = []
-    for mod in sys.modules.values():
-        has_align = hasattr(mod, 'alignChains') and callable(mod.alignChains)
-        has_color = hasattr(mod, 'setChainBoneColor') and callable(mod.setChainBoneColor)
-        if has_align and has_color:
-            saved.append((mod, mod.alignChains, mod.setChainBoneColor))
-            if disable:
-                mod.alignChains = lambda: None
-                mod.setChainBoneColor = lambda x: None
-    return saved
+from ...core.bone_mapper import BoneMapManager, resolve_preset
+from ...core.standard_ops import _build_fuzzy_preset_bones, _run_bone_color_refresh
+from ...core.re_chain_utils import _patch_chain_cleanup, _straighten_chain_orientations, _build_physics_bones_set
 
 
 def _is_mhwi_physics(name):
@@ -57,7 +45,7 @@ class MHWI_OT_AlignNonPhysics(bpy.types.Operator):
 
 
 # ==========================================
-# 2. 一键创建 Chain
+# 2. 一键创建 CTC Chain
 # ==========================================
 
 # 供 EnumProperty 回调使用的全局缓存
@@ -114,13 +102,35 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
 存在分叉的链会被跳过并报告，需用户手动处理分叉后再次运行。
 需要 MHW Model Editor 插件。"""
     bl_idname = "mhwi.auto_create_chains"
-    bl_label = "一键创建 Chain"
+    bl_label = "一键创建 CTC Chain"
     bl_options = {'REGISTER', 'UNDO'}
+
+    has_no_markers: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
+    auto_refresh: bpy.props.BoolProperty(
+        name="直接创建（自动刷新骨骼颜色）",
+        description="先自动运行骨骼颜色刷新，再尝试创建。若存在分叉仍会中止",
+        default=False,
+    )
 
     ctc_collection: bpy.props.EnumProperty(
         name="CTC Collection",
         description="选择要写入的 CTC Collection",
         items=_get_ctc_col_items,
+    )
+    auto_create_collection: bpy.props.BoolProperty(
+        name="自动创建集合",
+        description="勾选后自动创建 CTC Collection 及 Header，无需预先手动准备",
+        default=False,
+    )
+    collection_name: bpy.props.StringProperty(
+        name="集合名称",
+        description="新创建的 CTC Collection 名称（不含扩展名）",
+        default="",
+    )
+    straighten_orientation: bpy.props.BoolProperty(
+        name="骨骼方向预处理",
+        description="创建前将所有物理骨骼调整为竖直向上、扭转归零",
+        default=False,
     )
 
     @classmethod
@@ -134,50 +144,116 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
         )
 
     def invoke(self, context, _event):
+        arm = context.active_object
+        self.has_no_markers = not any(
+            pb.get("chain_role") in ("head", "branch_head")
+            for pb in (arm.pose.bones if arm and arm.type == 'ARMATURE' else [])
+        )
+
         global _ctc_col_items
         _ctc_col_items = [
             (col.name, col.name, "")
             for col in bpy.data.collections
             if _is_valid_ctc_collection(col)
         ]
-        if not _ctc_col_items:
-            self.report({'ERROR'}, _("未找到有效的 CTC Collection（需含 CTC_HEADER 空物体）"))
-            return {'CANCELLED'}
+
+        if not self.collection_name:
+            toolpanel = getattr(context.scene, 'mhw_mod3_toolpanel', None)
+            mod3_col = toolpanel.get("lastImportCollection") if toolpanel else None
+            if mod3_col and ".mod3" in mod3_col:
+                self.collection_name = mod3_col.split(".mod3")[0]
+
         return context.window_manager.invoke_props_dialog(self, width=320)
 
     def draw(self, _context):
-        self.layout.prop(self, "ctc_collection")
+        layout = self.layout
+        if self.has_no_markers:
+            box = layout.box()
+            box.alert = True
+            col = box.column(align=True)
+            col.label(text=_("当前骨架没有任何标记！"), icon='ERROR')
+            col.label(text=_("建议先使用物理链工具手动标记后再使用此功能。"))
+            layout.prop(self, "auto_refresh")
+            if not self.auto_refresh:
+                return
+            layout.separator()
+        row = layout.row()
+        row.prop(self, "auto_create_collection", text="自动创建集合")
+        if self.auto_create_collection:
+            layout.prop(self, "collection_name")
+        else:
+            layout.prop(self, "ctc_collection")
+        layout.prop(self, "straighten_orientation")
 
     def execute(self, context):
         t_total = time.perf_counter()
 
-        col = bpy.data.collections.get(self.ctc_collection)
-        if col is None:
-            self.report({'ERROR'}, _("找不到集合: %s") % self.ctc_collection)
-            return {'CANCELLED'}
-
-        # 设置 MHW CTC 工具面板的目标集合
-        toolpanel = getattr(context.scene, 'mhw_ctc_toolpanel', None)
-        if toolpanel is None:
-            self.report({'ERROR'}, _("未找到 MHW CTC 场景属性，请确认 MHW Model Editor 已正确加载"))
-            return {'CANCELLED'}
-        toolpanel.ctcCollection = col
-
+        # 在任何可能改变激活对象的操作之前先保存骨架引用
         armature = context.active_object
+        if not armature or armature.type != 'ARMATURE':
+            self.report({'ERROR'}, _("请先选中一个骨架"))
+            return {'CANCELLED'}
 
-        # 构建物理骨骼集合
+        if self.has_no_markers:
+            if not self.auto_refresh:
+                return {'CANCELLED'}
+            ok, msg = _run_bone_color_refresh(context, armature)
+            if not ok:
+                self.report({'ERROR'}, msg)
+                return {'CANCELLED'}
+            # CTC 不支持分叉链，刷新后做预检，有分叉则中止
+            physics_bones = _build_physics_bones_set(context, armature)
+            refreshed_heads = [pb for pb in armature.pose.bones
+                               if pb.get("chain_role") in ("head", "branch_head")]
+            branched = [pb.name for pb in refreshed_heads
+                        if _has_branch(pb, physics_bones, armature)]
+            if branched:
+                names = ", ".join(branched[:5]) + ("…" if len(branched) > 5 else "")
+                self.report({'ERROR'},
+                    _("检测到 %d 条链存在分叉（%s），CTC 不支持分叉链，"
+                      "请使用【标记为主链延伸】标记分叉方向后重试") % (len(branched), names))
+                return {'CANCELLED'}
+
+        if self.auto_create_collection:
+            result = bpy.ops.mhw_ctc.create_ctc_collection(collectionName=self.collection_name)
+            if result != {'FINISHED'}:
+                self.report({'ERROR'}, _("自动创建 CTC Collection 失败"))
+                return {'CANCELLED'}
+            # create_ctc_collection 可能改变了激活对象和模式，恢复骨架并进入姿态模式
+            context.view_layer.objects.active = armature
+            armature.select_set(True)
+            if context.mode != 'POSE':
+                bpy.ops.object.mode_set(mode='POSE')
+        else:
+            col = bpy.data.collections.get(self.ctc_collection)
+            if col is None:
+                self.report({'ERROR'}, _("找不到集合: %s") % self.ctc_collection)
+                return {'CANCELLED'}
+            toolpanel = getattr(context.scene, 'mhw_ctc_toolpanel', None)
+            if toolpanel is None:
+                self.report({'ERROR'}, _("未找到 MHW CTC 场景属性，请确认 MHW Model Editor 已正确加载"))
+                return {'CANCELLED'}
+            toolpanel.ctcCollection = col
+
         settings = context.scene.mhw_suite_settings
         mapper = BoneMapManager()
-        if mapper.load_preset(settings.import_preset_enum, is_import_x=True):
+        _x, _unused = resolve_preset(settings.import_preset_enum, armature, True)
+        if _x and mapper.load_preset(_x, is_import_x=True):
             preset_bones = _build_fuzzy_preset_bones(mapper, armature)
         else:
             preset_bones = set()
         physics_bones = {b.name for b in armature.data.bones if b.name not in preset_bones}
 
-        # 幂等性：收集已存在的链头骨骼名
+        if self.straighten_orientation:
+            _straighten_chain_orientations(armature, physics_bones)
+            context.view_layer.objects.active = armature
+            armature.select_set(True)
+            if context.mode != 'POSE':
+                bpy.ops.object.mode_set(mode='POSE')
+
+        col = context.scene.mhw_ctc_toolpanel.ctcCollection
         existing_heads = _get_existing_chain_heads(col)
 
-        # 找所有链头
         chain_heads = [
             pb for pb in armature.pose.bones
             if pb.get("chain_role") in ("head", "branch_head")
@@ -189,7 +265,6 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
         print(f"[ChainGen CTC] {len(chain_heads)} heads -> {len(chain_heads)} chains (linear only)",
               file=sys.stderr)
 
-        # monkey-patch MHW Model Editor 的 alignChains() / setChainBoneColor()
         _patches = _patch_chain_cleanup(disable=True)
 
         created = 0
@@ -209,9 +284,12 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
                           file=sys.stderr)
                     continue
 
-                # 选中链头骨骼并调用 CTC chain 创建算子
                 bpy.ops.pose.select_all(action='DESELECT')
-                head_pb.bone.select = True
+                # Blender 4.x: selection lives on Bone data; 5.x: moved to PoseBone
+                if hasattr(head_pb, 'select'):
+                    head_pb.select = True
+                else:
+                    head_pb.bone.select = True
                 armature.data.bones.active = head_pb.bone
 
                 t0 = time.perf_counter()
@@ -240,7 +318,6 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
               f"created={created}  skipped_existing={skipped_existing}  skipped_branch={len(skipped_branch)} ---",
               file=sys.stderr)
 
-        # 汇报结果
         msg_parts = [_("已创建 %d 条链") % created]
         if skipped_existing:
             msg_parts.append(_("已存在跳过 %d 条") % skipped_existing)
@@ -250,6 +327,8 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# ==========================================
+# 3. 物理骨骼规范化（拆分 + 重命名）
 # ==========================================
 # 3. 物理骨骼规范化（拆分 + 重命名）
 # ==========================================
@@ -357,12 +436,21 @@ def _assign_next_id(used_ids, id_range):
     return None
 
 
-def _count_rename_failures(armature, physics_bones_ordered, id_range):
+def _count_rename_failures(armature, physics_bones_ordered, id_range, also_exclude=None):
     """预检重命名会失败的骨骼数量（不实际改名）。
-    返回 (成功数, 失败数)。"""
+    返回 (成功数, 失败数)。
+
+    also_exclude: 额外要从 used_ids 中排除的骨骼名集合。
+    用于多批次顺序重命名时，前一批次的骨骼在执行时已离开当前范围，
+    预检阶段需显式告知本函数忽略这些骨骼的当前 ID。
+    """
+    # 待重命名骨骼即将释放自身 ID，不应计入"已占用"
+    physics_bones_set = set(physics_bones_ordered)
+    if also_exclude:
+        physics_bones_set |= set(also_exclude)
     used_ids = set()
     for b in armature.data.bones:
-        if b.name.startswith("MhBone_"):
+        if b.name.startswith("MhBone_") and b.name not in physics_bones_set:
             try:
                 idx = int(b.name.split("_")[-1])
                 if id_range[0] <= idx <= id_range[1]:
@@ -371,10 +459,10 @@ def _count_rename_failures(armature, physics_bones_ordered, id_range):
                 pass
     success = 0
     fail = 0
-    edit_bones = armature.data.edit_bones
+    existing_names = {b.name for b in armature.data.bones}
     for name in physics_bones_ordered:
         new_id = _assign_next_id(used_ids, id_range)
-        if new_id is None or edit_bones.get(name) is None:
+        if new_id is None or name not in existing_names:
             fail += 1
             continue
         used_ids.add(new_id)
@@ -384,11 +472,17 @@ def _count_rename_failures(armature, physics_bones_ordered, id_range):
 
 def _rename_physics_bones(armature, physics_bones_ordered, id_range):
     """将 physics_bones_ordered（骨骼名列表）重命名为 MhBone_xxx，使用 id_range 范围。
-    返回 (成功数, 失败数)。"""
+    返回 (成功数, 失败数)。
+
+    采用两步改名（临时名 → 正式名）避免同序列内的命名冲突：
+    若直接逐一改名，前面的骨骼抢占了后面骨骼的当前名称对应的 ID，
+    Blender 会自动给被顶替的骨骼追加 .001 后缀，导致后续查找失败。
+    """
+    # 待重命名骨骼即将释放自身 ID，不应计入"已占用"
+    physics_bones_set = set(physics_bones_ordered)
     used_ids = set()
-    # 收集已在范围内的 MhBone ID，避免冲突
     for b in armature.data.bones:
-        if b.name.startswith("MhBone_"):
+        if b.name.startswith("MhBone_") and b.name not in physics_bones_set:
             try:
                 idx = int(b.name.split("_")[-1])
                 if id_range[0] <= idx <= id_range[1]:
@@ -396,23 +490,44 @@ def _rename_physics_bones(armature, physics_bones_ordered, id_range):
             except (ValueError, IndexError):
                 pass
 
-    success = 0
-    fail = 0
-    # 必须在编辑模式下重命名
-    bpy.ops.object.mode_set(mode='EDIT')
-    edit_bones = armature.data.edit_bones
+    # 预先计算每根骨骼的目标名称
+    assignments = []  # [(old_name, new_name | None), ...]
     for name in physics_bones_ordered:
         new_id = _assign_next_id(used_ids, id_range)
         if new_id is None:
+            assignments.append((name, None))
+        else:
+            assignments.append((name, f"MhBone_{new_id:03d}"))
+            used_ids.add(new_id)
+
+    success = 0
+    fail = 0
+    bpy.ops.object.mode_set(mode='EDIT')
+    edit_bones = armature.data.edit_bones
+
+    # 第一步：全部改成临时名，消除新旧名称之间的冲突
+    temp_to_final = {}
+    for i, (old_name, new_name) in enumerate(assignments):
+        if new_name is None:
             fail += 1
             continue
-        eb = edit_bones.get(name)
+        eb = edit_bones.get(old_name)
         if eb is None:
             fail += 1
             continue
-        eb.name = f"MhBone_{new_id:03d}"
-        used_ids.add(new_id)
-        success += 1
+        tmp = f"__tmp_phys_{i}__"
+        eb.name = tmp
+        temp_to_final[tmp] = new_name
+
+    # 第二步：从临时名改为正式名
+    for tmp, final in temp_to_final.items():
+        eb = edit_bones.get(tmp)
+        if eb is not None:
+            eb.name = final
+            success += 1
+        else:
+            fail += 1
+
     bpy.ops.object.mode_set(mode='OBJECT')
     return success, fail
 
@@ -699,7 +814,9 @@ class MHWI_OT_BatchRenamePhysicsBones(bpy.types.Operator):
             tail = [n for n in physics
                     if _is_tail_bone(arm_obj.data.bones[n], physics_set)]
             _, f1 = _count_rename_failures(arm_obj, non_tail, (150, 200))
-            _, f2 = _count_rename_failures(arm_obj, tail, (201, 245))
+            # tail 的预检需排除 non_tail：执行时 non_tail 已先行重命名离开 (201, 245)，
+            # 若 non_tail 当前有 ID 落在该范围，不应计为 tail 的冲突
+            _, f2 = _count_rename_failures(arm_obj, tail, (201, 245), also_exclude=non_tail)
             return f1 + f2
 
     def invoke(self, context, _event):

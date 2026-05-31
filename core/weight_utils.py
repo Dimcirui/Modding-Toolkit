@@ -1,4 +1,5 @@
 import bpy
+from mathutils import Vector
 
 def merge_weights_and_delete_bones(armature_obj, bone_pairs):
     """
@@ -25,9 +26,17 @@ def merge_weights_and_delete_bones(armature_obj, bone_pairs):
                  for parent, delete in bone_pairs}
 
     # 1. 找到受该骨架影响的所有网格
-    mesh_objects = [o for o in bpy.data.objects
-                   if o.type == 'MESH' and
-                   any(m.type == 'ARMATURE' and m.object == armature_obj for m in o.modifiers)]
+    # 主：通过姿态修改器绑定
+    bound_meshes = {o for o in bpy.data.objects
+                    if o.type == 'MESH' and
+                    any(m.type == 'ARMATURE' and m.object == armature_obj for m in o.modifiers)}
+    # 补充：未绑定修改器但作为该骨架子级、且含有待删除骨骼同名顶点组的网格
+    delete_names = set(merge_map.keys())
+    extra_meshes = {o for o in bpy.data.objects
+                    if o.type == 'MESH' and o not in bound_meshes and
+                    o.parent == armature_obj and
+                    any(vg.name in delete_names for vg in o.vertex_groups)}
+    mesh_objects = bound_meshes | extra_meshes
 
     # 2. 遍历网格，将每个被删除骨骼的权重直接合并到其最终存活祖先
     for obj in mesh_objects:
@@ -121,6 +130,104 @@ def rename_or_merge_vgroup(obj, old_name, new_name):
         existing_vg.add([vert.index], min(existing_w + old_w, 1.0), 'REPLACE')
     obj.vertex_groups.remove(old_vg)
     return True
+
+
+def shape_key_to_weights(obj, active_kb, basis_kb, ignore_threshold=0.001,
+                         weight_strength=1.0, smooth_factor=0.5,
+                         smooth_iters=10, sync_seams=True, direction=None,
+                         vg_name=None):
+    """
+    Convert a shape key to a vertex group using normalized, Laplacian-smoothed weights.
+
+    Weights are normalized so the vertex with the largest displacement always gets 1.0,
+    with others scaled proportionally. Coincident vertices (UV seam duplicates) are
+    synced after each smoothing pass to prevent tearing.
+
+    direction: optional normalized Vector. When set, only vertices whose displacement
+    projects positively onto this axis contribute; weight = dot product magnitude.
+    This lets you split a single shape key (e.g. blink) into per-direction groups
+    (upper eyelid vs lower eyelid) by running the operator twice with opposite signs.
+
+    Returns the number of affected vertices, or None if no valid displacement is found.
+    """
+    vertices = obj.data.vertices
+    v_count = len(vertices)
+    raw_weights = [0.0] * v_count
+    max_val = 0.0
+    valid_count = 0
+
+    filter_dir = Vector(direction).normalized() if direction is not None else None
+    world_mat3 = obj.matrix_world.to_3x3() if filter_dir is not None else None
+
+    seam_groups = []
+    if sync_seams:
+        coincident = {}
+        for i, v in enumerate(vertices):
+            key = (round(v.co.x, 5), round(v.co.y, 5), round(v.co.z, 5))
+            coincident.setdefault(key, []).append(i)
+        seam_groups = [g for g in coincident.values() if len(g) > 1]
+
+    for i in range(v_count):
+        disp = active_kb.data[i].co - basis_kb.data[i].co
+        if filter_dir is not None:
+            val = (world_mat3 @ disp).dot(filter_dir)
+            if val <= ignore_threshold:
+                continue
+        else:
+            val = disp.length
+            if val <= ignore_threshold:
+                continue
+        if val > max_val:
+            max_val = val
+        raw_weights[i] = val
+        valid_count += 1
+
+    if valid_count == 0 or max_val == 0:
+        return None
+
+    for i in range(v_count):
+        if raw_weights[i] > 0:
+            raw_weights[i] = min(1.0, (raw_weights[i] / max_val) * weight_strength)
+
+    for group in seam_groups:
+        avg = sum(raw_weights[idx] for idx in group) / len(group)
+        for idx in group:
+            raw_weights[idx] = avg
+
+    if smooth_iters > 0:
+        adj = {i: [] for i in range(v_count)}
+        for edge in obj.data.edges:
+            adj[edge.vertices[0]].append(edge.vertices[1])
+            adj[edge.vertices[1]].append(edge.vertices[0])
+
+        for _ in range(smooth_iters):
+            new_weights = raw_weights.copy()
+            for i in range(v_count):
+                neighbors = adj[i]
+                if not neighbors:
+                    continue
+                avg_n = sum(raw_weights[n] for n in neighbors) / len(neighbors)
+                new_weights[i] = (raw_weights[i] * (1.0 - smooth_factor)
+                                  + avg_n * smooth_factor)
+            if sync_seams:
+                for group in seam_groups:
+                    avg = sum(new_weights[idx] for idx in group) / len(group)
+                    for idx in group:
+                        new_weights[idx] = avg
+            raw_weights = new_weights
+
+    if vg_name is None:
+        vg_name = active_kb.name
+    existing = obj.vertex_groups.get(vg_name)
+    if existing:
+        obj.vertex_groups.remove(existing)
+    vg = obj.vertex_groups.new(name=vg_name)
+
+    for i, w in enumerate(raw_weights):
+        if w > 0.001:
+            vg.add([i], min(1.0, w), 'REPLACE')
+
+    return valid_count
 
 
 def bone_has_weights(bone_name, mesh_objects):

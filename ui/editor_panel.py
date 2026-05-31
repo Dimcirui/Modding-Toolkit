@@ -1,5 +1,5 @@
 import bpy
-from bpy.app.translations import pgettext as _
+from ..core.i18n import _
 from ..core import ui_config
 from ..core.ui_config import get_display_name
 

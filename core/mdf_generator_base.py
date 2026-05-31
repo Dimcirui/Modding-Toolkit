@@ -113,6 +113,13 @@ def _analyze_principled_input(principled_node, input_name, mat_name=None, pbr_ty
         return ('SOLID', 0.0)
     if not socket.is_linked:
         # print(f"{_tag}: '{input_name}' 未连接 → SOLID", flush=True)
+        if pbr_type == 'normal':
+            # Principled BSDF Normal socket's default_value is (0,0,0) — a meaningless
+            # zero vector.  Blender uses the geometry normal at render time when this
+            # socket is unlinked, which in tangent space encodes as (0.5, 0.5, 1.0).
+            # Return that flat-normal constant so packed textures (NRR, RMT…) are
+            # correct.  Matches the fallback already used for the Normal Map node path.
+            return ('SOLID', (0.5, 0.5, 1.0, 1.0))
         return ('SOLID', socket.default_value)
 
     src = socket.links[0].from_node
@@ -238,6 +245,7 @@ def _is_albedo_slot(slot_type, channel_maps):
 
 
 _PRESET_EMISSIVE_CACHE: dict = {}
+_PRESET_SNOW_MAP_CACHE: dict = {}
 
 
 def preset_has_emissive_slots(preset_path, is_mrl3=False):
@@ -261,40 +269,94 @@ def preset_has_emissive_slots(preset_path, is_mrl3=False):
     return result
 
 
+def preset_has_albedo_blend_map(preset_path):
+    """True if the preset JSON includes an AlbedoBlendMap slot (MRL3 only)."""
+    if not preset_path or preset_path == 'NONE' or not os.path.isfile(preset_path):
+        return False
+    if preset_path in _PRESET_SNOW_MAP_CACHE:
+        return _PRESET_SNOW_MAP_CACHE[preset_path]
+    try:
+        with open(preset_path, encoding='utf-8') as f:
+            data = json.load(f)
+        result = any(e.get('name', '') == 'AlbedoBlendMap'
+                     for e in data.get('Map List', []))
+    except Exception:
+        result = False
+    _PRESET_SNOW_MAP_CACHE[preset_path] = result
+    return result
+
+
 # ── Preset loading ─────────────────────────────────────────────────────────────
 
+_addon_dir_cache   = None
+_addon_dir_cached  = False
+_preset_dir_cache  = {}
+_preset_items_cache = {}
+
+
 def _get_re_mesh_editor_addon_dir():
+    """Locate RE Mesh Editor add-on directory. Result is cached for the session."""
+    global _addon_dir_cache, _addon_dir_cached
+    if _addon_dir_cached:
+        return _addon_dir_cache
     import addon_utils
     for mod in addon_utils.modules():
         pkg  = getattr(mod, '__package__', '') or getattr(mod, '__name__', '')
         name = mod.bl_info.get('name', '')
         if 'RE Mesh' in name or 'REMeshEditor' in pkg or 're_mesh_editor' in pkg.lower():
-            return os.path.dirname(mod.__file__)
+            _addon_dir_cache  = os.path.dirname(mod.__file__)
+            _addon_dir_cached = True
+            return _addon_dir_cache
+    _addon_dir_cached = True   # cache the miss too
     return None
 
 
 def get_preset_dir_for_game(game_name):
     """Return path to RE Mesh Editor's Presets/{game_name}/ directory, or None."""
+    if game_name in _preset_dir_cache:
+        return _preset_dir_cache[game_name]
     addon_dir = _get_re_mesh_editor_addon_dir()
     if not addon_dir:
+        _preset_dir_cache[game_name] = None
         return None
     d = os.path.join(addon_dir, 'Presets', game_name)
-    return d if os.path.isdir(d) else None
+    result = d if os.path.isdir(d) else None
+    _preset_dir_cache[game_name] = result
+    return result
 
 
 def load_preset_enum_items(game_name):
-    """Return EnumProperty-compatible list for presets of the given game."""
+    """Return EnumProperty-compatible list for presets of the given game.
+    Result is cached per game name; call invalidate_preset_cache() after
+    adding/removing preset files if you need a fresh scan."""
+    if game_name in _preset_items_cache:
+        return _preset_items_cache[game_name]
     preset_dir = get_preset_dir_for_game(game_name)
     if not preset_dir:
-        return [('NONE', 'RE Mesh Editor presets not found', '')]
-    items = []
-    try:
-        for entry in sorted(os.scandir(preset_dir), key=lambda e: e.name):
-            if entry.is_file() and entry.name.endswith('.json'):
-                items.append((entry.path, entry.name[:-5], entry.path))
-    except Exception:
-        pass
-    return items if items else [('NONE', f'No presets found for {game_name}', '')]
+        items = [('NONE', 'RE Mesh Editor presets not found', '')]
+    else:
+        items = []
+        try:
+            for entry in sorted(os.scandir(preset_dir), key=lambda e: e.name):
+                if entry.is_file() and entry.name.endswith('.json'):
+                    items.append((entry.path, entry.name[:-5], entry.path))
+        except Exception:
+            pass
+        if not items:
+            items = [('NONE', f'No presets found for {game_name}', '')]
+    _preset_items_cache[game_name] = items
+    return items
+
+
+def invalidate_preset_cache():
+    """Clear all preset caches so the next draw() triggers a fresh filesystem scan."""
+    global _addon_dir_cache, _addon_dir_cached
+    _addon_dir_cache  = None
+    _addon_dir_cached = False
+    _preset_dir_cache.clear()
+    _preset_items_cache.clear()
+    _PRESET_EMISSIVE_CACHE.clear()
+    _PRESET_SNOW_MAP_CACHE.clear()
 
 
 def guess_best_preset(material_name, preset_items):
@@ -336,7 +398,7 @@ def _generate_solid_texture_path(value, tmp_dir, name_hint, size=SOLID_SIZE):
     if img_name in bpy.data.images:
         bpy.data.images.remove(bpy.data.images[img_name])
 
-    img = bpy.data.images.new(img_name, width=size, height=size, alpha=False)
+    img = bpy.data.images.new(img_name, width=size, height=size, alpha=True)
 
     if isinstance(value, (int, float)):
         v = float(max(0.0, min(1.0, value)))
@@ -412,7 +474,9 @@ def _try_downgrade_slot(slot_type, strategies, pbr_channels, channel_maps):
             return None
 
         if src is None:
-            rgba[out_i] = 0.0
+            # Alpha channel (index 3) defaults to opaque to avoid premultiplied-alpha
+            # issues when texconv converts the PNG to DDS (A=0 would zero all channels).
+            rgba[out_i] = 1.0 if out_i == 3 else 0.0
         elif isinstance(src, (int, float)):
             rgba[out_i] = float(src)
         elif isinstance(src, tuple):
@@ -471,6 +535,7 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context):
     bake_img = bpy.data.images.new(img_name, width=size, height=size,
                                    alpha=False, float_buffer=True)
 
+    orig_active_node = tree.nodes.active
     bake_node = tree.nodes.new('ShaderNodeTexImage')
     bake_node.image = bake_img
     tree.nodes.active = bake_node
@@ -615,9 +680,17 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context):
                 _, sock, val = item
                 sock.default_value = val
         tree.nodes.remove(bake_node)
+        try:
+            tree.nodes.active = orig_active_node
+        except Exception:
+            pass
         if img_name in bpy.data.images:
             bpy.data.images.remove(bpy.data.images[img_name])
         context.scene.render.engine = orig_engine
+        try:
+            material.node_tree.update_tag()
+        except Exception:
+            pass
         # print(f"[MDF Gen]   烘培 {material.name}/{pbr_type}: 已恢复引擎={context.scene.render.engine}", flush=True)
         # Restore Cycles GPU / device state
         try:
@@ -650,17 +723,164 @@ def _detect_max_tex_size(material):
     return max_size if max_size > 0 else BAKE_SIZE_DEFAULT
 
 
-def _get_pbr_paths(material, strategies, tmp_dir, bake_size, context, mesh_obj):
+_PBR_CHANNELS = ('color', 'normal', 'roughness', 'metallic', 'alpha', 'emissive')
+
+
+def detect_native_sizes(mat, strategies):
+    """
+    Return {channel: native_pixel_size} for all PBR channels.
+
+    SOLID  → SOLID_SIZE (256)
+    BAKE   → max texture size found in the material node tree
+    DIRECT → size of the source image if loaded in bpy.data.images,
+             otherwise falls back to the material's max texture size
+    """
+    mat_max = _detect_max_tex_size(mat)
+    sizes = {}
+    for ch in _PBR_CHANNELS:
+        sv = strategies.get(ch, ('SOLID', None))
+        strat = sv[0]
+        if strat == 'SOLID':
+            sizes[ch] = SOLID_SIZE
+        elif strat == 'BAKE':
+            sizes[ch] = mat_max
+        else:  # DIRECT
+            path = sv[1] if len(sv) > 1 else None
+            img_size = 0
+            if path:
+                for img in bpy.data.images:
+                    if bpy.path.abspath(img.filepath) == path and img.size[0] > 0:
+                        img_size = max(img.size[0], img.size[1])
+                        break
+            sizes[ch] = img_size if img_size > 0 else mat_max
+    return sizes
+
+
+def _nearest_pow2_leq(value, min_size=256):
+    """Return the largest power-of-2 that is ≤ value and ≥ min_size."""
+    if value <= min_size:
+        return min_size
+    p = 1
+    while p * 2 <= value:
+        p *= 2
+    return p
+
+
+def _maybe_resize_direct(src_path, target_size, tmp_dir):
+    """
+    If the source image is larger than target_size, save a scaled copy to
+    tmp_dir and return its path.  Otherwise return src_path unchanged.
+    Uses bpy.data.images so no Pillow dependency is required.
+    """
+    try:
+        img = bpy.data.images.load(src_path, check_existing=True)
+        native = max(img.size[0], img.size[1])
+        if native <= target_size:
+            return src_path
+
+        import hashlib
+        tag = hashlib.md5(f"{src_path}_{target_size}".encode()).hexdigest()[:8]
+        ext = os.path.splitext(src_path)[1] or '.png'
+        out_path = os.path.join(tmp_dir, f"resized_{tag}{ext}")
+
+        img_copy = img.copy()
+        try:
+            img_copy.scale(target_size, target_size)
+            img_copy.filepath_raw = out_path
+            img_copy.save()
+        finally:
+            bpy.data.images.remove(img_copy)
+        return out_path
+    except Exception as e:
+        print(f"[MDF Gen] resize failed for {src_path} → {target_size}px: {e}")
+        return src_path
+
+
+# ── Channel size override operator ─────────────────────────────────────────────
+
+_VALID_POW2_SIZES = [256, 512, 1024, 2048, 4096, 8192]
+_set_channel_size_items_cache: list = []
+
+
+def _channel_size_enum_items(self, context):
+    """Enum items callback for MHW_OT_SetChannelSize — avoids GC of string list."""
+    global _set_channel_size_items_cache
+    ns = self.native_size
+    _set_channel_size_items_cache = [
+        (str(s), f"{s}×{s}", "")
+        for s in _VALID_POW2_SIZES
+        if s <= ns
+    ]
+    return _set_channel_size_items_cache
+
+
+class MHW_OT_SetChannelSize(bpy.types.Operator):
+    """调整该通道的输出分辨率（仅限 ≤ 原生尺寸的 2 的幂次方，最小 256）"""
+    bl_idname  = "mhw.set_channel_size"
+    bl_label   = "调整输出尺寸"
+    bl_options = {'INTERNAL', 'UNDO'}
+
+    settings_attr: bpy.props.StringProperty()
+    mat_name:      bpy.props.StringProperty()
+    channel:       bpy.props.StringProperty()
+    native_size:   bpy.props.IntProperty(default=1024)
+    size:          bpy.props.EnumProperty(
+        name="输出尺寸",
+        description="烘焙 / 直接通道的最终输出分辨率（边长，正方形）",
+        items=_channel_size_enum_items,
+    )
+
+    def invoke(self, context, event):
+        settings = getattr(context.scene, self.settings_attr, None)
+        current  = 0
+        if settings:
+            for entry in settings.material_list:
+                if entry.blender_material == self.mat_name:
+                    current = getattr(entry, f"bake_size_{self.channel}", 0)
+                    break
+        # Pre-select current override, or fall back to native (clamped to valid)
+        target = current if current > 0 else self.native_size
+        valid  = [s for s in _VALID_POW2_SIZES if s <= self.native_size]
+        if valid:
+            best = max((s for s in valid if s <= target), default=valid[0])
+            self.size = str(best)
+        return context.window_manager.invoke_props_dialog(self, width=200)
+
+    def draw(self, context):
+        col = self.layout.column()
+        col.label(text=f"原生尺寸: {self.native_size}×{self.native_size}")
+        col.prop(self, "size", text="输出尺寸")
+
+    def execute(self, context):
+        settings = getattr(context.scene, self.settings_attr, None)
+        if not settings:
+            return {'CANCELLED'}
+        for entry in settings.material_list:
+            if entry.blender_material == self.mat_name:
+                setattr(entry, f"bake_size_{self.channel}", int(self.size))
+                return {'FINISHED'}
+        return {'CANCELLED'}
+
+
+def _get_pbr_paths(material, strategies, tmp_dir, bake_size, context, mesh_obj,
+                   channel_sizes=None):
     """
     Resolve each PBR strategy to a file path.
     Returns dict {pbr_type: path_or_None}.
     """
     paths = {}
     for pbr_type, strat_val in strategies.items():
-        strategy = strat_val[0]
-        value    = strat_val[1]
+        strategy    = strat_val[0]
+        value       = strat_val[1]
+        # Per-channel size override: 0 means "use global bake_size"
+        ch_override = (channel_sizes or {}).get(pbr_type, 0)
+        ch_size     = ch_override if ch_override > 0 else bake_size
+
         if strategy == 'DIRECT':
-            paths[pbr_type] = value
+            src = value
+            if ch_override > 0:
+                src = _maybe_resize_direct(src, ch_override, tmp_dir)
+            paths[pbr_type] = src
 
         elif strategy == 'SOLID':
             hint = f"{_slugify(material.name)}_{pbr_type}"
@@ -671,7 +891,7 @@ def _get_pbr_paths(material, strategies, tmp_dir, bake_size, context, mesh_obj):
             if mesh_obj:
                 _t_bake = time.time()
                 paths[pbr_type] = _bake_pbr_channel(
-                    material, pbr_type, mesh_obj, bake_size, tmp_dir, context)
+                    material, pbr_type, mesh_obj, ch_size, tmp_dir, context)
                 print(f"[MDF Gen]   烘培 {pbr_type}: {time.time() - _t_bake:.2f}s", flush=True)
             else:
                 print(f"[MDF Gen] No mesh found for baking {material.name}/{pbr_type}, skipping")
@@ -999,6 +1219,15 @@ class MdfGenRefreshBase(bpy.types.Operator):
                 sv = strategies.get(pt, ('?', None))
                 setattr(item, f"strat_{pt}", strategy_label(sv[0]))
 
+            # Per-channel native sizes (for the resize button in the UI)
+            native_sizes = detect_native_sizes(mat, strategies)
+            for pt in _PBR_CHANNELS:
+                try:
+                    setattr(item, f"native_size_{pt}", native_sizes.get(pt, 0))
+                    setattr(item, f"bake_size_{pt}", 0)   # reset override on refresh
+                except Exception:
+                    pass
+
         self.report({'INFO'}, f"已扫描 {len(settings.material_list)} 个材质")
         return {'FINISHED'}
 
@@ -1163,9 +1392,18 @@ class MdfGenProcessBase(bpy.types.Operator):
         strategies = analyze_material_strategies(mat)
         # print(f"[{cls._log_tag}]   分析材质节点: {time.time() - _t:.2f}s", flush=True)
         bake_size  = max(_detect_max_tex_size(mat), cls._bake_size)
+
+        # Collect per-channel user size overrides (0 = use global bake_size)
+        channel_sizes = {}
+        for pt in _PBR_CHANNELS:
+            override = getattr(mat_entry, f"bake_size_{pt}", 0)
+            if override > 0:
+                channel_sizes[pt] = override
+
         _t = time.time()
         pbr_paths  = _get_pbr_paths(
-            mat, strategies, temp_dir, bake_size, context, mesh_obj)
+            mat, strategies, temp_dir, bake_size, context, mesh_obj,
+            channel_sizes=channel_sizes or None)
         # print(f"[{cls._log_tag}]   解析PBR路径 (含烘培): {time.time() - _t:.2f}s", flush=True)
 
         # User-provided AO override (Blender has no built-in AO node)

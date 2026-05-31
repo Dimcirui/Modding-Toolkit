@@ -67,13 +67,13 @@ MHWI_SLOT_CHANNEL_MAPS = {
         'R': ('normal',   0),
         'G': ('normal',   1),
         'B': None,
-        'A': None,
+        'A': 1.0,
     },
     'RMTMap': {
         'R': ('roughness', 0),
         'G': ('metallic',  0),
         'B': None,
-        'A': None,
+        'A': 1.0,
     },
     'EmissiveMap': {
         'R': ('emissive', 0),

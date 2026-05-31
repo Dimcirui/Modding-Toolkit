@@ -1,3 +1,4 @@
+import json
 import os
 import bpy
 import mathutils
@@ -173,24 +174,20 @@ def find_bone_smart(bones, name):
 _import_preset_cache = []
 _target_preset_cache = []
 
-# 预设分类规则：文件名前缀 → 分类标签
-_PRESET_CATEGORY_RULES = [
-    (('怪猎',),                          '怪猎系'),
-    (('生化危机', '鬼泣', '街霸'),        'Capcom RE引擎'),
-    (('MMD', 'VRChat', 'Valve'),          '通用平台'),
-]
-
-def _get_preset_category(filename):
-    stem = os.path.splitext(filename)[0]
-    for prefixes, category in _PRESET_CATEGORY_RULES:
-        if any(stem.startswith(p) for p in prefixes):
-            return category
-    return '其他游戏'
+def _read_preset_meta(filepath):
+    """读取 preset_info 中的 name 和 category，文件损坏时 fallback。"""
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            pi = json.load(f).get('preset_info', {})
+        return pi.get('name', ''), pi.get('category', '')
+    except Exception:
+        return '', ''
 
 def get_preset_items(subdir):
     """
     扫描指定子目录下的所有 .json 文件，按分类分组并插入分隔标题。
     subdir: "presets/import" 或 "presets/bone"
+    显示名和分类均从 JSON 内 preset_info 读取，与文件名无关。
     """
     current_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.dirname(current_dir)
@@ -203,21 +200,25 @@ def get_preset_items(subdir):
     if not files:
         return [('NONE', "无预设文件", "")]
 
-    # 按分类分组
+    # 按分类分组，name/category 均从 JSON 内读取
     grouped = {}
     cat_order = ['怪猎系', 'Capcom RE引擎', '通用平台', '其他游戏']
     for f in files:
-        cat = _get_preset_category(f)
-        grouped.setdefault(cat, []).append(f)
+        filepath = os.path.join(preset_dir, f)
+        name, cat = _read_preset_meta(filepath)
+        if not name:
+            name = os.path.splitext(f)[0]  # fallback 到文件名 stem
+        if not cat or cat not in cat_order:
+            cat = '其他游戏'               # fallback 分类
+        grouped.setdefault(cat, []).append((f, name))
 
     items = []
     for cat in cat_order:
         if cat not in grouped:
             continue
         items.append(('', cat, ''))  # 分组标题（不可选）
-        for f in grouped[cat]:
-            display_name = os.path.splitext(f)[0]
-            items.append((f, display_name, f"加载 {f} 预设"))
+        for f, display_name in grouped[cat]:
+            items.append((f, display_name, f"加载 {display_name} 预设"))
 
     return items if items else [('NONE', "无预设文件", "")]
 

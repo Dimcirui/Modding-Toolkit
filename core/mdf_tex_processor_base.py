@@ -299,7 +299,7 @@ def _compose_channels(slot_type, pbr_paths, pbr_channels, temp_dir, tex_name, pb
         tmp_name = f"__mdf_compose_tmp_{pbr_type}"
         if tmp_name in bpy.data.images:
             bpy.data.images.remove(bpy.data.images[tmp_name])
-        img = bpy.data.images.load(img_path)
+        img = bpy.data.images.load(img_path, check_existing=False)
         img.name = tmp_name
         img.colorspace_settings.name = 'Non-Color'
         iw, ih = img.size
@@ -326,7 +326,9 @@ def _compose_channels(slot_type, pbr_paths, pbr_channels, temp_dir, tex_name, pb
     for out_ch, src in ch_map.items():
         out_i = _CH[out_ch]
         if src is None:
-            result[:, :, out_i] = 0.0
+            # Alpha channel (index 3) defaults to opaque to avoid premultiplied-alpha
+            # issues when texconv converts the PNG to DDS (A=0 would zero all channels).
+            result[:, :, out_i] = 1.0 if out_i == 3 else 0.0
             continue
         if isinstance(src, (int, float)):
             result[:, :, out_i] = float(src)

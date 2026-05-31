@@ -58,6 +58,18 @@ class RE9GenMaterialEntry(bpy.types.PropertyGroup):
         description="AO 贴图路径",
         subtype='FILE_PATH',
     )
+    native_size_color:     bpy.props.IntProperty(default=0)
+    native_size_normal:    bpy.props.IntProperty(default=0)
+    native_size_roughness: bpy.props.IntProperty(default=0)
+    native_size_metallic:  bpy.props.IntProperty(default=0)
+    native_size_alpha:     bpy.props.IntProperty(default=0)
+    native_size_emissive:  bpy.props.IntProperty(default=0)
+    bake_size_color:       bpy.props.IntProperty(default=0)
+    bake_size_normal:      bpy.props.IntProperty(default=0)
+    bake_size_roughness:   bpy.props.IntProperty(default=0)
+    bake_size_metallic:    bpy.props.IntProperty(default=0)
+    bake_size_alpha:       bpy.props.IntProperty(default=0)
+    bake_size_emissive:    bpy.props.IntProperty(default=0)
 
 
 def _on_re9_mesh_collection_update(self, context):
