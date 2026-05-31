@@ -452,7 +452,26 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
 
         # Snow overlay: override AlbedoBlendMap with fully-transparent solid texture
         if getattr(mat_entry, 'hide_snow_overlay', False) and "AlbedoBlendMap" in slot_types:
-            slot_binding_values["AlbedoBlendMap"] = "snow_Col_CMM"
+            _base_norm = base_path.strip('/\\').replace('/', '\\')
+            slot_binding_values["AlbedoBlendMap"] = f"{_base_norm}\\snow_Col_CMM"
+
+            if not getattr(mat_entry, 'skip_textures', False):
+                snow_disk = os.path.join(
+                    natives_root, 'nativePC',
+                    base_path.strip('/\\').replace('\\', os.sep).replace('/', os.sep),
+                    'snow_Col_CMM.tex',
+                )
+                os.makedirs(os.path.dirname(snow_disk), exist_ok=True)
+                snow_png = _generate_solid_texture_path(
+                    (0, 0, 0, 0), temp_dir, 'snow_Col_CMM', size=256)
+                if snow_png:
+                    snow_dds_stem = os.path.splitext(os.path.basename(snow_png))[0]
+                    snow_dds = os.path.join(temp_dir, snow_dds_stem + '.dds')
+                    ImageListToDDS([(snow_png, 'BC7_UNORM_SRGB')], temp_dir,
+                                   mat_entry.generate_mipmaps)
+                    if os.path.isfile(snow_dds):
+                        ConvertDDSToTex([snow_dds], snow_disk)
+                        print(f"[{self._log_tag}]   AlbedoBlendMap (snow) -> {os.path.basename(snow_disk)}")
 
         _t = time.time()
         mat_obj = _call_mhwi_read_preset(preset_path, mrl3_col)
