@@ -244,13 +244,20 @@ class RE4_OT_BatchExport(bpy.types.Operator):
                                 # 在副本上操作，不修改原骨架
                                 prev_active = context.view_layer.objects.active
                                 prev_sel = [o for o in context.selected_objects]
+                                prev_hidden = user_arm_obj.hide_viewport
                                 for o in prev_sel:
                                     o.select_set(False)
+                                user_arm_obj.hide_viewport = False
                                 context.view_layer.objects.active = user_arm_obj
                                 user_arm_obj.select_set(True)
                                 bpy.ops.object.duplicate()
                                 arm_copy = context.active_object
+                                user_arm_obj.hide_viewport = prev_hidden
                                 user_arm_obj.select_set(False)
+                                if arm_copy is None:
+                                    self.report({'WARNING'}, f"假头法: duplicate 失败，无法获取副本对象")
+                                    fail_count += 1
+                                    continue
                                 try:
                                     do_fakebone(context, arm_copy, native_path)
                                     for fbxskel_path in fbxskel_paths:
@@ -260,7 +267,7 @@ class RE4_OT_BatchExport(bpy.types.Operator):
                                     print(f"[RE4] FAILED FBXSKEL (假头法): {err}")
                                     fail_count += 1
                                 finally:
-                                    if arm_copy.name in bpy.data.objects:
+                                    if arm_copy is not None and arm_copy.name in bpy.data.objects:
                                         bpy.data.objects.remove(arm_copy, do_unlink=True)
                                     context.view_layer.objects.active = prev_active
                                     for o in prev_sel:
