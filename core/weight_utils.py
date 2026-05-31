@@ -26,9 +26,17 @@ def merge_weights_and_delete_bones(armature_obj, bone_pairs):
                  for parent, delete in bone_pairs}
 
     # 1. 找到受该骨架影响的所有网格
-    mesh_objects = [o for o in bpy.data.objects
-                   if o.type == 'MESH' and
-                   any(m.type == 'ARMATURE' and m.object == armature_obj for m in o.modifiers)]
+    # 主：通过姿态修改器绑定
+    bound_meshes = {o for o in bpy.data.objects
+                    if o.type == 'MESH' and
+                    any(m.type == 'ARMATURE' and m.object == armature_obj for m in o.modifiers)}
+    # 补充：未绑定修改器但作为该骨架子级、且含有待删除骨骼同名顶点组的网格
+    delete_names = set(merge_map.keys())
+    extra_meshes = {o for o in bpy.data.objects
+                    if o.type == 'MESH' and o not in bound_meshes and
+                    o.parent == armature_obj and
+                    any(vg.name in delete_names for vg in o.vertex_groups)}
+    mesh_objects = bound_meshes | extra_meshes
 
     # 2. 遍历网格，将每个被删除骨骼的权重直接合并到其最终存活祖先
     for obj in mesh_objects:
