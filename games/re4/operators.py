@@ -2,7 +2,7 @@ import bpy
 import os
 from ...core.i18n import _
 from . import data_maps
-from ...core.re_chain_utils import REChainConfig, auto_create_re_chains
+from ...core.re_chain_utils import REChainConfig, auto_create_re_chains, _is_valid_chain_collection
 from ...core.standard_ops import _run_bone_color_refresh
 
 _FINGER_INITIALS = {
@@ -388,12 +388,24 @@ class RE4_OT_FakeBone_OneClick(bpy.types.Operator):
             return {'CANCELLED'}
 
 
+_re4_chain_col_items = []
+
+
+def _get_re4_chain_col_items(self, context):
+    return _re4_chain_col_items
+
+
 class RE4_OT_AutoCreateChains(bpy.types.Operator):
     """一键创建 RE Chain（RE4 默认 .chain 格式）。"""
     bl_idname = "re4.auto_create_chains"
     bl_label = "一键创建 RE Chain"
     bl_options = {'REGISTER', 'UNDO'}
 
+    chain_collection: bpy.props.EnumProperty(
+        name="Chain Collection",
+        description="选择要写入的 Chain Collection",
+        items=_get_re4_chain_col_items,
+    )
     settings_mode: bpy.props.EnumProperty(
         name="Settings 模式",
         items=[
@@ -454,6 +466,19 @@ class RE4_OT_AutoCreateChains(bpy.types.Operator):
             col_name = context.scene.get("REMeshLastImportedCollection", "")
             if col_name and ".mesh" in col_name:
                 self.collection_name = col_name.split(".mesh")[0]
+
+        global _re4_chain_col_items
+        _re4_chain_col_items = [
+            (col.name, col.name, "")
+            for col in bpy.data.collections
+            if _is_valid_chain_collection(col)
+        ]
+        toolpanel = getattr(context.scene, 're_chain_toolpanel', None)
+        if toolpanel and toolpanel.chainCollection:
+            cur = toolpanel.chainCollection.name
+            if any(i[0] == cur for i in _re4_chain_col_items):
+                self.chain_collection = cur
+
         return context.window_manager.invoke_props_dialog(self, width=360)
 
     def draw(self, context):
@@ -473,6 +498,8 @@ class RE4_OT_AutoCreateChains(bpy.types.Operator):
         if self.auto_create_collection:
             layout.prop(self, "collection_name")
             layout.prop(self, "chain_format", expand=True)
+        else:
+            layout.prop(self, "chain_collection")
         layout.prop(self, "settings_mode", expand=True)
         layout.prop(self, "straighten_orientation")
         layout.prop(self, "apply_angle_ramp")
@@ -493,7 +520,7 @@ class RE4_OT_AutoCreateChains(bpy.types.Operator):
             collection_name=self.collection_name,
             tuning=None,
             settings_mode=self.settings_mode,
-            selected_collection="",
+            selected_collection=self.chain_collection,
             straighten_orientation=self.straighten_orientation,
             collider_filter_path="",
         )
