@@ -462,16 +462,25 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                     'snow_Col_CMM.tex',
                 )
                 os.makedirs(os.path.dirname(snow_disk), exist_ok=True)
-                snow_png = _generate_solid_texture_path(
-                    (0, 0, 0, 0), temp_dir, 'snow_Col_CMM', size=256)
-                if snow_png:
-                    snow_dds_stem = os.path.splitext(os.path.basename(snow_png))[0]
-                    snow_dds = os.path.join(temp_dir, snow_dds_stem + '.dds')
-                    ImageListToDDS([(snow_png, 'BC7_UNORM_SRGB')], temp_dir,
-                                   mat_entry.generate_mipmaps)
-                    if os.path.isfile(snow_dds):
-                        ConvertDDSToTex([snow_dds], snow_disk)
-                        print(f"[{self._log_tag}]   AlbedoBlendMap (snow) -> {os.path.basename(snow_disk)}")
+                # RGB white + alpha black (fully transparent); must use alpha=True
+                # so the PNG is saved as RGBA rather than RGB-only
+                _snow_img_name = '__gen_solid_snow_Col_CMM'
+                if _snow_img_name in bpy.data.images:
+                    bpy.data.images.remove(bpy.data.images[_snow_img_name])
+                _snow_img = bpy.data.images.new(
+                    _snow_img_name, width=256, height=256, alpha=True)
+                _snow_img.pixels[:] = [1.0, 1.0, 1.0, 0.0] * (256 * 256)
+                snow_png = os.path.join(temp_dir, '_solid_snow_Col_CMM.png')
+                _snow_img.filepath_raw = snow_png
+                _snow_img.file_format  = 'PNG'
+                _snow_img.save()
+                bpy.data.images.remove(_snow_img)
+                snow_dds = os.path.join(temp_dir, '_solid_snow_Col_CMM.dds')
+                ImageListToDDS([(snow_png, 'BC7_UNORM_SRGB')], temp_dir,
+                               mat_entry.generate_mipmaps)
+                if os.path.isfile(snow_dds):
+                    ConvertDDSToTex([snow_dds], snow_disk)
+                    print(f"[{self._log_tag}]   AlbedoBlendMap (snow) -> {os.path.basename(snow_disk)}")
 
         _t = time.time()
         mat_obj = _call_mhwi_read_preset(preset_path, mrl3_col)
