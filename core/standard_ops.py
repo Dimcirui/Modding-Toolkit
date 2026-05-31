@@ -1,5 +1,5 @@
 import bpy, mathutils
-from bpy.app.translations import pgettext as _
+from .i18n import _
 from .bone_mapper import BoneMapManager, STANDARD_BONE_NAMES, _normalize_bone_name, auto_detect_preset, resolve_preset
 from . import weight_utils, bone_utils
 
@@ -20,6 +20,26 @@ def _build_fuzzy_preset_bones(mapper, arm_obj):
     return preset_bones
 
 
+def _apply_bone_color(pb, role):
+    pb.color.palette = 'CUSTOM'
+    if role == "head":
+        pb.color.custom.normal = (0.10, 0.62, 1.00)
+        pb.color.custom.select = (0.40, 0.80, 1.00)
+        pb.color.custom.active = (0.70, 0.93, 1.00)
+    elif role == "branch_head":
+        pb.color.custom.normal = (0.70, 0.20, 1.00)
+        pb.color.custom.select = (0.83, 0.50, 1.00)
+        pb.color.custom.active = (0.93, 0.75, 1.00)
+    elif role == "main_continue":
+        pb.color.custom.normal = (1.0, 0.70, 0.10)
+        pb.color.custom.select = (1.0, 0.85, 0.40)
+        pb.color.custom.active = (1.0, 0.95, 0.70)
+    else:  # body / _End / untagged
+        pb.color.custom.normal = (0.18, 0.42, 0.90)
+        pb.color.custom.select = (0.45, 0.65, 1.00)
+        pb.color.custom.active = (0.70, 0.85, 1.00)
+
+
 def _apply_physics_bone_colors(arm_obj, preset_bones):
     """根据 chain_role 自定义属性为物理骨骼应用四色标记系统。
     会切换到姿态模式执行，调用后停留在姿态模式。
@@ -29,24 +49,7 @@ def _apply_physics_bone_colors(arm_obj, preset_bones):
     for pb in arm_obj.pose.bones:
         if pb.name in preset_bones:
             continue
-        role = pb.get("chain_role", "body")
-        pb.color.palette = 'CUSTOM'
-        if role == "head":
-            pb.color.custom.normal = (0.10, 0.62, 1.00)
-            pb.color.custom.select = (0.40, 0.80, 1.00)
-            pb.color.custom.active = (0.70, 0.93, 1.00)
-        elif role == "branch_head":
-            pb.color.custom.normal = (0.70, 0.20, 1.00)
-            pb.color.custom.select = (0.83, 0.50, 1.00)
-            pb.color.custom.active = (0.93, 0.75, 1.00)
-        elif role == "main_continue":
-            pb.color.custom.normal = (1.0, 0.70, 0.10)
-            pb.color.custom.select = (1.0, 0.85, 0.40)
-            pb.color.custom.active = (1.0, 0.95, 0.70)
-        else:  # body / _End / untagged
-            pb.color.custom.normal = (0.18, 0.42, 0.90)
-            pb.color.custom.select = (0.45, 0.65, 1.00)
-            pb.color.custom.active = (0.70, 0.85, 1.00)
+        _apply_bone_color(pb, pb.get("chain_role", "body"))
 
 class MODDER_OT_ApplyStandardX(bpy.types.Operator):
     """执行标准化 X：合并权重并重命名为基础名"""
@@ -923,6 +926,13 @@ class MODDER_OT_RefreshPhysicsBoneColors(bpy.types.Operator):
         if not arm_obj or arm_obj.type != 'ARMATURE':
             self.report({'ERROR'}, _("请先选中一个骨架"))
             return {'CANCELLED'}
+
+        bpy.context.view_layer.objects.active = arm_obj
+        bpy.ops.object.mode_set(mode='POSE')
+
+        selected = context.selected_pose_bones or []
+        partial = bool(selected)
+
         settings = context.scene.mhw_suite_settings
         mapper = BoneMapManager()
 
@@ -943,22 +953,42 @@ class MODDER_OT_RefreshPhysicsBoneColors(bpy.types.Operator):
             self.report({'WARNING'}, _("未能自动识别目标游戏预设，回退至来源预设 [%s]，建议手动切换") % fallback_name)
 
         preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
-        bpy.context.view_layer.objects.active = arm_obj
-        bpy.ops.object.mode_set(mode='POSE')
+
+        # 始终对全骨架做拓扑分析，保证 chain_role 正确
         _detect_chain_roles(arm_obj, preset_bones)
-        for b in arm_obj.data.bones:
-            if b.name in preset_bones:
+
+        if partial:
+            selected_names = {pb.name for pb in selected}
+            for b in arm_obj.data.bones:
+                if b.name not in selected_names:
+                    continue
                 pb = arm_obj.pose.bones.get(b.name)
-                if pb:
+                if not pb:
+                    continue
+                if b.name in preset_bones:
                     if "chain_role" in pb:
                         del pb["chain_role"]
                     pb.color.palette = 'DEFAULT'
-        _apply_physics_bone_colors(arm_obj, preset_bones)
-        if detected:
-            detected_name = mapper.preset_info.get('name', detected)
-            self.report({'INFO'}, _("骨骼颜色已刷新（自动识别预设：%s）") % detected_name)
+                else:
+                    _apply_bone_color(pb, pb.get("chain_role", "body"))
         else:
-            self.report({'INFO'}, _("骨骼颜色已刷新"))
+            for b in arm_obj.data.bones:
+                if b.name in preset_bones:
+                    pb = arm_obj.pose.bones.get(b.name)
+                    if pb:
+                        if "chain_role" in pb:
+                            del pb["chain_role"]
+                        pb.color.palette = 'DEFAULT'
+            _apply_physics_bone_colors(arm_obj, preset_bones)
+
+        preset_label = ""
+        if detected:
+            preset_label = _("（自动识别预设：%s）") % mapper.preset_info.get('name', detected)
+
+        if partial:
+            self.report({'INFO'}, (_("已刷新 %d 根骨骼") % len(selected)) + preset_label)
+        else:
+            self.report({'INFO'}, _("骨骼颜色已刷新") + preset_label)
         return {'FINISHED'}
 
 
@@ -1010,10 +1040,6 @@ class MODDER_OT_ClearChainRole(bpy.types.Operator):
         for pb in selected:
             if "chain_role" in pb:
                 del pb["chain_role"]
-            pb.color.palette = 'CUSTOM'
-            pb.color.custom.normal = (0.18, 0.42, 0.90)
-            pb.color.custom.select = (0.45, 0.65, 1.00)
-            pb.color.custom.active = (0.70, 0.85, 1.00)
         self.report({'INFO'}, _("已清除 %d 根骨骼的链角色标记") % len(selected))
         return {'FINISHED'}
 
