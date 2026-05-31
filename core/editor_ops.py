@@ -5,7 +5,7 @@ import re
 import shutil
 import subprocess
 import sys
-from bpy.app.translations import pgettext as _
+from .i18n import _
 from . import ui_config, bone_mapper
 from .bone_mapper import BoneMapManager, STANDARD_BONE_NAMES
 

@@ -1,5 +1,5 @@
 import bpy
-from bpy.app.translations import pgettext as _
+from ...core.i18n import _
 from ...core.re_chain_utils import REChainConfig, auto_create_re_chains
 from ...core.bone_mapper import auto_detect_preset, BoneMapManager
 from ...core.standard_ops import _build_fuzzy_preset_bones

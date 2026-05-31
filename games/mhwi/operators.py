@@ -2,7 +2,7 @@ import sys
 import time
 import bpy
 import re
-from bpy.app.translations import pgettext as _
+from ...core.i18n import _
 from ...core import bone_utils
 from ...core.bone_mapper import BoneMapManager, resolve_preset
 from ...core.standard_ops import _build_fuzzy_preset_bones

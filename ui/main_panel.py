@@ -1,7 +1,7 @@
 import bpy
 import os
 import re
-from bpy.app.translations import pgettext as _
+from ..core.i18n import _
 from ..core import bone_utils, weight_utils, ui_config
 from ..core.mdf_generator_base import MHW_OT_SetChannelSize
 from ..core.bone_utils import get_import_presets_callback, get_target_presets_callback

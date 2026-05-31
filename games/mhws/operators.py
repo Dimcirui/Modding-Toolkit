@@ -3,7 +3,7 @@ import re
 import sys
 import time
 import bpy
-from bpy.app.translations import pgettext as _
+from ...core.i18n import _
 from ...core import weight_utils
 from ...core.bone_mapper import BoneMapManager, STANDARD_BONE_NAMES
 from ...core.re_chain_utils import (

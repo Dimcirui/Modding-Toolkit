@@ -1,6 +1,6 @@
 import bpy
 import os
-from bpy.app.translations import pgettext as _
+from ...core.i18n import _
 from . import data_maps
 from ...core.re_chain_utils import REChainConfig, auto_create_re_chains
 

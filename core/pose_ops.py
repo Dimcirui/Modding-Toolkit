@@ -15,7 +15,7 @@ import json
 import os
 import copy
 import mathutils
-from bpy.app.translations import pgettext as _
+from .i18n import _
 from .bone_mapper import BoneMapManager, STANDARD_BONE_NAMES, resolve_preset
 from .bone_utils import get_import_presets_callback
 
