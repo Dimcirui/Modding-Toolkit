@@ -157,6 +157,7 @@ def shape_key_to_weights(obj, active_kb, basis_kb, ignore_threshold=0.001,
     valid_count = 0
 
     filter_dir = Vector(direction).normalized() if direction is not None else None
+    world_mat3 = obj.matrix_world.to_3x3() if filter_dir is not None else None
 
     seam_groups = []
     if sync_seams:
@@ -169,7 +170,7 @@ def shape_key_to_weights(obj, active_kb, basis_kb, ignore_threshold=0.001,
     for i in range(v_count):
         disp = active_kb.data[i].co - basis_kb.data[i].co
         if filter_dir is not None:
-            val = disp.dot(filter_dir)
+            val = (world_mat3 @ disp).dot(filter_dir)
             if val <= ignore_threshold:
                 continue
         else:

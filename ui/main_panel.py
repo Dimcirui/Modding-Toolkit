@@ -962,10 +962,10 @@ class MHW_OT_ShapeKeyToWeights(bpy.types.Operator):
 
 # (shape_key_name, direction_xyz, part_label, mhwi_vg, mhws_vg, re4_vg, re9_vg)
 _MMD_FACE_ENTRIES = [
-    ("ウィンク２",  ( 0,  0,  1), "左眼上眼皮", "MhBone_321", "L_UpEyeLid_LOD01",    "L_U_Eyelid03",  "L_UprLdEdge_02"),
-    ("ウィンク２",  ( 0,  0, -1), "左眼下眼皮", "MhBone_325", "L_LoEyeLid_LOD01",    "L_D_Eyelid03",  "L_LwrLdEdge_02"),
-    ("ｳｨﾝｸ２右",  ( 0,  0,  1), "右眼上眼皮", "MhBone_334", "R_UpEyeLid_LOD01",    "R_U_Eyelid03",  "R_UprLdEdge_02"),
-    ("ｳｨﾝｸ２右",  ( 0,  0, -1), "右眼下眼皮", "MhBone_338", "R_LoEyeLid_LOD01",    "R_D_Eyelid03",  "R_LwrLdEdge_02"),
+    ("ウィンク２",  ( 0,  0, -1), "左眼上眼皮", "MhBone_321", "L_UpEyeLid_LOD01",    "L_U_Eyelid03",  "L_UprLdEdge_02"),
+    ("ウィンク２",  ( 0,  0,  1), "左眼下眼皮", "MhBone_325", "L_LoEyeLid_LOD01",    "L_D_Eyelid03",  "L_LwrLdEdge_02"),
+    ("ｳｨﾝｸ２右",  ( 0,  0, -1), "右眼上眼皮", "MhBone_334", "R_UpEyeLid_LOD01",    "R_U_Eyelid03",  "R_UprLdEdge_02"),
+    ("ｳｨﾝｸ２右",  ( 0,  0,  1), "右眼下眼皮", "MhBone_338", "R_LoEyeLid_LOD01",    "R_D_Eyelid03",  "R_LwrLdEdge_02"),
     ("あ",          ( 0,  0,  1), "上嘴唇",     "MhBone_381", "C_upLip_T_LOD01",     "C_UpperLip",    "C_UprLp_02"),
     ("あ",          ( 0,  0, -1), "下嘴唇",     "MhBone_388", "C_loLip_T_LOD01",     "C_LowerLip",    "C_LwrLp_02"),
     ("あ",          ( 1,  0,  0), "左嘴角",     "MhBone_384", "L_cornerLip_B_LOD01", "L_MouthCorner", "L_LipCorner_02"),
