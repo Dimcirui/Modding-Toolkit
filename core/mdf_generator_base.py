@@ -398,7 +398,7 @@ def _generate_solid_texture_path(value, tmp_dir, name_hint, size=SOLID_SIZE):
     if img_name in bpy.data.images:
         bpy.data.images.remove(bpy.data.images[img_name])
 
-    img = bpy.data.images.new(img_name, width=size, height=size, alpha=False)
+    img = bpy.data.images.new(img_name, width=size, height=size, alpha=True)
 
     if isinstance(value, (int, float)):
         v = float(max(0.0, min(1.0, value)))
