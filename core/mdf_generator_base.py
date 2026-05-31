@@ -245,6 +245,7 @@ def _is_albedo_slot(slot_type, channel_maps):
 
 
 _PRESET_EMISSIVE_CACHE: dict = {}
+_PRESET_SNOW_MAP_CACHE: dict = {}
 
 
 def preset_has_emissive_slots(preset_path, is_mrl3=False):
@@ -265,6 +266,23 @@ def preset_has_emissive_slots(preset_path, is_mrl3=False):
     except Exception:
         result = False
     _PRESET_EMISSIVE_CACHE[preset_path] = result
+    return result
+
+
+def preset_has_albedo_blend_map(preset_path):
+    """True if the preset JSON includes an AlbedoBlendMap slot (MRL3 only)."""
+    if not preset_path or preset_path == 'NONE' or not os.path.isfile(preset_path):
+        return False
+    if preset_path in _PRESET_SNOW_MAP_CACHE:
+        return _PRESET_SNOW_MAP_CACHE[preset_path]
+    try:
+        with open(preset_path, encoding='utf-8') as f:
+            data = json.load(f)
+        result = any(e.get('name', '') == 'AlbedoBlendMap'
+                     for e in data.get('Map List', []))
+    except Exception:
+        result = False
+    _PRESET_SNOW_MAP_CACHE[preset_path] = result
     return result
 
 
@@ -338,6 +356,7 @@ def invalidate_preset_cache():
     _preset_dir_cache.clear()
     _preset_items_cache.clear()
     _PRESET_EMISSIVE_CACHE.clear()
+    _PRESET_SNOW_MAP_CACHE.clear()
 
 
 def guess_best_preset(material_name, preset_items):

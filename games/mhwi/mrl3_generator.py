@@ -58,6 +58,11 @@ class MhwiGenMaterialEntry(bpy.types.PropertyGroup):
         description="手动指定 AO 贴图 (Blender 无内置 AO 节点)",
         default=False,
     )
+    hide_snow_overlay: bpy.props.BoolProperty(
+        name="隐藏覆雪效果（解决雪地腿部发黑）",
+        description="将 AlbedoBlendMap 槽位设为完全透明贴图 snow_Col_CMM，消除覆雪混合导致的腿部发黑",
+        default=False,
+    )
     ao_image:         bpy.props.StringProperty(
         name="AO",
         description="AO 贴图路径",
@@ -444,6 +449,10 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                     null = MHWI_NULL_TEX.get(st)
                     if null:
                         slot_binding_values[st] = null
+
+        # Snow overlay: override AlbedoBlendMap with fully-transparent solid texture
+        if getattr(mat_entry, 'hide_snow_overlay', False) and "AlbedoBlendMap" in slot_types:
+            slot_binding_values["AlbedoBlendMap"] = "snow_Col_CMM"
 
         _t = time.time()
         mat_obj = _call_mhwi_read_preset(preset_path, mrl3_col)

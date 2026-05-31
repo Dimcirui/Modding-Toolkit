@@ -1,6 +1,6 @@
 import bpy
 
-from ...core.mdf_generator_base import get_mhwi_preset_dir, preset_has_emissive_slots
+from ...core.mdf_generator_base import get_mhwi_preset_dir, preset_has_emissive_slots, preset_has_albedo_blend_map
 
 GENERATOR_WINDOW_WIDTH = 580
 _SETTINGS_ATTR = "mhwi_mrl3_generator"
@@ -134,6 +134,8 @@ class MHWI_OT_Mrl3GeneratorDialog(bpy.types.Operator):
             box.prop(mat_entry, "use_ao")
             if mat_entry.use_ao:
                 box.prop(mat_entry, "ao_image")
+            if preset_has_albedo_blend_map(mat_entry.material_preset):
+                box.prop(mat_entry, "hide_snow_overlay")
 
 
 classes = [MHWI_OT_Mrl3GeneratorDialog]
