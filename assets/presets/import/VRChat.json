@@ -64,7 +64,8 @@
       "main": [
         "UpperArm_L",
         "Left arm",
-        "LeftUpperArm"
+        "LeftUpperArm",
+        "Elbow_support.L"
       ],
       "aux": [
         "UpperArm_twist_L",
@@ -75,7 +76,8 @@
       "main": [
         "LowerArm_L",
         "Left elbow",
-        "LeftLowerArm"
+        "LeftLowerArm",
+        "Wrist_support.L"
       ],
       "aux": [
         "LowerArm_twist_L",
@@ -106,7 +108,8 @@
       "main": [
         "UpperArm_R",
         "Right arm",
-        "RightUpperArm"
+        "RightUpperArm",
+        "Elbow_support.R"
       ],
       "aux": [
         "UpperArm_twist_R",
@@ -117,7 +120,8 @@
       "main": [
         "LowerArm_R",
         "Right elbow",
-        "RightLowerArm"
+        "RightLowerArm",
+        "Wrist_support.R"
       ],
       "aux": [
         "LowerArm_twist_R",
