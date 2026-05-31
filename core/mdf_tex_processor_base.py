@@ -43,6 +43,7 @@ _CH_ENUM_ITEMS = [('R', 'R', ''), ('G', 'G', ''), ('B', 'B', ''), ('A', 'A', '')
 BASE_TEXTURE_TYPE_ABBREV = {
     'BaseDielectricMap':               'ALBD',
     'BaseAlphaMap':                    'BaseAlpha',
+    'BaseShiftMap':                    'BaseShift',
     'NormalRoughnessOcclusionMap':     'NRRO',
     'NormalRoughness':                 'NRMR',
     'NormalRoughnessCavityMap':        'NRRC',
@@ -71,6 +72,12 @@ BASE_SLOT_CHANNEL_MAPS = {
         'G': ('color', 1),
         'B': ('color', 2),
         'A': ('alpha', 0),
+    },
+    'BaseShiftMap': {
+        'R': ('color', 0),
+        'G': ('color', 1),
+        'B': ('color', 2),
+        'A': None,
     },
     'NormalRoughnessOcclusionMap': {
         'R': ('roughness', 0),
@@ -137,16 +144,17 @@ BASE_SLOT_CHANNEL_MAPS = {
 BASE_COMMON_SLOT_TYPES = {
     'BaseDielectricMap',
     'BaseAlphaMap',
+    'BaseShiftMap',
+    'EmissiveMap',
+    'Emissive_ColorMap',
     'NormalRoughnessOcclusionMap',
     'NormalRoughnessCavityMap',
     'NormalRoughness',
     'NormalRoughnessMap',
     'AlphaTranslucentOcclusionSSSMap',
-    'SSSCavityOcclusionTranslucentMap',
-    'AlphaCavityOcclusionTranslucentMap',
-    'EmissiveMap',
-    'Emissive_ColorMap',
     'AlphaTranslucentOcclusionCavityMap'
+    'AlphaCavityOcclusionTranslucentMap',
+    'SSSCavityOcclusionTranslucentMap',
 }
 
 BASE_NULL_TEX_BY_TYPE = {
@@ -189,6 +197,7 @@ BASE_NULL_TEX_BY_TYPE = {
     'Ripple_Texture3D':              'MasterMaterial/Textures/Noise3D_MSK3.tex',
     'MaskMap':                       'systems/rendering/NullBlack.tex',
     'DetailMap':                     'systems/rendering/NullGray.tex',
+    'BaseShiftMap':                  'systems/rendering/NullBlack.tex',
 }
 
 # ── Factory helpers ────────────────────────────────────────────────────────────
