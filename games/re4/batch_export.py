@@ -257,22 +257,22 @@ class RE4_OT_BatchExport(bpy.types.Operator):
                                 if arm_copy is None:
                                     self.report({'WARNING'}, f"假头法: duplicate 失败，无法获取副本对象")
                                     fail_count += 1
-                                    continue
-                                try:
-                                    do_fakebone(context, arm_copy, native_path)
-                                    for fbxskel_path in fbxskel_paths:
-                                        full = os.path.join(natives_root, "natives", "STM", fbxskel_path.replace("/", os.sep))
-                                        try_export(_do_export_fbxskel, full, arm_copy.name, f"FBXSKEL (假头法) {os.path.basename(fbxskel_path)}")
-                                except Exception as err:
-                                    print(f"[RE4] FAILED FBXSKEL (假头法): {err}")
-                                    fail_count += 1
-                                finally:
-                                    if arm_copy is not None and arm_copy.name in bpy.data.objects:
-                                        bpy.data.objects.remove(arm_copy, do_unlink=True)
-                                    context.view_layer.objects.active = prev_active
-                                    for o in prev_sel:
-                                        if o.name in bpy.data.objects:
-                                            o.select_set(True)
+                                else:
+                                    try:
+                                        do_fakebone(context, arm_copy, native_path)
+                                        for fbxskel_path in fbxskel_paths:
+                                            full = os.path.join(natives_root, "natives", "STM", fbxskel_path.replace("/", os.sep))
+                                            try_export(_do_export_fbxskel, full, arm_copy.name, f"FBXSKEL (假头法) {os.path.basename(fbxskel_path)}")
+                                    except Exception as err:
+                                        print(f"[RE4] FAILED FBXSKEL (假头法): {err}")
+                                        fail_count += 1
+                                    finally:
+                                        if arm_copy is not None and arm_copy.name in bpy.data.objects:
+                                            bpy.data.objects.remove(arm_copy, do_unlink=True)
+                                        context.view_layer.objects.active = prev_active
+                                        for o in prev_sel:
+                                            if o.name in bpy.data.objects:
+                                                o.select_set(True)
                 else:
                     for fbxskel_path in fbxskel_paths:
                         full = os.path.join(natives_root, "natives", "STM", fbxskel_path.replace("/", os.sep))

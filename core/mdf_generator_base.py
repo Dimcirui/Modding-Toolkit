@@ -95,15 +95,56 @@ def detect_shader_type(material):
     return SHADER_UNKNOWN
 
 
+def _collect_tex_images(node, found, visited):
+    """Depth-first traversal collecting all TEX_IMAGE nodes upstream of *node*.
+    Stops recursing when a TEX_IMAGE is reached (does not enter its own inputs).
+    The *visited* set prevents re-visiting nodes in cyclic graphs."""
+    if id(node) in visited:
+        return
+    visited.add(id(node))
+    if node.type == 'TEX_IMAGE':
+        found.append(node)
+        return  # Don't recurse into TEX_IMAGE's own inputs (UV map, etc.)
+    for inp in node.inputs:
+        if inp.is_linked:
+            _collect_tex_images(inp.links[0].from_node, found, visited)
+
+
+def _find_single_tex_image_upstream(node):
+    """Return the filepath if exactly one valid TEX_IMAGE is reachable upstream
+    of *node*; return None if zero, two or more images are found.
+
+    Used for normal-map aggressive penetration: any single-source chain
+    (add-Z, Y-flip, Sep/Comb nodes, etc.) is treated as DIRECT.
+    Multi-source chains (mix of two maps) correctly fall back to BAKE."""
+    found = []
+    _collect_tex_images(node, found, set())
+    if len(found) != 1:
+        return None
+    img_node = found[0]
+    if not img_node.image:
+        return None
+    path = bpy.path.abspath(img_node.image.filepath)
+    return path if (path and os.path.isfile(path)) else None
+
+
 def _analyze_principled_input(principled_node, input_name, mat_name=None, pbr_type=None):
     """
     Returns ('DIRECT', filepath, source_channel) | ('SOLID', value) | ('BAKE', None).
 
-    DIRECT:  Image Texture directly connected, or via a Normal Map node.
-             Third element is 'R' (Color output) or 'A' (Alpha output) to
-             indicate which source channel should be read during composition.
+    DIRECT:  Image Texture directly connected, via a Normal Map node, via a
+             Separate Color/RGB node (functional channels), or — for normal maps
+             only — via any single-source chain (aggressive penetration).
+             Third element is 'R' (Color/RGB output) or 'A' (Alpha output).
     SOLID:   Socket unlinked — use default_value as a constant solid texture.
     BAKE:    Complex node chain — Cycles bake required.
+
+    Normal map special rules
+    ────────────────────────
+    • NORMAL_MAP node Strength = 0 or 1  → penetrate (treat as DIRECT).
+    • NORMAL_MAP node Strength in (0, 1) or linked → BAKE.
+    • Any node chain with exactly one upstream TEX_IMAGE → DIRECT.
+    • Two or more upstream TEX_IMAGEs (e.g. mix node) → BAKE.
     """
     _tag = f"[MDF Gen]   STRATEGY {mat_name}/{pbr_type}" if mat_name and pbr_type else "[MDF Gen]"
 
@@ -142,28 +183,51 @@ def _analyze_principled_input(principled_node, input_name, mat_name=None, pbr_ty
 
     if src.type == 'NORMAL_MAP':
         nm_color = src.inputs.get('Color')
-        if not nm_color:
-            # print(f"{_tag}: Normal Map({src.name}) 无 Color 输入端 → SOLID (默认法线 0.5,0.5,1.0)", flush=True)
-            return ('SOLID', (0.5, 0.5, 1.0, 1.0))
-        if not nm_color.is_linked:
+        if not nm_color or not nm_color.is_linked:
             # print(f"{_tag}: Normal Map({src.name}) Color 未连接 → SOLID (默认法线 0.5,0.5,1.0)", flush=True)
             return ('SOLID', (0.5, 0.5, 1.0, 1.0))
-        nm_src = nm_color.links[0].from_node
-        if nm_src.type == 'TEX_IMAGE':
-            if not nm_src.image:
-                # print(f"{_tag}: Normal Map({src.name}) → TEX_IMAGE({nm_src.name}) 无图片数据 → BAKE", flush=True)
-                return ('BAKE', None)
-            path = bpy.path.abspath(nm_src.image.filepath)
-            if not path:
-                # print(f"{_tag}: Normal Map({src.name}) → TEX_IMAGE({nm_src.name}) 路径为空 → BAKE", flush=True)
-                return ('BAKE', None)
-            if not os.path.isfile(path):
-                # print(f"{_tag}: Normal Map({src.name}) → TEX_IMAGE({nm_src.name}) 文件不存在: {path} → BAKE", flush=True)
-                return ('BAKE', None)
-            # print(f"{_tag}: Normal Map({src.name}) → TEX_IMAGE({nm_src.name}) → DIRECT(ch=R)", flush=True)
+        # Strength = 0 or 1 → treat as DIRECT (viewport-only scaling);
+        # 0 < Strength < 1 or linked → bake required to capture the scaling.
+        strength_inp = src.inputs.get('Strength')
+        if strength_inp and strength_inp.is_linked:
+            # print(f"{_tag}: Normal Map({src.name}) Strength 已连接 → BAKE", flush=True)
+            return ('BAKE', None)
+        sv = float(strength_inp.default_value) if strength_inp else 1.0
+        if 0.0 < sv < 1.0:
+            # print(f"{_tag}: Normal Map({src.name}) Strength={sv:.3f} ∈ (0,1) → BAKE", flush=True)
+            return ('BAKE', None)
+        # Penetrate through the Color input chain; succeed only if exactly one
+        # source TEX_IMAGE is found (two or more means a mix/blend is in play).
+        path = _find_single_tex_image_upstream(nm_color.links[0].from_node)
+        if path:
+            # print(f"{_tag}: Normal Map({src.name}) → DIRECT (穿透, Strength={sv})", flush=True)
             return ('DIRECT', path, 'R')
-        # print(f"{_tag}: Normal Map({src.name}) Color ← {nm_src.type}({nm_src.name}) → BAKE", flush=True)
+        # print(f"{_tag}: Normal Map({src.name}) → BAKE (多源或无效链路)", flush=True)
         return ('BAKE', None)
+
+    if src.type in ('SEPCOLOR', 'SEPRGB'):
+        sock_name = socket.links[0].from_socket.name
+        ch = {'Red': 'R', 'R': 'R', 'Green': 'G', 'G': 'G', 'Blue': 'B', 'B': 'B'}.get(sock_name)
+        if ch is not None:
+            sep_in = src.inputs.get('Color') or src.inputs.get('Image')
+            if sep_in and sep_in.is_linked:
+                tex_src = sep_in.links[0].from_node
+                if tex_src.type == 'TEX_IMAGE' and tex_src.image:
+                    path = bpy.path.abspath(tex_src.image.filepath)
+                    if path and os.path.isfile(path):
+                        # print(f"{_tag}: SEPCOLOR({src.name}) ch={ch} → TEX_IMAGE({tex_src.name}) → DIRECT", flush=True)
+                        return ('DIRECT', path, ch)
+        # print(f"{_tag}: SEPCOLOR({src.name}) → BAKE (Alpha输出或链路不满足)", flush=True)
+        return ('BAKE', None)
+
+    # Normal maps: catch-all aggressive penetration for chains that don't go
+    # through a NORMAL_MAP node (e.g. Combine Color with white B slot,
+    # or any other single-source chain the user built for viewport display).
+    if pbr_type == 'normal':
+        path = _find_single_tex_image_upstream(src)
+        if path:
+            # print(f"{_tag}: normal 穿透 ({src.type}({src.name})) → DIRECT", flush=True)
+            return ('DIRECT', path, 'R')
 
     # print(f"{_tag}: '{input_name}' ← 未识别节点类型 '{src.type}'({src.name}) → BAKE", flush=True)
     return ('BAKE', None)
@@ -505,6 +569,11 @@ def _try_downgrade_slot(slot_type, strategies, pbr_channels, channel_maps):
             return None
 
     return tuple(rgba)
+
+
+# Pre-built "all PBR-default" strategy dict, used to test whether a downgraded
+# slot RGBA is indistinguishable from the game's null texture.
+_DEFAULT_STRATEGIES = {pt: ('SOLID', tuple(vals)) for pt, vals in PBR_DEFAULTS.items()}
 
 
 # ── Cycles baking ──────────────────────────────────────────────────────────────
@@ -1495,6 +1564,21 @@ class MdfGenProcessBase(bpy.types.Operator):
                 # Only attempt downgrade for cacheable slots (no BAKE involved)
                 rgba = _try_downgrade_slot(slot_type, strategies, pbr_channels, cls._channel_maps)
                 if rgba is not None:
+                    # If every channel is at its PBR default value the slot carries
+                    # no meaningful data — redirect to the null texture directly
+                    # instead of generating a solid PNG/DDS/TEX.
+                    null = cls._null_tex_by_type.get(slot_type)
+                    if null:
+                        default_rgba = _try_downgrade_slot(
+                            slot_type, _DEFAULT_STRATEGIES, {}, cls._channel_maps)
+                        if default_rgba is not None and all(
+                                abs(a - b) < 1e-4 for a, b in zip(rgba, default_rgba)):
+                            slot_mdf_paths[slot_type] = null
+                            if cache_key is not None:
+                                comp_cache[cache_key] = (None, None, null)
+                            print(f"[{cls._log_tag}]   {slot_type} -> NULL (all-default)")
+                            continue
+
                     hint = f"{tex_name}_{slot_type.lower()}_dg"
                     composed = _generate_solid_texture_path(rgba, temp_dir, hint, size=256)
                     if composed:
