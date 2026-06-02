@@ -4,6 +4,7 @@
   "base_path": "STM/_Chainsaw/Character/ch/cha0",
   "fbxskel": "_Chainsaw/Character/ch/cha0/cha000.skeleton.5",
   "native_skeleton": "leon.skeleton.5",
+  "body_groups_for_fbxskel": ["身体(00)"],
   "groups": [
     {
       "name": "身体(00)",

@@ -465,7 +465,36 @@ _PREPROCESS_ARM_SLOTS = (
     "forearm_L",  "forearm_R",
     "hand_L",     "hand_R",
 )
-_PREPROCESS_Y_PRESET = "怪猎荒野.json"
+def _detect_mhws_y_preset(ref_arm_obj=None):
+    """Detect the MHWS bone (Y) preset filename.
+
+    Primary:  scan presets/bone/ for the first JSON whose preset_info.game_code
+              equals 'MHWS' (filename-agnostic, survives renames/translations).
+    Fallback: coverage-based auto-detection against *ref_arm_obj* — the MHWS
+              reference armature imported in Step 3 — requires ≥ 95 % coverage.
+    Returns the filename string (e.g. "怪猎荒野.json"), or None on failure.
+    """
+    import json as _json
+    from ...core.bone_mapper import auto_detect_preset
+
+    root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    bone_dir = os.path.join(root_dir, "assets", "presets", "bone")
+    if os.path.isdir(bone_dir):
+        for fname in sorted(os.listdir(bone_dir)):
+            if not fname.endswith('.json'):
+                continue
+            try:
+                with open(os.path.join(bone_dir, fname), encoding='utf-8') as fh:
+                    data = _json.load(fh)
+                if data.get('preset_info', {}).get('game_code') == 'MHWS':
+                    return fname
+            except Exception:
+                continue
+
+    # Fallback: coverage detection against the imported MHWS reference armature
+    if ref_arm_obj is not None:
+        return auto_detect_preset(ref_arm_obj, is_import_x=False)
+    return None
 
 
 def _detect_source_preset(source_arm_obj):
@@ -586,7 +615,6 @@ class MHWS_OT_PreprocessModel(bpy.types.Operator):
 
         settings.import_preset_enum = detected
         settings.pose_import_preset_enum = detected
-        settings.target_preset_enum = _PREPROCESS_Y_PRESET
 
         # Step 2: MMD only — 方向计算
         if detected == "MMD.json":
@@ -601,6 +629,13 @@ class MHWS_OT_PreprocessModel(bpy.types.Operator):
         mbt_panel.mhwilds_merge_facial_bones = True
         bpy.ops.mbt.import_mhwilds_fmesh()
         ref_arm_obj = _find_latest_mhwilds_armature()
+
+        # Detect Y (bone) preset: game_code first, then coverage fallback
+        y_preset = _detect_mhws_y_preset(ref_arm_obj)
+        if y_preset is None:
+            self.report({'WARNING'}, _("未能自动检测到荒野骨骼预设，请在面板中手动选择目标预设后重试"))
+            return {'CANCELLED'}
+        settings.target_preset_enum = y_preset
 
         scale = _calc_arm_scale(source_arm_obj, ref_arm_obj, detected)
         bpy.ops.object.mode_set(mode='OBJECT')

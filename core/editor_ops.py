@@ -126,6 +126,11 @@ class MODDER_OT_MirrorMapping(bpy.types.Operator):
         def get_mirrored_name(name):
             if not name: return None
             new_name = name
+            # Handle L_/l_ prefix style (RE Engine: L_BoneName, HD2: l_bonename)
+            if new_name.startswith("L_"):
+                return "R_" + new_name[2:]
+            if new_name.startswith("l_"):
+                return "r_" + new_name[2:]
             basic_replacements = [
                 ("_L_", "_R_"), ("_L.", "_R."), ("_L", "_R"),
                 (".L", ".R"), (" L ", " R "),
