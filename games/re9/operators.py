@@ -220,21 +220,12 @@ class RE9_OT_AutoCreateChains(bpy.types.Operator):
             selected_collection=self.chain_collection,
             sync_orientation=self.sync_orientation,
             collider_filter_path="",
+            apply_angle_ramp=self.apply_angle_ramp,
         )
         status = auto_create_re_chains(context, armature, config)
         if status == {'CANCELLED'}:
             self.report({'ERROR'}, _("创建 RE Chain 失败"))
             return {'CANCELLED'}
-        if self.apply_angle_ramp:
-            try:
-                context.view_layer.objects.active = armature
-                armature.select_set(True)
-                if context.mode != 'POSE':
-                    bpy.ops.object.mode_set(mode='POSE')
-                bpy.ops.re_chain.apply_angle_limit_ramp(
-                    maxAngleLimit=1.047198, maxIteration=4)
-            except Exception as e:
-                self.report({'WARNING'}, _("角度坡度应用失败，请在 RE Chain Editor 中手动设置") + f": {e}")
         self.report({'INFO'}, _("RE Chain 创建完成"))
         return {'FINISHED'}
 

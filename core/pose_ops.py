@@ -383,7 +383,7 @@ def _apply_transform(operator, context, inverse=False):
     mapper = BoneMapManager()
     bone_mapping = {}  # {target_bone_name: transform_bone_name}
     
-    _pose_preset, _ = resolve_preset(settings.pose_import_preset_enum, arm_obj, True)
+    _pose_preset, _resolve_err = resolve_preset(settings.pose_import_preset_enum, arm_obj, True)
     if _pose_preset and mapper.load_preset(_pose_preset, is_import_x=True):
         # 通过预设的标准键做桥接
         # 先建立: transform_bone_name -> std_key 的映射
