@@ -7,15 +7,19 @@ from . import weight_utils, bone_utils
 def _build_fuzzy_preset_bones(mapper, arm_obj):
     """用模糊匹配在骨架上构建预设骨骼集合，与 get_matches_for_standard 逻辑一致。
     返回的集合元素是骨架上的实际骨骼名，而非 JSON 中的字面量。
-    顶级 exclude 字段中的骨骼也会被并入集合（仅用于排除物理骨识别，不参与对齐/随动）。"""
+    顶级 exclude 字段中的骨骼也会被并入集合（仅用于排除物理骨识别，不参与对齐/随动）。
+    若预设游戏名在骨架中找不到（骨架已标准化），则回退到直接匹配标准键名本身。"""
     preset_bones = set()
+    existing = {b.name for b in arm_obj.data.bones}
     for std_key in mapper.mapping_data.keys():
         main_actual, aux_actuals = mapper.get_matches_for_standard(arm_obj, std_key)
         if main_actual:
             preset_bones.add(main_actual)
+        elif std_key in existing:
+            # 回退：预设游戏名未命中，但骨架中有与标准键同名的骨骼（已标准化的情形）
+            preset_bones.add(std_key)
         preset_bones.update(aux_actuals)
     # exclude 骨骼：直接按名称并入（无需模糊匹配，使用者自行确保名称准确）
-    existing = {b.name for b in arm_obj.data.bones}
     preset_bones.update(mapper.exclude_bones & existing)
     return preset_bones
 
@@ -902,15 +906,19 @@ class MODDER_OT_SetBoneVisibility(bpy.types.Operator):
 
         preset_bones = set()
         if self.mode != 'ALL':
+            existing = {b.name for b in arm_obj.data.bones}
             x_preset, err = resolve_preset(settings.import_preset_enum, arm_obj, True)
-            if x_preset is None:
-                self.report({'WARNING'}, err)
+            if x_preset is not None:
+                mapper = BoneMapManager()
+                if not mapper.load_preset(x_preset, is_import_x=True):
+                    self.report({'ERROR'}, _("预设加载失败"))
+                    return {'CANCELLED'}
+                preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
+            # 兜底：无论预设是否加载成功，标准名骨骼一定是基础骨（处理已标准化骨架 + AUTO 失败）
+            preset_bones.update(n for n in STANDARD_BONE_NAMES if n in existing)
+            if not preset_bones:
+                self.report({'WARNING'}, err or _("无法识别基础骨骼，请手动选择预设"))
                 return {'CANCELLED'}
-            mapper = BoneMapManager()
-            if not mapper.load_preset(x_preset, is_import_x=True):
-                self.report({'ERROR'}, _("预设加载失败"))
-                return {'CANCELLED'}
-            preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
 
         protected_bones = _load_protected_bones(arm_obj) if self.mode == 'PHYSICS' else set()
         bpy.ops.object.mode_set(mode='POSE')
