@@ -285,46 +285,66 @@ def _apply_collider_filter(col, before_names, path):
 
 
 def _apply_angle_ramp_all(context, armature, col, max_angle, iterations):
-    """对集合中每个 RE_CHAIN_CHAINGROUP 对象依次调用 apply_angle_limit_ramp。
+    """创建完成后，对集合中所有 chain group 应用角度限制坡度。
 
-    RE Chain 的 apply_angle_limit_ramp 算子在 OBJECT 模式下以活动对象为当前
-    ChainGroup 来确定作用范围，因此需要对每个 ChainGroup 对象单独激活一次。
-    armature 同时保持 selected（非 active）以便算子获取骨架数据。
+    re_chain.apply_angle_limit_ramp 算子会遍历 bpy.context.selected_objects 中
+    所有 RE_CHAIN_CHAINGROUP / RE_CHAIN_SUBGROUP 一次性处理，并要求 OBJECT 模式、
+    active_object 为 chain group。它读取的是 bpy.context.selected_objects——在外层
+    算子 execute() 深处直接 bpy.ops 调用时，仅靠 select_set 设置的选择状态不一定被
+    算子上下文采纳，一旦为空算子就静默 CANCELLED。因此这里用 temp_override 显式传入
+    selected_objects + active_object，并同时真实 select_set 作双保险，单次调用处理全部组。
     """
-    group_objs = [o for o in col.all_objects if o.get("TYPE") == "RE_CHAIN_CHAINGROUP"]
+    group_objs = [o for o in col.all_objects
+                  if o.get("TYPE") in ("RE_CHAIN_CHAINGROUP", "RE_CHAIN_SUBGROUP")]
     if not group_objs:
-        print("[ChainGen] apply_angle_ramp: no RE_CHAIN_CHAINGROUP objects found in collection",
+        print("[ChainGen] apply_angle_ramp: no chain group objects found in collection",
+              file=sys.stderr)
+        return
+
+    if not hasattr(bpy.ops.re_chain, 'apply_angle_limit_ramp'):
+        print("[ChainGen] apply_angle_ramp: operator re_chain.apply_angle_limit_ramp unavailable",
               file=sys.stderr)
         return
 
     prev_active = context.view_layer.objects.active
-    prev_mode   = context.mode
-
-    if prev_mode != 'OBJECT':
+    if context.mode != 'OBJECT':
         bpy.ops.object.mode_set(mode='OBJECT')
 
-    success = 0
-    for grp_obj in group_objs:
+    # 真实选择（双保险：覆盖那些读取实际选择标志而非上下文的算子内部逻辑）
+    try:
+        bpy.ops.object.select_all(action='DESELECT')
+    except Exception:
+        pass
+    for o in group_objs:
         try:
-            bpy.ops.object.select_all(action='DESELECT')
-            armature.select_set(True)       # 保持骨架在选择集中（非活动）
-            grp_obj.select_set(True)
-            context.view_layer.objects.active = grp_obj
-            bpy.ops.re_chain.apply_angle_limit_ramp(
-                maxAngleLimit=max_angle, maxIteration=iterations)
-            success += 1
-        except Exception as e:
-            print(f"[ChainGen] apply_angle_ramp failed on '{grp_obj.name}': {e}",
-                  file=sys.stderr)
+            o.select_set(True)
+        except Exception:
+            pass
+    context.view_layer.objects.active = group_objs[0]
 
-    print(f"[ChainGen] apply_angle_ramp: {success}/{len(group_objs)} groups done",
-          file=sys.stderr)
+    try:
+        with context.temp_override(active_object=group_objs[0],
+                                   object=group_objs[0],
+                                   selected_objects=group_objs,
+                                   selected_editable_objects=group_objs):
+            res = bpy.ops.re_chain.apply_angle_limit_ramp(
+                maxAngleLimit=max_angle, maxIteration=iterations)
+        print(f"[ChainGen] apply_angle_ramp: {res} on {len(group_objs)} group(s)",
+              file=sys.stderr)
+    except Exception as e:
+        print(f"[ChainGen] apply_angle_ramp failed: {e}", file=sys.stderr)
 
     # 恢复活动对象（mode 由调用方保持 OBJECT 即可）
-    bpy.ops.object.select_all(action='DESELECT')
+    try:
+        bpy.ops.object.select_all(action='DESELECT')
+    except Exception:
+        pass
     context.view_layer.objects.active = prev_active
     if prev_active:
-        prev_active.select_set(True)
+        try:
+            prev_active.select_set(True)
+        except Exception:
+            pass
 
 
 def _make_one_chain(armature, toolpanel, path):
