@@ -20,6 +20,10 @@ class REChainConfig:
     straighten_orientation: bool = False
     # 统一覆写 colliderFilterInfoPath：None=不动；""=留空(RE4/RE9，否则崩溃)；路径=MHWs 标准
     collider_filter_path: str | None = None
+    # 创建完所有链之后自动对每个 ChainSettings 组应用角度限制坡度
+    apply_angle_ramp: bool = False
+    apply_angle_ramp_max: float = 1.047198   # ≈ 60°
+    apply_angle_ramp_iter: int = 4
 
 
 def _patch_chain_cleanup(disable=True):
@@ -280,6 +284,49 @@ def _apply_collider_filter(col, before_names, path):
     return n
 
 
+def _apply_angle_ramp_all(context, armature, col, max_angle, iterations):
+    """对集合中每个 RE_CHAIN_CHAINGROUP 对象依次调用 apply_angle_limit_ramp。
+
+    RE Chain 的 apply_angle_limit_ramp 算子在 OBJECT 模式下以活动对象为当前
+    ChainGroup 来确定作用范围，因此需要对每个 ChainGroup 对象单独激活一次。
+    armature 同时保持 selected（非 active）以便算子获取骨架数据。
+    """
+    group_objs = [o for o in col.all_objects if o.get("TYPE") == "RE_CHAIN_CHAINGROUP"]
+    if not group_objs:
+        print("[ChainGen] apply_angle_ramp: no RE_CHAIN_CHAINGROUP objects found in collection",
+              file=sys.stderr)
+        return
+
+    prev_active = context.view_layer.objects.active
+    prev_mode   = context.mode
+
+    if prev_mode != 'OBJECT':
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+    success = 0
+    for grp_obj in group_objs:
+        try:
+            bpy.ops.object.select_all(action='DESELECT')
+            armature.select_set(True)       # 保持骨架在选择集中（非活动）
+            grp_obj.select_set(True)
+            context.view_layer.objects.active = grp_obj
+            bpy.ops.re_chain.apply_angle_limit_ramp(
+                maxAngleLimit=max_angle, maxIteration=iterations)
+            success += 1
+        except Exception as e:
+            print(f"[ChainGen] apply_angle_ramp failed on '{grp_obj.name}': {e}",
+                  file=sys.stderr)
+
+    print(f"[ChainGen] apply_angle_ramp: {success}/{len(group_objs)} groups done",
+          file=sys.stderr)
+
+    # 恢复活动对象（mode 由调用方保持 OBJECT 即可）
+    bpy.ops.object.select_all(action='DESELECT')
+    context.view_layer.objects.active = prev_active
+    if prev_active:
+        prev_active.select_set(True)
+
+
 def _make_one_chain(armature, toolpanel, path):
     """选中 path 上的骨骼并调用 chain_from_bone，返回是否成功。"""
     bpy.ops.pose.select_all(action='DESELECT')
@@ -447,5 +494,11 @@ def auto_create_re_chains(context, armature, config: REChainConfig):
     t_loop = time.perf_counter() - t_loop
     print(f"[ChainGen] --- loop: {t_loop:.4f}s  created={created}  skipped={skipped} ---",
           file=sys.stderr)
+
+    # 所有链及 collider filter 设定完成后，对每个 ChainSettings 组应用角度限制坡度
+    if config.apply_angle_ramp and created > 0:
+        toolpanel.chainCollection = col  # alignChains() 可能改变了集合指针，重新断言
+        _apply_angle_ramp_all(context, armature, col,
+                              config.apply_angle_ramp_max, config.apply_angle_ramp_iter)
 
     return {'FINISHED'}
