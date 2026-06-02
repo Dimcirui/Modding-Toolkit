@@ -320,7 +320,10 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
         if not mesh_collections:
             return
 
-        bpy.ops.object.mode_set(mode='OBJECT')
+        # mode_set 需要活动物体；无活动物体时必定已在 OBJECT 模式，直接跳过即可，
+        # 否则 poll 失败抛 "上下文缺失活动物体"（手动导出有选中物体故不复现）。
+        if context.view_layer.objects.active is not None and context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.select_all(action='DESELECT')
         for col in mesh_collections:
             for obj in [o for o in col.objects if o.type == 'MESH']:
