@@ -84,8 +84,64 @@ SHADER_MMD_DEV    = 'mmd_shader_dev'
 SHADER_UNKNOWN    = 'unknown'
 
 
+def _find_connected_shader(material):
+    """Return (node, SHADER_*) for the shader wired to Material Output's Surface.
+
+    Traverses through Mix Shader / Add Shader combinators via BFS so indirect
+    connections are also resolved.  When no Material Output exists (e.g. a
+    material with no output node at all) returns (None, SHADER_UNKNOWN).
+    """
+    if not material or not material.use_nodes:
+        return None, SHADER_UNKNOWN
+
+    nodes = material.node_tree.nodes
+    output_node = next(
+        (n for n in nodes if n.type == 'OUTPUT_MATERIAL' and n.is_active_output),
+        None,
+    ) or next((n for n in nodes if n.type == 'OUTPUT_MATERIAL'), None)
+
+    if output_node is None:
+        return None, SHADER_UNKNOWN
+
+    surface = output_node.inputs.get('Surface')
+    if not surface or not surface.is_linked:
+        return None, SHADER_UNKNOWN
+
+    visited = set()
+    queue = [surface.links[0].from_node]
+    while queue:
+        node = queue.pop(0)
+        if id(node) in visited:
+            continue
+        visited.add(id(node))
+        if node.type == 'BSDF_PRINCIPLED':
+            return node, SHADER_PRINCIPLED
+        if node.type == 'EMISSION':
+            return node, SHADER_EMISSION
+        if node.type == 'GROUP' and node.node_tree:
+            if any(h in node.node_tree.name.lower() for h in _MMD_DEV_NAME_HINTS):
+                return node, SHADER_MMD_DEV
+        # Recurse through shader combinators
+        if node.type in ('MIX_SHADER', 'ADD_SHADER'):
+            for inp in node.inputs:
+                if inp.type == 'SHADER' and inp.is_linked:
+                    queue.append(inp.links[0].from_node)
+
+    return None, SHADER_UNKNOWN
+
+
 def detect_shader_type(material):
-    """Return SHADER_* constant for the dominant shader in the material."""
+    """Return SHADER_* constant for the dominant shader in the material.
+
+    Prefers the shader actually connected to the Material Output so that idle
+    nodes (e.g. a disconnected Principled BSDF sitting next to a connected
+    MMDShaderDev group) are not mistaken for the active shader.
+    Falls back to a tree-scan when no Material Output is present.
+    """
+    _, shader_type = _find_connected_shader(material)
+    if shader_type != SHADER_UNKNOWN:
+        return shader_type
+    # Fallback: no Material Output node — check for any shader in tree
     if _find_principled_bsdf(material) is not None:
         return SHADER_PRINCIPLED
     if _find_emission_shader(material) is not None:
@@ -244,12 +300,30 @@ def analyze_material_strategies(material):
       MMDShaderDev    — color from Base Tex, alpha from Base Alpha; others SOLID defaults
     Both non-Principled types are treated as toon-style emissive shaders.
     """
-    principled = _find_principled_bsdf(material)
+    # Resolve the shader that is actually wired to the Material Output so that
+    # idle nodes (e.g. a disconnected Principled next to a connected MMDShaderDev)
+    # do not shadow the real shader.
+    shader_node, shader_type = _find_connected_shader(material)
+
+    # No Material Output present — fall back to any shader found in the tree
+    if shader_type == SHADER_UNKNOWN:
+        shader_node = _find_principled_bsdf(material)
+        if shader_node is not None:
+            shader_type = SHADER_PRINCIPLED
+        else:
+            shader_node = _find_emission_shader(material)
+            if shader_node is not None:
+                shader_type = SHADER_EMISSION
+            else:
+                shader_node = _find_mmd_shader_dev(material)
+                if shader_node is not None:
+                    shader_type = SHADER_MMD_DEV
+
     result = {}
 
-    if principled is not None:
+    if shader_type == SHADER_PRINCIPLED and shader_node is not None:
         for pbr_type, input_name in PRINCIPLED_INPUT_MAP.items():
-            result[pbr_type] = _analyze_principled_input(principled, input_name, material.name, pbr_type)
+            result[pbr_type] = _analyze_principled_input(shader_node, input_name, material.name, pbr_type)
         result['ao'] = ('SOLID', 1.0)
         return result
 
@@ -265,17 +339,14 @@ def analyze_material_strategies(material):
     for pbr_type in PRINCIPLED_INPUT_MAP:
         result[pbr_type] = ('SOLID', _NON_PBR_DEFAULTS.get(pbr_type, 0.0))
 
-    emission = _find_emission_shader(material)
-    if emission is not None:
-        color_strat        = _analyze_principled_input(emission, 'Color', material.name, 'emissive')
+    if shader_type == SHADER_EMISSION and shader_node is not None:
+        color_strat        = _analyze_principled_input(shader_node, 'Color', material.name, 'emissive')
         result['color']    = color_strat
         result['emissive'] = color_strat
-    else:
-        mmd = _find_mmd_shader_dev(material)
-        if mmd is not None:
-            result['color']    = _analyze_principled_input(mmd, _MMD_COLOR_SOCKET, material.name, 'color')
-            result['alpha']    = _analyze_principled_input(mmd, _MMD_ALPHA_SOCKET, material.name, 'alpha')
-            result['emissive'] = result['color']
+    elif shader_type == SHADER_MMD_DEV and shader_node is not None:
+        result['color']    = _analyze_principled_input(shader_node, _MMD_COLOR_SOCKET, material.name, 'color')
+        result['alpha']    = _analyze_principled_input(shader_node, _MMD_ALPHA_SOCKET, material.name, 'alpha')
+        result['emissive'] = result['color']
 
     result['ao'] = ('SOLID', 1.0)
     return result
@@ -286,7 +357,14 @@ def strategy_label(strategy):
 
 
 def _emissive_strength_is_zero(material):
-    """True if Principled BSDF's Emission Strength is unlinked and equals 0."""
+    """True if the active shader has no meaningful emission strength.
+
+    For Principled BSDF: checks the Emission Strength socket.
+    For Emission / MMDShaderDev shaders: always False (they are inherently emissive).
+    """
+    shader_type = detect_shader_type(material)
+    if shader_type in (SHADER_EMISSION, SHADER_MMD_DEV):
+        return False
     principled = _find_principled_bsdf(material)
     if principled is None:
         return True
@@ -589,13 +667,14 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context):
       emission/MMDShaderDev color/emissive — bakes as EMIT directly (no Principled needed)
     """
     tree = material.node_tree
-    principled = _find_principled_bsdf(material)
+    shader_type = detect_shader_type(material)
+    principled = _find_principled_bsdf(material) if shader_type == SHADER_PRINCIPLED else None
 
     if principled is None:
-        # Emission shader: can bake color/emissive channels as EMIT pass
+        # Emission / MMDShaderDev: can bake color/emissive channels as EMIT pass
         if pbr_type not in ('color', 'emissive'):
             return None
-        if _find_emission_shader(material) is None and _find_mmd_shader_dev(material) is None:
+        if shader_type not in (SHADER_EMISSION, SHADER_MMD_DEV):
             return None
 
     img_name = f"__gen_bake_{pbr_type}"
