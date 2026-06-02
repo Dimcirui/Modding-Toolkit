@@ -3,6 +3,8 @@ import json
 import os
 import shutil
 
+from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
+
 
 def _get_export_schemes_dir():
     addon_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -100,7 +102,7 @@ MESH_SETTINGS = {
 
 def _do_export_mesh(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    bpy.ops.re_mesh.exportfile(filepath=filepath, targetCollection=collection_name, **MESH_SETTINGS)
+    call_re_mesh_op('exportfile', filepath=filepath, targetCollection=collection_name, **MESH_SETTINGS)
 
 def _do_export_mdf2(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
@@ -163,7 +165,7 @@ class RE4_OT_BatchExport(bpy.types.Operator):
         scene = context.scene
         settings = scene.mhw_suite_settings
 
-        if not hasattr(bpy.ops, 're_mesh') or not hasattr(bpy.ops.re_mesh, 'exportfile'):
+        if not re_mesh_op_available('exportfile'):
             self.report({'ERROR'}, "RE Mesh Editor not installed")
             return {'CANCELLED'}
 

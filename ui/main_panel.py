@@ -3,6 +3,7 @@ import os
 import re
 from ..core.i18n import _
 from ..core import bone_utils, weight_utils, ui_config
+from ..core.re_mesh_compat import re_mesh_op_available
 from ..core.mdf_generator_base import MHW_OT_SetChannelSize
 from ..core.bone_utils import get_import_presets_callback, get_target_presets_callback
 from ..core.pose_ops import get_pose_presets_callback
@@ -729,7 +730,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
                 col.label(text="需要 Modder Batch Tool!", icon='ERROR')
 
             col.separator()
-            has_re_mesh = hasattr(bpy.ops, 're_mesh') and hasattr(bpy.ops.re_mesh, 'exportfile')
+            has_re_mesh = re_mesh_op_available('exportfile')
             sub = col.row(align=True)
             sub.enabled = has_re_mesh
             sub.operator("mhws.mdf_tex_processor_dialog", text=_("MDF2 处理器"), icon='TEXTURE')
@@ -769,7 +770,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
 
             col = box.column(align=True)
             col.separator()
-            has_re_mesh = hasattr(bpy.ops, 're_mesh') and hasattr(bpy.ops.re_mesh, 'exportfile')
+            has_re_mesh = re_mesh_op_available('exportfile')
             sub = col.row(align=True)
             sub.enabled = has_re_mesh
             sub.operator("re4.mdf_tex_processor_dialog", text=_("MDF2 处理器"), icon='TEXTURE')
@@ -798,7 +799,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             col.operator("re9.sync_child_orientation", text=_("同步子级朝向及扭转"), icon='CON_ROTLIKE')
 
             col.separator()
-            has_re_mesh = hasattr(bpy.ops, 're_mesh') and hasattr(bpy.ops.re_mesh, 'exportfile')
+            has_re_mesh = re_mesh_op_available('exportfile')
             sub = col.row(align=True)
             sub.enabled = has_re_mesh
             sub.operator("re9.mdf_tex_processor_dialog", text=_("MDF2 处理器"), icon='TEXTURE')
