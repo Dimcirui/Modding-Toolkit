@@ -7,6 +7,7 @@
         "_Mercenaries/Character/ch/cha8/cha800.fbxskel.5"
     ],
     "native_skeleton": "ada.fbxskel.5",
+    "body_groups_for_fbxskel": ["本体 身体(00)", "DLC 身体(00)"],
     "groups": [
         {
             "name": "本体 身体(00)",

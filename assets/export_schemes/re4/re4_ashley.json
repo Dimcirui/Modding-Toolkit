@@ -7,6 +7,7 @@
     "_Chainsaw/Character/ch/cha1/cha1z0.fbxskel.5"
   ],
   "native_skeleton": "ashley.fbxskel.5",
+  "body_groups_for_fbxskel": ["身体(00)"],
   "groups": [
     {
       "name": "身体(00)",

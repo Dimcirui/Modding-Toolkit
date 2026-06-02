@@ -202,6 +202,11 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         description="导出 fbxskel 前自动生成身体+手指 End 骨骼（原生骨架由预设 native_skeleton 字段指定）",
         default=False,
     )
+    re4_use_body_arm: bpy.props.BoolProperty(
+        name="使用身体骨架",
+        description="自动从身体 Mesh 集合获取骨架并对齐原生骨架，省去手动绑定 fbxskel 骨架",
+        default=False,
+    )
 
 
 class MHW_OT_GeneralTools(bpy.types.Operator):

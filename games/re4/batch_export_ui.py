@@ -348,10 +348,11 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
             op.character_id = character_id; op.entry_id = "_fbxskel"; op.suffix = "fbxskel"
             fbx_label = f"FBXSKEL (×{len(fbxskel_paths)})" if len(fbxskel_paths) > 1 else "FBXSKEL"
             row.label(text=fbx_label, icon='ARMATURE_DATA')
-            cur_arm = _get_binding(scene, character_id, "_fbxskel", "fbxskel")
-            op_p = row.operator("re4.pick_armature", text=cur_arm if cur_arm else "Select armature...",
-                                icon='DOWNARROW_HLT')
-            op_p.character_id = character_id
+            if not settings.re4_use_body_arm:
+                cur_arm = _get_binding(scene, character_id, "_fbxskel", "fbxskel")
+                op_p = row.operator("re4.pick_armature", text=cur_arm if cur_arm else "Select armature...",
+                                    icon='DOWNARROW_HLT')
+                op_p.character_id = character_id
             # 假头法
             row2 = box.row(align=True)
             row2.prop(settings, "re4_use_fakebone", icon='BONE_DATA')
@@ -361,6 +362,15 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
                     row2.label(text=native_skel, icon='FILE')
                 else:
                     row2.label(text="预设未配置 native_skeleton", icon='ERROR')
+            # 使用身体骨架
+            row3 = box.row(align=True)
+            row3.prop(settings, "re4_use_body_arm", icon='ARMATURE_DATA')
+            if settings.re4_use_body_arm:
+                body_groups = scheme.get("body_groups_for_fbxskel", [])
+                if body_groups:
+                    row3.label(text=" > ".join(body_groups), icon='INFO')
+                else:
+                    row3.label(text="预设未配置 body_groups_for_fbxskel", icon='ERROR')
 
         layout.separator()
         layout.prop(settings, "re4_use_blank_export", icon='FILE_BLANK')
