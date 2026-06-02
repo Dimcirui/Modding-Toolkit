@@ -437,20 +437,57 @@ _preset_items_cache = {}
 
 
 def _get_re_mesh_editor_addon_dir():
-    """Locate RE Mesh Editor add-on directory. Result is cached for the session."""
+    """Locate RE Mesh Editor add-on directory. Result is cached for the session.
+
+    Detection is driven by a signature file unique to RE Mesh Editor
+    (``modules/mdf/re_mdf_presets.py``) rather than the bl_info name or the
+    package name.  The root folder name and bl_info name vary between releases
+    and community forks (e.g. "RE-Mesh-Editor-main", "REME"), but the internal
+    module layout — and therefore this file — is stable across them.  An enabled
+    add-on is preferred over a merely-installed one.  The bl_info/package name
+    heuristic is kept only as a last-resort fallback.
+    """
     global _addon_dir_cache, _addon_dir_cached
     if _addon_dir_cached:
         return _addon_dir_cache
     import addon_utils
+
+    sig_rel = os.path.join('modules', 'mdf', 're_mdf_presets.py')
+    sig_match = None        # enabled add-on with signature file (best)
+    sig_fallback = None     # installed-but-disabled add-on with signature file
+    name_fallback = None    # name/package heuristic only (weakest)
+
     for mod in addon_utils.modules():
-        pkg  = getattr(mod, '__package__', '') or getattr(mod, '__name__', '')
-        name = mod.bl_info.get('name', '')
-        if 'RE Mesh' in name or 'REMeshEditor' in pkg or 're_mesh_editor' in pkg.lower():
-            _addon_dir_cache  = os.path.dirname(mod.__file__)
-            _addon_dir_cached = True
-            return _addon_dir_cache
+        mod_file = getattr(mod, '__file__', None)
+        if not mod_file:
+            continue
+        addon_dir = os.path.dirname(mod_file)
+
+        if os.path.isfile(os.path.join(addon_dir, sig_rel)):
+            try:
+                is_enabled = addon_utils.check(mod.__name__)[1]
+            except Exception:
+                is_enabled = False
+            if is_enabled:
+                sig_match = addon_dir
+                break
+            if sig_fallback is None:
+                sig_fallback = addon_dir
+            continue
+
+        if name_fallback is None:
+            pkg  = getattr(mod, '__package__', '') or getattr(mod, '__name__', '')
+            try:
+                name = mod.bl_info.get('name', '')
+            except Exception:
+                name = ''
+            if ('RE Mesh' in name or 'REMeshEditor' in pkg
+                    or 're_mesh_editor' in pkg.lower() or 'reme' in pkg.lower()):
+                name_fallback = addon_dir
+
+    _addon_dir_cache  = sig_match or sig_fallback or name_fallback
     _addon_dir_cached = True   # cache the miss too
-    return None
+    return _addon_dir_cache
 
 
 def get_preset_dir_for_game(game_name):
