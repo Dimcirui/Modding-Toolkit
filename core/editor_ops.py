@@ -27,7 +27,7 @@ class MODDER_OT_InitEditor(bpy.types.Operator):
 
 # === 拾取骨骼 ===
 class MODDER_OT_PickBone(bpy.types.Operator):
-    """将当前选中的骨骼填入指定槽位"""
+    """将当前选中的骨骼（或激活顶点组对应的骨骼）填入指定槽位"""
     bl_idname = "modder.pick_bone"
     bl_label = "拾取"
 
@@ -37,25 +37,43 @@ class MODDER_OT_PickBone(bpy.types.Operator):
     def execute(self, context):
         settings = context.scene.mhw_preset_editor
         slot = settings.slots[self.slot_index]
-        arm_obj = context.active_object
-
-        if not arm_obj or arm_obj.type != 'ARMATURE':
-            self.report({'ERROR'}, _("请先选中一个骨架"))
-            return {'CANCELLED'}
 
         selected_names = []
         active_name = ""
 
-        if context.mode == 'POSE':
-            selected_names = [b.name for b in context.selected_pose_bones]
+        obj = context.active_object
+        mode = context.mode
+
+        # --- 路径 1：骨架 Pose / Edit 模式（选中骨骼）---
+        if obj and obj.type == 'ARMATURE' and mode == 'POSE':
+            selected_names = [b.name for b in (context.selected_pose_bones or [])]
             if context.active_pose_bone:
                 active_name = context.active_pose_bone.name
-        elif context.mode == 'EDIT':
-            selected_names = [b.name for b in context.selected_editable_bones]
+
+        elif obj and obj.type == 'ARMATURE' and mode in ('EDIT', 'EDIT_ARMATURE'):
+            selected_names = [b.name for b in (context.selected_editable_bones or [])]
             if context.active_bone:
                 active_name = context.active_bone.name
+
+        # --- 路径 2：Mesh 权重绘制 / 网格编辑模式（激活顶点组 → 对应骨骼）---
+        elif obj and obj.type == 'MESH' and mode in ('PAINT_WEIGHT', 'EDIT_MESH', 'EDIT'):
+            vg = obj.vertex_groups.active
+            if vg is None:
+                self.report({'WARNING'}, _("没有激活的顶点组"))
+                return {'CANCELLED'}
+            arm_obj = obj.find_armature()
+            if arm_obj is None:
+                self.report({'WARNING'}, _("找不到绑定骨架，请确认网格有 Armature 修改器"))
+                return {'CANCELLED'}
+            if vg.name not in arm_obj.data.bones:
+                self.report({'WARNING'},
+                            _("顶点组 '%s' 在骨架中没有同名骨骼，跳过") % vg.name)
+                return {'CANCELLED'}
+            active_name = vg.name
+            selected_names = [vg.name]
+
         else:
-            self.report({'WARNING'}, _("请进入 Pose 或 Edit 模式选择骨骼"))
+            self.report({'WARNING'}, _("请进入 Pose / Edit 模式选择骨骼，或在权重绘制模式下激活顶点组"))
             return {'CANCELLED'}
 
         if not selected_names and not active_name:
