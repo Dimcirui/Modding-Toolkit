@@ -165,7 +165,22 @@ def shape_key_to_weights(obj, active_kb, basis_kb, ignore_threshold=0.001,
         for i, v in enumerate(vertices):
             key = (round(v.co.x, 5), round(v.co.y, 5), round(v.co.z, 5))
             coincident.setdefault(key, []).append(i)
-        seam_groups = [g for g in coincident.values() if len(g) > 1]
+        # Split coincident groups by normal similarity: true UV-seam duplicates share
+        # nearly identical normals, while touching-but-separate geometry (e.g. upper/lower
+        # lip when mouth is closed) faces opposite directions and must not be averaged.
+        for group in coincident.values():
+            if len(group) < 2:
+                continue
+            sub: list[list[int]] = []
+            for v_idx in group:
+                n = vertices[v_idx].normal
+                for sg in sub:
+                    if vertices[sg[0]].normal.dot(n) > 0.9:
+                        sg.append(v_idx)
+                        break
+                else:
+                    sub.append([v_idx])
+            seam_groups.extend(sg for sg in sub if len(sg) > 1)
 
     for i in range(v_count):
         disp = active_kb.data[i].co - basis_kb.data[i].co
