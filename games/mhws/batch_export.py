@@ -5,6 +5,7 @@ import os
 import shutil
 
 from ..re9.batch_export import _do_export_mesh, _do_export_mdf2, _do_export_chain2, _do_export_clsp
+from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
 
 # MHWs 游戏级文件后缀常量
 MHWS_EXTS = {
@@ -301,7 +302,7 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
 
     def _cleanup_mesh_collections(self, context, scene, settings):
         """Run RE Mesh cleanup operators on all bound mesh collections before export."""
-        if not (hasattr(bpy.ops, 're_mesh') and hasattr(bpy.ops.re_mesh, 'delete_loose')):
+        if not re_mesh_op_available('delete_loose'):
             self.report({'WARNING'}, "RE Mesh Editor 未安装，跳过导出前清理")
             return
 
@@ -320,20 +321,23 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
         if not mesh_collections:
             return
 
-        bpy.ops.object.mode_set(mode='OBJECT')
+        # mode_set 需要活动物体；无活动物体时必定已在 OBJECT 模式，直接跳过即可，
+        # 否则 poll 失败抛 "上下文缺失活动物体"（手动导出有选中物体故不复现）。
+        if context.view_layer.objects.active is not None and context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.select_all(action='DESELECT')
         for col in mesh_collections:
             for obj in [o for o in col.objects if o.type == 'MESH']:
                 context.view_layer.objects.active = obj
                 obj.select_set(True)
-                try: bpy.ops.re_mesh.delete_loose()
+                try: call_re_mesh_op('delete_loose')
                 except Exception: pass
-                try: bpy.ops.re_mesh.solve_repeated_uvs()
+                try: call_re_mesh_op('solve_repeated_uvs')
                 except Exception: pass
-                try: bpy.ops.re_mesh.remove_zero_weight_vertex_groups()
+                try: call_re_mesh_op('remove_zero_weight_vertex_groups')
                 except Exception: pass
                 try:
-                    bpy.ops.re_mesh.limit_total_normalize(maxWeights='12')
+                    call_re_mesh_op('limit_total_normalize', maxWeights='12')
                 except Exception:
                     try:
                         bpy.ops.object.vertex_group_limit_total(limit=12)
@@ -346,7 +350,7 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
         scene = context.scene
         settings = scene.mhw_suite_settings
 
-        if not hasattr(bpy.ops, 're_mesh') or not hasattr(bpy.ops.re_mesh, 'exportfile'):
+        if not re_mesh_op_available('exportfile'):
             self.report({'ERROR'}, "RE Mesh Editor not installed")
             return {'CANCELLED'}
 

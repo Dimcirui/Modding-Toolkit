@@ -5,6 +5,8 @@ import tempfile
 import shutil
 import time
 
+from .re_mesh_compat import re_mesh_op_available
+
 # ── PBR Constants ──────────────────────────────────────────────────────────────
 
 PBR_TYPES = ['color', 'alpha', 'emissive', 'normal', 'roughness', 'metallic', 'ao']
@@ -259,7 +261,7 @@ def _import_tex_utils():
                 return mod.ImageListToDDS, mod.DDSToTex
             except AttributeError:
                 pass
-    if not hasattr(bpy.ops, 're_mesh') or not hasattr(bpy.ops.re_mesh, 'exportfile'):
+    if not re_mesh_op_available('exportfile'):
         return None, None
     import addon_utils
     for mod in addon_utils.modules():

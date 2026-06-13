@@ -463,6 +463,10 @@ def auto_create_re_chains(context, armature, config: REChainConfig):
     for head_pb in chain_heads:
         paths = _decompose_chains(head_pb, armature, physics_bones)
         for path in paths:
+            if len(path) < 2:
+                print(f"[ChainGen] skip single-bone path: {path[0] if path else '?'} "
+                      f"(RE Chain requires at least head + tail)", file=sys.stderr)
+                continue
             all_entries.append((head_pb, paths, path))
     t_decompose = time.perf_counter() - t_decompose
     print(f"[ChainGen] _decompose_chains: {t_decompose:.4f}s  "
