@@ -440,9 +440,12 @@ def auto_create_re_chains(context, armature, config: REChainConfig):
     if toolpanel is None:
         return {'CANCELLED'}
     toolpanel.chainCollection = col
+    saved_file_type = toolpanel.chainFileType
+    toolpanel.chainFileType = config.chain_file_type
 
     chain_heads = [pb for pb in armature.pose.bones if pb.get("chain_role") in ("head", "branch_head")]
     if not chain_heads:
+        toolpanel.chainFileType = saved_file_type
         return {'CANCELLED'}
 
     physics_bones = _build_physics_bones_set(context, armature)
@@ -481,6 +484,7 @@ def auto_create_re_chains(context, armature, config: REChainConfig):
     # SHARED：循环外创建唯一 Chain Settings；GUESS 在 _create_chains_guess 内分组创建
     if config.settings_mode == 'SHARED':
         if bpy.ops.re_chain.create_chain_settings() != {'FINISHED'}:
+            toolpanel.chainFileType = saved_file_type
             return {'CANCELLED'}
 
     saved_experimental = getattr(toolpanel, 'experimentalPoseModeOptions', False)
@@ -508,6 +512,7 @@ def auto_create_re_chains(context, armature, config: REChainConfig):
             _align()
             _color(armature)
         toolpanel.experimentalPoseModeOptions = saved_experimental
+        toolpanel.chainFileType = saved_file_type
 
     # 统一覆写 collider filter：MHWs 用标准路径；RE4/RE9 留空（否则游戏崩溃）
     if config.collider_filter_path is not None:
