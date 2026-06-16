@@ -141,10 +141,12 @@ def _auto_create_chain_collection(config: REChainConfig):
     if toolpanel is None:
         return None, None, "RE Chain Editor toolpanel not found"
 
-    old_file_type = toolpanel.chainFileType
     old_active = bpy.context.view_layer.objects.active
 
     try:
+        # Must be set before create_chain_header so the header object gets the right data type.
+        # createChainCollection (inside create_chain_header) will also set chainFileType based
+        # on the collection name, so we don't restore it here — the caller owns that.
         toolpanel.chainFileType = config.chain_file_type
 
         result = bpy.ops.re_chain.create_chain_header(
@@ -175,7 +177,6 @@ def _auto_create_chain_collection(config: REChainConfig):
         return col, header, None
 
     finally:
-        toolpanel.chainFileType = old_file_type
         if old_active and old_active.name in bpy.data.objects:
             bpy.context.view_layer.objects.active = old_active
             old_active.select_set(True)
