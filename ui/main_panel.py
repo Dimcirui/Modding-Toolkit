@@ -123,6 +123,11 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         description="选择要导出的整套幻化",
         items=get_mhwi_sp_armor_callback,
     )
+    mhwi_cleanup_before_export: bpy.props.BoolProperty(
+        name="导出前清理网格",
+        description="导出前对所有已绑定的 mod3 集合执行: 删除松散几何、修复重复UV、清除零权重顶点组、限制并归一化权重（需要 RE Mesh Editor，未安装则静默跳过）",
+        default=True,
+    )
 
     # MHWs batch export
     mhws_armor_scheme: bpy.props.EnumProperty(

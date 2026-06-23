@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Modding Toolkit",
     "author": "Dimcirui",
-    "version": (2, 6, 6),
+    "version": (2, 6, 7),
     "blender": (3, 0, 0),
     "location": "View3D > Sidebar > MOD Toolkit",
     "description": "Modding Toolkit for Capcom's games",

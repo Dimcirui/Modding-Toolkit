@@ -1103,12 +1103,25 @@ def _strip_blender_suffix(name):
 
 def _import_read_preset_json():
     """Locate and return readPresetJSON from RE Mesh Editor."""
-    import sys, importlib
+    import sys, importlib, inspect
+
+    def _wrap_if_needed(fn):
+        # Old RE Mesh Editor versions only accept (filepath,); wrap for compatibility.
+        try:
+            nparams = len(inspect.signature(fn).parameters)
+        except (ValueError, TypeError):
+            nparams = 2
+        if nparams >= 2:
+            return fn
+        def _compat(filepath, targetCollection=None):
+            return fn(filepath)
+        return _compat
+
     for key, mod in sys.modules.items():
         if key.endswith('.modules.mdf.re_mdf_presets'):
             fn = getattr(mod, 'readPresetJSON', None)
             if fn:
-                return fn
+                return _wrap_if_needed(fn)
     import addon_utils
     for mod in addon_utils.modules():
         pkg = getattr(mod, '__package__', None) or getattr(mod, '__name__', '')
@@ -1118,7 +1131,7 @@ def _import_read_preset_json():
             m = importlib.import_module(f"{pkg}.modules.mdf.re_mdf_presets")
             fn = getattr(m, 'readPresetJSON', None)
             if fn:
-                return fn
+                return _wrap_if_needed(fn)
         except Exception:
             continue
     return None

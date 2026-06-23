@@ -3,6 +3,8 @@ import json
 import os
 import shutil
 
+from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
+
 
 # 部位定义：(代码, 显示名, mask索引)  mask顺序：手腿铠头腰
 MHWI_PARTS = [
@@ -467,6 +469,58 @@ class MHWI_OT_BatchExport(bpy.types.Operator):
     bl_label  = "MHWI Batch Export"
     bl_options = {'REGISTER'}
 
+    def _cleanup_mesh_collections(self, context, scene, settings):
+        """Run RE Mesh cleanup on all bound mod3 collections; silently skip if RE Mesh Editor unavailable."""
+        if not re_mesh_op_available('delete_loose'):
+            return
+
+        rank = settings.mhwi_rank_tab
+        if rank == 'HR':
+            model_id = settings.mhwi_selected_hr_armor
+        elif rank == 'MR':
+            model_id = settings.mhwi_selected_mr_armor
+        else:
+            model_id = settings.mhwi_selected_sp_armor
+
+        if not model_id or model_id == 'NONE':
+            return
+
+        seen = set()
+        mesh_collections = []
+        for part_code, _, _ in MHWI_PARTS:
+            col_name = get_binding(scene, model_id, part_code, "mod3")
+            if col_name and col_name not in seen:
+                col = bpy.data.collections.get(col_name)
+                if col:
+                    mesh_collections.append(col)
+                    seen.add(col_name)
+
+        if not mesh_collections:
+            return
+
+        if context.view_layer.objects.active is not None and context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.select_all(action='DESELECT')
+        for col in mesh_collections:
+            for obj in [o for o in col.objects if o.type == 'MESH']:
+                context.view_layer.objects.active = obj
+                obj.select_set(True)
+                try: call_re_mesh_op('delete_loose')
+                except Exception: pass
+                try: call_re_mesh_op('solve_repeated_uvs')
+                except Exception: pass
+                try: call_re_mesh_op('remove_zero_weight_vertex_groups')
+                except Exception: pass
+                try:
+                    call_re_mesh_op('limit_total_normalize', maxWeights='12')
+                except Exception:
+                    try:
+                        bpy.ops.object.vertex_group_limit_total(limit=12)
+                        bpy.ops.object.vertex_group_normalize_all(lock_active=False)
+                    except Exception:
+                        pass
+                obj.select_set(False)
+
     def execute(self, context):
         scene    = context.scene
         settings = scene.mhw_suite_settings
@@ -497,6 +551,9 @@ class MHWI_OT_BatchExport(bpy.types.Operator):
         if not armor_entry:
             self.report({'ERROR'}, f"装备包中未找到: {model_id}")
             return {'CANCELLED'}
+
+        if settings.mhwi_cleanup_before_export:
+            self._cleanup_mesh_collections(context, scene, settings)
 
         total_export = total_fail = total_skip = 0
         if rank == 'SP':

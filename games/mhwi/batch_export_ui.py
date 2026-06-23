@@ -196,6 +196,10 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
         else:
             self._draw_parts(layout, scene, model_id, active_parts)
 
+        layout.separator()
+        row = layout.row(align=False)
+        row.prop(settings, "mhwi_cleanup_before_export", icon='BRUSH_DATA')
+
     def _draw_parts(self, layout, scene, model_id, active_parts, sp_helm=False):
         # 表头行
         header = layout.row(align=False)
