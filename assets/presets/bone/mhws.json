@@ -5,7 +5,8 @@
     "type": "Y_PRESET",
     "version": "1.0",
     "description": "Target preset for MHWS. Standardized bones will be renamed to Wilds bone names.",
-    "category": "怪猎系"
+    "category": "怪猎系",
+    "default_align_mode": "FULL"
   },
   "mappings": {
     "pelvis": {

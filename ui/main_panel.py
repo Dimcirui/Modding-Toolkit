@@ -47,8 +47,22 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         name="目标游戏 (Y)",
         description="选择要导出的目标游戏",
         items=get_target_presets_callback,
+        update=lambda self, context: setattr(
+            self, "align_mode_override", bone_utils.get_default_align_mode(self.target_preset_enum)
+        ),
     )
-    
+
+    align_mode_override: bpy.props.EnumProperty(
+        name="对齐模式",
+        description="骨骼对齐 (Snap) 的对齐方式，切换目标游戏 (Y) 时会自动同步为该预设的默认值",
+        items=[
+            ('POS_ONLY', "仅位置", "只对齐骨骼头部位置，保留目标骨架原有的方向和长度"),
+            ('POS_ROLL', "位置+扭转", "对齐头部位置并复制来源骨骼的扭转(Roll)，长度方向不变"),
+            ('FULL', "完全对齐", "头部、尾部、扭转全部对齐到来源骨骼 (骨骼长度和方向都会跟随来源)"),
+        ],
+        default='POS_ONLY',
+    )
+
     show_mapping_details: bpy.props.BoolProperty(name="显示映射细节", default=False)
 
     bone_view_mode: bpy.props.EnumProperty(
@@ -546,6 +560,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             # 核心功能（带预设依赖提示）
             row = col.row(align=True)
             row.scale_y = 1.2
+            row.prop(settings, "align_mode_override", text="")
             row.operator("modder.universal_snap", text=_("对齐骨骼 [X+Y, 双骨架]"), icon='SNAP_ON')
             
             row = col.row(align=True)

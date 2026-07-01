@@ -235,3 +235,22 @@ def get_target_presets_callback(self, context):
     _target_preset_cache.append(("AUTO", "自动识别", "根据骨架骨骼覆盖率自动选择最匹配的预设"))
     _target_preset_cache.extend(get_preset_items("presets/bone"))
     return _target_preset_cache
+
+_VALID_ALIGN_MODES = ('FULL', 'POS_ONLY', 'POS_ROLL')
+
+def get_default_align_mode(filename):
+    """读取目标(Y)预设 preset_info.default_align_mode，未指定或预设不存在时回退 POS_ONLY。"""
+    if not filename or filename in ("NONE", "AUTO"):
+        return 'POS_ONLY'
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    root_dir = os.path.dirname(current_dir)
+    filepath = os.path.join(root_dir, "assets", "presets", "bone", os.path.basename(filename))
+    if not os.path.exists(filepath):
+        return 'POS_ONLY'
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        mode = data.get('preset_info', {}).get('default_align_mode', 'POS_ONLY')
+        return mode if mode in _VALID_ALIGN_MODES else 'POS_ONLY'
+    except Exception:
+        return 'POS_ONLY'

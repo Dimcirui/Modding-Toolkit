@@ -299,12 +299,12 @@ class MODDER_OT_UniversalSnap(bpy.types.Operator):
     def execute(self, context):
         settings = context.scene.mhw_suite_settings
         selected_objs = [o for o in context.selected_objects if o.type == 'ARMATURE']
-        
+
         # 1. 检查选中项
         if len(selected_objs) != 2 or not context.active_object:
             self.report({'ERROR'}, _("操作对象错误: 请先选中源骨架(X)，再按住Ctrl选中目标骨架(Y)"))
             return {'CANCELLED'}
-            
+
         target_arm = context.active_object  # 活动的是目标 (Y, 如 MHWI)
         source_arm = [o for o in selected_objs if o != target_arm][0]  # 另一个是源 (X, 如 VRC)
 
@@ -318,6 +318,14 @@ class MODDER_OT_UniversalSnap(bpy.types.Operator):
             self.report({'WARNING'}, _("目标预设 (Y): ") + err)
             return {'CANCELLED'}
 
+        # 目标预设 (Y) 为 AUTO 时，下拉框里的值不会随解析结果同步（AUTO 不会变成具体文件名），
+        # 所以这里直接按解析出的 y_preset 取其默认对齐模式，忽略下拉框当前值；
+        # 只有用户明确选中了具体预设时，才尊重下拉框（可能是同步来的，也可能是手动改的）
+        if settings.target_preset_enum == 'AUTO':
+            align_mode = bone_utils.get_default_align_mode(y_preset)
+        else:
+            align_mode = getattr(settings, 'align_mode_override', 'POS_ONLY')
+
         # 2. 加载映射表
         mapper_x = BoneMapManager()
         if not mapper_x.load_preset(x_preset, is_import_x=True):
@@ -330,69 +338,95 @@ class MODDER_OT_UniversalSnap(bpy.types.Operator):
             return {'CANCELLED'}
 
         # 3. 预计算源骨骼的世界坐标 (在 Object 模式下进行)
-        # 结构: { StandardName: Source_Head_World_Pos }
-        source_positions = {} 
+        # 结构: { StandardName: (Head_World, Tail_World_or_None, Roll_or_None) }
+        # FULL / POS_ROLL 模式还需要 tail 和 roll，这两项只存在于 EditBone 上，需临时切到源骨架的编辑模式读取
+        need_full_data = align_mode in ('FULL', 'POS_ROLL')
+        source_positions = {}
         source_mw = source_arm.matrix_world
-        
-        for std_key in STANDARD_BONE_NAMES:
-            src_name, _aux = mapper_x.get_matches_for_standard(source_arm, std_key)
-            if src_name:
-                try:
-                    b = source_arm.data.bones[src_name]
-                    # 我们只需要头部坐标即可，尾部会通过刚性移动自动计算
-                    source_positions[std_key] = source_mw @ b.head_local
-                except KeyError:
-                    pass
+
+        if need_full_data:
+            context.view_layer.objects.active = source_arm
+            bpy.ops.object.mode_set(mode='EDIT')
+            for std_key in STANDARD_BONE_NAMES:
+                src_name, _aux = mapper_x.get_matches_for_standard(source_arm, std_key)
+                if src_name and src_name in source_arm.data.edit_bones:
+                    eb = source_arm.data.edit_bones[src_name]
+                    source_positions[std_key] = (source_mw @ eb.head, source_mw @ eb.tail, eb.roll)
+            bpy.ops.object.mode_set(mode='OBJECT')
+        else:
+            for std_key in STANDARD_BONE_NAMES:
+                src_name, _aux = mapper_x.get_matches_for_standard(source_arm, std_key)
+                if src_name:
+                    try:
+                        b = source_arm.data.bones[src_name]
+                        # 仅位置模式只需要头部坐标，尾部会通过刚性移动自动计算
+                        source_positions[std_key] = (source_mw @ b.head_local, None, None)
+                    except KeyError:
+                        pass
 
         # 4. 进入编辑模式执行对齐
+        context.view_layer.objects.active = target_arm
         bpy.ops.object.mode_set(mode='EDIT')
         edit_bones = target_arm.data.edit_bones
         target_mw_inv = target_arm.matrix_world.inverted()
-        
+
         aligned_count = 0
-        
+
         # 按 STANDARD_BONE_NAMES 的顺序遍历 (通常是 Hips -> Spine -> Head)
         # 这样父级移动后，子级会先跟随移动，然后子级再根据自己的目标进行微调
         for std_key in STANDARD_BONE_NAMES:
             if std_key not in source_positions:
                 continue
-                
+
             # 获取目标骨名 (从 Y 表)
             tgt_entry = mapper_y.mapping_data.get(std_key)
             if not tgt_entry or not tgt_entry.get('main'):
                 continue
-            
+
             # 检查 skip_snap 标记 (某些游戏的特定骨骼不允许移动)
             if tgt_entry.get('skip_snap', False):
                 continue
-                
+
             tgt_name = tgt_entry['main'][0]
             if tgt_name not in edit_bones:
                 continue
-                
+
             t_bone = edit_bones[tgt_name]
-            
+
             # --- 核心对齐逻辑 ---
-            
+
             # A. 计算目标点 (转为 Target 本地坐标)
-            src_head_world = source_positions[std_key]
+            src_head_world, src_tail_world, src_roll = source_positions[std_key]
             target_head_local = target_mw_inv @ src_head_world
-            
+
             # B. 计算移动向量
             old_head = t_bone.head.copy()
             offset = target_head_local - old_head
-            
-            # C. 移动当前骨骼 (保持长度和方向)
-            t_bone.head = target_head_local
-            t_bone.tail += offset # 尾部跟随移动，保持骨骼向量不变
-            
-            # D. 刚性传递：递归移动所有子级
+
+            # C. 移动当前骨骼
+            if align_mode == 'FULL' and src_tail_world is not None:
+                # 头、尾、扭转全部照抄来源，骨骼长度和方向都会跟随来源
+                t_bone.head = target_head_local
+                t_bone.tail = target_mw_inv @ src_tail_world
+                t_bone.roll = src_roll
+            elif align_mode == 'POS_ROLL' and src_roll is not None:
+                # 头部对齐 + 复制扭转，长度方向保持目标骨架原有的
+                orig_vec = t_bone.tail - t_bone.head
+                t_bone.head = target_head_local
+                t_bone.tail = target_head_local + orig_vec
+                t_bone.roll = src_roll
+            else:
+                # 仅位置：保持长度和方向，尾部跟随头部整体平移
+                t_bone.head = target_head_local
+                t_bone.tail += offset
+
+            # D. 刚性传递：按头部位移量平移所有未单独映射的子级
             bone_utils.propagate_movement(t_bone, offset)
-            
+
             aligned_count += 1
-        
+
         bpy.ops.object.mode_set(mode='OBJECT')
-        self.report({'INFO'}, _("刚性对齐完成: %d 根骨骼") % aligned_count)
+        self.report({'INFO'}, _("骨架对齐完成: %d 根骨骼") % aligned_count)
         return {'FINISHED'}
     
 class MODDER_OT_SmartGraftBones(bpy.types.Operator):
