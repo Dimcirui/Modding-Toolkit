@@ -660,13 +660,215 @@ class MHWS_OT_PreprocessModel(bpy.types.Operator):
 
 
 # ============================================================
-# 身体权重转移至辅助权重 (HJ bones)
+# 优化荒野骨架 (对齐后的经验修正，只操作目标骨架自身)
 # ============================================================
 
-# Pairs of (base_bone, hj_bone). For each pair where the HJ bone exists:
-#   1. Translate the HJ bone so its head aligns with the base bone's head.
-#   2. Rename the base bone's vertex group to the HJ bone's name.
-_HJ_BONE_PAIRS = [
+# 需要移动到 Head/Neck_0 中点的骨骼
+_OPT_NECK_BONES = ['Neck_1', 'HeadRX_HJ_01', 'Neck_1_HJ_00']
+# Spine_1 头部在荒野骨架 rest 空间的原始局部坐标。
+# MBT 里 2 段来源下 Spine_1 不被吸附、停在原位；但我们的 universal_snap 会随动把它平移走，
+# 所以这里用死数据还原（编辑骨骼坐标为骨架局部空间，不受物体缩放/位移影响，对标准荒野骨架恒定）。
+_OPT_SPINE1_REST_HEAD = (0.0, 0.000001, 1.141)
+# Spine_1 相关骨骼（还原到原位）
+_OPT_SPINE1_BONES = ['Spine_1', 'Spine_1_HJ_00']
+# 需要移动到 Spine_1/Neck_0 中点的骨骼（照搬 MBT：Spine_2 落在 Spine_1 与 Neck_0 之间）
+_OPT_SPINE2_BONES = ['Spine_2', 'Spine_2_HJ_00']
+# 需要与 Hip 同点的骨骼
+_OPT_SPINE0_BONES = ['Spine_0', 'Spine_0_HJ_00']
+# 脚背贴地 Z 坐标 (与 MBT 一致)
+_OPT_INSTEP_Z = 0.019999
+
+
+def _opt_move_head_keep_direction(edit_bones, bone_name, new_head):
+    """移动骨骼头部到 new_head，保持原有长度和方向。骨骼不存在时忽略。"""
+    bone = edit_bones.get(bone_name)
+    if bone is None:
+        return
+    original_length = (bone.tail - bone.head).length
+    if original_length == 0:
+        bone.head = new_head
+        return
+    direction = (bone.tail - bone.head).normalized()
+    bone.head = new_head
+    bone.tail = bone.head + direction * original_length
+
+
+class MHWS_OT_OptimizeSkeleton(bpy.types.Operator):
+    """调整部分骨骼的位置，以缓解曲腿等问题，非二次元模型不建议使用"""
+    bl_idname = "mhws.optimize_skeleton"
+    bl_label = "优化荒野骨架"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return obj is not None and obj.type == 'ARMATURE'
+
+    def execute(self, context):
+        arm_obj = context.active_object
+
+        if context.mode != 'EDIT_ARMATURE':
+            bpy.ops.object.mode_set(mode='EDIT')
+        edit_bones = arm_obj.data.edit_bones
+
+        # Neck_1 应位于 Head 与 Neck_0 的中点
+        head_bone = edit_bones.get('Head')
+        neck0_bone = edit_bones.get('Neck_0')
+        if head_bone and neck0_bone:
+            center = (head_bone.head + neck0_bone.head) / 2
+            for name in _OPT_NECK_BONES:
+                _opt_move_head_keep_direction(edit_bones, name, center)
+
+        # 先把 Spine_1 还原到荒野原始位置（universal_snap 的随动会把它平移走），
+        # 再让 Spine_2 落在 Spine_1 与 Neck_0 中点——复刻 MBT
+        for name in _OPT_SPINE1_BONES:
+            _opt_move_head_keep_direction(edit_bones, name, _OPT_SPINE1_REST_HEAD)
+        spine1_bone = edit_bones.get('Spine_1')
+        if spine1_bone and neck0_bone:
+            center = (spine1_bone.head + neck0_bone.head) / 2
+            for name in _OPT_SPINE2_BONES:
+                _opt_move_head_keep_direction(edit_bones, name, center)
+
+        # Instep 应位于 Foot 与 Toe 的中点，且 Z 坐标与 Toe 平齐（脚底贴地）
+        for side in ('L', 'R'):
+            foot_bone = edit_bones.get(f'{side}_Foot')
+            toe_bone = edit_bones.get(f'{side}_Toe')
+            if foot_bone and toe_bone:
+                _opt_move_head_keep_direction(
+                    edit_bones, f'{side}_Toe',
+                    (toe_bone.head.x, toe_bone.head.y, _OPT_INSTEP_Z)
+                )
+                center = (
+                    (foot_bone.head.x + toe_bone.head.x) / 2,
+                    (foot_bone.head.y + toe_bone.head.y) / 2,
+                    toe_bone.head.z,
+                )
+                _opt_move_head_keep_direction(edit_bones, f'{side}_Instep', center)
+
+        # Knee 对齐到膝关节，Shin 在其正下方 0.01：
+        # universal_snap 已把 Shin 头对齐到膝关节位置，先把 Knee 平移到该点（保持自身方向长度），
+        # 再把 Shin 整体下移 0.01，使 Knee 恰在 Shin 正上方（仅 Z 相差），与 MBT 一致
+        for side in ('L', 'R'):
+            shin = edit_bones.get(f'{side}_Shin')
+            if shin is None:
+                continue
+            knee = edit_bones.get(f'{side}_Knee')
+            if knee is not None:
+                offset = shin.head - knee.head
+                knee.tail = knee.tail + offset
+                knee.head = shin.head.copy()
+            shin.head.z -= 0.01
+            shin.tail.z -= 0.01
+
+        # Spine_0 应与 Hip 同点，避免骑乘时臀部顶起
+        hip_bone = edit_bones.get('Hip')
+        if hip_bone:
+            hip_head = hip_bone.head.copy()
+            for name in _OPT_SPINE0_BONES:
+                _opt_move_head_keep_direction(edit_bones, name, hip_head)
+
+        bpy.ops.object.mode_set(mode='OBJECT')
+        self.report({'INFO'}, _("荒野骨架优化完成"))
+        return {'FINISHED'}
+
+
+# ============================================================
+# 优化辅助骨骼及权重 (HJ bones)
+# ============================================================
+
+# 将 HJ 辅助骨整体平移，使其头部与目标基础骨头部重合（保持 HJ 骨自身方向和长度）。
+# 基础骨已由 universal_snap 对齐到位。映射参考 MBT MHWilds 的 HJ 吸附表，
+# 转换为游戏骨架内部的基础骨目标。
+
+# 中心骨（无侧别）：HJ 骨 -> 基础骨
+_HJ_TO_BASE_CENTER = {
+    "Neck_1_HJ_00":  "Neck_1",
+    "Neck_0_HJ_00":  "Neck_0",
+    "Spine_2_HJ_00": "Spine_2",
+    "Spine_1_HJ_00": "Spine_1",
+    "Spine_0_HJ_00": "Spine_0",
+    "Hip_HJ_00":     "Hip",
+}
+
+# 侧别模板 {s} = L / R：HJ 骨 -> 基础骨（吸附到该基础骨头部）
+_HJ_TO_BASE_SIDED = {
+    # 肩部
+    "{s}_Shoulder_HJ_00": "{s}_Shoulder",
+    "{s}_Traps_HJ_00":    "{s}_Shoulder",
+    "{s}_Traps_HJ_01":    "{s}_Shoulder",
+    "{s}_Pec_HJ_00":      "{s}_Shoulder",
+    "{s}_Pec_HJ_01":      "{s}_Shoulder",
+    "{s}_Lats_HJ_00":     "{s}_Shoulder",
+    "{s}_Lats_HJ_01":     "{s}_Shoulder",
+    # 上臂
+    "{s}_UpperArm_HJ_00":       "{s}_UpperArm",
+    "{s}_UpperArmDouble_HJ_00": "{s}_UpperArm",
+    "{s}_UpperArmTwist_HJ_00":  "{s}_UpperArm",
+    "{s}_Deltoid_HJ_00":        "{s}_UpperArm",
+    "{s}_Deltoid_HJ_01":        "{s}_UpperArm",
+    "{s}_Deltoid_HJ_02":        "{s}_UpperArm",
+    # 肘 / 前臂
+    "{s}_Elbow_HJ_00":         "{s}_Forearm",
+    "{s}_Forearm_HJ_00":       "{s}_Forearm",
+    "{s}_ForearmDouble_HJ_00": "{s}_Forearm",
+    "{s}_ForearmRY_HJ_00":     "{s}_Forearm",
+    "{s}_ForearmRY_HJ_01":     "{s}_Forearm",
+    "{s}_ForearmTwist_HJ_00":  "{s}_Forearm",
+    # 手
+    "{s}_Hand_HJ_00":   "{s}_Hand",
+    "{s}_Hand_HJ_01":   "{s}_Hand",
+    "{s}_HandRZ_HJ_00": "{s}_Hand",
+    "{s}_Palm":         "{s}_Hand",
+    # 大腿
+    "{s}_Hip_HJ_00":       "{s}_Thigh",
+    "{s}_Hip_HJ_01":       "{s}_Thigh",
+    "{s}_ThighRZ_HJ_00":   "{s}_Thigh",
+    "{s}_ThighRZ_HJ_01":   "{s}_Thigh",
+    "{s}_ThighRX_HJ_00":   "{s}_Thigh",
+    "{s}_ThighRX_HJ_01":   "{s}_Thigh",
+    "{s}_ThighTwist_HJ_00": "{s}_Thigh",
+    "{s}_ThighTwist_HJ_01": "{s}_Thigh",
+    # 膝 / 小腿（膝关节位置由 {s}_Shin 头部代表）
+    "{s}_ThighTwist_HJ_02": "{s}_Shin",
+    "{s}_Calf_HJ_00":       "{s}_Shin",
+    "{s}_Shin_HJ_00":       "{s}_Shin",
+    "{s}_Shin_HJ_01":       "{s}_Shin",
+    "{s}_Knee_HJ_00":       "{s}_Shin",
+    "{s}_KneeDouble_HJ_00": "{s}_Shin",
+    "{s}_KneeRX_HJ_00":     "{s}_Shin",
+    # 脚
+    "{s}_Foot_HJ_00": "{s}_Foot",
+}
+
+# 扭转类 HJ 骨 -> 两关节头部中点。MBT 里这些吸附到 MMD 的中段扭转骨
+# (zArmTwist / zHandTwist)，游戏骨架内无对应参考点，用肢段中点近似。
+_HJ_TO_MIDPOINT_SIDED = {
+    "{s}_UpperArmTwist_HJ_01": ("{s}_UpperArm", "{s}_Forearm"),
+    "{s}_UpperArmTwist_HJ_02": ("{s}_UpperArm", "{s}_Forearm"),
+    "{s}_Triceps_HJ_00":       ("{s}_UpperArm", "{s}_Forearm"),
+    "{s}_Biceps_HJ_00":        ("{s}_UpperArm", "{s}_Forearm"),
+    "{s}_Biceps_HJ_01":        ("{s}_UpperArm", "{s}_Forearm"),
+    "{s}_ForearmTwist_HJ_01":  ("{s}_Forearm",  "{s}_Hand"),
+    "{s}_ForearmTwist_HJ_02":  ("{s}_Forearm",  "{s}_Hand"),
+}
+
+
+def _build_hj_move_tables():
+    """展开侧别模板，返回 (direct, midpoint)。
+    direct: {hj_name: base_name}；midpoint: {hj_name: (jointA, jointB)}"""
+    direct = dict(_HJ_TO_BASE_CENTER)
+    midpoint = {}
+    for s in ("L", "R"):
+        for hj_t, base_t in _HJ_TO_BASE_SIDED.items():
+            direct[hj_t.format(s=s)] = base_t.format(s=s)
+        for hj_t, (a_t, b_t) in _HJ_TO_MIDPOINT_SIDED.items():
+            midpoint[hj_t.format(s=s)] = (a_t.format(s=s), b_t.format(s=s))
+    return direct, midpoint
+
+_HJ_MOVE_DIRECT, _HJ_MOVE_MIDPOINT = _build_hj_move_tables()
+
+# 权重转移仍只针对原本这几对 (base_bone, hj_bone)：把基础骨顶点组改名/合并到 HJ 骨
+_HJ_WEIGHT_PAIRS = [
     ("Neck_1",     "Neck_1_HJ_00"),
     ("Neck_0",     "Neck_0_HJ_00"),
     ("L_Shoulder", "L_Shoulder_HJ_00"),
@@ -680,10 +882,10 @@ _HJ_BONE_PAIRS = [
 ]
 
 
-class MHWS_OT_BodyWeightToHJ(bpy.types.Operator):
-    """将身体权重转移至对应的辅助权重，通常来讲，这样会让这些部位的运动拥有更自然的表现"""
-    bl_idname = "mhws.body_weight_to_hj"
-    bl_label = "身体权重转移至辅助权重"
+class MHWS_OT_OptimizeAuxBones(bpy.types.Operator):
+    """将全部 HJ 辅助骨吸附到对应基础骨位置（扭转类取肢段中点），并把身体权重转移至主要辅助骨。通常能让这些部位的运动更自然"""
+    bl_idname = "mhws.optimize_aux_bones"
+    bl_label = "优化辅助骨骼及权重"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -694,31 +896,46 @@ class MHWS_OT_BodyWeightToHJ(bpy.types.Operator):
     def execute(self, context):
         arm_obj = context.active_object
 
-        # --- Step 1: align HJ bone positions in edit mode ---
-        if context.mode != 'EDIT':
+        # --- Step 1: 编辑模式下移动 HJ 骨 ---
+        if context.mode != 'EDIT_ARMATURE':
             bpy.ops.object.mode_set(mode='EDIT')
 
         edit_bones = arm_obj.data.edit_bones
-        active_pairs = []  # pairs where HJ bone actually exists
+        moved = 0
 
-        for base_name, hj_name in _HJ_BONE_PAIRS:
-            base_bone = edit_bones.get(base_name)
+        def rigid_move(bone, target_head):
+            offset = target_head - bone.head
+            bone.tail = bone.tail + offset
+            bone.head = target_head.copy()
+
+        # 直接吸附到基础骨头部
+        for hj_name, base_name in _HJ_MOVE_DIRECT.items():
             hj_bone = edit_bones.get(hj_name)
-            if base_bone is None or hj_bone is None:
+            base_bone = edit_bones.get(base_name)
+            if hj_bone is None or base_bone is None:
                 continue
-            # Translate HJ bone so head coincides with base bone head.
-            offset = base_bone.head - hj_bone.head
-            hj_bone.tail = hj_bone.tail + offset
-            hj_bone.head = base_bone.head.copy()
-            active_pairs.append((base_name, hj_name))
+            rigid_move(hj_bone, base_bone.head)
+            moved += 1
+
+        # 扭转类吸附到两关节头部中点
+        for hj_name, (a_name, b_name) in _HJ_MOVE_MIDPOINT.items():
+            hj_bone = edit_bones.get(hj_name)
+            a_bone = edit_bones.get(a_name)
+            b_bone = edit_bones.get(b_name)
+            if hj_bone is None or a_bone is None or b_bone is None:
+                continue
+            rigid_move(hj_bone, (a_bone.head + b_bone.head) / 2)
+            moved += 1
 
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        if not active_pairs:
-            self.report({'INFO'}, "未找到任何 HJ 辅助骨骼，无操作")
-            return {'FINISHED'}
+        # --- Step 2: 权重转移（仅原本几对） ---
+        bones = arm_obj.data.bones
+        active_pairs = [
+            (base, hj) for base, hj in _HJ_WEIGHT_PAIRS
+            if bones.get(base) is not None and bones.get(hj) is not None
+        ]
 
-        # --- Step 2: rename vertex groups on all bound meshes ---
         mesh_objects = [
             o for o in bpy.data.objects
             if o.type == 'MESH'
@@ -733,7 +950,7 @@ class MHWS_OT_BodyWeightToHJ(bpy.types.Operator):
 
         self.report(
             {'INFO'},
-            f"完成：{len(active_pairs)} 根 HJ 骨骼已对齐，{renamed} 个顶点组已重命名"
+            f"完成：{moved} 根辅助骨已吸附，{renamed} 个顶点组已转移权重"
         )
         return {'FINISHED'}
 
@@ -743,7 +960,8 @@ classes = [
     MHWS_OT_FaceWeightSimplify,
     MHWS_OT_AutoCreateChains,
     MHWS_OT_PreprocessModel,
-    MHWS_OT_BodyWeightToHJ,
+    MHWS_OT_OptimizeSkeleton,
+    MHWS_OT_OptimizeAuxBones,
 ]
 
 def register():

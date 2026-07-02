@@ -749,6 +749,10 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             if not has_mbt:
                 col.label(text="需要 Modder Batch Tool!", icon='ERROR')
 
+            col.operator("mhws.optimize_skeleton", text=_("优化荒野骨架"), icon='MOD_ARMATURE')
+            col.operator("mhws.optimize_aux_bones", text=_("优化辅助骨骼及权重"), icon='GROUP_VERTEX')
+            col.operator("mhw.mmd_face_weights", text=_("MMD 形态键转表情权重"), icon='SHAPEKEY_DATA').target_game = 'MHWS'
+
             col.separator()
             has_re_mesh = re_mesh_op_available('exportfile')
             sub = col.row(align=True)
@@ -765,10 +769,6 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row.operator("mhws.auto_create_chains", text=_("一键创建 RE Chain"), icon='LINKED')
             if not has_re_chain:
                 col.label(text="需要 RE Chain Editor!", icon='ERROR')
-
-            col.separator()
-            col.operator("mhws.body_weight_to_hj", text=_("身体权重转移至辅助权重"), icon='GROUP_VERTEX')
-            col.operator("mhw.mmd_face_weights", text=_("MMD 形态键转表情权重"), icon='SHAPEKEY_DATA').target_game = 'MHWS'
 
             col.separator()
             row = col.row()
