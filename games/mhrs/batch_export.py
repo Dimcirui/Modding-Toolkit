@@ -36,6 +36,9 @@ HELM_PART = "helm"
 # user: 不可绑定集合，始终在"未选项使用空模型"开启时从内置模板复制并按目标路径改名（含id）
 DEFAULT_FILE_TYPES = ["mesh", "mdf2", "chain", "user"]
 
+# 使用空模型替换时不生成空文件的类型（chain 无空模意义，直接跳过）
+NO_BLANK_FILE_TYPES = {"chain"}
+
 # 规范导出顺序
 _CANONICAL_FILE_TYPE_ORDER = ["mesh", "mdf2", "chain", "user"]
 _CANONICAL_FILE_TYPE_INDEX = {ft: i for i, ft in enumerate(_CANONICAL_FILE_TYPE_ORDER)}
@@ -380,7 +383,7 @@ class MHRS_OT_BatchExport(bpy.types.Operator):
 
                 col = get_binding(scene, armor_id, gender, part_id, filetype)
                 if not col:
-                    if use_blank:
+                    if use_blank and filetype not in NO_BLANK_FILE_TYPES:
                         blank_src = _get_blank_path(filetype)
                         if os.path.isfile(blank_src):
                             os.makedirs(os.path.dirname(filepath), exist_ok=True)
