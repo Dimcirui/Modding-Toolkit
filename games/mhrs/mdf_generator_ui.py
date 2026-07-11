@@ -49,6 +49,10 @@ class MHRS_OT_MdfGeneratorDialog(bpy.types.Operator):
         row.prop(settings, "mesh_collection", text="Mesh Collection")
         row.operator("mhrs.mdf_gen_refresh", text="", icon='FILE_REFRESH')
 
+        # ── Smart selection ───────────────────────────────────────────────────
+        row = layout.row(align=True)
+        row.operator("mhrs.select_same_material", icon='MATERIAL')
+
         row = layout.row(align=True)
         row.operator("mhrs.set_natives_root", text="Mod Root", icon='FILEBROWSER')
         natives_root = scene.get("mhrs_natives_root", "")

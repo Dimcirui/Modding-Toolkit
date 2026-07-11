@@ -693,7 +693,8 @@ _DEFAULT_STRATEGIES = {pt: ('SOLID', tuple(vals)) for pt, vals in PBR_DEFAULTS.i
 
 # ── Cycles baking ──────────────────────────────────────────────────────────────
 
-def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context):
+def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context,
+                      mesh_objects=None):
     """
     Bake one PBR channel from a Blender material via Cycles.
     Returns path to the saved PNG, or None on failure.
@@ -702,6 +703,10 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context):
       metallic    — temporarily routes Metallic link → Roughness, bakes as ROUGHNESS
       alpha       — temporarily routes Alpha link → Emission Color, bakes as EMIT
       emission/MMDShaderDev color/emissive — bakes as EMIT directly (no Principled needed)
+
+    mesh_objects — optional list of mesh objects that share the same material;
+                   all are selected during baking so Cycles covers every UV layout.
+                   Falls back to mesh_obj when omitted / empty.
     """
     tree = material.node_tree
     shader_type = detect_shader_type(material)
@@ -824,13 +829,18 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context):
             elif pbr_type == 'emissive':
                 bake_type = 'EMIT'
 
-        # Activate the target mesh
+        # Activate all meshes that share this material (or just the single one)
         prev_active   = context.view_layer.objects.active
         prev_selected = list(context.selected_objects)
         for o in prev_selected:
             o.select_set(False)
-        mesh_obj.select_set(True)
-        context.view_layer.objects.active = mesh_obj
+        if mesh_objects:
+            for mo in mesh_objects:
+                mo.select_set(True)
+            context.view_layer.objects.active = mesh_objects[0]
+        else:
+            mesh_obj.select_set(True)
+            context.view_layer.objects.active = mesh_obj
 
         # print(f"[MDF Gen]   烘培 {material.name}/{pbr_type}: 开始 (type={bake_type}, size={size}, samples={cycles_scene.samples})", flush=True)
         bpy.ops.object.bake(type=bake_type, **bake_kwargs)
@@ -1048,10 +1058,13 @@ class MHW_OT_SetChannelSize(bpy.types.Operator):
 
 
 def _get_pbr_paths(material, strategies, tmp_dir, bake_size, context, mesh_obj,
-                   channel_sizes=None):
+                   channel_sizes=None, mesh_objects=None):
     """
     Resolve each PBR strategy to a file path.
     Returns dict {pbr_type: path_or_None}.
+
+    mesh_objects — optional list of mesh objects sharing the same material;
+                   forwarded to _bake_pbr_channel so every UV layout is baked.
     """
     paths = {}
     for pbr_type, strat_val in strategies.items():
@@ -1076,7 +1089,8 @@ def _get_pbr_paths(material, strategies, tmp_dir, bake_size, context, mesh_obj,
             if mesh_obj:
                 _t_bake = time.time()
                 paths[pbr_type] = _bake_pbr_channel(
-                    material, pbr_type, mesh_obj, ch_size, tmp_dir, context)
+                    material, pbr_type, mesh_obj, ch_size, tmp_dir, context,
+                    mesh_objects=mesh_objects)
                 print(f"[MDF Gen]   烘培 {pbr_type}: {time.time() - _t_bake:.2f}s", flush=True)
             else:
                 print(f"[MDF Gen] No mesh found for baking {material.name}/{pbr_type}, skipping")
@@ -1308,6 +1322,27 @@ def _call_mhwi_read_preset(filepath, target_col):
 
 
 # ── Mesh helpers ───────────────────────────────────────────────────────────────
+
+def _find_meshes_by_material(collection, material_name):
+    """
+    在指定集合中查找所有使用指定材质的 MESH 物体。
+    返回 list，可能为空。
+
+    借鉴 SmartBatchBake 阶段二的 find_same_material_objects 思路：
+    遍历集合 → 检查每个物体的材质槽 → 收集匹配的网格。
+    """
+    if not collection or not material_name:
+        return []
+    matched = []
+    for obj in collection.all_objects:
+        if obj.type != 'MESH':
+            continue
+        for slot in obj.material_slots:
+            if slot.material and slot.material.name == material_name:
+                matched.append(obj)
+                break
+    return matched
+
 
 def _separate_mesh_by_material(context, mesh_col):
     """
@@ -1578,13 +1613,12 @@ class MdfGenProcessBase(bpy.types.Operator):
         if not os.path.isfile(preset_path):
             raise FileNotFoundError(f"Preset not found: {preset_path}")
 
-        # Find a representative mesh object (needed for baking)
-        mesh_obj = next(
-            (obj for obj in mesh_col.all_objects
-             if obj.type == 'MESH'
-             and any(m and m.name == mat_name for m in obj.data.materials)),
-            None,
-        )
+        # Find all mesh objects sharing this material (for baking across all UV layouts)
+        mesh_objects = _find_meshes_by_material(mesh_col, mat_name)
+        mesh_obj = mesh_objects[0] if mesh_objects else None
+        if mesh_objects:
+            print(f"[{cls._log_tag}]   '{mat_name}' → {len(mesh_objects)} 个网格: "
+                  f"{', '.join(o.name for o in mesh_objects)}")
 
         _t = time.time()
         strategies = analyze_material_strategies(mat)
@@ -1601,7 +1635,8 @@ class MdfGenProcessBase(bpy.types.Operator):
         _t = time.time()
         pbr_paths  = _get_pbr_paths(
             mat, strategies, temp_dir, bake_size, context, mesh_obj,
-            channel_sizes=channel_sizes or None)
+            channel_sizes=channel_sizes or None,
+            mesh_objects=mesh_objects)
         # print(f"[{cls._log_tag}]   解析PBR路径 (含烘培): {time.time() - _t:.2f}s", flush=True)
 
         # User-provided AO override (Blender has no built-in AO node)

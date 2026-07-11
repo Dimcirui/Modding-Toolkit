@@ -11,7 +11,7 @@ from ...core.mdf_generator_base import (
     _get_pbr_paths, _slugify, _strip_blender_suffix, _separate_mesh_by_material,
     _emissive_strength_is_zero, _is_emissive_slot, _is_albedo_slot,
     _make_source_id, _try_downgrade_slot, _generate_solid_texture_path,
-    _detect_max_tex_size,
+    _detect_max_tex_size, _find_meshes_by_material,
     load_mhwi_preset_enum_items,
     _import_mhwi_tex_convert, _call_mhwi_read_preset, _import_mhwi_create_collection,
     BAKE_SIZE_DEFAULT,
@@ -26,6 +26,14 @@ from .mrl3_tex_processor import (
 
 def _mhwi_get_presets(self, context):
     return load_mhwi_preset_enum_items()
+
+
+def _mhwi_find_meshes_by_material(mod3_col, material_name):
+    """
+    在 MOD3 集合中查找所有使用指定材质的 MESH 物体。
+    委托给 core 共享的 _find_meshes_by_material。
+    """
+    return _find_meshes_by_material(mod3_col, material_name)
 
 
 # ── PropertyGroups ─────────────────────────────────────────────────────────────
@@ -269,12 +277,12 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
         if not os.path.isfile(preset_path):
             raise FileNotFoundError(f"Preset not found: {preset_path}")
 
-        mesh_obj = next(
-            (obj for obj in mod3_col.all_objects
-             if obj.type == 'MESH'
-             and any(m and m.name == mat_name for m in obj.data.materials)),
-            None,
-        )
+        # ── 阶段二：查找 MOD3 集合中所有使用该材质的网格 ──
+        mesh_objects = _mhwi_find_meshes_by_material(mod3_col, mat_name)
+        mesh_obj = mesh_objects[0] if mesh_objects else None
+        if mesh_objects:
+            print(f"[{self._log_tag}]   '{mat_name}' → {len(mesh_objects)} 个网格: "
+                  f"{', '.join(o.name for o in mesh_objects)}")
 
         _t = time.time()
         strategies = analyze_material_strategies(mat)
@@ -282,7 +290,8 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
         bake_size  = max(_detect_max_tex_size(mat), self._bake_size)
         _t = time.time()
         pbr_paths  = _get_pbr_paths(
-            mat, strategies, temp_dir, bake_size, context, mesh_obj)
+            mat, strategies, temp_dir, bake_size, context, mesh_obj,
+            mesh_objects=mesh_objects)
         # print(f"[{self._log_tag}]   解析PBR路径 (含烘培): {time.time() - _t:.2f}s", flush=True)
 
         # User-provided AO override (Blender has no built-in AO node)
@@ -491,6 +500,70 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                 map_item.value = slot_binding_values[map_item.name]
 
 
+# ── Select Same Material operator ────────────────────────────────────────────────
+
+class MHWI_OT_SelectSameMaterial(bpy.types.Operator):
+    """选中 MOD3 集合中所有使用当前材质的网格物体（阶段二：智能筛选）"""
+    bl_idname  = "mhwi.select_same_material"
+    bl_label   = "Select Same Material Meshes"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    _log_tag = "MRL3 Gen"
+
+    @classmethod
+    def poll(cls, context):
+        """必须有激活 MESH 物体，且其材质在 material_list 中有对应条目"""
+        obj = context.active_object
+        if not obj or obj.type != 'MESH':
+            return False
+        if not obj.material_slots:
+            return False
+        settings = context.scene.mhwi_mrl3_generator
+        if not settings.mesh_collection:
+            return False
+        mat = obj.material_slots[obj.active_material_index].material
+        return mat is not None
+
+    def execute(self, context):
+        settings = context.scene.mhwi_mrl3_generator
+        mod3_col = settings.mesh_collection
+        if not mod3_col:
+            self.report({'ERROR'}, "请先选择 MOD3 集合")
+            return {'CANCELLED'}
+
+        active_obj = context.active_object
+        target_mat = active_obj.material_slots[active_obj.active_material_index].material
+        if not target_mat:
+            self.report({'ERROR'}, "激活物体没有材质")
+            return {'CANCELLED'}
+
+        # 查找同集合下共享相同材质的所有网格
+        matched = _mhwi_find_meshes_by_material(mod3_col, target_mat.name)
+
+        # 取消所有选中
+        for obj in context.view_layer.objects:
+            obj.select_set(False)
+
+        # 选中所有匹配的网格
+        for obj in matched:
+            obj.select_set(True)
+
+        # 保持原物体激活
+        if active_obj.name not in {o.name for o in matched}:
+            active_obj.select_set(True)
+        context.view_layer.objects.active = active_obj
+
+        print(f"[{self._log_tag}] 智能筛选: 材质 '{target_mat.name}' → "
+              f"{len(matched)} 个网格: {', '.join(o.name for o in matched)}")
+
+        self.report(
+            {'INFO'},
+            f"已选中 {len(matched)} 个使用 '{target_mat.name}' 的网格"
+            f"（含自身共 {len(matched) if active_obj.name in {o.name for o in matched} else len(matched) + 1} 个）",
+        )
+        return {'FINISHED'}
+
+
 # ── Registration ───────────────────────────────────────────────────────────────
 
 classes = [
@@ -498,6 +571,7 @@ classes = [
     MhwiGenSettings,
     MHWI_OT_Mrl3GenRefresh,
     MHWI_OT_Mrl3GenProcess,
+    MHWI_OT_SelectSameMaterial,
 ]
 
 

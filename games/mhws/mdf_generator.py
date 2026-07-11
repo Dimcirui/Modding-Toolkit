@@ -5,6 +5,7 @@ from ...core.mdf_tex_processor_base import (
 )
 from ...core.mdf_generator_base import (
     load_preset_enum_items,
+    _find_meshes_by_material,
     MdfGenRefreshBase, MdfGenProcessBase,
 )
 
@@ -127,6 +128,70 @@ class MHWS_OT_MdfGenProcess(MdfGenProcessBase):
     _log_tag          = "MHWS Gen"
 
 
+# ── Select Same Material operator ────────────────────────────────────────────────
+
+class MHWS_OT_SelectSameMaterial(bpy.types.Operator):
+    """选中 Mesh Collection 中所有使用当前材质的网格物体（阶段二：智能筛选）"""
+    bl_idname  = "mhws.select_same_material"
+    bl_label   = "Select Same Material Meshes"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    _log_tag = "MHWS Gen"
+
+    @classmethod
+    def poll(cls, context):
+        """必须有激活 MESH 物体，且其材质已设置，mesh_collection 已选择"""
+        obj = context.active_object
+        if not obj or obj.type != 'MESH':
+            return False
+        if not obj.material_slots:
+            return False
+        settings = context.scene.mhws_mdf_generator
+        if not settings.mesh_collection:
+            return False
+        mat = obj.material_slots[obj.active_material_index].material
+        return mat is not None
+
+    def execute(self, context):
+        settings = context.scene.mhws_mdf_generator
+        mesh_col = settings.mesh_collection
+        if not mesh_col:
+            self.report({'ERROR'}, "请先选择 Mesh Collection")
+            return {'CANCELLED'}
+
+        active_obj = context.active_object
+        target_mat = active_obj.material_slots[active_obj.active_material_index].material
+        if not target_mat:
+            self.report({'ERROR'}, "激活物体没有材质")
+            return {'CANCELLED'}
+
+        # 查找同集合下共享相同材质的所有网格
+        matched = _find_meshes_by_material(mesh_col, target_mat.name)
+
+        # 取消所有选中
+        for obj in context.view_layer.objects:
+            obj.select_set(False)
+
+        # 选中所有匹配的网格
+        for obj in matched:
+            obj.select_set(True)
+
+        # 保持原物体激活
+        if active_obj.name not in {o.name for o in matched}:
+            active_obj.select_set(True)
+        context.view_layer.objects.active = active_obj
+
+        print(f"[{self._log_tag}] 智能筛选: 材质 '{target_mat.name}' → "
+              f"{len(matched)} 个网格: {', '.join(o.name for o in matched)}")
+
+        self.report(
+            {'INFO'},
+            f"已选中 {len(matched)} 个使用 '{target_mat.name}' 的网格"
+            f"（含自身共 {len(matched) if active_obj.name in {o.name for o in matched} else len(matched) + 1} 个）",
+        )
+        return {'FINISHED'}
+
+
 # ── Registration ───────────────────────────────────────────────────────────────
 
 classes = [
@@ -134,6 +199,7 @@ classes = [
     MhwsGenSettings,
     MHWS_OT_MdfGenRefresh,
     MHWS_OT_MdfGenProcess,
+    MHWS_OT_SelectSameMaterial,
 ]
 
 

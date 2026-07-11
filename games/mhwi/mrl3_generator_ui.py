@@ -49,6 +49,10 @@ class MHWI_OT_Mrl3GeneratorDialog(bpy.types.Operator):
         row.prop(settings, "mesh_collection", text="Mod3 Collection")
         row.operator("mhwi.mrl3_gen_refresh", text="", icon='FILE_REFRESH')
 
+        # ── Smart selection ───────────────────────────────────────────────────
+        row = layout.row(align=True)
+        row.operator("mhwi.select_same_material", icon='MATERIAL')
+
         # ── Mod root ───────────────────────────────────────────────────────────
         row = layout.row(align=True)
         row.operator("mhwi.set_natives_root", text="Mod Root", icon='FILEBROWSER')

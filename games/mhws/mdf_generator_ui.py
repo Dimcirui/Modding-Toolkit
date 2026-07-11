@@ -51,6 +51,10 @@ class MHWS_OT_MdfGeneratorDialog(bpy.types.Operator):
         row.prop(settings, "mesh_collection", text="Mesh Collection")
         row.operator("mhws.mdf_gen_refresh", text="", icon='FILE_REFRESH')
 
+        # ── Smart selection ───────────────────────────────────────────────────
+        row = layout.row(align=True)
+        row.operator("mhws.select_same_material", icon='MATERIAL')
+
         # ── Mod root ───────────────────────────────────────────────────────────
         row = layout.row(align=True)
         row.operator("mhws.set_natives_root", text="Mod Root", icon='FILEBROWSER')
