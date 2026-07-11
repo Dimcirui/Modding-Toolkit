@@ -3,6 +3,7 @@ from .batch_export import (
     MHWS_PARTS, MHWS_VARIANTS, DEFAULT_FILE_TYPES,
     _load_scheme, _resolve_part_file_types, _canonical_order_file_types,
     get_binding, set_binding,
+    get_mhws_armor_callback,
 )
 
 EXPORTER_WINDOW_WIDTH = 580
@@ -74,6 +75,41 @@ class MHWS_OT_PickCollection(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# ── Pick Armor ──────────────────────────────────────────────────
+
+def _get_armor_label(context, armor_id):
+    """根据当前装备包解析 armor_id 对应的显示名，找不到则回退为原始 id"""
+    if not armor_id or armor_id == 'NONE':
+        return None
+    settings = context.scene.mhw_suite_settings
+    for item_id, label, *_ in get_mhws_armor_callback(settings, context):
+        if item_id == armor_id:
+            return label
+    return armor_id
+
+
+class MHWS_OT_PickArmor(bpy.types.Operator):
+    """搜索并选择装备（避免装备过多时下拉表溢出屏幕）"""
+    bl_idname = "mhws.pick_armor"
+    bl_label = "Pick Armor"
+    bl_options = {'INTERNAL'}
+    bl_property = "armor_id"
+
+    armor_id: bpy.props.EnumProperty(
+        name="Armor",
+        items=lambda self, ctx: get_mhws_armor_callback(ctx.scene.mhw_suite_settings, ctx)
+    )
+
+    def invoke(self, context, event):
+        context.window_manager.invoke_search_popup(self)
+        return {'RUNNING_MODAL'}
+
+    def execute(self, context):
+        if self.armor_id and self.armor_id != 'NONE':
+            context.scene.mhw_suite_settings.mhws_selected_armor = self.armor_id
+        return {'FINISHED'}
+
+
 class MHWS_OT_ClearBinding(bpy.types.Operator):
     bl_idname = "mhws.clear_binding"
     bl_label = "Clear Binding"
@@ -109,7 +145,9 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
         layout.prop(settings, "mhws_armor_scheme", text="装备包")
         row = layout.row(align=True)
         row.prop(settings, "mhws_armor_variant", text="")
-        row.prop(settings, "mhws_selected_armor", text="装备")
+        cur_armor_label = _get_armor_label(context, settings.mhws_selected_armor)
+        row.operator("mhws.pick_armor", text=cur_armor_label if cur_armor_label else "选择装备...",
+                     icon='DOWNARROW_HLT')
 
         # ── Natives Root ──
         natives_root = scene.get("mhws_natives_root", "")
@@ -227,6 +265,7 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
 
 classes = [
     MHWS_OT_PickCollection,
+    MHWS_OT_PickArmor,
     MHWS_OT_ClearBinding,
     MHWS_OT_BatchExportDialog,
 ]

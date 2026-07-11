@@ -11,6 +11,7 @@ MHRS_EXTS = {
     "mesh":  "mesh.2109148288",
     "mdf2":  "mdf2.23",
     "chain": "chain.48",
+    "user":  "user.2",
 }
 
 # 5个固定部位（part id 直接用于文件名，如 f_body279）
@@ -28,11 +29,15 @@ MHRS_GENDERS = [
     ("m", "男", ""),
 ]
 
+# 头盔部位代码（user.2 仅头盔存在，其余部位无此文件）
+HELM_PART = "helm"
+
 # 默认每套装备包含的文件类型
-DEFAULT_FILE_TYPES = ["mesh", "mdf2", "chain"]
+# user: 不可绑定集合，始终在"未选项使用空模型"开启时从内置模板复制并按目标路径改名（含id）
+DEFAULT_FILE_TYPES = ["mesh", "mdf2", "chain", "user"]
 
 # 规范导出顺序
-_CANONICAL_FILE_TYPE_ORDER = ["mesh", "mdf2", "chain"]
+_CANONICAL_FILE_TYPE_ORDER = ["mesh", "mdf2", "chain", "user"]
 _CANONICAL_FILE_TYPE_INDEX = {ft: i for i, ft in enumerate(_CANONICAL_FILE_TYPE_ORDER)}
 
 
@@ -147,11 +152,16 @@ def _resolve_part_file_types(armor_set, part_id):
     Priority: armor_set.parts_file_types[part_id] >
               armor_set.file_types >
               DEFAULT_FILE_TYPES
+    user.2 只存在于头盔，其余部位一律剔除（游戏本身就没有这个文件）。
     """
     parts_fts = armor_set.get("parts_file_types")
     if parts_fts and part_id in parts_fts:
-        return parts_fts[part_id]
-    return armor_set.get("file_types", DEFAULT_FILE_TYPES)
+        fts = parts_fts[part_id]
+    else:
+        fts = armor_set.get("file_types", DEFAULT_FILE_TYPES)
+    if part_id != HELM_PART:
+        fts = [ft for ft in fts if ft != "user"]
+    return fts
 
 
 def _make_filepath(natives_root, gender, code, part_id, filetype):
@@ -165,7 +175,7 @@ def _make_shadow_filepath(natives_root, gender):
     return os.path.join(natives_root, "natives", "STM", "player", "mod", gender, "bone", f"{gender}_shadow.{ext}")
 
 
-# ── Shadow（类 fbxskel 影子模型）────────────────────────────────
+# ── Shadow Mesh（作用类似 fbxskel 的影子网格）────────────────────
 
 def _get_shadow_asset_path(gender):
     """内置的 f_shadow/m_shadow 参考模型（需要用户后续放入 assets/mhrs/shadow/）"""
@@ -178,6 +188,24 @@ def _get_armature_from_collection(col_name):
         return None
     arms = [o for o in bpy.data.collections[col_name].objects if o.type == 'ARMATURE']
     return arms[0] if len(arms) == 1 else None
+
+
+def _find_auto_align_armature(scene, armor_id, gender, parts_mask):
+    """
+    未手动指定对齐骨架时的保险：若本次勾选的部位中，绑定的 mesh 集合
+    实际只涉及同一个集合（不管绑定了几个部位），就自动取该集合中的
+    唯一骨架作为对齐骨架；有 0 个或 >1 个不同集合时返回 None。
+    """
+    mesh_cols = set()
+    for idx, (part_id, _name) in enumerate(MHRS_PARTS):
+        if not (parts_mask & (1 << idx)):
+            continue
+        col_name = get_binding(scene, armor_id, gender, part_id, "mesh")
+        if col_name:
+            mesh_cols.add(col_name)
+    if len(mesh_cols) != 1:
+        return None
+    return _get_armature_from_collection(next(iter(mesh_cols)))
 
 
 def _do_shadow_export(context, natives_root, gender, align_arm):
@@ -204,7 +232,21 @@ def _do_shadow_export(context, natives_root, gender, align_arm):
 
     imported_col_name = None
     try:
-        call_re_mesh_op('importfile', filepath=asset_path)
+        # 显式传入 createCollections=True / clearScene=False：
+        # 脚本调用 bpy.ops 时未指定的属性会沿用 Blender 记住的“上次使用值”，
+        # 而不是类声明的默认值，若之前手动导入时改过这些选项，
+        # 会导致 REMeshLastImportedCollection 不被写入（甚至清空场景），必须显式指定。
+        call_re_mesh_op(
+            'importfile',
+            directory=os.path.dirname(asset_path),
+            files=[{"name": os.path.basename(asset_path)}],
+            clearScene=False,
+            createCollections=True,
+            loadMaterials=False,
+            loadMDFData=False,
+            loadShellFur=False,
+            importBoundingBoxes=False,
+        )
         imported_col_name = context.scene.get("REMeshLastImportedCollection", "")
         if not imported_col_name or imported_col_name not in bpy.data.collections:
             raise RuntimeError(f"导入参考模型失败: {asset_path}")
@@ -363,9 +405,12 @@ class MHRS_OT_BatchExport(bpy.types.Operator):
                     print(f"[MHRS] FAILED {label}: {err}")
                     fail_count += 1
 
-        # ── Shadow（类 fbxskel）──
+        # ── Shadow Mesh ──
         if settings.mhrs_use_shadow_export:
-            ok, msg = _do_shadow_export(context, natives_root, gender, settings.mhrs_shadow_armature)
+            align_arm = settings.mhrs_shadow_armature
+            if align_arm is None:
+                align_arm = _find_auto_align_armature(scene, armor_id, gender, parts_mask)
+            ok, msg = _do_shadow_export(context, natives_root, gender, align_arm)
             if ok:
                 self.report({'INFO'}, msg)
                 export_count += 1

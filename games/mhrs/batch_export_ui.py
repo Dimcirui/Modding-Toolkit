@@ -1,8 +1,10 @@
 import bpy
 from .batch_export import (
-    MHRS_PARTS, MHRS_GENDERS, DEFAULT_FILE_TYPES,
+    MHRS_PARTS, MHRS_GENDERS,
     _load_scheme, _resolve_part_file_types, _canonical_order_file_types,
     get_binding, set_binding,
+    get_mhrs_armor_callback,
+    _find_auto_align_armature,
 )
 
 EXPORTER_WINDOW_WIDTH = 580
@@ -11,12 +13,14 @@ _FILETYPE_ICONS = {
     "mesh":  'OUTLINER_OB_MESH',
     "mdf2":  'MATERIAL',
     "chain": 'CONSTRAINT_BONE',
+    "user":  'FILE_BLANK',
 }
 
 _FILETYPE_LABELS = {
     "mesh":  "MESH",
     "mdf2":  "MDF2",
     "chain": "CHAIN",
+    "user":  "USER",
 }
 
 
@@ -66,6 +70,41 @@ class MHRS_OT_PickCollection(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# ── Pick Armor ──────────────────────────────────────────────────
+
+def _get_armor_label(context, armor_id):
+    """根据当前装备包解析 armor_id 对应的显示名，找不到则回退为原始 id"""
+    if not armor_id or armor_id == 'NONE':
+        return None
+    settings = context.scene.mhw_suite_settings
+    for item_id, label, *_ in get_mhrs_armor_callback(settings, context):
+        if item_id == armor_id:
+            return label
+    return armor_id
+
+
+class MHRS_OT_PickArmor(bpy.types.Operator):
+    """搜索并选择装备（避免装备过多时下拉表溢出屏幕）"""
+    bl_idname = "mhrs.pick_armor"
+    bl_label = "Pick Armor"
+    bl_options = {'INTERNAL'}
+    bl_property = "armor_id"
+
+    armor_id: bpy.props.EnumProperty(
+        name="Armor",
+        items=lambda self, ctx: get_mhrs_armor_callback(ctx.scene.mhw_suite_settings, ctx)
+    )
+
+    def invoke(self, context, event):
+        context.window_manager.invoke_search_popup(self)
+        return {'RUNNING_MODAL'}
+
+    def execute(self, context):
+        if self.armor_id and self.armor_id != 'NONE':
+            context.scene.mhw_suite_settings.mhrs_selected_armor = self.armor_id
+        return {'FINISHED'}
+
+
 class MHRS_OT_ClearBinding(bpy.types.Operator):
     bl_idname = "mhrs.clear_binding"
     bl_label = "Clear Binding"
@@ -101,7 +140,9 @@ class MHRS_OT_BatchExportDialog(bpy.types.Operator):
         layout.prop(settings, "mhrs_armor_scheme", text="装备包")
         row = layout.row(align=True)
         row.prop(settings, "mhrs_gender", text="")
-        row.prop(settings, "mhrs_selected_armor", text="装备")
+        cur_armor_label = _get_armor_label(context, settings.mhrs_selected_armor)
+        row.operator("mhrs.pick_armor", text=cur_armor_label if cur_armor_label else "选择装备...",
+                     icon='DOWNARROW_HLT')
 
         # ── Natives Root ──
         natives_root = scene.get("mhrs_natives_root", "")
@@ -139,7 +180,7 @@ class MHRS_OT_BatchExportDialog(bpy.types.Operator):
         all_file_types = []
         for part_id, part_name in active_parts:
             fts = _canonical_order_file_types(
-                _resolve_part_file_types(armor_set, part_id)) if armor_set else DEFAULT_FILE_TYPES
+                _resolve_part_file_types(armor_set if armor_set else {}, part_id))
             per_part_fts[part_id] = fts
             for ft in fts:
                 if ft not in all_file_types:
@@ -161,6 +202,11 @@ class MHRS_OT_BatchExportDialog(bpy.types.Operator):
                 sub = row.row(align=True)
                 if ft not in part_fts:
                     sub.label(text="")
+                    continue
+
+                if ft == "user":
+                    # 不可绑定集合：始终由内置模板复制而来（受"未选项使用空模型"开关控制）
+                    sub.label(text="AUTO", icon='FILE_BLANK')
                     continue
 
                 cur = get_binding(scene, armor_id, gender, part_id, ft)
@@ -185,16 +231,22 @@ class MHRS_OT_BatchExportDialog(bpy.types.Operator):
         row.prop(settings, "mhrs_use_blank_export", icon='FILE_BLANK')
         row.prop(settings, "mhrs_cleanup_before_export", icon='BRUSH_DATA')
 
-        self._draw_shadow(layout, settings)
+        self._draw_shadow(layout, settings, scene, armor_id, gender, parts_mask)
 
-    def _draw_shadow(self, layout, settings):
+    def _draw_shadow(self, layout, settings, scene=None, armor_id=None, gender=None, parts_mask=None):
         layout.separator()
         box = layout.box()
         row = box.row(align=True)
-        row.prop(settings, "mhrs_use_shadow_export", text="使用fbxskel", icon='ARMATURE_DATA')
+        row.prop(settings, "mhrs_use_shadow_export", text="使用 Shadow Mesh", icon='ARMATURE_DATA')
         if not settings.mhrs_use_shadow_export:
             return
         box.prop(settings, "mhrs_shadow_armature", text="对齐骨架")
+        if not settings.mhrs_shadow_armature and scene is not None and armor_id and armor_id != 'NONE' and parts_mask is not None:
+            auto_arm = _find_auto_align_armature(scene, armor_id, gender, parts_mask)
+            if auto_arm:
+                box.label(text=f"未选择时将自动使用: {auto_arm.name}", icon='INFO')
+            else:
+                box.label(text="未选择对齐骨架，且无法自动判定（需恰好绑定 1 个 Mesh 集合）", icon='ERROR')
 
     def execute(self, context):
         bpy.ops.mhrs.batch_export()
@@ -203,6 +255,7 @@ class MHRS_OT_BatchExportDialog(bpy.types.Operator):
 
 classes = [
     MHRS_OT_PickCollection,
+    MHRS_OT_PickArmor,
     MHRS_OT_ClearBinding,
     MHRS_OT_BatchExportDialog,
 ]

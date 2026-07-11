@@ -4,6 +4,14 @@ import os
 import shutil
 
 from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
+from .weapon_data import (
+    WEAPON_FILE_TYPES,
+    get_weapon_parts,
+    _load_weapon_sets as _load_weapon_sets_json,
+    get_weapon_entry,
+    make_weapon_filepath, get_weapon_binding,
+    get_selected_weapon,
+)
 
 
 # 部位定义：(代码, 显示名, mask索引)  mask顺序：手腿铠头腰
@@ -461,6 +469,38 @@ def _export_sp(context, armor_entry, natives_root):
     return export_count, fail_count, skip_count
 
 
+def _export_weapon(context, weapon_type, entry, natives_root):
+    """导出单件武器（主模型 + 副部位，如盾/刀鞘/右手剑），返回 (export_count, fail_count, skip_count)"""
+    scene      = context.scene
+    main_code  = entry["id"]
+
+    export_count = fail_count = skip_count = 0
+
+    for part_code, part_name, model_code in get_weapon_parts(weapon_type, entry):
+        for ft in WEAPON_FILE_TYPES:
+            col   = get_weapon_binding(scene, weapon_type, main_code, part_code, ft)
+            label = f"武器/{part_name}/{ft.upper()}"
+
+            if not col:
+                skip_count += 1
+                continue
+            if col not in bpy.data.collections:
+                print(f"[MHWI] SKIP {label}: collection '{col}' not found")
+                skip_count += 1
+                continue
+
+            filepath = make_weapon_filepath(natives_root, weapon_type, main_code, model_code, ft)
+            try:
+                print(f"[MHWI] {label}: {col} -> {os.path.basename(filepath)}")
+                _EXPORT_FUNCS[ft](filepath, col)
+                export_count += 1
+            except Exception as err:
+                print(f"[MHWI] FAILED {label}: {err}")
+                fail_count += 1
+
+    return export_count, fail_count, skip_count
+
+
 # ── Operator ──────────────────────────────────────────────────────
 
 class MHWI_OT_BatchExport(bpy.types.Operator):
@@ -521,6 +561,30 @@ class MHWI_OT_BatchExport(bpy.types.Operator):
                         pass
                 obj.select_set(False)
 
+    def _execute_weapon(self, context, scene, settings, natives_root):
+        weapon_type = settings.mhwi_weapon_type_tab
+        weapon_id   = get_selected_weapon(scene, weapon_type)
+
+        if not weapon_id or weapon_id == 'NONE':
+            self.report({'ERROR'}, "请先选择一件武器")
+            return {'CANCELLED'}
+
+        data  = _load_weapon_sets_json(settings.mhwi_weapon_sets_file)
+        entry = get_weapon_entry(data, weapon_type, weapon_id)
+        if not entry:
+            self.report({'ERROR'}, f"武器预设组中未找到: {weapon_id}")
+            return {'CANCELLED'}
+
+        total_export, total_fail, total_skip = _export_weapon(context, weapon_type, entry, natives_root)
+
+        if total_fail > 0:
+            self.report({'WARNING'},
+                f"完成: 导出 {total_export}, 失败 {total_fail}, 跳过 {total_skip}")
+        else:
+            self.report({'INFO'},
+                f"完成: 导出 {total_export}, 跳过 {total_skip}")
+        return {'FINISHED'}
+
     def execute(self, context):
         scene    = context.scene
         settings = scene.mhw_suite_settings
@@ -533,6 +597,9 @@ class MHWI_OT_BatchExport(bpy.types.Operator):
         if not natives_root or not os.path.isdir(natives_root):
             self.report({'ERROR'}, "请先设置 Mod Root 目录（nativePC 的上级文件夹）")
             return {'CANCELLED'}
+
+        if settings.mhwi_export_mode == 'WEAPON':
+            return self._execute_weapon(context, scene, settings, natives_root)
 
         rank = settings.mhwi_rank_tab
         if rank == 'HR':

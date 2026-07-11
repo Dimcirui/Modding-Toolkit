@@ -5,7 +5,7 @@ from ...core.mdf_tex_processor_base import (
 )
 from ...core.mdf_generator_base import (
     load_preset_enum_items,
-    _find_meshes_by_material,
+    _find_meshes_by_material, mesh_collection_poll,
     MdfGenRefreshBase, MdfGenProcessBase,
 )
 
@@ -85,6 +85,7 @@ class MhwsGenSettings(bpy.types.PropertyGroup):
         name="Mesh Collection",
         type=bpy.types.Collection,
         description="Source mesh collection containing objects with Blender materials",
+        poll=mesh_collection_poll,
         update=_on_mhws_mesh_collection_update,
     )
     mdf_collection_name: bpy.props.StringProperty(

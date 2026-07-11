@@ -38,7 +38,7 @@ PRINCIPLED_INPUT_MAP = {
 }
 
 BAKE_SIZE_DEFAULT = 1024
-SOLID_SIZE        = 256
+SOLID_SIZE        = 8
 
 
 # ── Node analysis ──────────────────────────────────────────────────────────────
@@ -490,6 +490,13 @@ def _get_re_mesh_editor_addon_dir():
     return _addon_dir_cache
 
 
+def mesh_collection_poll(self, col):
+    """Restrict the Generator's Mesh Collection picker to RE Mesh collections
+    (same filter used by batch export's collection pickers), so the ID
+    browse dropdown doesn't get cluttered with MDF2/Chain/unrelated collections."""
+    return col.get("~TYPE") == "RE_MESH_COLLECTION" or col.name.endswith(".mesh")
+
+
 def get_preset_dir_for_game(game_name):
     """Return path to RE Mesh Editor's Presets/{game_name}/ directory, or None."""
     if game_name in _preset_dir_cache:
@@ -925,7 +932,7 @@ def detect_native_sizes(mat, strategies):
     """
     Return {channel: native_pixel_size} for all PBR channels.
 
-    SOLID  → SOLID_SIZE (256)
+    SOLID  → SOLID_SIZE (8)
     BAKE   → max texture size found in the material node tree
     DIRECT → size of the source image if loaded in bpy.data.images,
              otherwise falls back to the material's max texture size

@@ -1,6 +1,10 @@
 import bpy
 import os
 
+from .weapon_data import WEAPON_TYPES
+
+WEAPON_TYPE_CODES = [t[0] for t in WEAPON_TYPES]
+
 
 # 扫描的装备目录（性别标识, 文件夹名）
 EQUIP_DIRS = [("f", "f_equip"), ("m", "m_equip")]
@@ -10,6 +14,9 @@ PART_CODES = ["arm", "leg", "body", "helm", "wst"]
 
 # 扫描的文件扩展名
 SCAN_EXTS = {".mod3", ".mrl3", ".ctc"}
+
+# 武器无物理，仅扫描这两种
+WEAPON_SCAN_EXTS = {".mod3", ".mrl3"}
 
 PART_NAMES    = {"arm": "手臂", "leg": "腿部", "body": "身体", "helm": "头盔", "wst": "腰部"}
 GENDER_LABELS = {"f": "女", "m": "男"}
@@ -21,25 +28,28 @@ FT_ORDER      = ["mod3", "mrl3", "ctc"]
 class MHWI_ImportItem(bpy.types.PropertyGroup):
     """代表一个待导入文件"""
     filepath:  bpy.props.StringProperty()
-    group_key: bpy.props.StringProperty()   # model_id，用于归组
-    gender:    bpy.props.StringProperty()   # "f" / "m"
-    part:      bpy.props.StringProperty()   # "arm" / "leg" / ...
+    group_key: bpy.props.StringProperty()   # model_id（装备）或武器主模型代码
+    gender:    bpy.props.StringProperty()   # "f" / "m"（武器为空）
+    part:      bpy.props.StringProperty()   # 装备: "arm"/"leg"/...；武器: 该文件自身的 model code
     filetype:  bpy.props.StringProperty()   # "mod3" / "mrl3" / "ctc"
     enabled:   bpy.props.BoolProperty(default=True)
+    kind:      bpy.props.StringProperty(default="armor")   # "armor" / "weapon"
 
 
 class MHWI_ImportGroup(bpy.types.PropertyGroup):
-    """代表一套装备的 UI 折叠状态"""
-    group_key: bpy.props.StringProperty()   # model_id
+    """代表一套装备/一件武器的 UI 折叠状态"""
+    group_key: bpy.props.StringProperty()   # model_id 或武器主模型代码
     expanded:  bpy.props.BoolProperty(default=False)
+    kind:      bpy.props.StringProperty(default="armor")   # "armor" / "weapon"
 
 
 # ── 扫描 ──────────────────────────────────────────────────────────
 
 def scan_mhwi_folder(natives_root, scene):
     """
-    扫描 nativePC/pl/{f,m}_equip/ 下的装备文件，
+    扫描 nativePC/pl/{f,m}_equip/（装备）与 nativePC/wp/{type}/（武器）下的模型文件，
     将结果写入 scene.mhwi_import_items 和 scene.mhwi_import_groups。
+    无需指定装备或武器，两种目录结构一律解析。
     返回找到的文件总数。
     """
     items  = scene.mhwi_import_items
@@ -47,46 +57,80 @@ def scan_mhwi_folder(natives_root, scene):
     items.clear()
     groups.clear()
 
+    seen_groups = set()   # 已添加到 groups 的 group_key
+
+    # ── 装备（护甲 / 幻化） ──
     pl_dir = os.path.join(natives_root, "nativePC", "pl")
-    if not os.path.isdir(pl_dir):
-        return 0
-
-    seen_groups = set()   # 已添加到 groups 的 model_id
-
-    for gender, equip_folder in EQUIP_DIRS:
-        equip_dir = os.path.join(pl_dir, equip_folder)
-        if not os.path.isdir(equip_dir):
-            continue
-
-        for model_id in sorted(os.listdir(equip_dir)):
-            model_dir = os.path.join(equip_dir, model_id)
-            if not os.path.isdir(model_dir):
+    if os.path.isdir(pl_dir):
+        for gender, equip_folder in EQUIP_DIRS:
+            equip_dir = os.path.join(pl_dir, equip_folder)
+            if not os.path.isdir(equip_dir):
                 continue
 
-            for part in PART_CODES:
-                mod_dir = os.path.join(model_dir, part, "mod")
+            for model_id in sorted(os.listdir(equip_dir)):
+                model_dir = os.path.join(equip_dir, model_id)
+                if not os.path.isdir(model_dir):
+                    continue
+
+                for part in PART_CODES:
+                    mod_dir = os.path.join(model_dir, part, "mod")
+                    if not os.path.isdir(mod_dir):
+                        continue
+
+                    for fname in sorted(os.listdir(mod_dir)):
+                        ext = os.path.splitext(fname)[1].lower()
+                        if ext not in SCAN_EXTS:
+                            continue
+
+                        if model_id not in seen_groups:
+                            g           = groups.add()
+                            g.group_key = model_id
+                            g.kind      = "armor"
+                            seen_groups.add(model_id)
+
+                        item           = items.add()
+                        item.filepath  = os.path.join(mod_dir, fname)
+                        item.group_key = model_id
+                        item.gender    = gender
+                        item.part      = part
+                        item.filetype  = ext[1:]   # ".mod3" → "mod3"
+                        item.enabled   = True
+                        item.kind      = "armor"
+
+    # ── 武器 ──
+    wp_dir = os.path.join(natives_root, "nativePC", "wp")
+    if os.path.isdir(wp_dir):
+        for weapon_type in WEAPON_TYPE_CODES:
+            type_dir = os.path.join(wp_dir, weapon_type)
+            if not os.path.isdir(type_dir):
+                continue
+
+            for main_code in sorted(os.listdir(type_dir)):
+                mod_dir = os.path.join(type_dir, main_code, "mod")
                 if not os.path.isdir(mod_dir):
                     continue
 
                 for fname in sorted(os.listdir(mod_dir)):
                     ext = os.path.splitext(fname)[1].lower()
-                    if ext not in SCAN_EXTS:
+                    if ext not in WEAPON_SCAN_EXTS:
                         continue
 
-                    if model_id not in seen_groups:
+                    if main_code not in seen_groups:
                         g           = groups.add()
-                        g.group_key = model_id
-                        seen_groups.add(model_id)
+                        g.group_key = main_code
+                        g.kind      = "weapon"
+                        seen_groups.add(main_code)
 
                     item           = items.add()
                     item.filepath  = os.path.join(mod_dir, fname)
-                    item.group_key = model_id
-                    item.gender    = gender
-                    item.part      = part
-                    item.filetype  = ext[1:]   # ".mod3" → "mod3"
+                    item.group_key = main_code
+                    item.gender    = ""
+                    item.part      = os.path.splitext(fname)[0]   # 该文件自身的 model code
+                    item.filetype  = ext[1:]
                     item.enabled   = True
+                    item.kind      = "weapon"
 
-    # 只有一套装备时默认展开
+    # 只有一套装备/武器时默认展开
     if len(groups) == 1:
         groups[0].expanded = True
 

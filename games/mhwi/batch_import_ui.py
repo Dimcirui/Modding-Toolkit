@@ -2,6 +2,7 @@ import bpy
 from collections import defaultdict
 from .batch_import import PART_CODES, PART_NAMES, GENDER_LABELS, FT_ORDER
 from .batch_export import _load_armor_sets, get_armor_entry
+from .weapon_data import _load_weapon_sets
 
 IMPORTER_WINDOW_WIDTH = 560
 
@@ -24,6 +25,15 @@ def _armor_label(data, group_key):
     variant = entry.get("variant_label", "")
     eid     = entry["id"]
     return f"{name} {variant}  ({eid})" if variant else f"{name}  ({eid})"
+
+
+def _weapon_label(data, main_code):
+    """根据主模型代码（如 bs_two002）在武器预设组中查找显示名，找不到则回退为原始代码"""
+    if data:
+        for w in data.get("weapon_sets", []):
+            if w["id"] == main_code:
+                return f"{w['name']}  ({w['id']})"
+    return main_code
 
 _FILETYPE_ICONS = {
     "mod3": 'OUTLINER_OB_MESH',
@@ -112,9 +122,10 @@ class MHWI_OT_BatchImportDialog(bpy.types.Operator):
 
         layout.separator()
 
-        # ── 各套装备 ──
-        group_map  = _build_group_map(items)
-        armor_data = _load_armor_sets(scene.mhw_suite_settings.mhwi_armor_sets_file)
+        # ── 各套装备 / 武器 ──
+        group_map   = _build_group_map(items)
+        armor_data  = _load_armor_sets(scene.mhw_suite_settings.mhwi_armor_sets_file)
+        weapon_data = _load_weapon_sets(scene.mhw_suite_settings.mhwi_weapon_sets_file)
 
         for group in groups:
             gkey     = group.group_key
@@ -122,7 +133,10 @@ class MHWI_OT_BatchImportDialog(bpy.types.Operator):
             total    = sum(len(v) for v in gp_items.values())
             enabled  = sum(1 for its in gp_items.values() for it in its if it.enabled)
 
-            label = _armor_label(armor_data, gkey)
+            if group.kind == "weapon":
+                label = _weapon_label(weapon_data, gkey)
+            else:
+                label = _armor_label(armor_data, gkey)
 
             # 组标题行
             hrow = layout.row(align=True)
@@ -143,16 +157,27 @@ class MHWI_OT_BatchImportDialog(bpy.types.Operator):
             if not group.expanded:
                 continue
 
-            # 展开内容：按 (part, gender) 排序，每行显示该 (part, gender) 的所有文件类型
             box = layout.box()
-            for (gender, part), part_items in sorted(gp_items.items(), key=lambda x: _gp_sort_key(x[0])):
-                row = box.row(align=True)
-                part_label = f"{PART_NAMES.get(part, part)}  ({GENDER_LABELS.get(gender, gender)})"
-                row.label(text=part_label)
-                for it in part_items:
-                    ft_icon = _FILETYPE_ICONS.get(it.filetype, 'FILE')
-                    row.prop(it, "enabled", text=it.filetype.upper(),
-                             icon=ft_icon, toggle=True)
+            if group.kind == "weapon":
+                # 展开内容：按文件自身的 model code 排序，每行显示该文件的所有文件类型
+                for (_gender, part), part_items in sorted(gp_items.items(), key=lambda x: x[0][1]):
+                    row = box.row(align=True)
+                    part_label = f"{part}  (主模型)" if part == gkey else part
+                    row.label(text=part_label)
+                    for it in part_items:
+                        ft_icon = _FILETYPE_ICONS.get(it.filetype, 'FILE')
+                        row.prop(it, "enabled", text=it.filetype.upper(),
+                                 icon=ft_icon, toggle=True)
+            else:
+                # 展开内容：按 (part, gender) 排序，每行显示该 (part, gender) 的所有文件类型
+                for (gender, part), part_items in sorted(gp_items.items(), key=lambda x: _gp_sort_key(x[0])):
+                    row = box.row(align=True)
+                    part_label = f"{PART_NAMES.get(part, part)}  ({GENDER_LABELS.get(gender, gender)})"
+                    row.label(text=part_label)
+                    for it in part_items:
+                        ft_icon = _FILETYPE_ICONS.get(it.filetype, 'FILE')
+                        row.prop(it, "enabled", text=it.filetype.upper(),
+                                 icon=ft_icon, toggle=True)
 
     def execute(self, context):
         bpy.ops.mhwi.batch_import()

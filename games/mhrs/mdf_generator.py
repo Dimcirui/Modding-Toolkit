@@ -6,13 +6,13 @@ from .mdf_tex_processor import (
 )
 from ...core.mdf_generator_base import (
     load_preset_enum_items,
-    _find_meshes_by_material,
+    _find_meshes_by_material, mesh_collection_poll,
     MdfGenRefreshBase, MdfGenProcessBase,
 )
 
 # ── MHRS constants ──────────────────────────────────────────────────────────────
 
-MHRS_GEN_GAME = "MHRS"   # must match RE Mesh Editor Presets/ subfolder name
+MHRS_GEN_GAME = "MHRSB"   # must match RE Mesh Editor Presets/ subfolder name (its own gameName code for MH Rise)
 
 
 # ── Preset enum callback ───────────────────────────────────────────────────────
@@ -83,6 +83,7 @@ class MHRSGenSettings(bpy.types.PropertyGroup):
         name="Mesh Collection",
         type=bpy.types.Collection,
         description="Source mesh collection containing objects with Blender materials",
+        poll=mesh_collection_poll,
         update=_on_mhrs_mesh_collection_update,
     )
     mdf_collection_name: bpy.props.StringProperty(

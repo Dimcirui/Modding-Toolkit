@@ -6,6 +6,15 @@ from .batch_export import (
     get_binding, set_binding,
     get_blank, set_blank,
     get_export_ccl, set_export_ccl,
+    get_mhwi_hr_armor_callback, get_mhwi_mr_armor_callback, get_mhwi_sp_armor_callback,
+)
+from .weapon_data import (
+    WEAPON_FILE_TYPES,
+    get_weapon_parts, has_patch_model,
+    _load_weapon_sets, get_weapon_entry,
+    get_mhwi_weapon_callback_for_type,
+    get_weapon_binding, set_weapon_binding,
+    get_selected_weapon, set_selected_weapon,
 )
 
 EXPORTER_WINDOW_WIDTH = 560
@@ -121,6 +130,135 @@ class MHWI_OT_ToggleCCL(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# ── Pick / Clear（武器）───────────────────────────────────────────
+
+class MHWI_OT_PickWeaponCollection(bpy.types.Operator):
+    bl_idname  = "mhwi.pick_weapon_collection"
+    bl_label   = "Pick Collection"
+    bl_options = {'INTERNAL'}
+    bl_property = "collection_name"
+
+    weapon_type: bpy.props.StringProperty()
+    main_code:   bpy.props.StringProperty()
+    part:        bpy.props.StringProperty()
+    filetype:    bpy.props.StringProperty()
+    collection_name: bpy.props.EnumProperty(
+        name="Collection",
+        items=lambda self, ctx: _get_filtered_collections(self.filetype)
+    )
+
+    def invoke(self, context, event):
+        context.window_manager.invoke_search_popup(self)
+        return {'RUNNING_MODAL'}
+
+    def execute(self, context):
+        if self.collection_name and self.collection_name != "NONE":
+            set_weapon_binding(context.scene, self.weapon_type, self.main_code,
+                                self.part, self.filetype, self.collection_name)
+        return {'FINISHED'}
+
+
+class MHWI_OT_ClearWeaponBinding(bpy.types.Operator):
+    bl_idname  = "mhwi.clear_weapon_binding"
+    bl_label   = "Clear Binding"
+    bl_options = {'INTERNAL'}
+
+    weapon_type: bpy.props.StringProperty()
+    main_code:   bpy.props.StringProperty()
+    part:        bpy.props.StringProperty()
+    filetype:    bpy.props.StringProperty()
+
+    def execute(self, context):
+        set_weapon_binding(context.scene, self.weapon_type, self.main_code, self.part, self.filetype, "")
+        return {'FINISHED'}
+
+
+# ── Pick Armor ──────────────────────────────────────────────────
+
+def _mhwi_armor_items_for_rank(rank, context):
+    settings = context.scene.mhw_suite_settings
+    if rank == 'HR':
+        return get_mhwi_hr_armor_callback(settings, context)
+    elif rank == 'MR':
+        return get_mhwi_mr_armor_callback(settings, context)
+    else:
+        return get_mhwi_sp_armor_callback(settings, context)
+
+
+def _get_armor_label(context, rank, armor_id):
+    """根据当前装备包解析 armor_id 对应的显示名，找不到则回退为原始 id"""
+    if not armor_id or armor_id == 'NONE':
+        return None
+    for item_id, label, *_ in _mhwi_armor_items_for_rank(rank, context):
+        if item_id == armor_id:
+            return label
+    return armor_id
+
+
+class MHWI_OT_PickArmor(bpy.types.Operator):
+    """搜索并选择装备（避免装备过多时下拉表溢出屏幕）"""
+    bl_idname  = "mhwi.pick_armor"
+    bl_label   = "Pick Armor"
+    bl_options = {'INTERNAL'}
+    bl_property = "armor_id"
+
+    rank: bpy.props.StringProperty()   # 'HR' / 'MR' / 'SP'
+    armor_id: bpy.props.EnumProperty(
+        name="Armor",
+        items=lambda self, ctx: _mhwi_armor_items_for_rank(self.rank, ctx)
+    )
+
+    def invoke(self, context, event):
+        context.window_manager.invoke_search_popup(self)
+        return {'RUNNING_MODAL'}
+
+    def execute(self, context):
+        if self.armor_id and self.armor_id != 'NONE':
+            settings = context.scene.mhw_suite_settings
+            if self.rank == 'HR':
+                settings.mhwi_selected_hr_armor = self.armor_id
+            elif self.rank == 'MR':
+                settings.mhwi_selected_mr_armor = self.armor_id
+            else:
+                settings.mhwi_selected_sp_armor = self.armor_id
+        return {'FINISHED'}
+
+
+# ── Pick Weapon ───────────────────────────────────────────────────
+
+def _get_weapon_label(context, weapon_type, weapon_id):
+    """根据当前武器预设组解析 weapon_id 对应的显示名，找不到则回退为原始 id"""
+    if not weapon_id or weapon_id == 'NONE':
+        return None
+    for item_id, label, *_ in get_mhwi_weapon_callback_for_type(weapon_type, context):
+        if item_id == weapon_id:
+            return label
+    return weapon_id
+
+
+class MHWI_OT_PickWeapon(bpy.types.Operator):
+    """搜索并选择武器（避免武器过多时下拉表溢出屏幕）"""
+    bl_idname  = "mhwi.pick_weapon"
+    bl_label   = "Pick Weapon"
+    bl_options = {'INTERNAL'}
+    bl_property = "weapon_id"
+
+    weapon_type: bpy.props.StringProperty()
+    weapon_id: bpy.props.EnumProperty(
+        name="Weapon",
+        items=lambda self, ctx: get_mhwi_weapon_callback_for_type(self.weapon_type, ctx)
+    )
+
+    def invoke(self, context, event):
+        context.window_manager.invoke_search_popup(self)
+        return {'RUNNING_MODAL'}
+
+    def execute(self, context):
+        if self.weapon_id and self.weapon_id != 'NONE':
+            set_selected_weapon(context.scene, self.weapon_type, self.weapon_id)
+        return {'FINISHED'}
+
+
 # ── 主对话框 ──────────────────────────────────────────────────────
 
 class MHWI_OT_BatchExportDialog(bpy.types.Operator):
@@ -137,8 +275,8 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
         scene    = context.scene
         settings = scene.mhw_suite_settings
 
-        # ── 装备包 ──
-        layout.prop(settings, "mhwi_armor_sets_file", text="装备包")
+        # ── 模式切换（装备 / 武器） ──
+        layout.row().prop(settings, "mhwi_export_mode", expand=True)
 
         # ── Mod Root ──
         natives_root = scene.get("mhwi_natives_root", "")
@@ -151,6 +289,15 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
         else:
             row.label(text="未设置", icon='ERROR')
 
+        if settings.mhwi_export_mode == 'WEAPON':
+            self._draw_weapon_mode(layout, context, scene, settings)
+        else:
+            self._draw_armor_mode(layout, context, scene, settings)
+
+    def _draw_armor_mode(self, layout, context, scene, settings):
+        # ── 预设组 ──
+        layout.prop(settings, "mhwi_armor_sets_file", text="预设组")
+
         # ── 性别 + 位阶标签页 ──
         rank = settings.mhwi_rank_tab
         if rank != 'SP':
@@ -161,14 +308,16 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
 
         # ── 装备选择 ──
         if rank == 'HR':
-            layout.prop(settings, "mhwi_selected_hr_armor", text="装备")
             model_id = settings.mhwi_selected_hr_armor
         elif rank == 'MR':
-            layout.prop(settings, "mhwi_selected_mr_armor", text="装备")
             model_id = settings.mhwi_selected_mr_armor
         else:
-            layout.prop(settings, "mhwi_selected_sp_armor", text="装备")
             model_id = settings.mhwi_selected_sp_armor
+
+        cur_armor_label = _get_armor_label(context, rank, model_id)
+        op = layout.operator("mhwi.pick_armor", text=cur_armor_label if cur_armor_label else "选择装备...",
+                             icon='DOWNARROW_HLT')
+        op.rank = rank
 
         if not model_id or model_id == 'NONE':
             layout.separator()
@@ -199,6 +348,73 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
         layout.separator()
         row = layout.row(align=False)
         row.prop(settings, "mhwi_cleanup_before_export", icon='BRUSH_DATA')
+
+    def _draw_weapon_mode(self, layout, context, scene, settings):
+        # ── 预设组 ──
+        layout.prop(settings, "mhwi_weapon_sets_file", text="预设组")
+
+        # ── 武器类型 ──
+        layout.prop(settings, "mhwi_weapon_type_tab", text="武器类型")
+        weapon_type = settings.mhwi_weapon_type_tab
+
+        # ── 武器选择 ──
+        weapon_id = get_selected_weapon(scene, weapon_type)
+        cur_label = _get_weapon_label(context, weapon_type, weapon_id)
+        op = layout.operator("mhwi.pick_weapon", text=cur_label if cur_label else "选择武器...",
+                             icon='DOWNARROW_HLT')
+        op.weapon_type = weapon_type
+
+        if not weapon_id or weapon_id == 'NONE':
+            layout.separator()
+            layout.label(text="请选择武器以配置绑定", icon='INFO')
+            return
+
+        data  = _load_weapon_sets(settings.mhwi_weapon_sets_file)
+        entry = get_weapon_entry(data, weapon_type, weapon_id)
+        if not entry:
+            # 上次选择属于其他类型或预设组已变更，视为未选择
+            layout.separator()
+            layout.label(text="请选择武器以配置绑定", icon='INFO')
+            return
+
+        layout.separator()
+        if has_patch_model(entry):
+            sub = layout.row()
+            sub.enabled = False
+            sub.label(text="该武器拥有贴片模型，不建议替换！", icon='ERROR')
+
+        main_code = entry["id"]
+        parts     = get_weapon_parts(weapon_type, entry)
+
+        header = layout.row(align=False)
+        header.label(text="")
+        for ft in WEAPON_FILE_TYPES:
+            header.label(text=_FILETYPE_LABELS[ft], icon=_FILETYPE_ICONS[ft], translate=False)
+
+        for part_code, part_name, model_code in parts:
+            row = layout.row(align=False)
+            row.label(text=f"{part_name} ({model_code})")
+            for ft in WEAPON_FILE_TYPES:
+                self._draw_weapon_picker(row, scene, weapon_type, main_code, part_code, ft)
+
+    def _draw_weapon_picker(self, row, scene, weapon_type, main_code, part_code, ft):
+        cur = get_weapon_binding(scene, weapon_type, main_code, part_code, ft)
+        sub = row.row(align=True)
+        pick_op = sub.operator(
+            "mhwi.pick_weapon_collection",
+            text=cur if cur else "—",
+            icon='DOWNARROW_HLT' if not cur else _FILETYPE_ICONS[ft],
+        )
+        pick_op.weapon_type = weapon_type
+        pick_op.main_code   = main_code
+        pick_op.part        = part_code
+        pick_op.filetype    = ft
+        if cur:
+            clr_op = sub.operator("mhwi.clear_weapon_binding", text="", icon='X')
+            clr_op.weapon_type = weapon_type
+            clr_op.main_code   = main_code
+            clr_op.part        = part_code
+            clr_op.filetype    = ft
 
     def _draw_parts(self, layout, scene, model_id, active_parts, sp_helm=False):
         # 表头行
@@ -321,9 +537,13 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
 
 classes = [
     MHWI_OT_PickCollection,
+    MHWI_OT_PickArmor,
     MHWI_OT_ClearBinding,
     MHWI_OT_ToggleBlank,
     MHWI_OT_ToggleCCL,
+    MHWI_OT_PickWeaponCollection,
+    MHWI_OT_ClearWeaponBinding,
+    MHWI_OT_PickWeapon,
     MHWI_OT_BatchExportDialog,
 ]
 

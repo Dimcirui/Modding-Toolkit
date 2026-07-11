@@ -17,6 +17,7 @@ from ..games.mhwi.batch_export import (
     get_mhwi_mr_armor_callback,
     get_mhwi_sp_armor_callback,
 )
+from ..games.mhwi.weapon_data import get_mhwi_weapon_sets_callback, WEAPON_TYPES
 from ..core.bone_mapper import BoneMapManager
 
 # 映射详情预览缓存：{(x_preset, y_preset): (mapper_x, mapper_y)}
@@ -101,10 +102,28 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     )
 
     # MHWI batch export
+    mhwi_export_mode: bpy.props.EnumProperty(
+        name="导出模式",
+        items=[
+            ('ARMOR',  "装备", "导出人物装备（护甲/幻化）"),
+            ('WEAPON', "武器", "导出武器模型（暂不支持空模替换）"),
+        ],
+        default='ARMOR',
+    )
     mhwi_armor_sets_file: bpy.props.EnumProperty(
-        name="装备包",
-        description="选择 MHWI 装备包 JSON",
+        name="预设组",
+        description="选择 MHWI 装备预设组 JSON",
         items=get_mhwi_armor_sets_callback,
+    )
+    mhwi_weapon_sets_file: bpy.props.EnumProperty(
+        name="预设组",
+        description="选择 MHWI 武器预设组 JSON",
+        items=get_mhwi_weapon_sets_callback,
+    )
+    mhwi_weapon_type_tab: bpy.props.EnumProperty(
+        name="武器类型",
+        items=[(code, name, "") for code, name, _secondary in WEAPON_TYPES],
+        default='two',
     )
     mhwi_rank_tab: bpy.props.EnumProperty(
         name="位阶",
@@ -236,7 +255,7 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         default=True,
     )
     mhrs_use_shadow_export: bpy.props.BoolProperty(
-        name="使用fbxskel",
+        name="使用 Shadow Mesh",
         description="导出时将内置的 Shadow 参考模型骨架对齐到所选骨架，并导出到固定的 mod/{性别}/bone/ 路径",
         default=False,
     )
@@ -244,7 +263,7 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         type=bpy.types.Object,
         poll=lambda self, obj: obj.type == 'ARMATURE',
         name="对齐骨架",
-        description="用于对齐 Shadow 参考模型骨架的目标骨架",
+        description="用于对齐 Shadow 参考模型骨架的目标骨架；留空且本次仅绑定了一个 Mesh 集合时，将自动使用该集合内的骨架",
     )
 
     # RE4 batch export
@@ -773,10 +792,10 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             col.separator()
             row = col.row()
             row.enabled = has_mhw_model
-            row.operator("mhwi.batch_export_dialog", text=_("批量导出装备"), icon='EXPORT')
+            row.operator("mhwi.batch_export_dialog", text=_("批量导出"), icon='EXPORT')
             row = col.row()
             row.enabled = has_mhw_model
-            row.operator("mhwi.batch_import_dialog", text=_("批量导入装备"), icon='IMPORT')
+            row.operator("mhwi.batch_import_dialog", text=_("批量导入"), icon='IMPORT')
 
         if settings.show_mhws:
             box = layout.box()
