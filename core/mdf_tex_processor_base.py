@@ -56,6 +56,13 @@ BASE_TEXTURE_TYPE_ABBREV = {
     'SSSCavityOcclusionTranslucentMap': 'SCOT',
     'AlphaCavityOcclusionTranslucentMap': 'ACOT',
     'AlphaTranslucentOcclusionCavityMap': 'ATOC',
+    # MHRS
+    'NRMR_NRRTMap':                    'NRMR',   # same layout/abbrev as NormalRoughnessMap
+    'AlphaMap':                        'ALPHA',
+    'UserColorchangeMap':              'UCC',
+    'FurVelocityMap':                  'FVEL',   # matches games/mhwi/mrl3_tex_processor.py's MHWI_ABBREV_MAP
+    'FxMap':                           'FX',      # matches games/mhwi/mrl3_tex_processor.py's MHWI_ABBREV_MAP
+    'FurTex':                          'FUR',
 }
 
 # Channel composition maps.  Values may be:
@@ -94,6 +101,12 @@ BASE_SLOT_CHANNEL_MAPS = {
         'A': ('roughness', 0),
     },
     'NormalRoughnessMap': {
+        'R': ('normal',    0),
+        'G': ('normal',    1),
+        'B': None,
+        'A': ('roughness', 0),
+    },
+    'NRMR_NRRTMap': {   # MHRS — same layout as NormalRoughnessMap
         'R': ('normal',    0),
         'G': ('normal',    1),
         'B': None,
@@ -154,9 +167,16 @@ BASE_COMMON_SLOT_TYPES = {
     'NormalRoughness',
     'NormalRoughnessMap',
     'AlphaTranslucentOcclusionSSSMap',
-    'AlphaTranslucentOcclusionCavityMap'
+    'AlphaTranslucentOcclusionCavityMap',
     'AlphaCavityOcclusionTranslucentMap',
     'SSSCavityOcclusionTranslucentMap',
+    # MHRS
+    'NRMR_NRRTMap',
+    'AlphaMap',
+    'UserColorchangeMap',
+    'FurVelocityMap',
+    'FxMap',
+    'FurTex',
 }
 
 BASE_NULL_TEX_BY_TYPE = {
@@ -200,6 +220,12 @@ BASE_NULL_TEX_BY_TYPE = {
     'MaskMap':                       'systems/rendering/NullBlack.tex',
     'DetailMap':                     'systems/rendering/NullGray.tex',
     'BaseShiftMap':                  'systems/rendering/NullBlack.tex',
+    # MHRS (per RE Mesh Editor's tex_bindings_null.json, "generic"/MHRSB entries)
+    'NRMR_NRRTMap':                  'systems/rendering/NullNormalRoughness.tex',
+    'AlphaMap':                      'systems/rendering/NullWhite.tex',
+    'UserColorchangeMap':            'systems/rendering/NullBlack.tex',
+    'FurVelocityMap':                'MasterMaterial/Textures/NullFurVelocity.tex',
+    'FurTex':                        'systems/rendering/NullBlack.tex',
 }
 
 # ── Factory helpers ────────────────────────────────────────────────────────────

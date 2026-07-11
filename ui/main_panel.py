@@ -10,6 +10,7 @@ from ..core.pose_ops import get_pose_presets_callback
 from ..games.re9.batch_export import get_schemes_callback
 from ..games.re4.batch_export import get_schemes_callback as get_re4_schemes_callback
 from ..games.mhws.batch_export import get_mhws_schemes_callback, get_mhws_armor_callback, MHWS_VARIANTS
+from ..games.mhrs.batch_export import get_mhrs_schemes_callback, get_mhrs_armor_callback, MHRS_GENDERS
 from ..games.mhwi.batch_export import (
     get_mhwi_armor_sets_callback,
     get_mhwi_hr_armor_callback,
@@ -26,6 +27,7 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     # 顶部开关
     show_mhwi: bpy.props.BoolProperty(name="MHWI", default=False)
     show_mhws: bpy.props.BoolProperty(name="MHWS", default=False)
+    show_mhrs: bpy.props.BoolProperty(name="MHRS", default=False)
     show_re4: bpy.props.BoolProperty(name="RE4", default=False)
     show_re9: bpy.props.BoolProperty(name="RE9", default=False)
     
@@ -204,6 +206,45 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         name="未选项使用空模型",
         description="导出时对未选择集合的栏位，复制内置空文件代替跳过",
         default=True,
+    )
+
+    # MHRS batch export
+    mhrs_armor_scheme: bpy.props.EnumProperty(
+        name="装备包",
+        description="选择 MHRS 装备包 JSON",
+        items=get_mhrs_schemes_callback
+    )
+    mhrs_gender: bpy.props.EnumProperty(
+        name="性别",
+        description="选择猎人性别",
+        items=MHRS_GENDERS,
+        default='f'
+    )
+    mhrs_selected_armor: bpy.props.EnumProperty(
+        name="装备",
+        description="选择要导出的装备",
+        items=get_mhrs_armor_callback
+    )
+    mhrs_use_blank_export: bpy.props.BoolProperty(
+        name="未选项使用空模型",
+        description="导出时对未选择集合的栏位，复制内置空文件代替跳过",
+        default=False,
+    )
+    mhrs_cleanup_before_export: bpy.props.BoolProperty(
+        name="导出前清理网格",
+        description="导出前对所有已绑定的 mesh 集合执行: 删除松散几何、修复重复UV、清除零权重顶点组、限制并归一化权重（需要 RE Mesh Editor）",
+        default=True,
+    )
+    mhrs_use_shadow_export: bpy.props.BoolProperty(
+        name="使用fbxskel",
+        description="导出时将内置的 Shadow 参考模型骨架对齐到所选骨架，并导出到固定的 mod/{性别}/bone/ 路径",
+        default=False,
+    )
+    mhrs_shadow_armature: bpy.props.PointerProperty(
+        type=bpy.types.Object,
+        poll=lambda self, obj: obj.type == 'ARMATURE',
+        name="对齐骨架",
+        description="用于对齐 Shadow 参考模型骨架的目标骨架",
     )
 
     # RE4 batch export
@@ -487,6 +528,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
         row = layout.row(align=True)
         row.prop(settings, "show_mhwi", toggle=True, text="MHWI")
         row.prop(settings, "show_mhws", toggle=True, text="MHWS")
+        row.prop(settings, "show_mhrs", toggle=True, text="MHRS")
         row.prop(settings, "show_re4", toggle=True, text="RE4")
         row.prop(settings, "show_re9", toggle=True, text="RE9")
         
@@ -811,6 +853,32 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row = col.row()
             row.enabled = has_re_mesh
             row.operator("re4.batch_export_dialog", text="RE4 Batch Exporter", icon='EXPORT')
+
+        if settings.show_mhrs:
+            box = layout.box()
+            box.label(text="MHRS Tools", icon='GHOST_ENABLED')
+            col = box.column(align=True)
+
+            has_re_mesh = re_mesh_op_available('exportfile')
+            sub = col.row(align=True)
+            sub.enabled = has_re_mesh
+            sub.operator("mhrs.mdf_tex_processor_dialog", text=_("MDF2 处理器"), icon='TEXTURE')
+            sub.operator("mhrs.mdf_generator_dialog",     text=_("MDF2 生成器"), icon='SHADERFX')
+            if not has_re_mesh:
+                col.label(text="需要 RE Mesh Editor!", icon='ERROR')
+
+            col.separator()
+            has_re_chain = hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
+            row = col.row()
+            row.enabled = has_re_chain
+            row.operator("mhrs.auto_create_chains", text=_("一键创建 RE Chain"), icon='LINKED')
+            if not has_re_chain:
+                col.label(text="需要 RE Chain Editor!", icon='ERROR')
+
+            col.separator()
+            row = col.row()
+            row.enabled = has_re_mesh
+            row.operator("mhrs.batch_export_dialog", text="MHRS Batch Exporter", icon='EXPORT')
 
         if settings.show_re9:
             box = layout.box()

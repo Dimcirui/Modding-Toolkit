@@ -1,8 +1,9 @@
-from . import mhwi, mhws, re4, re9
+from . import mhwi, mhws, mhrs, re4, re9
 
 modules = [
     mhwi,
     mhws,
+    mhrs,
     re4,
     re9,
 ]

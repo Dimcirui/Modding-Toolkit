@@ -1,0 +1,1199 @@
+{
+  "armor_sets": [
+    {
+      "id": "001",
+      "name": "皮制/皮制S/皮制X",
+      "parts_mask": 31
+    },
+    {
+      "id": "002",
+      "name": "猎人/猎人S/猎人X",
+      "parts_mask": 31
+    },
+    {
+      "id": "003",
+      "name": "骨制/骨制S/骨制X",
+      "parts_mask": 31
+    },
+    {
+      "id": "004",
+      "name": "合金/合金S/合金X",
+      "parts_mask": 31
+    },
+    {
+      "id": "009",
+      "name": "搔鸟/搔鸟S",
+      "parts_mask": 31
+    },
+    {
+      "id": "010",
+      "name": "毒妖鸟/毒妖鸟S",
+      "parts_mask": 31
+    },
+    {
+      "id": "011",
+      "name": "泥鱼龙",
+      "parts_mask": 31
+    },
+    {
+      "id": "012",
+      "name": "土砂龙/土砂龙S",
+      "parts_mask": 31
+    },
+    {
+      "id": "013",
+      "name": "飞雷龙/飞雷龙S",
+      "parts_mask": 31
+    },
+    {
+      "id": "014",
+      "name": "锁甲/锁甲S/锁甲X",
+      "parts_mask": 31
+    },
+    {
+      "id": "020",
+      "name": "蛮颚龙/蛮颚龙S",
+      "parts_mask": 31
+    },
+    {
+      "id": "021",
+      "name": "雌火龙/雌火龙S",
+      "parts_mask": 31
+    },
+    {
+      "id": "026",
+      "name": "死神/死神S/死神X",
+      "parts_mask": 31
+    },
+    {
+      "id": "031",
+      "name": "铸铁/铸铁S/铸铁X",
+      "parts_mask": 31
+    },
+    {
+      "id": "033",
+      "name": "火龙/火龙S",
+      "parts_mask": 31
+    },
+    {
+      "id": "034",
+      "name": "角龙/角龙S",
+      "parts_mask": 31
+    },
+    {
+      "id": "036",
+      "name": "旅团/旅团S/旅团X",
+      "parts_mask": 31
+    },
+    {
+      "id": "037",
+      "name": "名手羽饰/强弓羽饰",
+      "parts_mask": 8
+    },
+    {
+      "id": "042",
+      "name": "爆鳞龙",
+      "parts_mask": 31
+    },
+    {
+      "id": "043",
+      "name": "花纹钢",
+      "parts_mask": 31
+    },
+    {
+      "id": "044",
+      "name": "杜宾/杜宾X",
+      "parts_mask": 31
+    },
+    {
+      "id": "046",
+      "name": "帝王",
+      "parts_mask": 31
+    },
+    {
+      "id": "047",
+      "name": "钢龙",
+      "parts_mask": 31
+    },
+    {
+      "id": "054",
+      "name": "骷髅/骷髅S/骷髅X",
+      "parts_mask": 8
+    },
+    {
+      "id": "060",
+      "name": "知略眼镜",
+      "parts_mask": 8
+    },
+    {
+      "id": "061",
+      "name": "炎之封眼",
+      "parts_mask": 8
+    },
+    {
+      "id": "062",
+      "name": "墨镜",
+      "parts_mask": 8
+    },
+    {
+      "id": "079",
+      "name": "冰牙龙/冰牙龙S",
+      "parts_mask": 31
+    },
+    {
+      "id": "080",
+      "name": "迅龙/迅龙S",
+      "parts_mask": 31
+    },
+    {
+      "id": "083",
+      "name": "轰龙/轰龙S",
+      "parts_mask": 31
+    },
+    {
+      "id": "200",
+      "name": "炎火装束/炎火装束・继/炎火装束・霸",
+      "parts_mask": 31
+    },
+    {
+      "id": "201",
+      "name": "祸铠/祸铠・霸",
+      "parts_mask": 31
+    },
+    {
+      "id": "202",
+      "name": "天狗兽/天狗兽S",
+      "parts_mask": 31
+    },
+    {
+      "id": "203",
+      "name": "伞鸟/伞鸟S",
+      "parts_mask": 31
+    },
+    {
+      "id": "204",
+      "name": "河童蛙/河童蛙S",
+      "parts_mask": 31
+    },
+    {
+      "id": "205",
+      "name": "人鱼龙/人鱼龙S",
+      "parts_mask": 31
+    },
+    {
+      "id": "206",
+      "name": "妃蜘蛛",
+      "parts_mask": 31
+    },
+    {
+      "id": "207",
+      "name": "雪鬼兽/雪鬼兽S",
+      "parts_mask": 31
+    },
+    {
+      "id": "208",
+      "name": "泥翁龙/泥翁龙S",
+      "parts_mask": 31
+    },
+    {
+      "id": "209",
+      "name": "风卷",
+      "parts_mask": 31
+    },
+    {
+      "id": "210",
+      "name": "鸣神",
+      "parts_mask": 31
+    },
+    {
+      "id": "211",
+      "name": "镰鼬龙/镰鼬龙S",
+      "parts_mask": 31
+    },
+    {
+      "id": "212",
+      "name": "水行",
+      "parts_mask": 31
+    },
+    {
+      "id": "213",
+      "name": "丸鸟S伪装/丸鸟X伪装/丸鸟伪装",
+      "parts_mask": 8
+    },
+    {
+      "id": "214",
+      "name": "垂皮龙/垂皮龙S/垂皮龙X",
+      "parts_mask": 10
+    },
+    {
+      "id": "215",
+      "name": "硬甲龙/硬甲龙S/硬甲龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "216",
+      "name": "狗龙皮/狗龙皮S/狗龙皮X",
+      "parts_mask": 17
+    },
+    {
+      "id": "217",
+      "name": "飞甲虫/飞甲虫S/飞甲虫X",
+      "parts_mask": 31
+    },
+    {
+      "id": "218",
+      "name": "野猪S伪装/野猪X伪装/野猪伪装",
+      "parts_mask": 8
+    },
+    {
+      "id": "219",
+      "name": "翼蛇龙/翼蛇龙S/翼蛇龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "220",
+      "name": "水生兽/水生兽S/水生兽X",
+      "parts_mask": 22
+    },
+    {
+      "id": "221",
+      "name": "熔岩兽/熔岩兽S/熔岩兽X",
+      "parts_mask": 6
+    },
+    {
+      "id": "222",
+      "name": "毒狗龙/毒狗龙S/毒狗龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "223",
+      "name": "眠狗龙/眠狗龙S/眠狗龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "224",
+      "name": "青熊兽/青熊兽S/青熊兽X",
+      "parts_mask": 31
+    },
+    {
+      "id": "225",
+      "name": "白兔兽/白兔兽S/白兔兽X",
+      "parts_mask": 31
+    },
+    {
+      "id": "226",
+      "name": "赤甲兽/赤甲兽S/赤甲兽X",
+      "parts_mask": 31
+    },
+    {
+      "id": "227",
+      "name": "水兽/水兽S",
+      "parts_mask": 31
+    },
+    {
+      "id": "228",
+      "name": "泡狐龙/泡狐龙S",
+      "parts_mask": 31
+    },
+    {
+      "id": "229",
+      "name": "奇怪龙/奇怪龙S",
+      "parts_mask": 31
+    },
+    {
+      "id": "233",
+      "name": "岩龙/岩龙S",
+      "parts_mask": 31
+    },
+    {
+      "id": "234",
+      "name": "雷狼龙/雷狼龙S",
+      "parts_mask": 31
+    },
+    {
+      "id": "235",
+      "name": "金色",
+      "parts_mask": 31
+    },
+    {
+      "id": "237",
+      "name": "赫耀",
+      "parts_mask": 31
+    },
+    {
+      "id": "238",
+      "name": "花瓣/花瓣S/花瓣X",
+      "parts_mask": 31
+    },
+    {
+      "id": "239",
+      "name": "鱼鳞/鱼鳞S/鱼鳞X",
+      "parts_mask": 31
+    },
+    {
+      "id": "240",
+      "name": "南瓜/南瓜S/南瓜X",
+      "parts_mask": 31
+    },
+    {
+      "id": "241",
+      "name": "凤蝶/凤蝶S/凤蝶X/锹形/锹形S/锹形X",
+      "parts_mask": 31
+    },
+    {
+      "id": "242",
+      "name": "海境/海境S/海境X",
+      "parts_mask": 31
+    },
+    {
+      "id": "243",
+      "name": "混沌/混沌・真/混沌・霸",
+      "parts_mask": 10
+    },
+    {
+      "id": "244",
+      "name": "雪绒花/雪绒花S/雪绒花X",
+      "parts_mask": 31
+    },
+    {
+      "id": "245",
+      "name": "毒蛛/毒蛛S/毒蛛X/毒蝎/毒蝎S/毒蝎X",
+      "parts_mask": 31
+    },
+    {
+      "id": "246",
+      "name": "依巫/依巫・燿/依巫・祈/倪泰表/倪泰表・真/倪泰表・霸",
+      "parts_mask": 31
+    },
+    {
+      "id": "248",
+      "name": "贝壳/贝壳S/贝壳X",
+      "parts_mask": 31
+    },
+    {
+      "id": "249",
+      "name": "哥特/哥特S/哥特X",
+      "parts_mask": 31
+    },
+    {
+      "id": "250",
+      "name": "祸铠封具",
+      "parts_mask": 31
+    },
+    {
+      "id": "251",
+      "name": "亚瑟",
+      "parts_mask": 31
+    },
+    {
+      "id": "252",
+      "name": "铬合金/铬合金X",
+      "parts_mask": 20
+    },
+    {
+      "id": "254",
+      "name": "骑士",
+      "parts_mask": 31
+    },
+    {
+      "id": "255",
+      "name": "黑色皮制",
+      "parts_mask": 16
+    },
+    {
+      "id": "257",
+      "name": "狗龙S伪装/狗龙X伪装/狗龙伪装",
+      "parts_mask": 8
+    },
+    {
+      "id": "259",
+      "name": "倪泰里/倪泰里・真/倪泰里・霸/神凪/神凪・愿/神凪・洸",
+      "parts_mask": 31
+    },
+    {
+      "id": "260",
+      "name": "牙猎犬伪装/牙猎犬尾巴",
+      "parts_mask": 12
+    },
+    {
+      "id": "261",
+      "name": "艾露猫尾巴/艾露猫耳朵",
+      "parts_mask": 12
+    },
+    {
+      "id": "262",
+      "name": "名角假发",
+      "parts_mask": 8
+    },
+    {
+      "id": "263",
+      "name": "龙人耳饰",
+      "parts_mask": 8
+    },
+    {
+      "id": "264",
+      "name": "狐狸面具",
+      "parts_mask": 8
+    },
+    {
+      "id": "265",
+      "name": "染花",
+      "parts_mask": 27
+    },
+    {
+      "id": "266",
+      "name": "飞燕",
+      "parts_mask": 19
+    },
+    {
+      "id": "267",
+      "name": "兔团子耳饰",
+      "parts_mask": 8
+    },
+    {
+      "id": "268",
+      "name": "狸兽伪装",
+      "parts_mask": 8
+    },
+    {
+      "id": "269",
+      "name": "敬爱围巾",
+      "parts_mask": 8
+    },
+    {
+      "id": "270",
+      "name": "艾露猫忍头巾",
+      "parts_mask": 8
+    },
+    {
+      "id": "271",
+      "name": "炎火外套",
+      "parts_mask": 3
+    },
+    {
+      "id": "272",
+      "name": "炎火武士",
+      "parts_mask": 31
+    },
+    {
+      "id": "276",
+      "name": "豪鬼",
+      "parts_mask": 31
+    },
+    {
+      "id": "277",
+      "name": "潜水员",
+      "parts_mask": 31
+    },
+    {
+      "id": "278",
+      "name": "原型",
+      "parts_mask": 31
+    },
+    {
+      "id": "279",
+      "name": "公会十字",
+      "parts_mask": 31
+    },
+    {
+      "id": "280",
+      "name": "黑带",
+      "parts_mask": 31
+    },
+    {
+      "id": "281",
+      "name": "苦无耳饰",
+      "parts_mask": 8
+    },
+    {
+      "id": "282",
+      "name": "华丽耳饰",
+      "parts_mask": 8
+    },
+    {
+      "id": "283",
+      "name": "鬼火鸟耳饰",
+      "parts_mask": 8
+    },
+    {
+      "id": "284",
+      "name": "犬猫耳饰",
+      "parts_mask": 8
+    },
+    {
+      "id": "285",
+      "name": "蝴蝶结项链",
+      "parts_mask": 8
+    },
+    {
+      "id": "286",
+      "name": "皮制项圈",
+      "parts_mask": 8
+    },
+    {
+      "id": "287",
+      "name": "褶边项圈",
+      "parts_mask": 8
+    },
+    {
+      "id": "288",
+      "name": "博爱绷带",
+      "parts_mask": 8
+    },
+    {
+      "id": "289",
+      "name": "猎户星",
+      "parts_mask": 31
+    },
+    {
+      "id": "290",
+      "name": "盛装",
+      "parts_mask": 31
+    },
+    {
+      "id": "291",
+      "name": "盛开",
+      "parts_mask": 31
+    },
+    {
+      "id": "292",
+      "name": "索尼克服装",
+      "parts_mask": 27
+    },
+    {
+      "id": "293",
+      "name": "苍世武士",
+      "parts_mask": 31
+    },
+    {
+      "id": "300",
+      "name": "祸铠・真",
+      "parts_mask": 31
+    },
+    {
+      "id": "301",
+      "name": "天狗兽X",
+      "parts_mask": 31
+    },
+    {
+      "id": "302",
+      "name": "伞鸟X",
+      "parts_mask": 31
+    },
+    {
+      "id": "303",
+      "name": "河童蛙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "304",
+      "name": "人鱼龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "305",
+      "name": "妃蜘蛛X",
+      "parts_mask": 31
+    },
+    {
+      "id": "306",
+      "name": "雪鬼兽X",
+      "parts_mask": 31
+    },
+    {
+      "id": "307",
+      "name": "泥翁龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "308",
+      "name": "风卷・真",
+      "parts_mask": 31
+    },
+    {
+      "id": "309",
+      "name": "鸣神・真",
+      "parts_mask": 31
+    },
+    {
+      "id": "310",
+      "name": "镰鼬龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "311",
+      "name": "钢龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "312",
+      "name": "水行・真",
+      "parts_mask": 31
+    },
+    {
+      "id": "313",
+      "name": "帝王X",
+      "parts_mask": 31
+    },
+    {
+      "id": "314",
+      "name": "花纹钢X",
+      "parts_mask": 31
+    },
+    {
+      "id": "315",
+      "name": "水兽X",
+      "parts_mask": 31
+    },
+    {
+      "id": "316",
+      "name": "土砂龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "317",
+      "name": "奇怪龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "318",
+      "name": "迅龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "319",
+      "name": "冰牙龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "320",
+      "name": "雌火龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "321",
+      "name": "火龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "322",
+      "name": "轰龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "323",
+      "name": "角龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "324",
+      "name": "岩龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "325",
+      "name": "雷狼龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "326",
+      "name": "齐天・真",
+      "parts_mask": 31
+    },
+    {
+      "id": "327",
+      "name": "赫耀・真",
+      "parts_mask": 31
+    },
+    {
+      "id": "328",
+      "name": "搔鸟X",
+      "parts_mask": 31
+    },
+    {
+      "id": "329",
+      "name": "毒妖鸟X",
+      "parts_mask": 31
+    },
+    {
+      "id": "330",
+      "name": "泥鱼龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "331",
+      "name": "飞雷龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "332",
+      "name": "蛮颚龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "333",
+      "name": "爆鳞龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "334",
+      "name": "泡狐龙X",
+      "parts_mask": 31
+    },
+    {
+      "id": "335",
+      "name": "金黄澄月",
+      "parts_mask": 31
+    },
+    {
+      "id": "336",
+      "name": "银白耀日",
+      "parts_mask": 31
+    },
+    {
+      "id": "337",
+      "name": "大名盾蟹",
+      "parts_mask": 31
+    },
+    {
+      "id": "338",
+      "name": "将军镰蟹",
+      "parts_mask": 31
+    },
+    {
+      "id": "339",
+      "name": "怒天",
+      "parts_mask": 31
+    },
+    {
+      "id": "340",
+      "name": "月光",
+      "parts_mask": 31
+    },
+    {
+      "id": "341",
+      "name": "黑蚀龙",
+      "parts_mask": 31
+    },
+    {
+      "id": "342",
+      "name": "友爱/方舟",
+      "parts_mask": 31
+    },
+    {
+      "id": "343",
+      "name": "千刃龙",
+      "parts_mask": 31
+    },
+    {
+      "id": "344",
+      "name": "电龙",
+      "parts_mask": 31
+    },
+    {
+      "id": "345",
+      "name": "阴阳师",
+      "parts_mask": 31
+    },
+    {
+      "id": "346",
+      "name": "祸铠・怨",
+      "parts_mask": 31
+    },
+    {
+      "id": "347",
+      "name": "天狗兽Z",
+      "parts_mask": 31
+    },
+    {
+      "id": "348",
+      "name": "人鱼龙Z",
+      "parts_mask": 31
+    },
+    {
+      "id": "349",
+      "name": "妃蜘蛛Z",
+      "parts_mask": 31
+    },
+    {
+      "id": "350",
+      "name": "泥翁龙Ｚ",
+      "parts_mask": 31
+    },
+    {
+      "id": "351",
+      "name": "矜持",
+      "parts_mask": 31
+    },
+    {
+      "id": "352",
+      "name": "爵银龙",
+      "parts_mask": 31
+    },
+    {
+      "id": "353",
+      "name": "冰狼龙",
+      "parts_mask": 31
+    },
+    {
+      "id": "354",
+      "name": "刚缠兽",
+      "parts_mask": 31
+    },
+    {
+      "id": "355",
+      "name": "冥渊缠铠",
+      "parts_mask": 31
+    },
+    {
+      "id": "356",
+      "name": "棘龙",
+      "parts_mask": 31
+    },
+    {
+      "id": "357",
+      "name": "棘龙Z",
+      "parts_mask": 31
+    },
+    {
+      "id": "358",
+      "name": "蓝速龙",
+      "parts_mask": 31
+    },
+    {
+      "id": "359",
+      "name": "巨蜂",
+      "parts_mask": 31
+    },
+    {
+      "id": "360",
+      "name": "巨甲虫",
+      "parts_mask": 31
+    },
+    {
+      "id": "361",
+      "name": "蔚蓝",
+      "parts_mask": 31
+    },
+    {
+      "id": "362",
+      "name": "朱伟",
+      "parts_mask": 31
+    },
+    {
+      "id": "363",
+      "name": "情谊",
+      "parts_mask": 31
+    },
+    {
+      "id": "364",
+      "name": "雷尼根",
+      "parts_mask": 31
+    },
+    {
+      "id": "365",
+      "name": "漾光",
+      "parts_mask": 31
+    },
+    {
+      "id": "366",
+      "name": "海洋",
+      "parts_mask": 31
+    },
+    {
+      "id": "367",
+      "name": "薄暮",
+      "parts_mask": 31
+    },
+    {
+      "id": "368",
+      "name": "碧空",
+      "parts_mask": 31
+    },
+    {
+      "id": "369",
+      "name": "尊严",
+      "parts_mask": 31
+    },
+    {
+      "id": "370",
+      "name": "艾丽西亚",
+      "parts_mask": 31
+    },
+    {
+      "id": "371",
+      "name": "王国重装骑士",
+      "parts_mask": 31
+    },
+    {
+      "id": "372",
+      "name": "王国轻装骑士",
+      "parts_mask": 31
+    },
+    {
+      "id": "373",
+      "name": "王国炮术队",
+      "parts_mask": 31
+    },
+    {
+      "id": "374",
+      "name": "博爱/教授",
+      "parts_mask": 31
+    },
+    {
+      "id": "375",
+      "name": "龙公礼服",
+      "parts_mask": 31
+    },
+    {
+      "id": "376",
+      "name": "公会诗人/学士",
+      "parts_mask": 31
+    },
+    {
+      "id": "377",
+      "name": "水手",
+      "parts_mask": 31
+    },
+    {
+      "id": "378",
+      "name": "求知/猎鹰",
+      "parts_mask": 31
+    },
+    {
+      "id": "379",
+      "name": "贤者",
+      "parts_mask": 31
+    },
+    {
+      "id": "380",
+      "name": "追踪者",
+      "parts_mask": 31
+    },
+    {
+      "id": "381",
+      "name": "王国据点司令",
+      "parts_mask": 31
+    },
+    {
+      "id": "382",
+      "name": "掠夺者王冠",
+      "parts_mask": 8
+    },
+    {
+      "id": "383",
+      "name": "巴尔巴尼亚",
+      "parts_mask": 31
+    },
+    {
+      "id": "384",
+      "name": "恩宠",
+      "parts_mask": 31
+    },
+    {
+      "id": "385",
+      "name": "五行",
+      "parts_mask": 31
+    },
+    {
+      "id": "386",
+      "name": "守护者",
+      "parts_mask": 31
+    },
+    {
+      "id": "387",
+      "name": "公会宫殿",
+      "parts_mask": 31
+    },
+    {
+      "id": "388",
+      "name": "结云",
+      "parts_mask": 31
+    },
+    {
+      "id": "389",
+      "name": "福木兔伪装",
+      "parts_mask": 8
+    },
+    {
+      "id": "390",
+      "name": "海蛞蝓帽子",
+      "parts_mask": 8
+    },
+    {
+      "id": "391",
+      "name": "幻想宝冠",
+      "parts_mask": 8
+    },
+    {
+      "id": "392",
+      "name": "雷尔尼亚",
+      "parts_mask": 26
+    },
+    {
+      "id": "393",
+      "name": "蒙面围巾",
+      "parts_mask": 8
+    },
+    {
+      "id": "394",
+      "name": "灭龙猎装",
+      "parts_mask": 31
+    },
+    {
+      "id": "395",
+      "name": "夏日",
+      "parts_mask": 31
+    },
+    {
+      "id": "396",
+      "name": "秋风",
+      "parts_mask": 31
+    },
+    {
+      "id": "397",
+      "name": "蓬松毛皮",
+      "parts_mask": 31
+    },
+    {
+      "id": "398",
+      "name": "怪悟猎仁/百龙夜子",
+      "parts_mask": 31
+    },
+    {
+      "id": "400",
+      "name": "啮生虫王冠",
+      "parts_mask": 8
+    },
+    {
+      "id": "401",
+      "name": "海豚王冠",
+      "parts_mask": 8
+    },
+    {
+      "id": "402",
+      "name": "黑翼耳饰",
+      "parts_mask": 8
+    },
+    {
+      "id": "403",
+      "name": "白色福木兔耳套",
+      "parts_mask": 8
+    },
+    {
+      "id": "405",
+      "name": "牙猎面具",
+      "parts_mask": 8
+    },
+    {
+      "id": "406",
+      "name": "探明的单片眼镜",
+      "parts_mask": 8
+    },
+    {
+      "id": "407",
+      "name": "菲奥莱娜",
+      "parts_mask": 31
+    },
+    {
+      "id": "408",
+      "name": "倪泰",
+      "parts_mask": 31
+    },
+    {
+      "id": "409",
+      "name": "阿尔洛",
+      "parts_mask": 31
+    },
+    {
+      "id": "410",
+      "name": "火芽",
+      "parts_mask": 31
+    },
+    {
+      "id": "411",
+      "name": "水芸",
+      "parts_mask": 31
+    },
+    {
+      "id": "415",
+      "name": "脉动钢龙",
+      "parts_mask": 31
+    },
+    {
+      "id": "416",
+      "name": "水行・醒",
+      "parts_mask": 31
+    },
+    {
+      "id": "417",
+      "name": "脉动帝王",
+      "parts_mask": 31
+    },
+    {
+      "id": "418",
+      "name": "赫耀・历",
+      "parts_mask": 31
+    },
+    {
+      "id": "419",
+      "name": "久爱/美德",
+      "parts_mask": 31
+    },
+    {
+      "id": "420",
+      "name": "原初",
+      "parts_mask": 31
+    },
+    {
+      "id": "421",
+      "name": "堕天/混茫",
+      "parts_mask": 31
+    },
+    {
+      "id": "422",
+      "name": "雪崩",
+      "parts_mask": 31
+    },
+    {
+      "id": "423",
+      "name": "风雨",
+      "parts_mask": 31
+    },
+    {
+      "id": "424",
+      "name": "蒸汽贵族",
+      "parts_mask": 31
+    },
+    {
+      "id": "425",
+      "name": "机械",
+      "parts_mask": 31
+    },
+    {
+      "id": "428",
+      "name": "狂野",
+      "parts_mask": 31
+    },
+    {
+      "id": "433",
+      "name": "黑带S",
+      "parts_mask": 31
+    },
+    {
+      "id": "435",
+      "name": "健美",
+      "parts_mask": 23
+    },
+    {
+      "id": "507",
+      "name": "祝福羽饰/翔驱羽饰",
+      "parts_mask": 8
+    },
+    {
+      "id": "508",
+      "name": "埃尔迦德",
+      "parts_mask": 18
+    }
+  ]
+}
