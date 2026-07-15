@@ -814,6 +814,10 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             col.operator("mhws.optimize_aux_bones", text=_("优化辅助骨骼及权重"), icon='GROUP_VERTEX')
             col.operator("mhw.mmd_face_weights", text=_("MMD 形态键转表情权重"), icon='SHAPEKEY_DATA').target_game = 'MHWS'
 
+            row = col.row()
+            row.enabled = has_mbt
+            row.operator("mhws.add_facial_bones", text=_("一键添加表情骨"), icon='SHAPEKEY_DATA')
+
             col.separator()
             has_re_mesh = re_mesh_op_available('exportfile')
             sub = col.row(align=True)
@@ -1086,6 +1090,14 @@ _MMD_FACE_ENTRIES = [
 ]
 _MMD_FACE_GAME_COL = {'MHWI': 3, 'MHWS': 4, 'RE4': 5, 'RE9': 6}
 
+# 不允许自定义忽略阈值/权重强度/平滑扩散率/平滑迭代次数，改为按部位使用固定值；
+# 上眼皮单独调高形变捕捉精度 (阈值0、扩散率0，避免眨眼权重被过度平滑)
+_MMD_FACE_UPPER_EYELID_LABELS = {"左眼上眼皮", "右眼上眼皮"}
+_MMD_FACE_FIXED_PARAMS = {
+    True:  dict(ignore_threshold=0.0,   weight_strength=1.0, smooth_factor=0.0, smooth_iters=10),
+    False: dict(ignore_threshold=0.001, weight_strength=1.0, smooth_factor=0.5, smooth_iters=10),
+}
+
 
 class MHW_OT_MMDFaceWeights(bpy.types.Operator):
     """将 MMD 眼皮/嘴型形态键按方向拆分为目标游戏表情顶点组"""
@@ -1101,23 +1113,6 @@ class MHW_OT_MMDFaceWeights(bpy.types.Operator):
             ('RE4',  "RE4",  ""),
             ('RE9',  "RE9",  ""),
         ],
-    )
-    ignore_threshold: bpy.props.FloatProperty(
-        name="忽略阈值",
-        default=0.001, min=0.0,
-        description="Vertices with displacement smaller than this are ignored",
-    )
-    weight_strength: bpy.props.FloatProperty(
-        name="权重强度",
-        default=1.0, min=0.1, max=5.0,
-    )
-    smooth_factor: bpy.props.FloatProperty(
-        name="平滑扩散率",
-        default=0.5, min=0.0, max=1.0,
-    )
-    smooth_iters: bpy.props.IntProperty(
-        name="平滑迭代次数",
-        default=10, min=0, max=100,
     )
     sync_seams: bpy.props.BoolProperty(
         name="缝合重合顶点",
@@ -1139,10 +1134,6 @@ class MHW_OT_MMDFaceWeights(bpy.types.Operator):
         col = layout.column()
         col.prop(self, "target_game")
         col.separator()
-        col.prop(self, "ignore_threshold")
-        col.prop(self, "weight_strength", slider=True)
-        col.prop(self, "smooth_factor", slider=True)
-        col.prop(self, "smooth_iters")
         col.prop(self, "sync_seams")
 
     def execute(self, context):
@@ -1161,15 +1152,14 @@ class MHW_OT_MMDFaceWeights(bpy.types.Operator):
                 skipped.append(part_label)
                 continue
             target_vg = vg_names[vg_col - 3]
+            params = _MMD_FACE_FIXED_PARAMS[part_label in _MMD_FACE_UPPER_EYELID_LABELS]
+
             result = weight_utils.shape_key_to_weights(
                 obj, kb, basis_kb,
-                ignore_threshold=self.ignore_threshold,
-                weight_strength=self.weight_strength,
-                smooth_factor=self.smooth_factor,
-                smooth_iters=self.smooth_iters,
                 sync_seams=self.sync_seams,
                 direction=direction,
                 vg_name=target_vg,
+                **params,
             )
             if result is None:
                 skipped.append(part_label)

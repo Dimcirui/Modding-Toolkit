@@ -3,8 +3,10 @@ import re
 import sys
 import time
 import bpy
+import mathutils
 from ...core.i18n import _
 from ...core import weight_utils
+from ...core import bone_utils
 from ...core.bone_mapper import BoneMapManager, STANDARD_BONE_NAMES
 from ...core.re_chain_utils import (
     REChainConfig,
@@ -660,6 +662,264 @@ class MHWS_OT_PreprocessModel(bpy.types.Operator):
 
 
 # ============================================================
+# 一键添加表情骨 (从原版荒野骨架移植表情骨到目标骨架)
+# ============================================================
+
+_FACIAL_ROOT_BONE = "HeadAll_SCL"
+_BLINK_FAKE_OFFSET_Y = 0.05
+_BLINK_TARGET_BONES = ("L_UpEyeLidJ_LOD02", "R_UpEyeLidJ_LOD02")
+
+_facial_armature_cache = []
+
+
+def _get_facial_armature_items(self, context):
+    """骨架下拉框回调。保留全局引用防止 Blender 因 GC 出现野指针崩溃。"""
+    global _facial_armature_cache
+    _facial_armature_cache.clear()
+    for obj in bpy.data.objects:
+        if obj.type == 'ARMATURE':
+            _facial_armature_cache.append((obj.name, obj.name, ""))
+    if not _facial_armature_cache:
+        _facial_armature_cache.append(("NONE", _("无可用骨架"), ""))
+    return _facial_armature_cache
+
+
+def _collect_facial_subtree(ref_arm):
+    """返回 (HeadAll_SCL 及其所有子级的骨骼名列表, HeadAll_SCL 原父级骨骼名)。"""
+    root_bone = ref_arm.data.bones.get(_FACIAL_ROOT_BONE)
+    if root_bone is None:
+        return [], None
+    names = [_FACIAL_ROOT_BONE] + [b.name for b in root_bone.children_recursive]
+    parent_name = root_bone.parent.name if root_bone.parent else None
+    return names, parent_name
+
+
+def _graft_facial_bones(ref_arm, target_arm):
+    """将 ref_arm 的 HeadAll_SCL 及其所有子级完整移植到 target_arm。
+
+    直接照搬来源世界坐标下的 head/tail/roll（不做竖直化，也不加尾骨），
+    并按来源层级关系重建父子链；HeadAll_SCL 本身挂到目标骨架中与来源同名的父级骨骼上。
+    会先清除 target_arm 中已存在的同名旧骨骼。返回新建骨骼数。
+    """
+    subtree_names, root_parent_name = _collect_facial_subtree(ref_arm)
+    if not subtree_names:
+        return 0
+
+    # 1. 在来源骨架 EDIT 模式下读取世界坐标 head/tail/roll 及父级名
+    bpy.context.view_layer.objects.active = ref_arm
+    bpy.ops.object.mode_set(mode='EDIT')
+    ref_mat = ref_arm.matrix_world
+    src_data = {}
+    for name in subtree_names:
+        eb = ref_arm.data.edit_bones.get(name)
+        if eb is None:
+            continue
+        parent_name = eb.parent.name if eb.parent else None
+        src_data[name] = (ref_mat @ eb.head, ref_mat @ eb.tail, eb.roll, parent_name)
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+    if not src_data:
+        return 0
+
+    # 2. 目标骨架：清除同名旧骨骼，再逐个创建新骨骼
+    bpy.context.view_layer.objects.active = target_arm
+    bpy.ops.object.mode_set(mode='EDIT')
+    edit_bones = target_arm.data.edit_bones
+
+    for name in subtree_names:
+        if name in edit_bones:
+            edit_bones.remove(edit_bones[name])
+
+    tgt_mat_inv = target_arm.matrix_world.inverted()
+    created = 0
+    for name in subtree_names:
+        if name not in src_data:
+            continue
+        head_w, tail_w, roll, _p = src_data[name]
+        eb = edit_bones.new(name)
+        eb.head = tgt_mat_inv @ head_w
+        eb.tail = tgt_mat_inv @ tail_w
+        eb.roll = roll
+        eb.use_connect = False
+        created += 1
+
+    # 3. 按来源层级重建父子关系
+    for name in subtree_names:
+        eb = edit_bones.get(name)
+        if eb is None or name not in src_data:
+            continue
+        if name == _FACIAL_ROOT_BONE:
+            if root_parent_name and root_parent_name in edit_bones:
+                eb.parent = edit_bones[root_parent_name]
+        else:
+            _h, _t, _r, p_name = src_data[name]
+            if p_name and p_name in edit_bones:
+                eb.parent = edit_bones[p_name]
+
+    bpy.ops.object.mode_set(mode='OBJECT')
+    return created
+
+
+def _cleanup_ref_import(ref_arm_obj):
+    """删除猎人模型网格及其所在的导入集合（通常是一个 "xxx.mesh" 集合），
+    保留 ref_arm_obj 本体并将其重新挂到场景根集合，避免集合被清理后连同变成孤立对象。
+    """
+    ref_meshes = [
+        o for o in bpy.data.objects
+        if o.type == 'MESH'
+        and (o.parent == ref_arm_obj
+             or any(m.type == 'ARMATURE' and m.object == ref_arm_obj for m in o.modifiers))
+    ]
+
+    # 记录猎人模型/参考骨架所在的导入集合，供之后清理
+    import_cols = set()
+    for o in ref_meshes + [ref_arm_obj]:
+        import_cols.update(o.users_collection)
+
+    # 参考骨架先挂回场景根集合，确保它不随导入集合一起被清理掉
+    scene_col = bpy.context.scene.collection
+    if ref_arm_obj.name not in scene_col.objects:
+        scene_col.objects.link(ref_arm_obj)
+    for col in list(ref_arm_obj.users_collection):
+        if col != scene_col:
+            col.objects.unlink(ref_arm_obj)
+
+    for mesh_obj in ref_meshes:
+        bpy.data.objects.remove(mesh_obj, do_unlink=True)
+
+    # 清理已变为空的导入集合（跳过场景根集合）
+    for col in import_cols:
+        if col == scene_col:
+            continue
+        if col.name in bpy.data.collections and len(col.objects) == 0 and len(col.children) == 0:
+            bpy.data.collections.remove(col)
+
+
+def _apply_blink_fake_bone(arm_obj, bone_name):
+    """假头法：在 bone_name(A) 与其父级(B) 之间插入一个从 B 原位复制出的假骨骼(B')，
+    父子关系变为 B > B' > A，然后将 B' 与 A 一同沿 +Y (世界空间) 位移。
+    返回 True 表示已处理，A 不存在或没有父级时返回 False。
+    """
+    bpy.context.view_layer.objects.active = arm_obj
+    if bpy.context.mode != 'EDIT_ARMATURE':
+        bpy.ops.object.mode_set(mode='EDIT')
+    edit_bones = arm_obj.data.edit_bones
+
+    a = edit_bones.get(bone_name)
+    if a is None or a.parent is None:
+        return False
+    b = a.parent
+
+    b_prime = edit_bones.new(b.name + "_Fake")
+    b_prime.head = b.head.copy()
+    b_prime.tail = b.tail.copy()
+    b_prime.roll = b.roll
+    b_prime.parent = b
+    b_prime.use_connect = False
+
+    a.parent = b_prime
+    a.use_connect = False
+
+    mat3 = arm_obj.matrix_world.to_3x3()
+    local_offset = mat3.inverted() @ mathutils.Vector((0.0, _BLINK_FAKE_OFFSET_Y, 0.0))
+
+    b_prime.head += local_offset
+    b_prime.tail += local_offset
+    a.head += local_offset
+    a.tail += local_offset
+
+    return True
+
+
+class MHWS_OT_AddFacialBones(bpy.types.Operator):
+    """将原版荒野骨架的表情骨骼移植到当前骨架，可选择使用假头法调整眨眼幅度"""
+    bl_idname = "mhws.add_facial_bones"
+    bl_label = "一键添加表情骨"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    target_armature: bpy.props.EnumProperty(
+        name="骨架",
+        description="选择要添加表情骨的骨架",
+        items=_get_facial_armature_items,
+    )
+    increase_blink_amplitude: bpy.props.BoolProperty(
+        name="增加眨眼幅度（二次元模型用）",
+        description="对上眼皮骨骼使用假头法，增大闭眼动作的形变幅度",
+        default=False,
+    )
+
+    @classmethod
+    def poll(cls, context):
+        return (
+            hasattr(bpy.ops, 'mbt') and hasattr(bpy.ops.mbt, 'import_mhwilds_fmesh')
+            and any(o.type == 'ARMATURE' for o in bpy.data.objects)
+        )
+
+    def invoke(self, context, event):
+        active = context.active_object
+        if active and active.type == 'ARMATURE':
+            self.target_armature = active.name
+        return context.window_manager.invoke_props_dialog(self, width=380)
+
+    def draw(self, context):
+        layout = self.layout
+        note = layout.row()
+        note.active = False
+        note.label(text=_("使用该功能将清除原本存在的表情骨！"))
+        layout.separator()
+        layout.prop(self, "target_armature")
+        layout.prop(self, "increase_blink_amplitude")
+
+    def execute(self, context):
+        target_arm = bpy.data.objects.get(self.target_armature)
+        if target_arm is None or target_arm.type != 'ARMATURE':
+            self.report({'WARNING'}, _("请选择一个有效的骨架"))
+            return {'CANCELLED'}
+
+        if context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+        # Step 1: 导入猎人骨架+模型（不合并表情骨）
+        mbt_panel = context.scene.mbt_toolpanel
+        mbt_panel.mhwilds_convert_to_tpose = True
+        mbt_panel.mhwilds_merge_facial_bones = False
+        bpy.ops.mbt.import_mhwilds_fmesh()
+        ref_arm_obj = _find_latest_mhwilds_armature()
+        if ref_arm_obj is None:
+            self.report({'ERROR'}, _("参考骨架导入失败"))
+            return {'CANCELLED'}
+
+        # Step 2: 删除猎人模型及其导入集合，让参考骨架与选中骨架对齐（按同名骨骼对齐，仅位置）
+        _cleanup_ref_import(ref_arm_obj)
+
+        bone_utils.align_armatures_by_name(target_arm, ref_arm_obj, mode='POS_ONLY')
+
+        # Step 3: 移植 HeadAll_SCL 及其所有子级
+        created = _graft_facial_bones(ref_arm_obj, target_arm)
+        if created == 0:
+            self.report({'WARNING'}, _("参考骨架中未找到表情骨根骨骼 (HeadAll_SCL)"))
+            return {'CANCELLED'}
+
+        # Step 4: 假头法增加眨眼幅度
+        fake_count = 0
+        if self.increase_blink_amplitude:
+            for bone_name in _BLINK_TARGET_BONES:
+                if _apply_blink_fake_bone(target_arm, bone_name):
+                    fake_count += 1
+
+        bpy.context.view_layer.objects.active = target_arm
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.select_all(action='DESELECT')
+        target_arm.select_set(True)
+
+        msg = _("已添加 %d 根表情骨") % created
+        if self.increase_blink_amplitude:
+            msg += _("，%d 侧已增加眨眼幅度") % fake_count
+        self.report({'INFO'}, msg)
+        return {'FINISHED'}
+
+
+# ============================================================
 # 优化荒野骨架 (对齐后的经验修正，只操作目标骨架自身)
 # ============================================================
 
@@ -960,6 +1220,7 @@ classes = [
     MHWS_OT_FaceWeightSimplify,
     MHWS_OT_AutoCreateChains,
     MHWS_OT_PreprocessModel,
+    MHWS_OT_AddFacialBones,
     MHWS_OT_OptimizeSkeleton,
     MHWS_OT_OptimizeAuxBones,
 ]
