@@ -163,6 +163,11 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         description="导出前对所有已绑定的 mod3 集合执行: 删除松散几何、修复重复UV、清除零权重顶点组、限制并归一化权重（需要 RE Mesh Editor，未安装则静默跳过）",
         default=True,
     )
+    mhwi_confuse_before_export: bpy.props.BoolProperty(
+        name="防石化",
+        description="在 mod3 和 mrl3 中添加一些混淆内容，不影响使用，但可以有效防止一些拿别人 mod 改改就当自己的东西的倒狗",
+        default=False,
+    )
 
     # MHWs batch export
     mhws_armor_scheme: bpy.props.EnumProperty(

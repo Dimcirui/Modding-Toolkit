@@ -348,6 +348,8 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
         layout.separator()
         row = layout.row(align=False)
         row.prop(settings, "mhwi_cleanup_before_export", icon='BRUSH_DATA')
+        row = layout.row(align=False)
+        row.prop(settings, "mhwi_confuse_before_export", icon='LOCKED')
 
     def _draw_weapon_mode(self, layout, context, scene, settings):
         # ── 预设组 ──

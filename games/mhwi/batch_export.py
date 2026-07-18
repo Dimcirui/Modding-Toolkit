@@ -59,6 +59,44 @@ def _get_armor_sets_dir():
 def _get_blank_path(filename):
     return os.path.join(_addon_dir(), "assets", "blank_files", "mhwi", filename)
 
+def _get_confuse_path(filename):
+    return os.path.join(_addon_dir(), "assets", "mhwi", "confuse", filename)
+
+
+# ── 防石化辅助 ────────────────────────────────────────────────────
+
+def _find_func_in_modules(func_name):
+    """在已加载的所有 Python 模块中按名称动态查找函数。"""
+    import sys
+    for mod in sys.modules.values():
+        func = getattr(mod, func_name, None)
+        if func is not None and callable(func):
+            return func
+    return None
+
+
+def _cleanup_confuse(injected, temp_collections):
+    """导出完成后，将注入的混淆对象从目标集合移除，并删除临时导入集合。"""
+    for obj, col in injected:
+        try:
+            col.objects.unlink(obj)
+        except Exception:
+            pass
+        try:
+            bpy.data.objects.remove(obj, do_unlink=True)
+        except Exception:
+            pass
+    for col in temp_collections:
+        for obj in list(col.all_objects):
+            try:
+                bpy.data.objects.remove(obj, do_unlink=True)
+            except Exception:
+                pass
+        try:
+            bpy.data.collections.remove(col, do_unlink=True)
+        except Exception:
+            pass
+
 
 # ── JSON 加载 ─────────────────────────────────────────────────────
 
@@ -561,6 +599,131 @@ class MHWI_OT_BatchExport(bpy.types.Operator):
                         pass
                 obj.select_set(False)
 
+    def _collect_target_cols(self, scene, model_id, rank, settings):
+        """收集所有已绑定的唯一 mod3 和 mrl3 集合，供防石化注入使用。"""
+        seen_mod3, seen_mrl3 = set(), set()
+        mod3_cols, mrl3_cols = [], []
+
+        for part_code, _, _ in MHWI_PARTS:
+            for ft, seen, col_list in (
+                ("mod3", seen_mod3, mod3_cols),
+                ("mrl3", seen_mrl3, mrl3_cols),
+            ):
+                name = get_binding(scene, model_id, part_code, ft)
+                if name and name not in seen:
+                    col = bpy.data.collections.get(name)
+                    if col:
+                        col_list.append(col)
+                        seen.add(name)
+
+        if rank == 'SP':
+            data = _load_armor_sets(settings.mhwi_armor_sets_file)
+            armor_entry = get_armor_entry(data, model_id) if data else None
+            if armor_entry:
+                for extra_id, part in (
+                    (armor_entry.get("face_id"), "face"),
+                    (armor_entry.get("hair_id"), "hair"),
+                ):
+                    if not extra_id:
+                        continue
+                    for ft, seen, col_list in (
+                        ("mod3", seen_mod3, mod3_cols),
+                        ("mrl3", seen_mrl3, mrl3_cols),
+                    ):
+                        name = get_binding(scene, extra_id, part, ft)
+                        if name and name not in seen:
+                            col = bpy.data.collections.get(name)
+                            if col:
+                                col_list.append(col)
+                                seen.add(name)
+
+        return mod3_cols, mrl3_cols
+
+    def _inject_confuse(self, context, scene, settings):
+        """导出前将混淆网格（mod3）和混淆材质（mrl3）注入所有绑定集合。
+        返回 (injected, temp_collections)，供导出后通过 _cleanup_confuse 清理。
+        """
+        confuse_mod3 = _get_confuse_path("confuse.mod3")
+        confuse_mrl3 = _get_confuse_path("confuse.mrl3")
+        if not os.path.isfile(confuse_mod3) or not os.path.isfile(confuse_mrl3):
+            print("[MHWI] 防石化: 混淆文件缺失，跳过")
+            return [], []
+
+        rank = settings.mhwi_rank_tab
+        if rank == 'HR':
+            model_id = settings.mhwi_selected_hr_armor
+        elif rank == 'MR':
+            model_id = settings.mhwi_selected_mr_armor
+        else:
+            model_id = settings.mhwi_selected_sp_armor
+
+        if not model_id or model_id == 'NONE':
+            return [], []
+
+        mod3_cols, mrl3_cols = self._collect_target_cols(scene, model_id, rank, settings)
+        injected = []
+        temp_collections = []
+
+        # ── mod3 注入 ──
+        if mod3_cols:
+            importMHWMod3File = _find_func_in_modules("importMHWMod3File")
+            if importMHWMod3File:
+                options = {
+                    "clearScene": False, "loadMaterials": False, "loadMrl3Data": False,
+                    "loadUnusedTextures": False, "loadUnusedProps": False,
+                    "useBackfaceCulling": False, "reloadCachedTextures": False,
+                    "mrl3Path": "", "ArmatureDisplayType": "OCTAHEDRAL", "BonesDisplaySize": 5,
+                    "createCollections": True, "importArmatureOnly": False,
+                    "importAllLODs": False, "importBoundingBoxes": False,
+                    "loadPhysics": False, "addNestedCollections": False,
+                }
+                try:
+                    importMHWMod3File(confuse_mod3, options)
+                    src_col_name = context.scene.mhw_mod3_toolpanel.lastImportCollection
+                    src_col = bpy.data.collections.get(src_col_name)
+                    if src_col:
+                        temp_collections.append(src_col)
+                        confuse_meshes = [o for o in src_col.all_objects if o.type == 'MESH']
+                        for target_col in mod3_cols:
+                            arm = next((o for o in target_col.objects if o.type == 'ARMATURE'), None)
+                            for src in confuse_meshes:
+                                new_obj = src.copy()
+                                target_col.objects.link(new_obj)
+                                new_obj.parent = arm
+                                if arm:
+                                    for mod in new_obj.modifiers:
+                                        if mod.type == 'ARMATURE':
+                                            mod.object = arm
+                                injected.append((new_obj, target_col))
+                except Exception as e:
+                    print(f"[MHWI] 防石化 mod3 注入失败: {e}")
+
+        # ── mrl3 注入 ──
+        if mrl3_cols:
+            importMHWMrl3File = _find_func_in_modules("importMHWMrl3File")
+            if importMHWMrl3File:
+                temp_mrl3_col = bpy.data.collections.new("__mhwi_cfz_mrl3__")
+                bpy.context.scene.collection.children.link(temp_mrl3_col)
+                temp_collections.append(temp_mrl3_col)
+                try:
+                    importMHWMrl3File(confuse_mrl3, {
+                        "parentCollection": temp_mrl3_col,
+                        "mod3MatHashDict": {},
+                    })
+                    confuse_mats = [
+                        o for o in temp_mrl3_col.all_objects
+                        if o.type == 'EMPTY' and o.get("~TYPE") == "MHW_MRL3_MATERIAL"
+                    ]
+                    for target_col in mrl3_cols:
+                        for src in confuse_mats:
+                            new_obj = src.copy()
+                            target_col.objects.link(new_obj)
+                            injected.append((new_obj, target_col))
+                except Exception as e:
+                    print(f"[MHWI] 防石化 mrl3 注入失败: {e}")
+
+        return injected, temp_collections
+
     def _execute_weapon(self, context, scene, settings, natives_root):
         weapon_type = settings.mhwi_weapon_type_tab
         weapon_id   = get_selected_weapon(scene, weapon_type)
@@ -622,16 +785,25 @@ class MHWI_OT_BatchExport(bpy.types.Operator):
         if settings.mhwi_cleanup_before_export:
             self._cleanup_mesh_collections(context, scene, settings)
 
-        total_export = total_fail = total_skip = 0
-        if rank == 'SP':
-            total_export, total_fail, total_skip = _export_sp(context, armor_entry, natives_root)
-        else:
-            genders = _resolve_genders(settings.mhwi_gender)
-            for gender in genders:
-                e, f, s = _export_gender(context, settings, armor_entry, gender, natives_root)
-                total_export += e
-                total_fail   += f
-                total_skip   += s
+        injected = []
+        temp_collections = []
+        if settings.mhwi_confuse_before_export:
+            injected, temp_collections = self._inject_confuse(context, scene, settings)
+
+        try:
+            total_export = total_fail = total_skip = 0
+            if rank == 'SP':
+                total_export, total_fail, total_skip = _export_sp(context, armor_entry, natives_root)
+            else:
+                genders = _resolve_genders(settings.mhwi_gender)
+                for gender in genders:
+                    e, f, s = _export_gender(context, settings, armor_entry, gender, natives_root)
+                    total_export += e
+                    total_fail   += f
+                    total_skip   += s
+        finally:
+            if injected or temp_collections:
+                _cleanup_confuse(injected, temp_collections)
 
         if total_fail > 0:
             self.report({'WARNING'},
