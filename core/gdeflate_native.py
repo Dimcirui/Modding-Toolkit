@@ -1,4 +1,4 @@
-"""GDeflate compression via a bundled GDeflateWrapper DLL (MIT).
+"""GDeflate compression via a bundled GDeflateWrapper DLL (MIT, Windows only).
 
 Needed only for .tex versions that require GDeflate-compressed mip data
 (MHWILDS, RE9). Ported from RE-Mesh-Editor's gdeflate/gdeflate.py wrapper.
@@ -7,7 +7,6 @@ Needed only for .tex versions that require GDeflate-compressed mip data
 import ctypes
 from ctypes import c_bool, c_uint8, c_uint32, c_uint64, POINTER, byref
 import os
-import platform
 
 FASTEST = 1      # DSTORAGE_COMPRESSION_FASTEST
 DEFAULT = 9       # DSTORAGE_COMPRESSION_DEFAULT
@@ -21,21 +20,12 @@ def _bin_dir():
     return os.path.join(root_dir, "assets", "bin", "gdeflate")
 
 
-def _dll_filename():
-    system = platform.system()
-    if system == 'Windows':
-        return "GDeflateWrapper.dll"
-    if system == 'Linux':
-        return "libGDeflateWrapper.so"
-    raise RuntimeError(f"Unsupported OS for GDeflate: {system}")
-
-
 def _load_dll():
     global _DLL
     if _DLL is not None:
         return _DLL
 
-    dll_path = os.path.join(_bin_dir(), _dll_filename())
+    dll_path = os.path.join(_bin_dir(), "GDeflateWrapper.dll")
     if not os.path.isfile(dll_path):
         raise RuntimeError(f"GDeflate library not found: {dll_path}")
     dll = ctypes.CDLL(dll_path)

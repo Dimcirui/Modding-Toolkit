@@ -1,4 +1,4 @@
-"""Native PNG/TGA/etc. -> DDS conversion via a bundled texconv DLL.
+"""Native PNG/TGA/etc. -> DDS conversion via a bundled texconv DLL (Windows only).
 
 Uses matyalatte's Texconv-Custom-DLL (MIT, wraps Microsoft's MIT-licensed
 DirectXTex) bundled directly in assets/bin/texconv/ — no external Blender
@@ -8,7 +8,6 @@ NSA-Cloud/AsteriskAmpersand's RE-Mesh-Editor texconv.py wrapper (MIT).
 
 import ctypes
 import os
-import platform
 
 from . import dxgi_format as dxgi
 
@@ -20,23 +19,10 @@ def _bin_dir():
     return os.path.join(root_dir, "assets", "bin", "texconv")
 
 
-def _dll_filename():
-    system = platform.system()
-    if system == 'Windows':
-        return "texconv.dll"
-    if system == 'Darwin':
-        return "libtexconv.dylib"
-    if system == 'Linux':
-        return "libtexconv.so"
-    raise RuntimeError(f"Unsupported OS for texconv: {system}")
-
-
 def _ensure_com_initialized():
     """texconv reads images via WIC, which requires COM to be initialized on the
     calling thread. Safe to call repeatedly (COM reference-counts init calls);
     we never pair it with CoUninitialize since the host process (Blender) outlives us."""
-    if platform.system() != 'Windows':
-        return
     COINIT_APARTMENTTHREADED = 0x2
     ctypes.windll.ole32.CoInitializeEx(None, COINIT_APARTMENTTHREADED)
 
@@ -45,7 +31,7 @@ def _load_dll():
     global _DLL
     if _DLL is not None:
         return _DLL
-    dll_path = os.path.join(_bin_dir(), _dll_filename())
+    dll_path = os.path.join(_bin_dir(), "texconv.dll")
     if not os.path.isfile(dll_path):
         raise RuntimeError(f"texconv library not found: {dll_path}")
     _DLL = ctypes.cdll.LoadLibrary(dll_path)
@@ -56,9 +42,7 @@ def unload_dll():
     global _DLL
     if _DLL is None:
         return
-    handle = _DLL._handle
-    if platform.system() == 'Windows':
-        ctypes.windll.kernel32.FreeLibrary(handle)
+    ctypes.windll.kernel32.FreeLibrary(_DLL._handle)
     _DLL = None
 
 
@@ -95,13 +79,6 @@ def convert_to_dds(filepath, dxgi_format_name, out_dir, generate_mips=True,
     """
     if not dxgi.is_valid_format_name(dxgi_format_name):
         raise ValueError(f"Not a known DXGI format: {dxgi_format_name}")
-
-    if (('BC6' in dxgi_format_name or 'BC7' in dxgi_format_name)
-            and platform.system() != 'Windows' and not allow_slow_codec):
-        raise RuntimeError(
-            f"Cannot export {dxgi_format_name} textures on this platform "
-            "(no GPU-accelerated compressor outside Windows). Pass allow_slow_codec=True to force it."
-        )
 
     _ensure_com_initialized()
     dll = _load_dll()
