@@ -137,6 +137,22 @@ def align_armatures_by_name(source_arm, target_arm, mode='POS_ONLY', skip_fn=Non
     bpy.ops.object.mode_set(mode='OBJECT')
     return count
 
+_armature_enum_cache = []
+
+
+def get_armature_enum_items(self, context):
+    """通用骨架下拉框回调：列出场景中所有骨架物体。
+    保留全局引用防止 Blender 因 GC 出现野指针崩溃。"""
+    global _armature_enum_cache
+    _armature_enum_cache.clear()
+    for obj in bpy.data.objects:
+        if obj.type == 'ARMATURE':
+            _armature_enum_cache.append((obj.name, obj.name, ""))
+    if not _armature_enum_cache:
+        _armature_enum_cache.append(("NONE", "无可用骨架", ""))
+    return _armature_enum_cache
+
+
 def find_bone_smart(bones, name):
     """
     智能查找骨骼：

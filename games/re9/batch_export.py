@@ -4,6 +4,7 @@ import os
 import shutil
 
 from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
+from ...core.bone_utils import align_armatures_by_name
 
 
 def _get_export_schemes_dir():
@@ -11,6 +12,11 @@ def _get_export_schemes_dir():
     d = os.path.join(addon_dir, "assets", "export_schemes", "re9")
     os.makedirs(d, exist_ok=True)
     return d
+
+
+def _get_native_skeletons_dir():
+    addon_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    return os.path.join(addon_dir, "assets", "native_skeletons", "re9")
 
 
 _scheme_cache = []
@@ -233,7 +239,42 @@ class RE9_OT_BatchExport(bpy.types.Operator):
             fbx_arm = _get_binding(scene, character_id, "_fbxskel", "fbxskel")
             if fbx_enabled and fbx_arm:
                 full = os.path.join(natives_root, "natives", "stm", "character", fbxskel_path.replace("/", os.sep))
-                try_export(_do_export_fbxskel, full, fbx_arm, "FBXSKEL")
+                native_path = os.path.join(_get_native_skeletons_dir(), os.path.basename(fbxskel_path))
+                if os.path.isfile(native_path):
+                    user_arm_obj = bpy.data.objects.get(fbx_arm)
+                    if user_arm_obj is None or user_arm_obj.type != 'ARMATURE':
+                        print(f"[RE9] SKIP FBXSKEL: armature '{fbx_arm}' not found")
+                        skip_count += 1
+                    else:
+                        prev_active = context.view_layer.objects.active
+                        prev_sel = [o for o in context.selected_objects]
+                        for o in prev_sel:
+                            o.select_set(False)
+                        native_copy = None
+                        try:
+                            bpy.ops.re_fbxskel.importfile(filepath=native_path)
+                            native_copy = context.view_layer.objects.active
+                            if native_copy is None or native_copy.type != 'ARMATURE':
+                                raise RuntimeError(f"导入原生骨架失败: {native_path}")
+                            native_copy.select_set(False)
+                            # 仅对齐位置/朝向，不生成假骨骼——把原生骨架（含仅存在于原生骨架
+                            # 中的骨骼）整体对齐到用户绑定的骨架比例上，再导出对齐后的副本
+                            align_armatures_by_name(user_arm_obj, native_copy, mode='FULL')
+                            print(f"[RE9] FBXSKEL (对齐原生骨架): {fbx_arm} -> {os.path.basename(full)}")
+                            _do_export_fbxskel(full, native_copy.name)
+                            export_count += 1
+                        except Exception as err:
+                            print(f"[RE9] FAILED FBXSKEL (对齐原生骨架): {err}")
+                            fail_count += 1
+                        finally:
+                            if native_copy is not None and native_copy.name in bpy.data.objects:
+                                bpy.data.objects.remove(native_copy, do_unlink=True)
+                            context.view_layer.objects.active = prev_active
+                            for o in prev_sel:
+                                if o.name in bpy.data.objects:
+                                    o.select_set(True)
+                else:
+                    try_export(_do_export_fbxskel, full, fbx_arm, "FBXSKEL")
 
         # --- Per entry ---
         for group in scheme["groups"]:

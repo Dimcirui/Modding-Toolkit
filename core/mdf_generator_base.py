@@ -1519,12 +1519,7 @@ class MdfGenProcessBase(bpy.types.Operator):
 
         print(f"[{cls._log_tag}] {'='*40}", flush=True)
 
-        _t_import = time.time()
         ImageListToDDS, DDSToTex = _import_tex_utils()
-        # print(f"[{cls._log_tag}] 加载 RE Mesh Editor 模块: {time.time() - _t_import:.2f}s", flush=True)
-        if ImageListToDDS is None:
-            self.report({'ERROR'}, "无法加载 RE Mesh Editor 贴图工具，请确认已安装并启用")
-            return {'CANCELLED'}
 
         _t_import = time.time()
         readPresetJSON = _import_read_preset_json()

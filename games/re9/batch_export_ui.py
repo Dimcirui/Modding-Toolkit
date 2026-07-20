@@ -1,9 +1,11 @@
 import bpy
+import os
 from .batch_export import (
     _load_scheme, _get_binding, _set_binding,
     _get_enabled, _set_enabled, get_schemes_callback,
     _get_simplified_group_binding, _set_simplified_group_binding,
     _set_simplified_empty_binding,
+    _get_native_skeletons_dir,
 )
 
 EXPORTER_WINDOW_WIDTH = 600
@@ -503,7 +505,14 @@ class RE9_OT_BatchExportDialog(bpy.types.Operator):
             op_p = row.operator("re9.pick_armature", text=cur_arm if cur_arm else "Select armature...",
                                 icon='DOWNARROW_HLT')
             op_p.character_id = character_id
-        
+
+            native_path = os.path.join(_get_native_skeletons_dir(), os.path.basename(fbxskel_path))
+            row2 = box.row(align=True)
+            if os.path.isfile(native_path):
+                row2.label(text=f"将对齐原生骨架: {os.path.basename(native_path)}", icon='ARMATURE_DATA')
+            else:
+                row2.label(text="未找到原生骨架文件，将直接导出选中骨架", icon='ERROR')
+
         layout.separator()
         row = layout.row()
         op_c = row.operator("re9.clear_all_bindings", text="Clear All Selected", icon='TRASH')

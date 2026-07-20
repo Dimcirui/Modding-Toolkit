@@ -5,8 +5,6 @@ import tempfile
 import shutil
 import time
 
-from .re_mesh_compat import re_mesh_op_available
-
 # ── PBR Constants ──────────────────────────────────────────────────────────────
 
 PBR_TYPES = ['color', 'alpha', 'emissive', 'normal', 'roughness', 'metallic', 'ao']
@@ -35,7 +33,7 @@ PBR_DEFAULTS = {
 PBR_CHANNEL_SELECTABLE = {'alpha', 'roughness', 'metallic', 'ao'}
 
 # Slot types that should be converted as BC7_UNORM_SRGB (colour / emissive data)
-SRGB_SLOT_TYPES = {'BaseDielectricMap', 'BaseAlphaMap', 'EmissiveMap'}
+SRGB_SLOT_TYPES = {'BaseDielectricMap', 'BaseAlphaMap', 'EmissiveMap', 'Emissive_ColorMap', 'BaseShiftMap'}
 
 _CH           = {'R': 0, 'G': 1, 'B': 2, 'A': 3}
 _CH_ENUM_ITEMS = [('R', 'R', ''), ('G', 'G', ''), ('B', 'B', ''), ('A', 'A', '')]
@@ -276,30 +274,31 @@ def make_disk_path(natives_root, base_path, tex_name, slot_type, abbrev_map, tex
     return os.path.join(natives_root, rel)
 
 
-# ── RE Mesh Editor import ──────────────────────────────────────────────────────
+# ── Native texture conversion (no external addon) ──────────────────────────────
+# Drop-in replacements for RE Mesh Editor's re_tex_utils.ImageListToDDS/DDSToTex,
+# backed by our own bundled texconv + .tex writer (core/texconv_native.py,
+# core/tex_file.py) instead of the external RE Mesh Editor addon.
+
+def _ImageListToDDS(imageConvertList, outDir, generateMipMaps):
+    from . import texconv_native
+    for in_path, dds_format in imageConvertList:
+        try:
+            texconv_native.convert_to_dds(in_path, dds_format, outDir, generate_mips=generateMipMaps)
+        except Exception as err:
+            print(f"Failed to convert {in_path} - {err}")
+
+
+def _DDSToTex(ddsPathList, texVersion, outPath):
+    from . import tex_file
+    if len(ddsPathList) != 1:
+        raise NotImplementedError("Texture arrays are not supported")
+    tex_file.write_tex_from_dds(ddsPathList[0], texVersion, outPath)
+
 
 def _import_tex_utils():
-    """Locate and import ImageListToDDS / DDSToTex from RE Mesh Editor."""
-    import sys, importlib
-    for key, mod in sys.modules.items():
-        if key.endswith('.modules.tex.re_tex_utils'):
-            try:
-                return mod.ImageListToDDS, mod.DDSToTex
-            except AttributeError:
-                pass
-    if not re_mesh_op_available('exportfile'):
-        return None, None
-    import addon_utils
-    for mod in addon_utils.modules():
-        pkg = getattr(mod, '__package__', None) or getattr(mod, '__name__', '')
-        if not pkg:
-            continue
-        try:
-            tu = importlib.import_module(f"{pkg}.modules.tex.re_tex_utils")
-            return tu.ImageListToDDS, tu.DDSToTex
-        except Exception:
-            continue
-    return None, None
+    """Return (ImageListToDDS, DDSToTex) — Modding-Toolkit's own native
+    implementation; no external addon required."""
+    return _ImageListToDDS, _DDSToTex
 
 
 # ── Channel composition ────────────────────────────────────────────────────────
@@ -774,12 +773,7 @@ class MdfTexProcessBase(bpy.types.Operator):
 
         print(f"[{cls._log_tag}] {'='*40}", flush=True)
 
-        _t_import = time.time()
         ImageListToDDS, DDSToTex = _import_tex_utils()
-        # print(f"[{cls._log_tag}] 加载外部模块: {time.time() - _t_import:.2f}s", flush=True)
-        if ImageListToDDS is None or DDSToTex is None:
-            self.report({'ERROR'}, "无法加载 RE Mesh Editor 贴图工具，请确认已安装并启用")
-            return {'CANCELLED'}
 
         temp_dir = tempfile.mkdtemp(prefix="mdf_tex_")
         export_count = fail_count = skip_count = 0

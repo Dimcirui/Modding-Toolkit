@@ -4,6 +4,7 @@ from ...core.i18n import _
 from . import data_maps
 from ...core.re_chain_utils import REChainConfig, auto_create_re_chains, _is_valid_chain_collection
 from ...core.standard_ops import _run_bone_color_refresh
+from ...core import bone_utils, ref_skeleton, facial_bones
 
 _FINGER_INITIALS = {
     'Index': 'I', 'Thumb': 'T', 'Middle': 'M',
@@ -533,9 +534,108 @@ class RE4_OT_AutoCreateChains(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# ============================================================
+# 一键添加表情骨 (从原生角色骨架移植表情骨到目标骨架)
+# ============================================================
+
+_RE4_FACIAL_ROOT_BONE = "FacialDef_Face"
+_RE4_BLINK_FAKE_OFFSET_Y = 0.05
+_RE4_BLINK_TARGET_BONES = ("L_U_Eyelid03", "R_U_Eyelid03")
+
+
+class RE4_OT_AddFacialBones(bpy.types.Operator):
+    """将原生角色骨架的表情骨骼移植到当前骨架，可选择使用假头法调整眨眼幅度"""
+    bl_idname = "re4.add_facial_bones"
+    bl_label = "一键添加表情骨"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    target_armature: bpy.props.EnumProperty(
+        name="骨架",
+        description="选择要添加表情骨的骨架",
+        items=bone_utils.get_armature_enum_items,
+    )
+    reference_character: bpy.props.EnumProperty(
+        name="参考角色",
+        description="选择用作表情骨来源的角色参考骨架",
+        items=lambda self, ctx: ref_skeleton.get_reference_skeleton_items('re4'),
+    )
+    increase_blink_amplitude: bpy.props.BoolProperty(
+        name="增加眨眼幅度（二次元模型用）",
+        description="对上眼皮骨骼使用假头法，增大闭眼动作的形变幅度",
+        default=False,
+    )
+
+    @classmethod
+    def poll(cls, context):
+        return any(o.type == 'ARMATURE' for o in bpy.data.objects)
+
+    def invoke(self, context, event):
+        active = context.active_object
+        if active and active.type == 'ARMATURE':
+            self.target_armature = active.name
+        return context.window_manager.invoke_props_dialog(self, width=380)
+
+    def draw(self, context):
+        layout = self.layout
+        note = layout.row()
+        note.active = False
+        note.label(text=_("使用该功能将清除原本存在的表情骨！"))
+        layout.separator()
+        layout.prop(self, "target_armature")
+        layout.prop(self, "reference_character")
+        layout.prop(self, "increase_blink_amplitude")
+
+    def execute(self, context):
+        target_arm = bpy.data.objects.get(self.target_armature)
+        if target_arm is None or target_arm.type != 'ARMATURE':
+            self.report({'WARNING'}, _("请选择一个有效的骨架"))
+            return {'CANCELLED'}
+
+        if not self.reference_character or self.reference_character == 'NONE':
+            self.report({'ERROR'}, _("请选择参考角色（添加文件到 assets/reference_skeletons/re4/）"))
+            return {'CANCELLED'}
+
+        if context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+        # Step 1: 导入参考角色骨架（内置资源，不依赖外部插件）
+        ref_arm_obj = ref_skeleton.import_reference_armature('re4', self.reference_character)
+        if ref_arm_obj is None:
+            self.report({'ERROR'}, _("参考骨架导入失败: %s") % self.reference_character)
+            return {'CANCELLED'}
+
+        # Step 2: 让参考骨架与选中骨架对齐（按同名骨骼对齐，仅位置）
+        bone_utils.align_armatures_by_name(target_arm, ref_arm_obj, mode='POS_ONLY')
+
+        # Step 3: 移植表情骨根骨骼及其所有子级
+        created = facial_bones.graft_facial_bones(ref_arm_obj, target_arm, _RE4_FACIAL_ROOT_BONE)
+        if created == 0:
+            self.report({'WARNING'}, _("参考骨架中未找到表情骨根骨骼 (%s)") % _RE4_FACIAL_ROOT_BONE)
+            return {'CANCELLED'}
+
+        # Step 4: 假头法增加眨眼幅度
+        fake_count = 0
+        if self.increase_blink_amplitude:
+            for bone_name in _RE4_BLINK_TARGET_BONES:
+                if facial_bones.apply_blink_fake_bone(target_arm, bone_name, _RE4_BLINK_FAKE_OFFSET_Y):
+                    fake_count += 1
+
+        bpy.context.view_layer.objects.active = target_arm
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.select_all(action='DESELECT')
+        target_arm.select_set(True)
+
+        msg = _("已添加 %d 根表情骨") % created
+        if self.increase_blink_amplitude:
+            msg += _("，%d 侧已增加眨眼幅度") % fake_count
+        self.report({'INFO'}, msg)
+        return {'FINISHED'}
+
+
 classes = [
     RE4_OT_FakeBone_OneClick,
     RE4_OT_AutoCreateChains,
+    RE4_OT_AddFacialBones,
 ]
 
 def register():

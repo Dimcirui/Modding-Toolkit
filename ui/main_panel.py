@@ -808,29 +808,17 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             col = box.column(align=True)
 
             # 一键模型预处理
-            has_mbt = hasattr(bpy.ops, 'mbt') and hasattr(bpy.ops.mbt, 'import_mhwilds_fmesh')
-            row = col.row()
-            row.enabled = has_mbt
-            row.operator("mhws.preprocess_model", text=_("一键导入并对齐荒野模型"), icon='ARMATURE_DATA')
-            if not has_mbt:
-                col.label(text="需要 Modder Batch Tool!", icon='ERROR')
+            col.operator("mhws.preprocess_model", text=_("一键导入并对齐荒野模型"), icon='ARMATURE_DATA')
 
             col.operator("mhws.optimize_skeleton", text=_("优化荒野骨架"), icon='MOD_ARMATURE')
             col.operator("mhws.optimize_aux_bones", text=_("优化辅助骨骼及权重"), icon='GROUP_VERTEX')
             col.operator("mhw.mmd_face_weights", text=_("MMD 形态键转表情权重"), icon='SHAPEKEY_DATA').target_game = 'MHWS'
-
-            row = col.row()
-            row.enabled = has_mbt
-            row.operator("mhws.add_facial_bones", text=_("一键添加表情骨"), icon='SHAPEKEY_DATA')
+            col.operator("mhws.add_facial_bones", text=_("一键添加表情骨"), icon='SHAPEKEY_DATA')
 
             col.separator()
-            has_re_mesh = re_mesh_op_available('exportfile')
             sub = col.row(align=True)
-            sub.enabled = has_re_mesh
             sub.operator("mhws.mdf_tex_processor_dialog", text=_("MDF2 处理器"), icon='TEXTURE')
             sub.operator("mhws.mdf_generator_dialog",     text=_("MDF2 生成器"), icon='SHADERFX')
-            if not has_re_mesh:
-                col.label(text="需要 RE Mesh Editor!", icon='ERROR')
 
             col.separator()
             has_re_chain = hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
@@ -841,6 +829,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
                 col.label(text="需要 RE Chain Editor!", icon='ERROR')
 
             col.separator()
+            has_re_mesh = re_mesh_op_available('exportfile')
             row = col.row()
             row.enabled = has_re_mesh
             row.operator("mhws.batch_export_dialog", text="MHWs Batch Exporter", icon='EXPORT')
@@ -860,9 +849,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
 
             col = box.column(align=True)
             col.separator()
-            has_re_mesh = re_mesh_op_available('exportfile')
             sub = col.row(align=True)
-            sub.enabled = has_re_mesh
             sub.operator("re4.mdf_tex_processor_dialog", text=_("MDF2 处理器"), icon='TEXTURE')
             sub.operator("re4.mdf_generator_dialog",     text=_("MDF2 生成器"), icon='SHADERFX')
 
@@ -876,8 +863,10 @@ class MHW_PT_MainPanel(bpy.types.Panel):
 
             col.separator()
             col.operator("mhw.mmd_face_weights", text=_("MMD 形态键转表情权重"), icon='SHAPEKEY_DATA').target_game = 'RE4'
+            col.operator("re4.add_facial_bones", text=_("一键添加表情骨"), icon='SHAPEKEY_DATA')
 
             col.separator()
+            has_re_mesh = re_mesh_op_available('exportfile')
             row = col.row()
             row.enabled = has_re_mesh
             row.operator("re4.batch_export_dialog", text="RE4 Batch Exporter", icon='EXPORT')
@@ -887,13 +876,9 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             box.label(text="MHRS Tools", icon='GHOST_ENABLED')
             col = box.column(align=True)
 
-            has_re_mesh = re_mesh_op_available('exportfile')
             sub = col.row(align=True)
-            sub.enabled = has_re_mesh
             sub.operator("mhrs.mdf_tex_processor_dialog", text=_("MDF2 处理器"), icon='TEXTURE')
             sub.operator("mhrs.mdf_generator_dialog",     text=_("MDF2 生成器"), icon='SHADERFX')
-            if not has_re_mesh:
-                col.label(text="需要 RE Mesh Editor!", icon='ERROR')
 
             col.separator()
             has_re_chain = hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
@@ -904,6 +889,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
                 col.label(text="需要 RE Chain Editor!", icon='ERROR')
 
             col.separator()
+            has_re_mesh = re_mesh_op_available('exportfile')
             row = col.row()
             row.enabled = has_re_mesh
             row.operator("mhrs.batch_export_dialog", text="MHRS Batch Exporter", icon='EXPORT')
@@ -915,13 +901,9 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             col.operator("re9.sync_child_orientation", text=_("同步子级朝向及扭转"), icon='CON_ROTLIKE')
 
             col.separator()
-            has_re_mesh = re_mesh_op_available('exportfile')
             sub = col.row(align=True)
-            sub.enabled = has_re_mesh
             sub.operator("re9.mdf_tex_processor_dialog", text=_("MDF2 处理器"), icon='TEXTURE')
             sub.operator("re9.mdf_generator_dialog",     text=_("MDF2 生成器"), icon='SHADERFX')
-            if not has_re_mesh:
-                col.label(text="需要 RE Mesh Editor!", icon='ERROR')
 
             col.separator()
             has_re_chain = hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
@@ -933,8 +915,10 @@ class MHW_PT_MainPanel(bpy.types.Panel):
 
             col.separator()
             col.operator("mhw.mmd_face_weights", text=_("MMD 形态键转表情权重"), icon='SHAPEKEY_DATA').target_game = 'RE9'
+            col.operator("re9.add_facial_bones", text=_("一键添加表情骨"), icon='SHAPEKEY_DATA')
 
             col.separator()
+            has_re_mesh = re_mesh_op_available('exportfile')
             row = col.row()
             row.enabled = has_re_mesh
             row.operator("re9.batch_export_dialog", text="RE9 Batch Exporter", icon='EXPORT')

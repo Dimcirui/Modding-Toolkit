@@ -332,13 +332,7 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                         "无法加载 MHW Model Editor 贴图转换函数，请确认已安装并启用")
             return {'CANCELLED'}
 
-        _t_import = time.time()
         ImageListToDDS, __ = _import_tex_utils()
-        # print(f"[MHWI Tex] 加载 RE Mesh Editor 模块: {time.time() - _t_import:.2f}s", flush=True)
-        if ImageListToDDS is None:
-            self.report({'WARNING'},
-                        "RE Mesh Editor 未安装：PNG/TGA 输入将无法处理，"
-                        "仅支持直接提供 .dds 或 .tex 文件")
 
         temp_dir     = tempfile.mkdtemp(prefix="mhwi_tex_")
         export_count = fail_count = skip_count = 0
@@ -455,9 +449,6 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                             ConvertDDSToTex([src_img], disk_path)
                             # print(f"[MHWI Tex]   DDS→TEX {slot.texture_type}: {time.time() - _t_tex:.2f}s", flush=True)
                         else:
-                            if ImageListToDDS is None:
-                                raise RuntimeError(
-                                    "RE Mesh Editor 未安装，无法将图片转换为 DDS")
                             dds_fmt = (
                                 'BC7_UNORM_SRGB' if slot.texture_type in MHWI_SRGB_SLOT_TYPES else
                                 'BC5_UNORM'      if slot.texture_type in MHWI_BC5_SLOT_TYPES  else
