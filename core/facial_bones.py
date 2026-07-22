@@ -2,12 +2,22 @@ import bpy
 import mathutils
 
 
+def _is_end_bone(name):
+    """FBX 导出时每个末端关节都会带一个 "_end"（有时嵌套为 "_end_end"）辅助节点，
+    仅用于在其他工具里推断骨骼朝向/长度，Blender 骨骼本身自带 head/tail 不需要它，
+    移植表情骨时应过滤掉，避免这些辅助节点被当成正常骨骼一并移植。"""
+    return name.lower().endswith("_end")
+
+
 def collect_facial_subtree(ref_arm, root_bone_name):
-    """返回 (root_bone_name 及其所有子级的骨骼名列表, root_bone_name 原父级骨骼名)。"""
+    """返回 (root_bone_name 及其所有子级的骨骼名列表, root_bone_name 原父级骨骼名)。
+    自动过滤 FBX 导出产生的 "_end" 辅助节点。"""
     root_bone = ref_arm.data.bones.get(root_bone_name)
     if root_bone is None:
         return [], None
-    names = [root_bone_name] + [b.name for b in root_bone.children_recursive]
+    names = [root_bone_name] + [
+        b.name for b in root_bone.children_recursive if not _is_end_bone(b.name)
+    ]
     parent_name = root_bone.parent.name if root_bone.parent else None
     return names, parent_name
 
