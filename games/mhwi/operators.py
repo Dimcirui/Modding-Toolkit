@@ -470,6 +470,11 @@ def _count_rename_failures(armature, physics_bones_ordered, id_range, also_exclu
     return success, fail
 
 
+def _child_meshes(armature):
+    """返回骨架的所有子级网格对象（递归，不要求已绑定为姿态修改器）。"""
+    return [obj for obj in armature.children_recursive if obj.type == 'MESH']
+
+
 def _rename_physics_bones(armature, physics_bones_ordered, id_range):
     """将 physics_bones_ordered（骨骼名列表）重命名为 MhBone_xxx，使用 id_range 范围。
     返回 (成功数, 失败数)。
@@ -477,6 +482,11 @@ def _rename_physics_bones(armature, physics_bones_ordered, id_range):
     采用两步改名（临时名 → 正式名）避免同序列内的命名冲突：
     若直接逐一改名，前面的骨骼抢占了后面骨骼的当前名称对应的 ID，
     Blender 会自动给被顶替的骨骼追加 .001 后缀，导致后续查找失败。
+
+    骨架子级网格若已绑定姿态（Armature）修改器指向本骨架，Blender 会在改名时
+    自动同步其顶点组名；未绑定的子级网格不会被自动处理，因此这里对所有子级
+    网格额外做一次同名顶点组的手动改名（已被自动同步的网格此时对应顶点组已
+    不存在，手动步骤会直接跳过，不会重复处理或产生冲突）。
     """
     # 待重命名骨骼即将释放自身 ID，不应计入"已占用"
     physics_bones_set = set(physics_bones_ordered)
@@ -500,6 +510,8 @@ def _rename_physics_bones(armature, physics_bones_ordered, id_range):
             assignments.append((name, f"MhBone_{new_id:03d}"))
             used_ids.add(new_id)
 
+    child_meshes = _child_meshes(armature)
+
     success = 0
     fail = 0
     bpy.ops.object.mode_set(mode='EDIT')
@@ -517,6 +529,10 @@ def _rename_physics_bones(armature, physics_bones_ordered, id_range):
             continue
         tmp = f"__tmp_phys_{i}__"
         eb.name = tmp
+        for mesh_obj in child_meshes:
+            vg = mesh_obj.vertex_groups.get(old_name)
+            if vg is not None:
+                vg.name = tmp
         temp_to_final[tmp] = new_name
 
     # 第二步：从临时名改为正式名
@@ -527,6 +543,10 @@ def _rename_physics_bones(armature, physics_bones_ordered, id_range):
             success += 1
         else:
             fail += 1
+        for mesh_obj in child_meshes:
+            vg = mesh_obj.vertex_groups.get(tmp)
+            if vg is not None:
+                vg.name = final
 
     bpy.ops.object.mode_set(mode='OBJECT')
     return success, fail
