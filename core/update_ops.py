@@ -3,16 +3,21 @@ import json
 import urllib.request
 import ssl
 
+from .i18n import T
+
 # 替换为你的 GitHub 仓库 raw 地址
 # 例如: https://raw.githubusercontent.com/YourName/RepoName/main/version.json
 # 注意：一定要用 raw.githubusercontent.com
 VERSION_URL = "https://raw.githubusercontent.com/dimcirui/modding-toolkit/main/version.json"
 
 class MODDER_OT_CheckForUpdates(bpy.types.Operator):
-    """检查插件更新"""
     bl_idname = "modder.check_updates"
-    bl_label = "检查更新"
-    
+    bl_label = "Check for Updates"
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.update_ops.check_updates_desc")
+
     def execute(self, context):
         try:
             # 忽略 SSL 证书验证 (防止部分网络环境下报错)
@@ -39,15 +44,16 @@ class MODDER_OT_CheckForUpdates(bpy.types.Operator):
                 local_ver = context.preferences.addons[addon_name].bl_info.get('version', (0, 0, 0))
                 
                 if remote_ver > local_ver:
-                    self.report({'WARNING'}, f"发现新版本: v{'.'.join(map(str, remote_ver))} (当前: v{'.'.join(map(str, local_ver))})")
+                    self.report({'WARNING'}, T("core.update_ops.new_version_found").format(
+                        remote='.'.join(map(str, remote_ver)), local='.'.join(map(str, local_ver))))
                     # 这里可以弹窗提示下载
                     bpy.ops.wm.url_open(url=data.get("download_url", ""))
                 else:
-                    self.report({'INFO'}, "当前已是最新版本")
-                    
+                    self.report({'INFO'}, T("core.update_ops.already_latest"))
+
         except Exception as e:
-            self.report({'ERROR'}, f"检查更新失败: {str(e)}")
-            
+            self.report({'ERROR'}, T("core.update_ops.check_failed").format(err=str(e)))
+
         return {'FINISHED'}
 
 classes = [MODDER_OT_CheckForUpdates]

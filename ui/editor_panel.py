@@ -1,9 +1,12 @@
 import bpy
-from ..core.i18n import _
+from ..core.i18n import T
 from ..core import ui_config
 from ..core.ui_config import get_display_name
 
-# 分组名 → EditorSettings 折叠属性名的精确映射
+# Group name -> EditorSettings collapse-property name mapping.
+# NOTE: these dict keys are Chinese because they must match ui_config's
+# UI_HIERARCHY group names exactly (ui_config.py is out of this migration's
+# scope) — they're internal lookup keys, not displayed UI text.
 _GROUP_PROP_MAP = {
     "躯干和头部": "show_torso",
     "手臂":       "show_arm_l",
@@ -13,12 +16,15 @@ _GROUP_PROP_MAP = {
 }
 
 class MHW_PT_PresetEditor(bpy.types.Panel):
-    bl_label = "预设编辑器"
+    bl_label = ""
     bl_idname = "MHW_PT_preset_editor"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'MOD Toolkit'
     bl_options = {'DEFAULT_CLOSED'}
+
+    def draw_header(self, context):
+        self.layout.label(text=T("ui.editor_panel.panel_title"))
 
     def draw(self, context):
         layout = self.layout
@@ -27,47 +33,47 @@ class MHW_PT_PresetEditor(bpy.types.Panel):
         is_x = editor_settings.edit_mode == 'X'
 
         # ===========================
-        # 1. 管理现有预设
+        # 1. Manage existing presets
         # ===========================
         box = layout.box()
-        box.label(text="管理现有预设 (Manage):", icon='FILE_FOLDER')
+        box.label(text=T("ui.editor_panel.manage_header"), icon='FILE_FOLDER')
 
-        # 编辑模式切换
+        # Edit mode toggle
         row = box.row(align=True)
         row.prop(editor_settings, "edit_mode", expand=True)
 
-        # 预设选择 + 操作按钮
+        # Preset selection + action buttons
         row = box.row(align=True)
         if is_x:
             row.prop(suite_settings, "import_preset_enum", text="")
         else:
             row.prop(suite_settings, "target_preset_enum", text="")
-        row.operator("modder.load_x_preset", text=_("读取/编辑"), icon='IMPORT')
+        row.operator("modder.load_x_preset", text=T("ui.editor_panel.load_edit"), icon='IMPORT')
         row.operator("modder.delete_x_preset", text="", icon='TRASH')
 
-        # 打开文件夹按钮
+        # Open folder button
         row = box.row()
-        row.operator("modder.open_preset_folder", text=_("打开预设文件夹"), icon='FILE_FOLDER')
+        row.operator("modder.open_preset_folder", text=T("ui.editor_panel.open_preset_folder"), icon='FILE_FOLDER')
 
-        # 转换按钮
+        # Convert button
         row = box.row()
         if is_x:
-            row.operator("modder.convert_preset", text=_("复制为 Y 预设 (X转换)"), icon='PASTEDOWN')
+            row.operator("modder.convert_preset", text=T("ui.editor_panel.convert_to_y"), icon='PASTEDOWN')
         else:
-            row.operator("modder.convert_preset", text=_("复制为 X 预设 (Y转换)"), icon='PASTEDOWN')
+            row.operator("modder.convert_preset", text=T("ui.editor_panel.convert_to_x"), icon='PASTEDOWN')
 
         layout.separator()
 
         # ===========================
-        # 2. 编辑器工作区
+        # 2. Editor workspace
         # ===========================
-        layout.label(text="编辑器工作区:", icon='EDITMODE_HLT')
+        layout.label(text=T("ui.editor_panel.workspace_header"), icon='EDITMODE_HLT')
 
         row = layout.row(align=True)
-        row.prop(editor_settings, "new_preset_name", text="保存名")
-        row.operator("modder.save_x_preset", text=_("保存"), icon='DISK_DRIVE')
+        row.prop(editor_settings, "new_preset_name", text=T("ui.editor_panel.save_name_label"))
+        row.operator("modder.save_x_preset", text=T("ui.editor_panel.save_btn"), icon='DISK_DRIVE')
 
-        layout.operator("modder.init_editor", text=_("清空并初始化列表"), icon='FILE_NEW')
+        layout.operator("modder.init_editor", text=T("ui.editor_panel.init_list_btn"), icon='FILE_NEW')
 
         row = layout.row()
         row.prop(editor_settings, "search_filter", text="", icon='VIEWZOOM')
@@ -75,9 +81,9 @@ class MHW_PT_PresetEditor(bpy.types.Panel):
 
         layout.separator()
 
-        # --- 骨骼列表 ---
+        # --- Bone list ---
         if len(editor_settings.slots) == 0:
-            layout.label(text="列表为空，请点击初始化", icon='INFO')
+            layout.label(text=T("ui.editor_panel.list_empty"), icon='INFO')
             return
 
         slot_map = {s.std_name: i for i, s in enumerate(editor_settings.slots)}
@@ -118,7 +124,7 @@ class MHW_PT_PresetEditor(bpy.types.Panel):
                         op.slot_index = idx
                         op.target = 'MAIN'
                     else:
-                        row.label(text="[未设置]", icon='DOT')
+                        row.label(text=T("ui.editor_panel.unset_label"), icon='DOT')
 
                     op = row.operator("modder.pick_bone", text="", icon='EYEDROPPER')
                     op.slot_index = idx

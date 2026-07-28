@@ -1,6 +1,7 @@
 import bpy
 import os
 
+from ...core.i18n import T
 from .weapon_data import WEAPON_TYPES
 
 WEAPON_TYPE_CODES = [t[0] for t in WEAPON_TYPES]
@@ -18,8 +19,14 @@ SCAN_EXTS = {".mod3", ".mrl3", ".ctc"}
 # 武器无物理，仅扫描这两种
 WEAPON_SCAN_EXTS = {".mod3", ".mrl3"}
 
-PART_NAMES    = {"arm": "手臂", "leg": "腿部", "body": "身体", "helm": "头盔", "wst": "腰部"}
-GENDER_LABELS = {"f": "女", "m": "男"}
+PART_NAMES    = {
+    "arm":  "mhwi.batch_import.part_arm",
+    "leg":  "mhwi.batch_import.part_leg",
+    "body": "mhwi.batch_import.part_body",
+    "helm": "mhwi.batch_import.part_helm",
+    "wst":  "mhwi.batch_import.part_wst",
+}
+GENDER_LABELS = {"f": "mhwi.batch_import.gender_f", "m": "mhwi.batch_import.gender_m"}
 FT_ORDER      = ["mod3", "mrl3", "ctc"]
 
 
@@ -175,29 +182,36 @@ def _resolve_target(col_name, parent_col):
 # ── Operators ─────────────────────────────────────────────────────
 
 class MHWI_OT_ScanImportFolder(bpy.types.Operator):
-    """扫描当前 Mod Root 目录，列出可导入的装备文件"""
     bl_idname  = "mhwi.scan_import_folder"
-    bl_label   = "解析"
+    bl_label   = "Scan"
     bl_options = {'INTERNAL'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.batch_import.scan_desc")
 
     def execute(self, context):
         natives_root = context.scene.get("mhwi_natives_root", "")
         if not natives_root or not os.path.isdir(natives_root):
-            self.report({'ERROR'}, "请先设置 Mod Root 目录（nativePC 的上级文件夹）")
+            self.report({'ERROR'}, T("mhwi.batch_import.set_mod_root_first"))
             return {'CANCELLED'}
         count = scan_mhwi_folder(natives_root, context.scene)
         if count == 0:
-            self.report({'WARNING'}, "未找到任何可导入的装备文件，请确认目录结构正确")
+            self.report({'WARNING'}, T("mhwi.batch_import.no_files_found"))
         else:
-            self.report({'INFO'}, f"解析完成，找到 {count} 个文件")
+            self.report({'INFO'}, T("mhwi.batch_import.scan_done").format(n=count))
         return {'FINISHED'}
 
 
 class MHWI_OT_ToggleImportGroup(bpy.types.Operator):
-    """展开/折叠一套装备"""
     bl_idname  = "mhwi.toggle_import_group"
     bl_label   = "Toggle Import Group"
     bl_options = {'INTERNAL'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.batch_import.toggle_group_desc")
+
     group_key: bpy.props.StringProperty()
 
     def execute(self, context):
@@ -209,10 +223,14 @@ class MHWI_OT_ToggleImportGroup(bpy.types.Operator):
 
 
 class MHWI_OT_SelectImportGroup(bpy.types.Operator):
-    """批量选中/取消选中一套装备的所有文件"""
     bl_idname  = "mhwi.select_import_group"
     bl_label   = "Select Import Group"
     bl_options = {'INTERNAL'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.batch_import.select_group_desc")
+
     group_key: bpy.props.StringProperty()
     value:     bpy.props.BoolProperty()
 
@@ -224,10 +242,14 @@ class MHWI_OT_SelectImportGroup(bpy.types.Operator):
 
 
 class MHWI_OT_SelectAllImport(bpy.types.Operator):
-    """全选/全不选所有待导入文件"""
     bl_idname  = "mhwi.select_all_import"
     bl_label   = "Select All Import"
     bl_options = {'INTERNAL'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.batch_import.select_all_desc")
+
     value: bpy.props.BoolProperty()
 
     def execute(self, context):
@@ -237,14 +259,17 @@ class MHWI_OT_SelectAllImport(bpy.types.Operator):
 
 
 class MHWI_OT_BatchImport(bpy.types.Operator):
-    """MHWI 装备批量导入"""
     bl_idname  = "mhwi.batch_import"
     bl_label   = "MHWI Batch Import"
     bl_options = {'REGISTER'}
 
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.batch_import.batch_import_desc")
+
     def execute(self, context):
         if not (hasattr(bpy.ops, 'mhw_mod3') and hasattr(bpy.ops.mhw_mod3, 'import_mhw_mod3')):
-            self.report({'ERROR'}, "MHW Model Editor 未安装")
+            self.report({'ERROR'}, T("mhwi.batch_import.model_editor_missing"))
             return {'CANCELLED'}
 
         items   = context.scene.mhwi_import_items
@@ -254,7 +279,7 @@ class MHWI_OT_BatchImport(bpy.types.Operator):
             key=lambda x: FT_ORDER.index(x.filetype) if x.filetype in FT_ORDER else 99,
         )
         if not enabled:
-            self.report({'WARNING'}, "没有选中任何项目")
+            self.report({'WARNING'}, T("mhwi.batch_import.no_items_selected"))
             return {'CANCELLED'}
 
         # 构建 (group_key, gender, part) → {filetype: filepath} 的配对映射
@@ -328,9 +353,9 @@ class MHWI_OT_BatchImport(bpy.types.Operator):
                 fail += 1
 
         if fail:
-            self.report({'WARNING'}, f"完成: 导入 {ok}, 失败 {fail}")
+            self.report({'WARNING'}, T("mhwi.batch_import.import_done_with_fail").format(ok=ok, fail=fail))
         else:
-            self.report({'INFO'}, f"完成: 导入 {ok} 个文件")
+            self.report({'INFO'}, T("mhwi.batch_import.import_done").format(ok=ok))
         return {'FINISHED'}
 
 

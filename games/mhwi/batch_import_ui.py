@@ -1,5 +1,6 @@
 import bpy
 from collections import defaultdict
+from ...core.i18n import T
 from .batch_import import PART_CODES, PART_NAMES, GENDER_LABELS, FT_ORDER
 from .batch_export import _load_armor_sets, get_armor_entry
 from .weapon_data import _load_weapon_sets
@@ -72,10 +73,13 @@ def _gp_sort_key(gender_part):
 # ── 对话框 ────────────────────────────────────────────────────────
 
 class MHWI_OT_BatchImportDialog(bpy.types.Operator):
-    """MHWI 装备批量导入对话框"""
     bl_idname  = "mhwi.batch_import_dialog"
     bl_label   = "MHWI Batch Importer"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.batch_import_ui.dialog_desc")
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self, width=IMPORTER_WINDOW_WIDTH)
@@ -93,10 +97,10 @@ class MHWI_OT_BatchImportDialog(bpy.types.Operator):
             short = "/".join(parts[-3:]) if len(parts) > 3 else natives_root
             row.label(text=f".../{short}")
         else:
-            row.label(text="未设置", icon='ERROR')
+            row.label(text=T("mhwi.batch_import_ui.not_set"), icon='ERROR')
 
         # ── 解析按钮 ──
-        layout.operator("mhwi.scan_import_folder", text="解析", icon='FILE_REFRESH')
+        layout.operator("mhwi.scan_import_folder", text=T("mhwi.batch_import_ui.scan_btn"), icon='FILE_REFRESH')
 
         items  = scene.mhwi_import_items
         groups = scene.mhwi_import_groups
@@ -104,7 +108,8 @@ class MHWI_OT_BatchImportDialog(bpy.types.Operator):
         if not groups:
             layout.separator()
             layout.label(
-                text="点击「解析」扫描装备文件" if natives_root else "请先设置 Mod Root",
+                text=T("mhwi.batch_import_ui.click_scan_hint") if natives_root
+                     else T("mhwi.batch_import_ui.set_mod_root_hint"),
                 icon='INFO',
             )
             return
@@ -114,11 +119,11 @@ class MHWI_OT_BatchImportDialog(bpy.types.Operator):
         # ── 全局选择栏 ──
         enabled_count = sum(1 for it in items if it.enabled)
         row = layout.row(align=True)
-        op_all  = row.operator("mhwi.select_all_import", text="全选",   icon='CHECKBOX_HLT')
+        op_all  = row.operator("mhwi.select_all_import", text=T("mhwi.batch_import_ui.select_all"), icon='CHECKBOX_HLT')
         op_all.value  = True
-        op_none = row.operator("mhwi.select_all_import", text="全不选", icon='CHECKBOX_DEHLT')
+        op_none = row.operator("mhwi.select_all_import", text=T("mhwi.batch_import_ui.deselect_all"), icon='CHECKBOX_DEHLT')
         op_none.value = False
-        row.label(text=f"{enabled_count} / {len(items)} 已选")
+        row.label(text=T("mhwi.batch_import_ui.selected_count").format(enabled=enabled_count, total=len(items)))
 
         layout.separator()
 
@@ -162,7 +167,7 @@ class MHWI_OT_BatchImportDialog(bpy.types.Operator):
                 # 展开内容：按文件自身的 model code 排序，每行显示该文件的所有文件类型
                 for (_gender, part), part_items in sorted(gp_items.items(), key=lambda x: x[0][1]):
                     row = box.row(align=True)
-                    part_label = f"{part}  (主模型)" if part == gkey else part
+                    part_label = f"{part}  ({T('mhwi.batch_import_ui.main_model')})" if part == gkey else part
                     row.label(text=part_label)
                     for it in part_items:
                         ft_icon = _FILETYPE_ICONS.get(it.filetype, 'FILE')
@@ -172,7 +177,7 @@ class MHWI_OT_BatchImportDialog(bpy.types.Operator):
                 # 展开内容：按 (part, gender) 排序，每行显示该 (part, gender) 的所有文件类型
                 for (gender, part), part_items in sorted(gp_items.items(), key=lambda x: _gp_sort_key(x[0])):
                     row = box.row(align=True)
-                    part_label = f"{PART_NAMES.get(part, part)}  ({GENDER_LABELS.get(gender, gender)})"
+                    part_label = f"{T(PART_NAMES.get(part, part))}  ({T(GENDER_LABELS.get(gender, gender))})"
                     row.label(text=part_label)
                     for it in part_items:
                         ft_icon = _FILETYPE_ICONS.get(it.filetype, 'FILE')

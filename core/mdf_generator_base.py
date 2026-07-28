@@ -18,6 +18,7 @@ import tempfile
 import shutil
 import time
 
+from .i18n import T
 from .mdf_tex_processor_base import (
     BASE_SLOT_CHANNEL_MAPS, BASE_NULL_TEX_BY_TYPE, BASE_TEXTURE_TYPE_ABBREV,
     SRGB_SLOT_TYPES, PBR_DEFAULTS, PBR_CHANNEL_SELECTABLE, _CH,
@@ -1018,18 +1019,21 @@ def _channel_size_enum_items(self, context):
 
 
 class MHW_OT_SetChannelSize(bpy.types.Operator):
-    """调整该通道的输出分辨率（仅限 ≤ 原生尺寸的 2 的幂次方，最小 256）"""
     bl_idname  = "mhw.set_channel_size"
-    bl_label   = "调整输出尺寸"
+    bl_label   = "Set Output Size"
     bl_options = {'INTERNAL', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.mdf_generator_base.set_channel_size_desc")
 
     settings_attr: bpy.props.StringProperty()
     mat_name:      bpy.props.StringProperty()
     channel:       bpy.props.StringProperty()
     native_size:   bpy.props.IntProperty(default=1024)
     size:          bpy.props.EnumProperty(
-        name="输出尺寸",
-        description="烘焙 / 直接通道的最终输出分辨率（边长，正方形）",
+        name="Output Size",
+        description="Final output resolution for the baked/direct channel (square side length)",
         items=_channel_size_enum_items,
     )
 
@@ -1051,8 +1055,8 @@ class MHW_OT_SetChannelSize(bpy.types.Operator):
 
     def draw(self, context):
         col = self.layout.column()
-        col.label(text=f"原生尺寸: {self.native_size}×{self.native_size}")
-        col.prop(self, "size", text="输出尺寸")
+        col.label(text=T("core.mdf_generator_base.native_size_label").format(size=self.native_size))
+        col.prop(self, "size", text=T("core.mdf_generator_base.output_size_label"))
 
     def execute(self, context):
         settings = getattr(context.scene, self.settings_attr, None)
@@ -1408,7 +1412,7 @@ class MdfGenRefreshBase(bpy.types.Operator):
 
         mesh_col = settings.mesh_collection
         if not mesh_col:
-            self.report({'ERROR'}, "请先选择网格集合")
+            self.report({'ERROR'}, T("core.mdf_generator_base.select_mesh_collection"))
             return {'CANCELLED'}
 
         mat_names = set()
@@ -1419,7 +1423,7 @@ class MdfGenRefreshBase(bpy.types.Operator):
                         mat_names.add(mat.name)
 
         if not mat_names:
-            self.report({'ERROR'}, "集合中没有找到材质")
+            self.report({'ERROR'}, T("core.mdf_generator_base.no_materials_in_collection"))
             return {'CANCELLED'}
 
         preset_items = cls._load_preset_items()
@@ -1469,7 +1473,7 @@ class MdfGenRefreshBase(bpy.types.Operator):
                 except Exception:
                     pass
 
-        self.report({'INFO'}, f"已扫描 {len(settings.material_list)} 个材质")
+        self.report({'INFO'}, T("core.mdf_generator_base.scanned_materials").format(n=len(settings.material_list)))
         return {'FINISHED'}
 
 
@@ -1498,24 +1502,24 @@ class MdfGenProcessBase(bpy.types.Operator):
 
         natives_root = context.scene.get(cls._natives_root_key, "")
         if not natives_root or not os.path.isdir(natives_root):
-            self.report({'ERROR'}, "请先设置 Natives Root 目录（natives 的上级文件夹）")
+            self.report({'ERROR'}, T("core.mdf_generator_base.set_natives_root"))
             return {'CANCELLED'}
 
         mesh_col = settings.mesh_collection
         if not mesh_col:
-            self.report({'ERROR'}, "请先选择网格集合")
+            self.report({'ERROR'}, T("core.mdf_generator_base.select_mesh_collection"))
             return {'CANCELLED'}
 
         base_path = settings.texture_base_path.strip()
         if not base_path:
-            self.report({'ERROR'}, "请填写 Base Path")
+            self.report({'ERROR'}, T("core.mdf_generator_base.fill_base_path"))
             return {'CANCELLED'}
 
         if cls._path_fixed_prefix:
             base_path = cls._path_fixed_prefix.strip('/') + '/' + base_path.strip('/')
 
         if not settings.material_list:
-            self.report({'ERROR'}, "请先点击 Refresh 加载材质")
+            self.report({'ERROR'}, T("core.mdf_generator_base.click_refresh_first"))
             return {'CANCELLED'}
 
         print(f"[{cls._log_tag}] {'='*40}", flush=True)
@@ -1526,7 +1530,7 @@ class MdfGenProcessBase(bpy.types.Operator):
         readPresetJSON = _import_read_preset_json()
         # print(f"[{cls._log_tag}] 加载 Preset 模块: {time.time() - _t_import:.2f}s", flush=True)
         if readPresetJSON is None:
-            self.report({'ERROR'}, "无法加载 RE Mesh Editor Preset 工具")
+            self.report({'ERROR'}, T("core.mdf_generator_base.cannot_load_preset_tool"))
             return {'CANCELLED'}
 
         mdf_col = self._get_or_create_mdf_collection(context, mesh_col, settings)
@@ -1564,9 +1568,10 @@ class MdfGenProcessBase(bpy.types.Operator):
 
         print(f"[{cls._log_tag}] ★ 总耗时: {time.time() - _t_total:.2f}s ★", flush=True)
         if fail_count:
-            self.report({'WARNING'}, f"完成: 成功 {export_count}, 失败 {fail_count}")
+            self.report({'WARNING'}, T("core.mdf_generator_base.process_done_with_fail").format(
+                export=export_count, fail=fail_count))
         else:
-            self.report({'INFO'}, f"完成: 成功生成 {export_count} 个材质的 MDF2 + 贴图")
+            self.report({'INFO'}, T("core.mdf_generator_base.process_done").format(n=export_count))
         return {'FINISHED'}  # MdfGenProcessBase
 
     # ── helpers ────────────────────────────────────────────────────────────────

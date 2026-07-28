@@ -1,18 +1,20 @@
 import bpy
 
+from ...core.i18n import T
 from .mdf_generator import RE4_GEN_GAME
 from ...core.mdf_generator_base import get_preset_dir_for_game, preset_has_emissive_slots
 
 GENERATOR_WINDOW_WIDTH = 580
 _SETTINGS_ATTR = "re4_mdf_generator"
 
-_STRAT_LABELS = {
-    'color':     "基础色",
-    'normal':    "法线",
-    'roughness': "粗糙度",
-    'metallic':  "金属度",
-    'alpha':     "Alpha",
-    'emissive':  "自发光",
+# T() keys for each channel's display label (resolved fresh at draw time)
+_STRAT_LABEL_KEYS = {
+    'color':     "re4.mdf_generator_ui.strat_color",
+    'normal':    "re4.mdf_generator_ui.strat_normal",
+    'roughness': "re4.mdf_generator_ui.strat_roughness",
+    'metallic':  "re4.mdf_generator_ui.strat_metallic",
+    'alpha':     "re4.mdf_generator_ui.strat_alpha",
+    'emissive':  "re4.mdf_generator_ui.strat_emissive",
 }
 
 _STRAT_ICONS = {
@@ -24,10 +26,15 @@ _STRAT_ICONS = {
 
 
 class RE4_OT_MdfGeneratorDialog(bpy.types.Operator):
-    """RE4 MDF2 Generator — 从 Blender 网格材质创建 MDF2 + 贴图。需要有现成的 mesh 集合，并在材质里连好 Principled BSDF"""
+    """RE4 MDF2 Generator - create MDF2 + textures from Blender mesh materials.
+    Requires an existing mesh collection with a Principled BSDF wired up in each material"""
     bl_idname  = "re4.mdf_generator_dialog"
     bl_label   = "MDF2 Generator"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("re4.mdf_generator_ui.dialog_desc")
 
     def invoke(self, context, event):
         settings = context.scene.re4_mdf_generator
@@ -69,7 +76,7 @@ class RE4_OT_MdfGeneratorDialog(bpy.types.Operator):
         if not settings.mdf_collection_name.strip() and settings.mesh_collection:
             mc        = settings.mesh_collection.name
             auto_name = mc.replace('.mesh', '.mdf2') if '.mesh' in mc else mc + ".mdf2"
-            layout.row().label(text=f"    自动: {auto_name}", icon='INFO')
+            layout.row().label(text=T("re4.mdf_generator_ui.auto_mdf_name").format(name=auto_name), icon='INFO')
 
         row = layout.row(align=True)
         row.label(text="natives/STM/_Chainsaw/Character/ch/")
@@ -77,16 +84,16 @@ class RE4_OT_MdfGeneratorDialog(bpy.types.Operator):
         if not settings.texture_base_path.strip():
             layout.row().label(text="    e.g. Author/CharacterName/", icon='INFO')
 
-        layout.prop(settings, "flip_normal_g")
+        layout.prop(settings, "flip_normal_g", text=T("re4.mdf_generator.flip_normal_g_label"))
 
         preset_dir = get_preset_dir_for_game(RE4_GEN_GAME)
         if not preset_dir:
             layout.separator()
-            layout.label(text="未找到 RE Mesh Editor RE4 预设目录", icon='ERROR')
+            layout.label(text=T("re4.mdf_generator_ui.preset_dir_not_found"), icon='ERROR')
 
         if not settings.material_list:
             layout.separator()
-            layout.label(text="选择网格集合后点击刷新", icon='INFO')
+            layout.label(text=T("re4.mdf_generator_ui.select_mesh_collection_hint"), icon='INFO')
             return
 
         layout.separator()
@@ -103,10 +110,11 @@ class RE4_OT_MdfGeneratorDialog(bpy.types.Operator):
                 continue
 
             strat_box = box.box()
-            strat_box.label(text="节点树分析 (贴图来源策略)", icon='NODETREE')
+            strat_box.label(text=T("re4.mdf_generator_ui.node_tree_analysis"), icon='NODETREE')
             grid = strat_box.grid_flow(row_major=True, columns=3,
                                        even_columns=True, align=True)
-            for pt, label in _STRAT_LABELS.items():
+            for pt, label_key in _STRAT_LABEL_KEYS.items():
+                label       = T(label_key)
                 strat       = getattr(mat_entry, f"strat_{pt}", "?")
                 icon        = _STRAT_ICONS.get(strat, 'QUESTION')
                 native_size = getattr(mat_entry, f"native_size_{pt}", 0)
@@ -124,9 +132,9 @@ class RE4_OT_MdfGeneratorDialog(bpy.types.Operator):
                     op.native_size   = native_size
 
             if preset_has_emissive_slots(mat_entry.material_preset):
-                box.prop(mat_entry, "use_toon")
-            box.prop(mat_entry, "generate_mipmaps")
-            box.prop(mat_entry, "skip_textures")
+                box.prop(mat_entry, "use_toon", text=T("re4.mdf_generator.use_toon_label"))
+            box.prop(mat_entry, "generate_mipmaps", text=T("re4.mdf_generator.generate_mipmaps_label"))
+            box.prop(mat_entry, "skip_textures", text=T("re4.mdf_generator.skip_textures_label"))
             box.prop(mat_entry, "use_ao")
             if mat_entry.use_ao:
                 box.prop(mat_entry, "ao_image")

@@ -1,6 +1,8 @@
 import os
 import json
 
+from ...core.i18n import T
+
 
 def _addon_dir():
     return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -16,31 +18,39 @@ def _get_weapon_sets_dir():
 # 附加部位与主模型共享同一个模型文件夹，仅将代码中的类型前缀替换为对应部位前缀
 # 例：one026 -> sld026；swo016 -> saya016；bs_one001 -> bs_sld001
 WEAPON_TYPES = [
-    ("two",  "大剑",   []),
-    ("one",  "片手剑", [("sld", "盾")]),
-    ("sou",  "双剑",   [("sou_r", "右手剑")]),
-    ("swo",  "太刀",   [("saya", "刀鞘")]),
-    ("ham",  "大锤",   []),
-    ("hue",  "狩猎笛", []),
-    ("lan",  "长枪",   [("sld", "盾")]),
-    ("gun",  "铳枪",   [("sld", "盾")]),
-    ("saxe", "斩斧",   []),
-    ("caxe", "盾斧",   [("sld", "盾")]),
-    ("rod",  "操虫棍", []),
-    ("bow",  "弓",     []),
-    ("hbg",  "重弩炮", []),
-    ("lbg",  "轻弩炮", []),
+    ("two",  "mhwi.weapon_data.type_two",  []),
+    ("one",  "mhwi.weapon_data.type_one",  [("sld", "mhwi.weapon_data.part_sld")]),
+    ("sou",  "mhwi.weapon_data.type_sou",  [("sou_r", "mhwi.weapon_data.part_sou_r")]),
+    ("swo",  "mhwi.weapon_data.type_swo",  [("saya", "mhwi.weapon_data.part_saya")]),
+    ("ham",  "mhwi.weapon_data.type_ham",  []),
+    ("hue",  "mhwi.weapon_data.type_hue",  []),
+    ("lan",  "mhwi.weapon_data.type_lan",  [("sld", "mhwi.weapon_data.part_sld")]),
+    ("gun",  "mhwi.weapon_data.type_gun",  [("sld", "mhwi.weapon_data.part_sld")]),
+    ("saxe", "mhwi.weapon_data.type_saxe", []),
+    ("caxe", "mhwi.weapon_data.type_caxe", [("sld", "mhwi.weapon_data.part_sld")]),
+    ("rod",  "mhwi.weapon_data.type_rod",  []),
+    ("bow",  "mhwi.weapon_data.type_bow",  []),
+    ("hbg",  "mhwi.weapon_data.type_hbg",  []),
+    ("lbg",  "mhwi.weapon_data.type_lbg",  []),
 ]
 WEAPON_TYPE_MAP = {t[0]: t for t in WEAPON_TYPES}
+
+
+def get_weapon_type_items(self=None, context=None):
+    """Dynamic items= callback so weapon-type tab labels re-evaluate per draw
+    (a plain list comprehension over WEAPON_TYPES would only be built once,
+    at class-definition/import time, before the addon's language preference
+    is even loaded)."""
+    return [(code, T(key), "") for code, key, _secondary in WEAPON_TYPES]
 
 WEAPON_FILE_TYPES = ["mod3", "mrl3"]
 
 PART_LABELS = {
-    "main":   "主模型",
-    "sld":    "盾",
-    "saya":   "刀鞘",
-    "sou_r":  "右手剑",
-    "saya_r": "右手鞘",
+    "main":   "mhwi.weapon_data.part_main",
+    "sld":    "mhwi.weapon_data.part_sld",
+    "saya":   "mhwi.weapon_data.part_saya",
+    "sou_r":  "mhwi.weapon_data.part_sou_r",
+    "saya_r": "mhwi.weapon_data.part_saya_r",
 }
 
 
@@ -58,7 +68,7 @@ def get_weapon_parts(weapon_type, entry):
     """返回该武器条目的实际部位列表 [(部位代码, 部位显示名, 模型代码), ...]，含主模型"""
     _, _, default_secondary = WEAPON_TYPE_MAP[weapon_type]
     main_code = entry["id"]
-    parts = [("main", "主模型", main_code)]
+    parts = [("main", T(PART_LABELS["main"]), main_code)]
 
     secondary = list(default_secondary)
     for code in entry.get("extra_parts", []):
@@ -66,7 +76,7 @@ def get_weapon_parts(weapon_type, entry):
             secondary.append((code, PART_LABELS.get(code, code)))
 
     for code, label in secondary:
-        parts.append((code, label, _derive_part_code(main_code, weapon_type, code)))
+        parts.append((code, T(label), _derive_part_code(main_code, weapon_type, code)))
     return parts
 
 
@@ -84,7 +94,7 @@ def get_mhwi_weapon_sets_callback(self, context):
             name = os.path.splitext(f)[0]
             result.append((f, name, ""))
     if not result:
-        result.append(('NONE', "无武器预设组", ""))
+        result.append(('NONE', T("mhwi.weapon_data.no_weapon_sets"), ""))
     return result
 
 
@@ -121,7 +131,7 @@ def get_mhwi_weapon_callback_for_type(weapon_type, context):
             label = f"{w['name']}  ({w['id']})"
             items.append((w["id"], label, "", len(items)))
     if not items:
-        items.append(('NONE', "无武器", "", 0))
+        items.append(('NONE', T("mhwi.weapon_data.no_weapons"), "", 0))
     _weapon_items_cache[weapon_type] = items
     return items
 

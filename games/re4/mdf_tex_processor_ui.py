@@ -1,13 +1,18 @@
 import bpy
 
+from ...core.i18n import T
 from ...core.mdf_tex_processor_ui_base import MdfTexDialogBase
 from .mdf_tex_processor import RE4_COMMON_SLOT_TYPES, RE4_NULL_TEX_BY_TYPE
 
 
 class RE4_OT_MdfTexProcessorDialog(MdfTexDialogBase):
-    """MDF2 处理器 — 在已有 MDF2 材质的基础上处理贴图。需要有现成的已起好名字的 MDF2 集合"""
+    """MDF2 Processor - process textures on top of an existing MDF2 material"""
     bl_idname = "re4.mdf_tex_processor_dialog"
     bl_label  = "MDF2 + Tex Processor"
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("re4.mdf_tex_processor_ui.dialog_desc")
 
     _game_prefix       = "re4"
     _settings_attr     = "re4_mdf_tex_processor"

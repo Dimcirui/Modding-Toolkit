@@ -1,7 +1,6 @@
 import sys
 import time
 import bpy
-from .i18n import _
 from dataclasses import dataclass
 from ..core.bone_mapper import BoneMapManager, resolve_preset
 from ..core.standard_ops import _build_fuzzy_preset_bones

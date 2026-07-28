@@ -5,19 +5,37 @@ import tempfile
 import shutil
 import time
 
+from .i18n import T
+
 # ── PBR Constants ──────────────────────────────────────────────────────────────
 
 PBR_TYPES = ['color', 'alpha', 'emissive', 'normal', 'roughness', 'metallic', 'ao']
 
-PBR_TYPE_LABELS = {
-    'color':     "基础色 (Albedo)",
-    'alpha':     "Alpha 遮罩",
-    'emissive':  "自发光 (Emissive)",
-    'normal':    "法线 (Normal)",
-    'roughness': "粗糙度 (Roughness)",
-    'metallic':  "金属度 (Metallic)",
-    'ao':        "AO",
+_PBR_TYPE_LABEL_KEYS = {
+    'color':     "core.mdf_tex_processor_base.pbr_color",
+    'alpha':     "core.mdf_tex_processor_base.pbr_alpha",
+    'emissive':  "core.mdf_tex_processor_base.pbr_emissive",
+    'normal':    "core.mdf_tex_processor_base.pbr_normal",
+    'roughness': "core.mdf_tex_processor_base.pbr_roughness",
+    'metallic':  "core.mdf_tex_processor_base.pbr_metallic",
+    'ao':        "core.mdf_tex_processor_base.pbr_ao",
 }
+
+class _LiveTranslatedLabels(dict):
+    """dict whose __getitem__ re-evaluates T() on every access.
+
+    PBR_TYPE_LABELS is consumed elsewhere as a plain subscript
+    (``PBR_TYPE_LABELS[pt]``) by files outside this migration's scope
+    (core/mdf_tex_processor_ui_base.py, games/*/mrl3_tex_processor_ui.py).
+    Subclassing dict and overriding __getitem__ lets those call sites keep
+    working unchanged while still picking up a language switch at draw time,
+    instead of requiring every caller to switch to a get_..._callback()
+    function call (pattern 7 doesn't fit here since callers use [] indexing,
+    not an items= callback)."""
+    def __getitem__(self, key):
+        return T(dict.__getitem__(self, key))
+
+PBR_TYPE_LABELS = _LiveTranslatedLabels(_PBR_TYPE_LABEL_KEYS)
 
 PBR_DEFAULTS = {
     'color':     [0.0, 0.0, 0.0, 1.0],
@@ -512,37 +530,49 @@ def mdf_collection_poll(self, col):
 # ── Shared PropertyGroups ──────────────────────────────────────────────────────
 
 class MdfTexPBRInputs(bpy.types.PropertyGroup):
-    color:     bpy.props.StringProperty(name="基础色 (Albedo)", subtype='FILE_PATH')
-    alpha:     bpy.props.StringProperty(name="Alpha 遮罩",      subtype='FILE_PATH')
-    emissive:  bpy.props.StringProperty(name="自发光",           subtype='FILE_PATH')
-    normal:    bpy.props.StringProperty(name="法线 (Normal)",   subtype='FILE_PATH')
-    roughness: bpy.props.StringProperty(name="粗糙度",           subtype='FILE_PATH')
-    metallic:  bpy.props.StringProperty(name="金属度",           subtype='FILE_PATH')
-    ao:        bpy.props.StringProperty(name="AO",              subtype='FILE_PATH')
+    color:     bpy.props.StringProperty(name="Base Color (Albedo)", subtype='FILE_PATH')
+    alpha:     bpy.props.StringProperty(name="Alpha Mask",          subtype='FILE_PATH')
+    emissive:  bpy.props.StringProperty(name="Emissive",            subtype='FILE_PATH')
+    normal:    bpy.props.StringProperty(name="Normal",              subtype='FILE_PATH')
+    roughness: bpy.props.StringProperty(name="Roughness",           subtype='FILE_PATH')
+    metallic:  bpy.props.StringProperty(name="Metallic",            subtype='FILE_PATH')
+    ao:        bpy.props.StringProperty(name="AO",                  subtype='FILE_PATH')
     alpha_ch:     bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
     roughness_ch: bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
     metallic_ch:  bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
     ao_ch:        bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
-    alpha_inv:     bpy.props.BoolProperty(name="反相", default=False)
-    roughness_inv: bpy.props.BoolProperty(name="反相", default=False)
-    metallic_inv:  bpy.props.BoolProperty(name="反相", default=False)
-    ao_inv:        bpy.props.BoolProperty(name="反相", default=False)
+    alpha_inv:     bpy.props.BoolProperty(name="Invert", default=False)
+    roughness_inv: bpy.props.BoolProperty(name="Invert", default=False)
+    metallic_inv:  bpy.props.BoolProperty(name="Invert", default=False)
+    ao_inv:        bpy.props.BoolProperty(name="Invert", default=False)
     normal_flip_g: bpy.props.BoolProperty(name="GL>DX", default=False,
-                                          description="合成时翻转法线G通道 (OpenGL转DirectX)")
+                                          description="Flip the normal map's G channel when composing (OpenGL to DirectX)")
+
+
+_mdf_tex_slot_mode_items_cache = []
+
+def get_mdf_tex_slot_mode_items(self, context):
+    global _mdf_tex_slot_mode_items_cache
+    _mdf_tex_slot_mode_items_cache = [
+        ('COMPOSE', T("core.mdf_tex_processor_base.mode_compose"),
+                    T("core.mdf_tex_processor_base.mode_compose_desc"), 'NODE_COMPOSITING', 0),
+        ('DIRECT',  T("core.mdf_tex_processor_base.mode_direct"),
+                    T("core.mdf_tex_processor_base.mode_direct_desc"),  'IMAGE_DATA',       1),
+        ('DEFAULT', T("core.mdf_tex_processor_base.mode_default"),
+                    T("core.mdf_tex_processor_base.mode_default_desc"), 'LINKED',           2),
+        ('SKIP',    T("core.mdf_tex_processor_base.mode_skip"),
+                    T("core.mdf_tex_processor_base.mode_skip_desc"),    'RADIOBUT_OFF',     3),
+    ]
+    return _mdf_tex_slot_mode_items_cache
 
 
 class MdfTexSlotItem(bpy.types.PropertyGroup):
     texture_type:  bpy.props.StringProperty(name="Texture Type")
     original_path: bpy.props.StringProperty(name="Original Path")
     mode: bpy.props.EnumProperty(
-        name="模式",
-        items=[
-            ('COMPOSE', 'PBR转换',   '从上方 PBR 输入合成通道并转换',      'NODE_COMPOSITING', 0),
-            ('DIRECT',  '直接选择',  '直接选择已打包好的图片/DDS/TEX文件', 'IMAGE_DATA',       1),
-            ('DEFAULT', '默认空贴图','写入该槽位对应的游戏内空贴图路径',    'LINKED',           2),
-            ('SKIP',    '不修改',    '保持现有路径不变',                   'RADIOBUT_OFF',     3),
-        ],
-        default='SKIP',
+        name="Mode",
+        items=get_mdf_tex_slot_mode_items,
+        default=3,  # 'SKIP' — dynamic items require an int index default
     )
     direct_image: bpy.props.StringProperty(name="Direct Image", subtype='FILE_PATH')
 
@@ -553,10 +583,10 @@ class MdfTexMaterialItem(bpy.types.PropertyGroup):
     expanded:          bpy.props.BoolProperty(default=False)
     pbr_expanded:      bpy.props.BoolProperty(default=False)
     other_expanded:    bpy.props.BoolProperty(default=False)
-    generate_mipmaps:  bpy.props.BoolProperty(name="生成 MipMaps", default=True)
+    generate_mipmaps:  bpy.props.BoolProperty(name="Generate MipMaps", default=True)
     skip_textures:     bpy.props.BoolProperty(
-        name="仅生成材质",
-        description="跳过贴图合成与转换，仅更新材质定义中的贴图路径",
+        name="Material Only",
+        description="Skip texture composition/conversion; only update texture paths in the material definition",
         default=False,
     )
     pbr:   bpy.props.PointerProperty(type=MdfTexPBRInputs)
@@ -575,10 +605,10 @@ class MdfTexRefreshBase(bpy.types.Operator):
         settings = getattr(context.scene, type(self)._settings_attr)
         col = settings.mdf_collection
         if not col:
-            self.report({'ERROR'}, "请先选择 MDF 集合")
+            self.report({'ERROR'}, T("core.mdf_tex_processor_base.select_mdf_collection"))
             return {'CANCELLED'}
         count = _do_refresh(settings, col, context.scene, is_null_fn=type(self)._is_null_fn)
-        self.report({'INFO'}, f"已加载 {count} 个材质")
+        self.report({'INFO'}, T("core.mdf_tex_processor_base.loaded_materials").format(n=count))
         return {'FINISHED'}
 
 
@@ -688,7 +718,7 @@ class MdfTexCopyMaterialBase(bpy.types.Operator):
                               for s in mat.slots},
         }
         settings.clipboard_json = json.dumps(data)
-        self.report({'INFO'}, f"已复制 {mat.material_name}")
+        self.report({'INFO'}, T("core.mdf_tex_processor_base.copied_material").format(name=mat.material_name))
         return {'FINISHED'}
 
 
@@ -702,7 +732,7 @@ class MdfTexPasteMaterialBase(bpy.types.Operator):
     def execute(self, context):
         settings = getattr(context.scene, type(self)._settings_attr)
         if not settings.clipboard_json:
-            self.report({'WARNING'}, "剪贴板为空")
+            self.report({'WARNING'}, T("core.mdf_tex_processor_base.clipboard_empty"))
             return {'CANCELLED'}
         mats = settings.materials
         if not (0 <= self.mat_index < len(mats)):
@@ -729,7 +759,7 @@ class MdfTexPasteMaterialBase(bpy.types.Operator):
                 sd = slot_data[slot.texture_type]
                 slot.mode         = sd.get('mode', 'SKIP')
                 slot.direct_image = sd.get('direct_image', '')
-        self.report({'INFO'}, f"已粘贴到 {mat.material_name}")
+        self.report({'INFO'}, T("core.mdf_tex_processor_base.pasted_to_material").format(name=mat.material_name))
         return {'FINISHED'}
 
 
@@ -756,19 +786,19 @@ class MdfTexProcessBase(bpy.types.Operator):
 
         natives_root = scene.get(cls._natives_root_key, "")
         if not natives_root or not os.path.isdir(natives_root):
-            self.report({'ERROR'}, "请先设置 Natives Root 目录（natives 的上级文件夹）")
+            self.report({'ERROR'}, T("core.mdf_tex_processor_base.set_natives_root"))
             return {'CANCELLED'}
         if not settings.mdf_collection:
-            self.report({'ERROR'}, "请先选择 MDF 集合")
+            self.report({'ERROR'}, T("core.mdf_tex_processor_base.select_mdf_collection"))
             return {'CANCELLED'}
         base_path = settings.texture_base_path.strip()
         if not base_path:
-            self.report({'ERROR'}, "请填写 Base Path")
+            self.report({'ERROR'}, T("core.mdf_tex_processor_base.fill_base_path"))
             return {'CANCELLED'}
         if cls._path_fixed_prefix:
             base_path = cls._path_fixed_prefix.strip('/') + '/' + base_path.strip('/')
         if not settings.materials:
-            self.report({'ERROR'}, "请先点击 Refresh 加载材质")
+            self.report({'ERROR'}, T("core.mdf_tex_processor_base.click_refresh_first"))
             return {'CANCELLED'}
 
         print(f"[{cls._log_tag}] {'='*40}", flush=True)
@@ -919,10 +949,11 @@ class MdfTexProcessBase(bpy.types.Operator):
         print(f"[{cls._log_tag}] ★ 总耗时: {time.time() - _t_total:.2f}s ★", flush=True)
 
         if fail_count > 0:
-            self.report({'WARNING'},
-                        f"完成: 生成 {export_count}, 失败 {fail_count}, 跳过 {skip_count}")
+            self.report({'WARNING'}, T("core.mdf_tex_processor_base.process_done_with_fail").format(
+                export=export_count, fail=fail_count, skip=skip_count))
         else:
-            self.report({'INFO'}, f"完成: 生成 {export_count}, 跳过 {skip_count}")
+            self.report({'INFO'}, T("core.mdf_tex_processor_base.process_done").format(
+                export=export_count, skip=skip_count))
         return {'FINISHED'}
 
 

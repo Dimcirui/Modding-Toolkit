@@ -4,6 +4,7 @@ import tempfile
 import shutil
 import time
 
+from ...core.i18n import T
 from ...core.mdf_tex_processor_base import (
     PBR_TYPES, PBR_CHANNEL_SELECTABLE,
     MdfTexMaterialItem,
@@ -18,15 +19,16 @@ from ...core.mdf_tex_processor_base import (
 
 # ── MHWI MRL3 constants ───────────────────────────────────────────────────────
 
-# (slot_type, label, pbr_composable)
+# (slot_type, label, pbr_composable) -- label is currently unused for display
+# (UI draws slot.texture_type directly); kept in English for documentation value.
 MHWI_MRL3_SLOT_DEFS = [
-    ("AlbedoMap",      "BaseAlpha",  True),
-    ("NormalMap",      "法线",       True),
-    ("RMTMap",         "RMT",        True),
-    ("EmissiveMap",    "发光",       True),
-    ("ColorMaskMap",   "颜色遮罩",   False),
-    ("FxMap",          "FX",         False),
-    ("FurVelocityMap", "皮毛速度",   False),
+    ("AlbedoMap",      "BaseAlpha",     True),
+    ("NormalMap",      "Normal",        True),
+    ("RMTMap",         "RMT",           True),
+    ("EmissiveMap",    "Emissive",      True),
+    ("ColorMaskMap",   "Color Mask",    False),
+    ("FxMap",          "FX",            False),
+    ("FurVelocityMap", "Fur Velocity",  False),
 ]
 
 MHWI_PBR_SLOT_TYPES = {s for s, _, pbr in MHWI_MRL3_SLOT_DEFS if pbr}
@@ -239,7 +241,7 @@ class Mrl3TexProcessorSettings(bpy.types.PropertyGroup):
     )
     texture_base_path: bpy.props.StringProperty(
         name="Base Path",
-        description="nativePC/ 下的贴图目录，例：pl/f_equip/pl042_0500/helm/tex",
+        description="Texture directory under nativePC/, e.g. pl/f_equip/pl042_0500/helm/tex",
         default="",
     )
     materials:              bpy.props.CollectionProperty(type=MdfTexMaterialItem)
@@ -259,10 +261,10 @@ class MHWI_OT_Mrl3TexRefresh(bpy.types.Operator):
         settings = context.scene.mhwi_mrl3_tex_processor
         col = settings.mrl3_collection
         if not col:
-            self.report({'ERROR'}, "请先选择 MRL3 集合")
+            self.report({'ERROR'}, T("mhwi.mrl3_tex_processor.select_mrl3_collection_first"))
             return {'CANCELLED'}
         count = _do_mhwi_refresh(settings, col, context.scene)
-        self.report({'INFO'}, f"已加载 {count} 个材质")
+        self.report({'INFO'}, T("mhwi.mrl3_tex_processor.materials_loaded").format(n=count))
         return {'FINISHED'}
 
 
@@ -297,10 +299,13 @@ class MHWI_OT_Mrl3TexPasteMaterial(MdfTexPasteMaterialBase):
 
 
 class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
-    """合成 PBR 贴图通道、转换 DDS→TEX 并更新 MRL3 绑定路径"""
     bl_idname  = "mhwi.mrl3_tex_process"
     bl_label   = "Process"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.mrl3_tex_processor.process_desc")
 
     def execute(self, context):
         _t_total = time.time()
@@ -309,17 +314,17 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
 
         natives_root = scene.get("mhwi_natives_root", "")
         if not natives_root or not os.path.isdir(natives_root):
-            self.report({'ERROR'}, "请先设置 Mod Root 目录")
+            self.report({'ERROR'}, T("mhwi.mrl3_generator.set_mod_root_first"))
             return {'CANCELLED'}
         if not settings.mrl3_collection:
-            self.report({'ERROR'}, "请先选择 MRL3 集合")
+            self.report({'ERROR'}, T("mhwi.mrl3_tex_processor.select_mrl3_collection_first"))
             return {'CANCELLED'}
         base_path = settings.texture_base_path.strip()
         if not base_path:
-            self.report({'ERROR'}, "请填写 Base Path（nativePC/ 下的贴图目录）")
+            self.report({'ERROR'}, T("mhwi.mrl3_generator.fill_base_path"))
             return {'CANCELLED'}
         if not settings.materials:
-            self.report({'ERROR'}, "请先点击 Refresh 加载材质")
+            self.report({'ERROR'}, T("mhwi.mrl3_generator.click_refresh_first"))
             return {'CANCELLED'}
 
         print("[MHWI Tex] ========================================", flush=True)
@@ -328,8 +333,7 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
         ConvertDDSToTex = _import_mhwtex_convert()
         # print(f"[MHWI Tex] 加载 MHW Model Editor 模块: {time.time() - _t_import:.2f}s", flush=True)
         if ConvertDDSToTex is None:
-            self.report({'ERROR'},
-                        "无法加载 MHW Model Editor 贴图转换函数，请确认已安装并启用")
+            self.report({'ERROR'}, T("mhwi.mrl3_generator.cannot_load_tex_convert"))
             return {'CANCELLED'}
 
         ImageListToDDS, __ = _import_tex_utils()
@@ -489,9 +493,11 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
 
         if fail_count > 0:
             self.report({'WARNING'},
-                        f"完成: 生成 {export_count}, 失败 {fail_count}, 跳过 {skip_count}")
+                        T("mhwi.mrl3_tex_processor.process_done_with_fail").format(
+                            n=export_count, fail=fail_count, skip=skip_count))
         else:
-            self.report({'INFO'}, f"完成: 生成 {export_count}, 跳过 {skip_count}")
+            self.report({'INFO'}, T("mhwi.mrl3_tex_processor.process_done").format(
+                n=export_count, skip=skip_count))
         return {'FINISHED'}
 
 

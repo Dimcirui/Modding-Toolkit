@@ -1,6 +1,6 @@
 import bpy
 
-from ...core.i18n import _
+from ...core.i18n import T
 from ...core.re_chain_utils import REChainConfig, auto_create_re_chains, _is_valid_chain_collection
 from ...core.standard_ops import _run_bone_color_refresh
 
@@ -11,56 +11,66 @@ def _get_mhrs_chain_col_items(self, context):
     return _mhrs_chain_col_items
 
 
+def _get_settings_mode_items(self, context):
+    return [
+        ('SHARED',   T("mhrs.operators.settings_mode_shared"),   T("mhrs.operators.settings_mode_shared_desc")),
+        ('SEPARATE', T("mhrs.operators.settings_mode_separate"), T("mhrs.operators.settings_mode_separate_desc")),
+        ('GUESS',    T("mhrs.operators.settings_mode_guess"),    T("mhrs.operators.settings_mode_guess_desc")),
+    ]
+
+
+def _get_chain_format_items(self, context):
+    return [
+        ('.chain',  "Chain",  T("mhrs.operators.chain_format_chain_desc")),
+        ('.chain2', "Chain2", T("mhrs.operators.chain_format_chain2_desc")),
+    ]
+
+
 class MHRS_OT_AutoCreateChains(bpy.types.Operator):
-    """一键创建 RE Chain（MHRS 使用 .chain 格式）。"""
+    """Create RE Chain in one click (MHRS uses the .chain format)."""
     bl_idname = "mhrs.auto_create_chains"
-    bl_label = "一键创建 RE Chain"
+    bl_label = "Create RE Chain"
     bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhrs.operators.auto_create_chains_desc")
 
     chain_collection: bpy.props.EnumProperty(
         name="Chain Collection",
-        description="选择要写入的 Chain Collection",
+        description="Chain Collection to write the result into",
         items=_get_mhrs_chain_col_items,
     )
     settings_mode: bpy.props.EnumProperty(
-        name="Settings 模式",
-        items=[
-            ('SEPARATE', "各自独立", "每条链拥有独立的 Chain Settings"),
-            ('SHARED',   "共享同一", "所有链共用同一个 Chain Settings"),
-            ('GUESS',    "猜测分组", "根据骨骼名自动分类，同类型共享一组 Chain Settings 并写入推测物理参数；无法识别的归入第一组"),
-        ],
-        default='SHARED',
+        name="Settings Mode",
+        items=_get_settings_mode_items,
     )
     auto_create_collection: bpy.props.BoolProperty(
-        name="自动创建集合",
+        name="Auto-create Collection",
         default=False,
     )
     collection_name: bpy.props.StringProperty(
-        name="集合名称",
+        name="Collection Name",
         default="",
     )
     chain_format: bpy.props.EnumProperty(
-        name="Chain 格式",
-        items=[
-            (".chain", "Chain", "旧格式，用于 MHRS / RE4 等游戏"),
-            (".chain2", "Chain2", "新格式，用于 MHWilds / RE9"),
-        ],
-        default='.chain',
+        name="Chain Format",
+        items=_get_chain_format_items,
     )
     straighten_orientation: bpy.props.BoolProperty(
-        name="骨骼方向预处理",
-        description="创建前将所有物理骨骼调整为竖直向上、扭转归零",
+        name="Bone Direction Preprocess",
+        description="Before creating, adjust all physics bones to point straight up with roll reset to zero",
         default=False,
     )
     has_no_markers: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
     auto_refresh: bpy.props.BoolProperty(
-        name="直接创建（自动刷新骨骼颜色）",
-        description="先自动运行骨骼颜色刷新，再尝试创建",
+        name="Create Directly (Auto-refresh Bone Colors)",
+        description="Automatically run bone color refresh first, then try creating",
         default=False,
     )
     apply_angle_ramp: bpy.props.BoolProperty(
-        name="自动应用角度坡度",
-        description="链创建完成后自动调用 apply_angle_limit_ramp（最大60°，4级梯度）",
+        name="Auto-apply Angle Ramp",
+        description="Automatically call apply_angle_limit_ramp after chain creation (max 60°, 4-step gradient)",
         default=False,
     )
 
@@ -103,22 +113,22 @@ class MHRS_OT_AutoCreateChains(bpy.types.Operator):
             box = layout.box()
             box.alert = True
             col = box.column(align=True)
-            col.label(text=_("当前骨架没有任何标记！"), icon='ERROR')
-            col.label(text=_("建议先使用物理链工具手动标记后再使用此功能。"))
-            layout.prop(self, "auto_refresh")
+            col.label(text=T("mhrs.operators.no_markers_warning"), icon='ERROR')
+            col.label(text=T("mhrs.operators.no_markers_hint"))
+            layout.prop(self, "auto_refresh", text=T("mhrs.operators.auto_refresh_label"))
             if not self.auto_refresh:
                 return
             layout.separator()
         row = layout.row()
-        row.prop(self, "auto_create_collection", text="自动创建集合")
+        row.prop(self, "auto_create_collection", text=T("mhrs.operators.auto_create_collection_label"))
         if self.auto_create_collection:
-            layout.prop(self, "collection_name")
-            layout.prop(self, "chain_format", expand=True)
+            layout.prop(self, "collection_name", text=T("mhrs.operators.collection_name_label"))
+            layout.prop(self, "chain_format", text=T("mhrs.operators.chain_format_label"), expand=True)
         else:
             layout.prop(self, "chain_collection")
-        layout.prop(self, "settings_mode", expand=True)
-        layout.prop(self, "straighten_orientation")
-        layout.prop(self, "apply_angle_ramp")
+        layout.prop(self, "settings_mode", text=T("mhrs.operators.settings_mode_label"), expand=True)
+        layout.prop(self, "straighten_orientation", text=T("mhrs.operators.straighten_orientation_label"))
+        layout.prop(self, "apply_angle_ramp", text=T("mhrs.operators.apply_angle_ramp_label"))
 
     def execute(self, context):
         armature = context.active_object
@@ -143,9 +153,9 @@ class MHRS_OT_AutoCreateChains(bpy.types.Operator):
         )
         status = auto_create_re_chains(context, armature, config)
         if status == {'CANCELLED'}:
-            self.report({'ERROR'}, _("创建 RE Chain 失败"))
+            self.report({'ERROR'}, T("mhrs.operators.create_failed"))
             return {'CANCELLED'}
-        self.report({'INFO'}, _("RE Chain 创建完成"))
+        self.report({'INFO'}, T("mhrs.operators.create_done"))
         return {'FINISHED'}
 
 

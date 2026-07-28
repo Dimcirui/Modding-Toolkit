@@ -2,7 +2,7 @@ import sys
 import time
 import bpy
 import re
-from ...core.i18n import _
+from ...core.i18n import T
 from ...core import bone_utils
 from ...core.bone_mapper import BoneMapManager, resolve_preset
 from ...core.standard_ops import _build_fuzzy_preset_bones, _run_bone_color_refresh
@@ -23,15 +23,18 @@ def _is_mhwi_physics(name):
 # 1. 对齐 MHWI 非物理骨骼
 # ==========================================
 class MHWI_OT_AlignNonPhysics(bpy.types.Operator):
-    """对齐 MHWI 骨骼 (跳过 150-245 物理骨)"""
     bl_idname = "mhwi.align_non_physics"
-    bl_label = "对齐非物理骨骼"
+    bl_label = "Align Non-Physics Bones"
     bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.operators.align_non_physics_desc")
 
     def execute(self, context):
         selected_objects = [obj for obj in context.selected_objects if obj.type == 'ARMATURE']
         if len(selected_objects) != 2 or not context.active_object:
-            self.report({'ERROR'}, "请选择两个骨架 (源 -> 目标)")
+            self.report({'ERROR'}, T("mhwi.operators.select_two_armatures"))
             return {'CANCELLED'}
         target_armature = context.active_object
         source_armature = [obj for obj in selected_objects if obj != target_armature][0]
@@ -40,7 +43,7 @@ class MHWI_OT_AlignNonPhysics(bpy.types.Operator):
         aligned = bone_utils.align_armatures_by_name(
             source_armature, target_armature, skip_fn=_is_mhwi_physics)
         skip = sum(1 for b in target_armature.data.bones if _is_mhwi_physics(b.name))
-        self.report({'INFO'}, f"对齐: {aligned}, 跳过物理骨: {skip}")
+        self.report({'INFO'}, T("mhwi.operators.align_done").format(aligned=aligned, skip=skip))
         return {'FINISHED'}
 
 
@@ -98,38 +101,39 @@ def _has_branch(head_pb, physics_bones, armature):
 
 
 class MHWI_OT_AutoCreateChains(bpy.types.Operator):
-    """在姿态模式下，根据物理骨骼的 chain_role 属性自动为每条线性链创建 CTC Chain。
-存在分叉的链会被跳过并报告，需用户手动处理分叉后再次运行。
-需要 MHW Model Editor 插件。"""
     bl_idname = "mhwi.auto_create_chains"
-    bl_label = "一键创建 CTC Chain"
+    bl_label = "Auto-Create CTC Chains"
     bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.operators.auto_create_chains_desc")
 
     has_no_markers: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
     auto_refresh: bpy.props.BoolProperty(
-        name="直接创建（自动刷新骨骼颜色）",
-        description="先自动运行骨骼颜色刷新，再尝试创建。若存在分叉仍会中止",
+        name="Create Directly (auto-refresh bone colors)",
+        description="Automatically run bone color refresh first, then attempt to create. Still aborts if branches remain",
         default=False,
     )
 
     ctc_collection: bpy.props.EnumProperty(
         name="CTC Collection",
-        description="选择要写入的 CTC Collection",
+        description="Select the CTC Collection to write into",
         items=_get_ctc_col_items,
     )
     auto_create_collection: bpy.props.BoolProperty(
-        name="自动创建集合",
-        description="勾选后自动创建 CTC Collection 及 Header，无需预先手动准备",
+        name="Auto-create Collection",
+        description="When checked, automatically create the CTC Collection and Header — no manual preparation needed",
         default=False,
     )
     collection_name: bpy.props.StringProperty(
-        name="集合名称",
-        description="新创建的 CTC Collection 名称（不含扩展名）",
+        name="Collection Name",
+        description="Name of the newly created CTC Collection (without extension)",
         default="",
     )
     straighten_orientation: bpy.props.BoolProperty(
-        name="骨骼方向预处理",
-        description="创建前将所有物理骨骼调整为竖直向上、扭转归零",
+        name="Bone Orientation Preprocessing",
+        description="Before creating, adjust all physics bones to point straight up with roll reset to zero",
         default=False,
     )
 
@@ -171,19 +175,19 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
             box = layout.box()
             box.alert = True
             col = box.column(align=True)
-            col.label(text=_("当前骨架没有任何标记！"), icon='ERROR')
-            col.label(text=_("建议先使用物理链工具手动标记后再使用此功能。"))
-            layout.prop(self, "auto_refresh")
+            col.label(text=T("mhwi.operators.no_markers_warning"), icon='ERROR')
+            col.label(text=T("mhwi.operators.no_markers_hint"))
+            layout.prop(self, "auto_refresh", text=T("mhwi.operators.auto_refresh_name"))
             if not self.auto_refresh:
                 return
             layout.separator()
         row = layout.row()
-        row.prop(self, "auto_create_collection", text="自动创建集合")
+        row.prop(self, "auto_create_collection", text=T("mhwi.operators.auto_create_collection_name"))
         if self.auto_create_collection:
-            layout.prop(self, "collection_name")
+            layout.prop(self, "collection_name", text=T("mhwi.operators.collection_name_name"))
         else:
             layout.prop(self, "ctc_collection")
-        layout.prop(self, "straighten_orientation")
+        layout.prop(self, "straighten_orientation", text=T("mhwi.operators.straighten_orientation_name"))
 
     def execute(self, context):
         t_total = time.perf_counter()
@@ -191,7 +195,7 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
         # 在任何可能改变激活对象的操作之前先保存骨架引用
         armature = context.active_object
         if not armature or armature.type != 'ARMATURE':
-            self.report({'ERROR'}, _("请先选中一个骨架"))
+            self.report({'ERROR'}, T("mhwi.operators.select_armature_first"))
             return {'CANCELLED'}
 
         if self.has_no_markers:
@@ -210,14 +214,13 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
             if branched:
                 names = ", ".join(branched[:5]) + ("…" if len(branched) > 5 else "")
                 self.report({'ERROR'},
-                    _("检测到 %d 条链存在分叉（%s），CTC 不支持分叉链，"
-                      "请使用【标记为主链延伸】标记分叉方向后重试") % (len(branched), names))
+                    T("mhwi.operators.branch_detected").format(n=len(branched), names=names))
                 return {'CANCELLED'}
 
         if self.auto_create_collection:
             result = bpy.ops.mhw_ctc.create_ctc_collection(collectionName=self.collection_name)
             if result != {'FINISHED'}:
-                self.report({'ERROR'}, _("自动创建 CTC Collection 失败"))
+                self.report({'ERROR'}, T("mhwi.operators.auto_create_ctc_failed"))
                 return {'CANCELLED'}
             # create_ctc_collection 可能改变了激活对象和模式，恢复骨架并进入姿态模式
             context.view_layer.objects.active = armature
@@ -227,11 +230,11 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
         else:
             col = bpy.data.collections.get(self.ctc_collection)
             if col is None:
-                self.report({'ERROR'}, _("找不到集合: %s") % self.ctc_collection)
+                self.report({'ERROR'}, T("mhwi.operators.collection_not_found").format(name=self.ctc_collection))
                 return {'CANCELLED'}
             toolpanel = getattr(context.scene, 'mhw_ctc_toolpanel', None)
             if toolpanel is None:
-                self.report({'ERROR'}, _("未找到 MHW CTC 场景属性，请确认 MHW Model Editor 已正确加载"))
+                self.report({'ERROR'}, T("mhwi.operators.ctc_toolpanel_missing"))
                 return {'CANCELLED'}
             toolpanel.ctcCollection = col
 
@@ -259,7 +262,7 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
             if pb.get("chain_role") in ("head", "branch_head")
         ]
         if not chain_heads:
-            self.report({'WARNING'}, _("未找到链首骨骼（chain_role=head/branch_head），请先刷新骨骼颜色"))
+            self.report({'WARNING'}, T("mhwi.operators.no_chain_heads"))
             return {'CANCELLED'}
 
         print(f"[ChainGen CTC] {len(chain_heads)} heads -> {len(chain_heads)} chains (linear only)",
@@ -318,12 +321,13 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
               f"created={created}  skipped_existing={skipped_existing}  skipped_branch={len(skipped_branch)} ---",
               file=sys.stderr)
 
-        msg_parts = [_("已创建 %d 条链") % created]
+        msg_parts = [T("mhwi.operators.chains_created").format(n=created)]
         if skipped_existing:
-            msg_parts.append(_("已存在跳过 %d 条") % skipped_existing)
+            msg_parts.append(T("mhwi.operators.chains_skipped_existing").format(n=skipped_existing))
         if skipped_branch:
-            msg_parts.append(_("因分叉跳过 %d 条: %s") % (len(skipped_branch), ", ".join(skipped_branch)))
-        self.report({'INFO'}, "，".join(msg_parts))
+            msg_parts.append(T("mhwi.operators.chains_skipped_branch").format(
+                n=len(skipped_branch), names=", ".join(skipped_branch)))
+        self.report({'INFO'}, T("mhwi.operators.list_sep").join(msg_parts))
         return {'FINISHED'}
 
 
@@ -591,27 +595,31 @@ class MHWI_RegionAssignment(bpy.types.PropertyGroup):
     region: bpy.props.StringProperty()
     bone_count: bpy.props.IntProperty()
     slot: bpy.props.EnumProperty(
-        name="目标部位",
+        name="Target Slot",
         items=_SLOT_ITEMS,
         default='body',
     )
 
 
+def _get_split_fast_mode_items(self, context):
+    return [
+        ('DIRECT', T("mhwi.operators.fast_mode_direct"), T("mhwi.operators.fast_mode_direct_desc")),
+        ('SPLIT',  T("mhwi.operators.fast_mode_split"),  T("mhwi.operators.fast_mode_split_desc")),
+    ]
+
+
 class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
-    """将物理骨骼按部位拆分到不同骨架（不重命名骨骼）。
-骨架对象名会加上部位后缀（_body/_arm/_wst/_leg）。
-骨架总数 ≤255 时可选直接重命名或拆分；>255 时必须拆分。"""
     bl_idname = "mhwi.split_physics_bones"
-    bl_label = "拆分物理骨"
+    bl_label = "Split Physics Bones"
     bl_options = {'REGISTER', 'UNDO'}
 
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.operators.split_physics_bones_desc")
+
     fast_mode: bpy.props.EnumProperty(
-        name="处理方式",
-        items=[
-            ('DIRECT', "直接重命名", "一步到位，全部物理骨命名到 300~512"),
-            ('SPLIT',  "拆分为多个部位", "按部位拆分骨架，后续用「一键重命名」处理"),
-        ],
-        default='DIRECT',
+        name="Processing Mode",
+        items=_get_split_fast_mode_items,
     )
     is_fast_path: bpy.props.BoolProperty(default=True, options={'HIDDEN'})
 
@@ -664,20 +672,25 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
         for item in assignments:
             slot_counts[item.slot] += item.bone_count
 
-        region_labels = {"head": "头部", "arms": "双臂", "torso": "躯干", "legs": "双腿"}
+        region_labels = {
+            "head": "mhwi.operators.region_head",
+            "arms": "mhwi.operators.region_arms",
+            "torso": "mhwi.operators.region_torso",
+            "legs": "mhwi.operators.region_legs",
+        }
         box = layout.box()
         row = box.row()
-        row.label(text="区域")
-        row.label(text="物理骨数")
-        row.label(text="目标部位")
+        row.label(text=T("mhwi.operators.col_region"))
+        row.label(text=T("mhwi.operators.col_bone_count"))
+        row.label(text=T("mhwi.operators.col_target_slot"))
         for item in assignments:
             row = box.row()
-            row.label(text=region_labels.get(item.region, item.region))
+            row.label(text=T(region_labels.get(item.region, item.region)))
             row.label(text=str(item.bone_count))
             row.prop(item, "slot", text="")
 
         layout.separator()
-        layout.label(text=_("容量状态："))
+        layout.label(text=T("mhwi.operators.capacity_status"))
         cap_row = layout.row()
         body_capacity = context.scene.mhwi_body_capacity
         for slot, capacity in _SLOT_CAPACITY.items():
@@ -688,24 +701,24 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
         for slot, capacity in _SLOT_CAPACITY.items():
             cap = body_capacity if slot == 'body' else capacity
             if slot_counts.get(slot, 0) > cap:
-                layout.label(text=_("警告：%s 超出容量限制，请调整分配") % slot.upper(), icon='ERROR')
+                layout.label(text=T("mhwi.operators.capacity_exceeded").format(slot=slot.upper()), icon='ERROR')
 
     def invoke(self, context, _event):
         armature = context.active_object
         mapper = BoneMapManager()
         if not mapper.load_preset("mhwi_world.json", is_import_x=True):
-            self.report({'ERROR'}, _("无法加载怪猎世界预设"))
+            self.report({'ERROR'}, T("mhwi.operators.cannot_load_world_preset"))
             return {'CANCELLED'}
         preset_bones = _build_fuzzy_preset_bones(mapper, armature)
         physics_bones = _collect_physics_bones(armature, preset_bones)
         if not physics_bones:
-            self.report({'INFO'}, _("未找到需要处理的物理骨骼"))
+            self.report({'INFO'}, T("mhwi.operators.no_physics_bones_found"))
             return {'CANCELLED'}
 
         self.is_fast_path = len(armature.data.bones) <= 255
         non_empty = self._compute_assignments(context, armature, physics_bones, preset_bones, mapper)
         if not non_empty:
-            self.report({'WARNING'}, _("物理骨骼均为孤立骨骼，无法自动分配区域"))
+            self.report({'WARNING'}, T("mhwi.operators.isolated_physics_bones"))
             return {'CANCELLED'}
 
         return context.window_manager.invoke_props_dialog(self, width=400)
@@ -713,21 +726,21 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
     def draw(self, context):
         layout = self.layout
         if self.is_fast_path:
-            layout.label(text=_("物理骨数未超出 body 限制范围，如何处理？"))
+            layout.label(text=T("mhwi.operators.fast_path_prompt"))
             layout.prop(self, "fast_mode", expand=True)
             if self.fast_mode == 'DIRECT':
                 return
             layout.separator()
-            layout.label(text=_("请确认各区域的目标部位："))
+            layout.label(text=T("mhwi.operators.confirm_region_targets"))
         else:
-            layout.label(text=_("总骨骼数超过 255，请分配各区域的目标部位："))
+            layout.label(text=T("mhwi.operators.over_255_prompt"))
         self._draw_slot_table(layout, context)
 
     def execute(self, context):
         armature = context.active_object
         mapper = BoneMapManager()
         if not mapper.load_preset("mhwi_world.json", is_import_x=True):
-            self.report({'ERROR'}, _("无法加载怪猎世界预设"))
+            self.report({'ERROR'}, T("mhwi.operators.cannot_load_world_preset"))
             return {'CANCELLED'}
         preset_bones = _build_fuzzy_preset_bones(mapper, armature)
         physics_bones = _collect_physics_bones(armature, preset_bones)
@@ -738,10 +751,10 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
             s, f = _count_rename_failures(armature, physics_bones, _SLOT_ID_RANGE['body'])
             if f > 0:
                 self.report({'ERROR'},
-                    _("当前超出了 %d 个骨骼（ID 范围不足），请改用拆分模式") % f)
+                    T("mhwi.operators.exceeds_bone_count").format(n=f))
                 return {'CANCELLED'}
             success, fail = _rename_physics_bones(armature, physics_bones, _SLOT_ID_RANGE['body'])
-            self.report({'INFO'}, _("重命名完成：成功 %d 根，失败 %d 根") % (success, fail))
+            self.report({'INFO'}, T("mhwi.operators.rename_done").format(success=success, fail=fail))
             return {'FINISHED'}
 
         # 拆分路径
@@ -757,8 +770,8 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
             for slot, capacity in _SLOT_CAPACITY.items():
                 cap = body_capacity if slot == 'body' else capacity
                 if slot_counts.get(slot, 0) > cap:
-                    self.report({'ERROR'}, _("%s 超出容量限制（%d/%d），请先调整分配") % (
-                        slot.upper(), slot_counts[slot], cap))
+                    self.report({'ERROR'}, T("mhwi.operators.slot_capacity_exceeded").format(
+                        slot=slot.upper(), count=slot_counts[slot], cap=cap))
                     return {'CANCELLED'}
 
         # 按槽位收集骨骼
@@ -792,18 +805,19 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
         armature.data.name = armature.name
 
         context.view_layer.objects.active = armature
-        self.report({'INFO'}, _("拆分完成：已生成 %d 个骨架（%s）") % (
-            len(slot_armatures), "、".join(slot_armatures.keys())))
+        self.report({'INFO'}, T("mhwi.operators.split_done").format(
+            n=len(slot_armatures), names=T("mhwi.operators.list_sep").join(slot_armatures.keys())))
         return {'FINISHED'}
 
 
 class MHWI_OT_BatchRenamePhysicsBones(bpy.types.Operator):
-    """对选中的所有骨架批量重命名物理骨骼为 MhBone_xxx 格式。
-名称含 _body 的骨架使用 300~512 范围；其他骨架使用 150~200（非尾骨）+ 201~245（尾骨）范围。
-请先用「拆分物理骨」完成骨架拆分，再运行此操作。"""
     bl_idname = "mhwi.batch_rename_physics_bones"
-    bl_label = "一键重命名"
+    bl_label = "Batch Rename Physics Bones"
     bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.operators.batch_rename_desc")
 
     _fail_count: bpy.props.IntProperty(default=0, options={'HIDDEN'})
 
@@ -842,7 +856,7 @@ class MHWI_OT_BatchRenamePhysicsBones(bpy.types.Operator):
     def invoke(self, context, _event):
         mapper = BoneMapManager()
         if not mapper.load_preset("mhwi_world.json", is_import_x=True):
-            self.report({'ERROR'}, _("无法加载怪猎世界预设"))
+            self.report({'ERROR'}, T("mhwi.operators.cannot_load_world_preset"))
             return {'CANCELLED'}
 
         armatures = [obj for obj in context.selected_objects if obj.type == 'ARMATURE']
@@ -858,16 +872,16 @@ class MHWI_OT_BatchRenamePhysicsBones(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        layout.label(text=_("警告"), icon='ERROR')
+        layout.label(text=T("mhwi.operators.warning_label"), icon='ERROR')
         layout.separator()
         layout.label(
-            text=_("当前超出了 %d 个骨骼，建议先简化骨骼后再进行命名。") % self._fail_count)
-        layout.label(text=_("确定仍然进行重命名？"))
+            text=T("mhwi.operators.batch_rename_over_limit").format(n=self._fail_count))
+        layout.label(text=T("mhwi.operators.confirm_rename_anyway"))
 
     def execute(self, context):
         mapper = BoneMapManager()
         if not mapper.load_preset("mhwi_world.json", is_import_x=True):
-            self.report({'ERROR'}, _("无法加载怪猎世界预设"))
+            self.report({'ERROR'}, T("mhwi.operators.cannot_load_world_preset"))
             return {'CANCELLED'}
 
         armatures = [obj for obj in context.selected_objects if obj.type == 'ARMATURE']
@@ -898,7 +912,7 @@ class MHWI_OT_BatchRenamePhysicsBones(bpy.types.Operator):
                 total_success += s
                 total_fail += f
 
-        self.report({'INFO'}, _("重命名完成：成功 %d 根，失败 %d 根") % (total_success, total_fail))
+        self.report({'INFO'}, T("mhwi.operators.rename_done").format(success=total_success, fail=total_fail))
         return {'FINISHED'}
 
 

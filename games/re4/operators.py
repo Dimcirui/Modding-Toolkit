@@ -1,6 +1,6 @@
 import bpy
 import os
-from ...core.i18n import _
+from ...core.i18n import T
 from . import data_maps
 from ...core.re_chain_utils import REChainConfig, auto_create_re_chains, _is_valid_chain_collection
 from ...core.standard_ops import _run_bone_color_refresh
@@ -35,7 +35,7 @@ def get_native_skeletons_callback(self, context):
                 name = f.split('.skeleton.')[0]
                 _native_skel_cache.append((f, name, ""))
     if not _native_skel_cache:
-        _native_skel_cache.append(('NONE', "无可用骨架 (添加至 assets/native_skeletons/re4/)", ""))
+        _native_skel_cache.append(('NONE', T("re4.operators.no_native_skeleton"), ""))
     return _native_skel_cache
 
 
@@ -283,7 +283,7 @@ def do_fakebone(context, user_arm_obj, native_fbxskel_path):
     成功返回 True，失败抛出异常。
     """
     if not hasattr(bpy.ops, 're_fbxskel') or not hasattr(bpy.ops.re_fbxskel, 'importfile'):
-        raise RuntimeError("需要 RE Mesh Editor 的 fbxskel 导入器 (re_fbxskel.importfile)")
+        raise RuntimeError(T("re4.operators.need_re_fbxskel_importer"))
 
     prev_active   = context.view_layer.objects.active
     prev_selected = [o for o in context.selected_objects]
@@ -298,7 +298,7 @@ def do_fakebone(context, user_arm_obj, native_fbxskel_path):
         bpy.ops.re_fbxskel.importfile(filepath=native_fbxskel_path)
         native_arm = context.active_object
         if native_arm is None or native_arm.type != 'ARMATURE':
-            raise RuntimeError(f"导入原生骨架失败: {native_fbxskel_path}")
+            raise RuntimeError(T("re4.operators.native_import_failed").format(path=native_fbxskel_path))
         native_arm.select_set(False)
 
         # ── 身体 ──
@@ -341,51 +341,55 @@ def do_fakebone(context, user_arm_obj, native_fbxskel_path):
 # ==========================================
 
 class RE4_OT_FakeBone_OneClick(bpy.types.Operator):
-    """(假头法) 一键为选中骨架生成全套 End 骨骼"""
+    """Fakehead Method: one-click generate a full set of End bones"""
     bl_idname = "re4.fakebone_one_click"
-    bl_label  = "(假头法) 生成假骨骼"
+    bl_label  = "Generate Fake Bones (Fakehead Method)"
     bl_options = {'REGISTER', 'UNDO'}
 
     native_skeleton: bpy.props.EnumProperty(
-        name="原生骨架",
-        description="选择对应角色的原生 fbxskel 文件",
+        name="Native Skeleton",
+        description="Select the native fbxskel file for the corresponding character",
         items=get_native_skeletons_callback,
     )
 
+    @classmethod
+    def description(cls, context, properties):
+        return T("re4.operators.fakebone_oneclick_desc")
+
     def invoke(self, context, event):
         if context.active_object is None or context.active_object.type != 'ARMATURE':
-            self.report({'ERROR'}, _("请先选中目标骨架"))
+            self.report({'ERROR'}, T("re4.operators.select_target_armature_error"))
             return {'CANCELLED'}
         return context.window_manager.invoke_props_dialog(self, width=320)
 
     def draw(self, context):
-        self.layout.prop(self, "native_skeleton", text="角色原生骨架")
+        self.layout.prop(self, "native_skeleton", text=T("re4.operators.native_skeleton_prop_label"))
 
     def execute(self, context):
         if not hasattr(bpy.ops, 're_fbxskel') or not hasattr(bpy.ops.re_fbxskel, 'exportfile'):
-            self.report({'ERROR'}, _("需要 RE Mesh Editor 插件"))
+            self.report({'ERROR'}, T("re4.operators.need_re_mesh_editor"))
             return {'CANCELLED'}
 
         user_arm = context.active_object
         if user_arm is None or user_arm.type != 'ARMATURE':
-            self.report({'ERROR'}, _("请先选中目标骨架"))
+            self.report({'ERROR'}, T("re4.operators.select_target_armature_error"))
             return {'CANCELLED'}
 
         if not self.native_skeleton or self.native_skeleton == 'NONE':
-            self.report({'ERROR'}, _("请选择原生骨架（添加文件到 assets/native_skeletons/re4/）"))
+            self.report({'ERROR'}, T("re4.operators.select_native_skeleton_error"))
             return {'CANCELLED'}
 
         native_path = os.path.join(_get_native_skeletons_dir(), self.native_skeleton)
         if not os.path.isfile(native_path):
-            self.report({'ERROR'}, _("找不到原生骨架: %s") % native_path)
+            self.report({'ERROR'}, T("re4.operators.native_skeleton_not_found").format(path=native_path))
             return {'CANCELLED'}
 
         try:
             do_fakebone(context, user_arm, native_path)
-            self.report({'INFO'}, _("假骨骼生成完成"))
+            self.report({'INFO'}, T("re4.operators.fakebone_done"))
             return {'FINISHED'}
         except Exception as e:
-            self.report({'ERROR'}, _("假骨骼生成失败: %s") % e)
+            self.report({'ERROR'}, T("re4.operators.fakebone_failed").format(error=e))
             return {'CANCELLED'}
 
 
@@ -396,58 +400,68 @@ def _get_re4_chain_col_items(self, context):
     return _re4_chain_col_items
 
 
+def _get_settings_mode_items(self, context):
+    return [
+        ('SHARED',   T("re4.operators.settings_mode_shared_label"),   T("re4.operators.settings_mode_shared_desc")),
+        ('SEPARATE', T("re4.operators.settings_mode_separate_label"), T("re4.operators.settings_mode_separate_desc")),
+        ('GUESS',    T("re4.operators.settings_mode_guess_label"),    T("re4.operators.settings_mode_guess_desc")),
+    ]
+
+
+def _get_chain_format_items(self, context):
+    return [
+        (".chain",  "Chain",  T("re4.operators.chain_format_v1_desc")),
+        (".chain2", "Chain2", T("re4.operators.chain_format_v2_desc")),
+    ]
+
+
 class RE4_OT_AutoCreateChains(bpy.types.Operator):
-    """一键创建 RE Chain（RE4 默认 .chain 格式）。"""
+    """One-click create RE Chain (RE4 default .chain format)"""
     bl_idname = "re4.auto_create_chains"
-    bl_label = "一键创建 RE Chain"
+    bl_label = "Auto-Create RE Chains"
     bl_options = {'REGISTER', 'UNDO'}
 
     chain_collection: bpy.props.EnumProperty(
         name="Chain Collection",
-        description="选择要写入的 Chain Collection",
+        description="Select the Chain Collection to write into",
         items=_get_re4_chain_col_items,
     )
     settings_mode: bpy.props.EnumProperty(
-        name="Settings 模式",
-        items=[
-            ('SEPARATE', "各自独立", "每条链拥有独立的 Chain Settings"),
-            ('SHARED',   "共享同一", "所有链共用同一个 Chain Settings"),
-            ('GUESS',    "猜测分组", "根据骨骼名自动分类，同类型共享一组 Chain Settings 并写入推测物理参数；无法识别的归入第一组"),
-        ],
-        default='SHARED',
+        name="Settings Mode",
+        items=_get_settings_mode_items,
     )
     auto_create_collection: bpy.props.BoolProperty(
-        name="自动创建集合",
+        name="Auto-Create Collection",
         default=False,
     )
     collection_name: bpy.props.StringProperty(
-        name="集合名称",
+        name="Collection Name",
         default="",
     )
     chain_format: bpy.props.EnumProperty(
-        name="Chain 格式",
-        items=[
-            (".chain", "Chain", "旧格式，用于 RE4 等早期游戏"),
-            (".chain2", "Chain2", "新格式，用于 MHWilds / RE9"),
-        ],
-        default='.chain',
+        name="Chain Format",
+        items=_get_chain_format_items,
     )
     straighten_orientation: bpy.props.BoolProperty(
-        name="骨骼方向预处理",
-        description="创建前将所有物理骨骼调整为竖直向上、扭转归零",
+        name="Straighten Bone Orientation",
+        description="Before creating, adjust all physics bones to point straight up with zeroed twist",
         default=False,
     )
     has_no_markers: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
     auto_refresh: bpy.props.BoolProperty(
-        name="直接创建（自动刷新骨骼颜色）",
-        description="先自动运行骨骼颜色刷新，再尝试创建",
+        name="Create Directly (auto-refresh bone colors)",
+        description="Automatically run the bone color refresh first, then try to create",
         default=False,
     )
     apply_angle_ramp: bpy.props.BoolProperty(
-        name="自动应用角度坡度",
-        description="链创建完成后自动调用 apply_angle_limit_ramp（最大60°，4级梯度）",
+        name="Auto-Apply Angle Ramp",
+        description="After chain creation, automatically call apply_angle_limit_ramp (max 60 degrees, 4-step ramp)",
         default=False,
     )
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("re4.operators.autocreate_chains_desc")
 
     @classmethod
     def poll(cls, context):
@@ -488,22 +502,22 @@ class RE4_OT_AutoCreateChains(bpy.types.Operator):
             box = layout.box()
             box.alert = True
             col = box.column(align=True)
-            col.label(text=_("当前骨架没有任何标记！"), icon='ERROR')
-            col.label(text=_("建议先使用物理链工具手动标记后再使用此功能。"))
-            layout.prop(self, "auto_refresh")
+            col.label(text=T("re4.operators.no_markers_warning1"), icon='ERROR')
+            col.label(text=T("re4.operators.no_markers_warning2"))
+            layout.prop(self, "auto_refresh", text=T("re4.operators.auto_refresh_label"))
             if not self.auto_refresh:
                 return
             layout.separator()
         row = layout.row()
-        row.prop(self, "auto_create_collection", text="自动创建集合")
+        row.prop(self, "auto_create_collection", text=T("re4.operators.auto_create_collection_label"))
         if self.auto_create_collection:
-            layout.prop(self, "collection_name")
-            layout.prop(self, "chain_format", expand=True)
+            layout.prop(self, "collection_name", text=T("re4.operators.collection_name_label"))
+            layout.prop(self, "chain_format", text=T("re4.operators.chain_format_label"), expand=True)
         else:
             layout.prop(self, "chain_collection")
-        layout.prop(self, "settings_mode", expand=True)
-        layout.prop(self, "straighten_orientation")
-        layout.prop(self, "apply_angle_ramp")
+        layout.prop(self, "settings_mode", text=T("re4.operators.settings_mode_label"), expand=True)
+        layout.prop(self, "straighten_orientation", text=T("re4.operators.straighten_orientation_label"))
+        layout.prop(self, "apply_angle_ramp", text=T("re4.operators.apply_angle_ramp_label"))
 
     def execute(self, context):
         armature = context.active_object
@@ -528,9 +542,9 @@ class RE4_OT_AutoCreateChains(bpy.types.Operator):
         )
         status = auto_create_re_chains(context, armature, config)
         if status == {'CANCELLED'}:
-            self.report({'ERROR'}, _("创建 RE Chain 失败"))
+            self.report({'ERROR'}, T("re4.operators.create_chain_failed"))
             return {'CANCELLED'}
-        self.report({'INFO'}, _("RE Chain 创建完成"))
+        self.report({'INFO'}, T("re4.operators.create_chain_done"))
         return {'FINISHED'}
 
 
@@ -544,26 +558,31 @@ _RE4_BLINK_TARGET_BONES = ("L_U_Eyelid03", "R_U_Eyelid03")
 
 
 class RE4_OT_AddFacialBones(bpy.types.Operator):
-    """将原生角色骨架的表情骨骼移植到当前骨架，可选择使用假头法调整眨眼幅度"""
+    """Graft facial bones from the native character skeleton onto the current skeleton,
+    optionally using the Fakehead Method to adjust blink amplitude"""
     bl_idname = "re4.add_facial_bones"
-    bl_label = "一键添加表情骨"
+    bl_label = "Add Facial Bones"
     bl_options = {'REGISTER', 'UNDO'}
 
     target_armature: bpy.props.EnumProperty(
-        name="骨架",
-        description="选择要添加表情骨的骨架",
+        name="Skeleton",
+        description="Select the skeleton to add facial bones to",
         items=bone_utils.get_armature_enum_items,
     )
     reference_character: bpy.props.EnumProperty(
-        name="参考角色",
-        description="选择用作表情骨来源的角色参考骨架",
+        name="Reference Character",
+        description="Select the reference character skeleton to source facial bones from",
         items=lambda self, ctx: ref_skeleton.get_reference_skeleton_items('re4'),
     )
     increase_blink_amplitude: bpy.props.BoolProperty(
-        name="增加眨眼幅度（二次元模型用）",
-        description="对上眼皮骨骼使用假头法，增大闭眼动作的形变幅度",
+        name="Increase Blink Amplitude (for anime-style models)",
+        description="Use the Fakehead Method on the upper eyelid bones to increase the blink deformation amplitude",
         default=False,
     )
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("re4.operators.add_facial_bones_desc")
 
     @classmethod
     def poll(cls, context):
@@ -579,41 +598,41 @@ class RE4_OT_AddFacialBones(bpy.types.Operator):
         layout = self.layout
         note = layout.row()
         note.active = False
-        note.label(text=_("使用该功能将清除原本存在的表情骨！"))
+        note.label(text=T("re4.operators.facial_bones_warning"))
         layout.separator()
-        layout.prop(self, "target_armature")
-        layout.prop(self, "reference_character")
-        layout.prop(self, "increase_blink_amplitude")
+        layout.prop(self, "target_armature", text=T("re4.operators.target_armature_label"))
+        layout.prop(self, "reference_character", text=T("re4.operators.reference_character_label"))
+        layout.prop(self, "increase_blink_amplitude", text=T("re4.operators.increase_blink_amplitude_label"))
 
     def execute(self, context):
         target_arm = bpy.data.objects.get(self.target_armature)
         if target_arm is None or target_arm.type != 'ARMATURE':
-            self.report({'WARNING'}, _("请选择一个有效的骨架"))
+            self.report({'WARNING'}, T("re4.operators.invalid_armature_warning"))
             return {'CANCELLED'}
 
         if not self.reference_character or self.reference_character == 'NONE':
-            self.report({'ERROR'}, _("请选择参考角色（添加文件到 assets/reference_skeletons/re4/）"))
+            self.report({'ERROR'}, T("re4.operators.select_reference_character_error"))
             return {'CANCELLED'}
 
         if context.mode != 'OBJECT':
             bpy.ops.object.mode_set(mode='OBJECT')
 
-        # Step 1: 导入参考角色骨架（内置资源，不依赖外部插件）
+        # Step 1: import the reference character skeleton (bundled asset, no external addon needed)
         ref_arm_obj = ref_skeleton.import_reference_armature('re4', self.reference_character)
         if ref_arm_obj is None:
-            self.report({'ERROR'}, _("参考骨架导入失败: %s") % self.reference_character)
+            self.report({'ERROR'}, T("re4.operators.reference_import_failed").format(name=self.reference_character))
             return {'CANCELLED'}
 
-        # Step 2: 让参考骨架与选中骨架对齐（按同名骨骼对齐，仅位置）
+        # Step 2: align the reference skeleton to the selected skeleton (by matching bone names, position only)
         bone_utils.align_armatures_by_name(target_arm, ref_arm_obj, mode='POS_ONLY')
 
-        # Step 3: 移植表情骨根骨骼及其所有子级
+        # Step 3: graft the facial bone root and all its children
         created = facial_bones.graft_facial_bones(ref_arm_obj, target_arm, _RE4_FACIAL_ROOT_BONE)
         if created == 0:
-            self.report({'WARNING'}, _("参考骨架中未找到表情骨根骨骼 (%s)") % _RE4_FACIAL_ROOT_BONE)
+            self.report({'WARNING'}, T("re4.operators.facial_root_not_found").format(bone=_RE4_FACIAL_ROOT_BONE))
             return {'CANCELLED'}
 
-        # Step 4: 假头法增加眨眼幅度
+        # Step 4: Fakehead Method to increase blink amplitude
         fake_count = 0
         if self.increase_blink_amplitude:
             for bone_name in _RE4_BLINK_TARGET_BONES:
@@ -625,9 +644,9 @@ class RE4_OT_AddFacialBones(bpy.types.Operator):
         bpy.ops.object.select_all(action='DESELECT')
         target_arm.select_set(True)
 
-        msg = _("已添加 %d 根表情骨") % created
+        msg = T("re4.operators.facial_bones_added").format(n=created)
         if self.increase_blink_amplitude:
-            msg += _("，%d 侧已增加眨眼幅度") % fake_count
+            msg += T("re4.operators.blink_amplitude_added").format(n=fake_count)
         self.report({'INFO'}, msg)
         return {'FINISHED'}
 

@@ -1,13 +1,17 @@
 import bpy
 
+from ...core.i18n import T
 from ...core.mdf_tex_processor_ui_base import MdfTexDialogBase
 from .mdf_tex_processor import RE9_COMMON_SLOT_TYPES, RE9_NULL_TEX_BY_TYPE
 
 
 class RE9_OT_MdfTexProcessorDialog(MdfTexDialogBase):
-    """MDF2 处理器 — 在已有 MDF2 材质的基础上处理贴图。需要有现成的已起好名字的 MDF2 集合"""
     bl_idname = "re9.mdf_tex_processor_dialog"
     bl_label  = "MDF2 + Tex Processor"
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("re9.mdf_tex_processor_ui.dialog_desc")
 
     _game_prefix       = "re9"
     _settings_attr     = "re9_mdf_tex_processor"

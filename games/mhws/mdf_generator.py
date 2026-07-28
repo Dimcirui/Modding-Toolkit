@@ -8,6 +8,7 @@ from ...core.mdf_generator_base import (
     _find_meshes_by_material, mesh_collection_poll,
     MdfGenRefreshBase, MdfGenProcessBase,
 )
+from ...core.i18n import T
 
 # ── MHWS constants ─────────────────────────────────────────────────────────────
 
@@ -39,24 +40,25 @@ class MhwsGenMaterialEntry(bpy.types.PropertyGroup):
     strat_alpha:      bpy.props.StringProperty(default="?")
     strat_emissive:   bpy.props.StringProperty(default="?")
     use_toon:         bpy.props.BoolProperty(
-        name="使用三渲二",
-        description="跳过自发光贴图处理，将自发光槽位路径设为与基础色槽位相同",
+        name="Use Toon Shading",
+        description="Skip emissive texture processing; set the emissive slot path the same as the base color slot",
         default=False,
     )
-    generate_mipmaps: bpy.props.BoolProperty(name="生成 MipMaps", default=True)
+    generate_mipmaps: bpy.props.BoolProperty(name="Generate MipMaps", default=True)
     skip_textures:    bpy.props.BoolProperty(
-        name="仅生成材质",
-        description="跳过贴图合成与转换，仅创建材质定义并填入贴图路径",
+        name="Material Only",
+        description="Skip texture composition/conversion; only create the material definition and fill in "
+                    "texture paths",
         default=False,
     )
     use_ao:           bpy.props.BoolProperty(
-        name="添加 AO",
-        description="手动指定 AO 贴图 (Blender 无内置 AO 节点)",
+        name="Add AO",
+        description="Manually specify an AO texture (Blender has no built-in AO node)",
         default=False,
     )
     ao_image:         bpy.props.StringProperty(
         name="AO",
-        description="AO 贴图路径",
+        description="AO texture path",
         subtype='FILE_PATH',
     )
     # Native pixel sizes detected at refresh (read-only, set by MdfGenRefreshBase)
@@ -101,9 +103,9 @@ class MhwsGenSettings(bpy.types.PropertyGroup):
     material_list:     bpy.props.CollectionProperty(type=MhwsGenMaterialEntry)
     material_list_idx: bpy.props.IntProperty()
     flip_normal_g:     bpy.props.BoolProperty(
-        name="法线 OpenGL → DirectX",
-        description="启用后，将连接的 OpenGL 法线贴图直接转为 DX 格式，"
-                    "不再需要在着色器内手动进行 G 通道反相",
+        name="Normal OpenGL -> DirectX",
+        description="When enabled, connected OpenGL normal maps are converted directly to DX format, without "
+                    "needing to manually flip the G channel in the shader",
         default=False,
     )
 
@@ -132,12 +134,15 @@ class MHWS_OT_MdfGenProcess(MdfGenProcessBase):
 # ── Select Same Material operator ────────────────────────────────────────────────
 
 class MHWS_OT_SelectSameMaterial(bpy.types.Operator):
-    """选中 Mesh Collection 中所有使用当前材质的网格物体（阶段二：智能筛选）"""
     bl_idname  = "mhws.select_same_material"
     bl_label   = "Select Same Material Meshes"
     bl_options = {'REGISTER', 'UNDO'}
 
     _log_tag = "MHWS Gen"
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhws.mdf_generator.select_same_material_desc")
 
     @classmethod
     def poll(cls, context):
@@ -157,13 +162,13 @@ class MHWS_OT_SelectSameMaterial(bpy.types.Operator):
         settings = context.scene.mhws_mdf_generator
         mesh_col = settings.mesh_collection
         if not mesh_col:
-            self.report({'ERROR'}, "请先选择 Mesh Collection")
+            self.report({'ERROR'}, T("mhws.mdf_generator.select_mesh_collection_first"))
             return {'CANCELLED'}
 
         active_obj = context.active_object
         target_mat = active_obj.material_slots[active_obj.active_material_index].material
         if not target_mat:
-            self.report({'ERROR'}, "激活物体没有材质")
+            self.report({'ERROR'}, T("mhws.mdf_generator.active_obj_no_material"))
             return {'CANCELLED'}
 
         # 查找同集合下共享相同材质的所有网格
@@ -185,10 +190,11 @@ class MHWS_OT_SelectSameMaterial(bpy.types.Operator):
         print(f"[{self._log_tag}] 智能筛选: 材质 '{target_mat.name}' → "
               f"{len(matched)} 个网格: {', '.join(o.name for o in matched)}")
 
+        total = len(matched) if active_obj.name in {o.name for o in matched} else len(matched) + 1
         self.report(
             {'INFO'},
-            f"已选中 {len(matched)} 个使用 '{target_mat.name}' 的网格"
-            f"（含自身共 {len(matched) if active_obj.name in {o.name for o in matched} else len(matched) + 1} 个）",
+            T("mhws.mdf_generator.selected_meshes_report").format(
+                count=len(matched), mat=target_mat.name, total=total),
         )
         return {'FINISHED'}
 

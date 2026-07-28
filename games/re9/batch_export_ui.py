@@ -1,5 +1,6 @@
 import bpy
 import os
+from ...core.i18n import T
 from .batch_export import (
     _load_scheme, _get_binding, _set_binding,
     _get_enabled, _set_enabled, get_schemes_callback,
@@ -509,9 +510,10 @@ class RE9_OT_BatchExportDialog(bpy.types.Operator):
             native_path = os.path.join(_get_native_skeletons_dir(), os.path.basename(fbxskel_path))
             row2 = box.row(align=True)
             if os.path.isfile(native_path):
-                row2.label(text=f"将对齐原生骨架: {os.path.basename(native_path)}", icon='ARMATURE_DATA')
+                row2.label(text=T("re9.batch_export_ui.will_align_native_skeleton").format(name=os.path.basename(native_path)),
+                           icon='ARMATURE_DATA')
             else:
-                row2.label(text="未找到原生骨架文件，将直接导出选中骨架", icon='ERROR')
+                row2.label(text=T("re9.batch_export_ui.native_skeleton_not_found"), icon='ERROR')
 
         layout.separator()
         row = layout.row()

@@ -2,12 +2,16 @@ import bpy
 
 from ...core.mdf_tex_processor_ui_base import MdfTexDialogBase
 from .mdf_tex_processor import COMMON_SLOT_TYPES, NULL_TEX_BY_TYPE
+from ...core.i18n import T
 
 
 class MHWS_OT_MdfTexProcessorDialog(MdfTexDialogBase):
-    """MDF2 处理器 — 在已有 MDF2 材质的基础上处理贴图。需要有现成的已起好名字的 MDF2 集合"""
     bl_idname = "mhws.mdf_tex_processor_dialog"
     bl_label  = "MDF2 + Tex Processor"
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhws.mdf_tex_processor_ui.dialog_desc")
 
     _game_prefix       = "mhws"
     _settings_attr     = "mdf_tex_processor"

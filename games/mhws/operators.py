@@ -2,7 +2,7 @@ import os
 import sys
 import time
 import bpy
-from ...core.i18n import _
+from ...core.i18n import T
 from ...core import weight_utils
 from ...core import bone_utils
 from ...core import ref_skeleton
@@ -126,15 +126,18 @@ ENDFIELD_FACE_RENAME_MAP = [
 
 
 class MHWS_OT_EndfieldFaceRename(bpy.types.Operator):
-    """将 Endfield 面部顶点组名称批量转换为 MHWilds 格式"""
     bl_idname = "mhws.endfield_face_rename"
-    bl_label = "Endfield 面部改名"
+    bl_label = "Endfield Face Rename"
     bl_options = {'REGISTER', 'UNDO'}
-    
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhws.operators.endfield_face_rename_desc")
+
     @classmethod
     def poll(cls, context):
         return any(o.type == 'MESH' for o in context.selected_objects)
-    
+
     def execute(self, context):
         total = 0
         for obj in context.selected_objects:
@@ -143,7 +146,7 @@ class MHWS_OT_EndfieldFaceRename(bpy.types.Operator):
             for old_name, new_name in ENDFIELD_FACE_RENAME_MAP:
                 if weight_utils.rename_or_merge_vgroup(obj, old_name, new_name):
                     total += 1
-        self.report({'INFO'}, _("已处理 %d 个面部顶点组") % total)
+        self.report({'INFO'}, T("mhws.operators.endfield_processed").format(n=total))
         return {'FINISHED'}
 
 
@@ -186,11 +189,14 @@ def _transfer_partial(obj, source_names, targets_with_ratios):
 
 
 class MHWS_OT_FaceWeightSimplify(bpy.types.Operator):
-    """简化面部权重: 将 MHWilds 格式的细分面部骨骼权重合并到主要骨骼上"""
     bl_idname = "mhws.face_weight_simplify"
-    bl_label = "面部权重简化"
+    bl_label = "Face Weight Simplify"
     bl_options = {'REGISTER', 'UNDO'}
-    
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhws.operators.face_weight_simplify_desc")
+
     @classmethod
     def poll(cls, context):
         return context.active_object and context.active_object.type == 'MESH'
@@ -260,7 +266,7 @@ class MHWS_OT_FaceWeightSimplify(bpy.types.Operator):
         _transfer_partial(obj, ["R_upLip_T_LOD01", "L_upLip_T_LOD01"],
                           [("C_upLip_T_LOD01", 0.6)])
         
-        self.report({'INFO'}, _("面部权重简化完成"))
+        self.report({'INFO'}, T("mhws.operators.face_weight_simplify_done"))
         return {'FINISHED'}
 
 
@@ -276,6 +282,21 @@ def _get_chain_col_items(self, context):
     return _chain_col_items
 
 
+def _get_settings_mode_items(self, context):
+    return [
+        ('SHARED',   T("mhws.operators.settings_mode_shared"),   T("mhws.operators.settings_mode_shared_desc")),
+        ('SEPARATE', T("mhws.operators.settings_mode_separate"), T("mhws.operators.settings_mode_separate_desc")),
+        ('GUESS',    T("mhws.operators.settings_mode_guess"),    T("mhws.operators.settings_mode_guess_desc")),
+    ]
+
+
+def _get_chain_format_items(self, context):
+    return [
+        ('.chain2', "Chain2", T("mhws.operators.chain_format_chain2_desc")),
+        ('.chain',  "Chain",  T("mhws.operators.chain_format_chain_desc")),
+    ]
+
+
 _MHWS_TUNING = {
     'calculateMode': '3', 'chainAttrFlags': '4',
     'calculateStepTime': 2.0, 'modelCollisionSearch': 1,
@@ -285,62 +306,56 @@ _MHWS_TUNING = {
 
 
 class MHWS_OT_AutoCreateChains(bpy.types.Operator):
-    """一键创建 RE Chain。支持自动创建集合 + MHWilds 特调 Header。"""
     bl_idname = "mhws.auto_create_chains"
-    bl_label = "一键创建 RE Chain"
+    bl_label = "One-Click Create RE Chain"
     bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhws.operators.auto_create_chains_desc")
 
     chain_collection: bpy.props.EnumProperty(
         name="Chain Collection",
-        description="选择要写入的 Chain Collection",
+        description="Select the Chain Collection to write to",
         items=_get_chain_col_items,
     )
     settings_mode: bpy.props.EnumProperty(
-        name="Settings 模式",
-        items=[
-            ('SEPARATE', "各自独立", "每条链拥有独立的 Chain Settings"),
-            ('SHARED',   "共享同一", "所有链共用同一个 Chain Settings"),
-            ('GUESS',    "猜测分组", "根据骨骼名自动分类，同类型共享一组 Chain Settings 并写入推测物理参数；无法识别的归入第一组"),
-        ],
-        default='SHARED',
+        name="Settings Mode",
+        items=_get_settings_mode_items,
     )
     auto_create_collection: bpy.props.BoolProperty(
-        name="自动创建集合",
-        description="勾选后自动创建 Chain Collection 及 Header，无需预先手动准备",
+        name="Auto-create Collection",
+        description="When checked, automatically create the Chain Collection and Header, no manual prep needed",
         default=False,
     )
     collection_name: bpy.props.StringProperty(
-        name="集合名称",
-        description="新创建的 Chain Collection 名称（不含扩展名）",
+        name="Collection Name",
+        description="Name of the newly created Chain Collection (without extension)",
         default="",
     )
     chain_format: bpy.props.EnumProperty(
-        name="Chain 格式",
-        items=[
-            (".chain", "Chain", "旧格式，用于 RE4 等早期游戏"),
-            (".chain2", "Chain2", "新格式，用于 MHWilds / RE9"),
-        ],
-        default='.chain2',
+        name="Chain Format",
+        items=_get_chain_format_items,
     )
     apply_mhwilds_tuning: bpy.props.BoolProperty(
-        name="使用荒野特调Header",
-        description="将 Header 参数覆盖为 MHWilds 校准值（calculateMode=Quality 等）",
+        name="Use Wilds-Tuned Header",
+        description="Override Header parameters with MHWilds calibration values (calculateMode=Quality, etc.)",
         default=False,
     )
     straighten_orientation: bpy.props.BoolProperty(
-        name="骨骼方向预处理",
-        description="创建前将所有物理骨骼调整为竖直向上、扭转归零",
+        name="Bone Orientation Preprocessing",
+        description="Before creation, reset all physics bones to point straight up with zero twist",
         default=False,
     )
     has_no_markers: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
     auto_refresh: bpy.props.BoolProperty(
-        name="直接创建（自动刷新骨骼颜色）",
-        description="先自动运行骨骼颜色刷新，再尝试创建",
+        name="Create Directly (auto-refresh bone colors)",
+        description="Automatically run bone color refresh first, then attempt to create",
         default=False,
     )
     apply_angle_ramp: bpy.props.BoolProperty(
-        name="自动应用角度坡度",
-        description="链创建完成后自动调用 apply_angle_limit_ramp（最大60°，4级梯度）",
+        name="Auto-apply Angle Ramp",
+        description="After chain creation, automatically call apply_angle_limit_ramp (max 60°, 4-step ramp)",
         default=False,
     )
 
@@ -387,24 +402,24 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
             box = layout.box()
             box.alert = True
             col = box.column(align=True)
-            col.label(text=_("当前骨架没有任何标记！"), icon='ERROR')
-            col.label(text=_("建议先使用物理链工具手动标记后再使用此功能。"))
-            layout.prop(self, "auto_refresh")
+            col.label(text=T("mhws.operators.no_markers_warning1"), icon='ERROR')
+            col.label(text=T("mhws.operators.no_markers_warning2"))
+            layout.prop(self, "auto_refresh", text=T("mhws.operators.auto_refresh_name"))
             if not self.auto_refresh:
                 return
             layout.separator()
         row = layout.row()
-        row.prop(self, "auto_create_collection", text="自动创建集合")
+        row.prop(self, "auto_create_collection", text=T("mhws.operators.auto_create_collection_name"))
         if self.auto_create_collection:
-            layout.prop(self, "collection_name")
-            layout.prop(self, "chain_format", expand=True)
+            layout.prop(self, "collection_name", text=T("mhws.operators.collection_name_name"))
+            layout.prop(self, "chain_format", expand=True, text=T("mhws.operators.chain_format_name"))
             if self.chain_format == '.chain2':
-                layout.prop(self, "apply_mhwilds_tuning")
+                layout.prop(self, "apply_mhwilds_tuning", text=T("mhws.operators.apply_mhwilds_tuning_name"))
         else:
             layout.prop(self, "chain_collection")
-        layout.prop(self, "settings_mode", expand=True)
-        layout.prop(self, "straighten_orientation")
-        layout.prop(self, "apply_angle_ramp")
+        layout.prop(self, "settings_mode", expand=True, text=T("mhws.operators.settings_mode_name"))
+        layout.prop(self, "straighten_orientation", text=T("mhws.operators.straighten_orientation_name"))
+        layout.prop(self, "apply_angle_ramp", text=T("mhws.operators.apply_angle_ramp_name"))
 
     def execute(self, context):
         armature = context.active_object
@@ -433,10 +448,10 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
         status = auto_create_re_chains(context, armature, config)
 
         if status == {'CANCELLED'}:
-            self.report({'ERROR'}, _("创建 RE Chain 失败"))
+            self.report({'ERROR'}, T("mhws.operators.chain_create_failed"))
             return {'CANCELLED'}
 
-        self.report({'INFO'}, _("RE Chain 创建完成"))
+        self.report({'INFO'}, T("mhws.operators.chain_create_done"))
         return {'FINISHED'}
 
 
@@ -562,10 +577,13 @@ def _calc_y_offset(source_arm_obj, ref_arm_obj, detected_preset):
 
 
 class MHWS_OT_PreprocessModel(bpy.types.Operator):
-    """自动识别 MMD/VRChat → 姿态校正 → 导入参考骨架 → 缩放/Y轴偏移校准 → 骨架对齐"""
     bl_idname = "mhws.preprocess_model"
-    bl_label = "一键导入并对齐荒野模型"
+    bl_label = "One-Click Import & Align Wilds Model"
     bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhws.operators.preprocess_model_desc")
 
     @classmethod
     def poll(cls, context):
@@ -579,13 +597,13 @@ class MHWS_OT_PreprocessModel(bpy.types.Operator):
 
         source_arm_obj = context.active_object
         if not source_arm_obj or source_arm_obj.type != 'ARMATURE':
-            self.report({'WARNING'}, _("请先选中一个骨架"))
+            self.report({'WARNING'}, T("mhws.operators.select_armature_first"))
             return {'CANCELLED'}
 
         # Step 1: auto-detect X preset (MMD / VRChat only)
         detected = _detect_source_preset(source_arm_obj)
         if detected is None:
-            self.report({'WARNING'}, _("目前该功能只适用于MMD和VRChat模型！"))
+            self.report({'WARNING'}, T("mhws.operators.mmd_vrchat_only"))
             return {'CANCELLED'}
 
         settings.import_preset_enum = detected
@@ -601,13 +619,13 @@ class MHWS_OT_PreprocessModel(bpy.types.Operator):
         # Step 3: import reference skeleton (T-pose, bundled) + arm-scale calibration
         ref_arm_obj = ref_skeleton.import_reference_armature('mhws', _MHWS_REF_SKELETON_FILE)
         if ref_arm_obj is None:
-            self.report({'ERROR'}, _("参考骨架导入失败（请确认 assets/reference_skeletons/mhws/%s 存在）") % _MHWS_REF_SKELETON_FILE)
+            self.report({'ERROR'}, T("mhws.operators.ref_skeleton_import_failed").format(name=_MHWS_REF_SKELETON_FILE))
             return {'CANCELLED'}
 
         # Detect Y (bone) preset: game_code first, then coverage fallback
         y_preset = _detect_mhws_y_preset(ref_arm_obj)
         if y_preset is None:
-            self.report({'WARNING'}, _("未能自动检测到荒野骨骼预设，请在面板中手动选择目标预设后重试"))
+            self.report({'WARNING'}, T("mhws.operators.no_wilds_preset_detected"))
             return {'CANCELLED'}
         settings.target_preset_enum = y_preset
 
@@ -639,7 +657,7 @@ class MHWS_OT_PreprocessModel(bpy.types.Operator):
         context.view_layer.objects.active = ref_arm_obj
         bpy.ops.modder.universal_snap()
 
-        self.report({'INFO'}, _("模型预处理完成"))
+        self.report({'INFO'}, T("mhws.operators.preprocess_done"))
         return {'FINISHED'}
 
 
@@ -653,19 +671,23 @@ _BLINK_TARGET_BONES = ("L_UpEyeLidJ_LOD02", "R_UpEyeLidJ_LOD02")
 
 
 class MHWS_OT_AddFacialBones(bpy.types.Operator):
-    """将原版荒野骨架的表情骨骼移植到当前骨架，可选择使用假头法调整眨眼幅度"""
     bl_idname = "mhws.add_facial_bones"
-    bl_label = "一键添加表情骨"
+    bl_label = "One-Click Add Facial Bones"
     bl_options = {'REGISTER', 'UNDO'}
 
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhws.operators.add_facial_bones_desc")
+
     target_armature: bpy.props.EnumProperty(
-        name="骨架",
-        description="选择要添加表情骨的骨架",
+        name="Armature",
+        description="Select the armature to add facial bones to",
         items=bone_utils.get_armature_enum_items,
     )
     increase_blink_amplitude: bpy.props.BoolProperty(
-        name="增加眨眼幅度（二次元模型用）",
-        description="对上眼皮骨骼使用假头法，增大闭眼动作的形变幅度",
+        name="Increase Blink Amplitude (for anime-style models)",
+        description="Apply the fake-head method to the upper eyelid bones, increasing the deformation amplitude "
+                    "of the eye-closing motion",
         default=False,
     )
 
@@ -683,15 +705,15 @@ class MHWS_OT_AddFacialBones(bpy.types.Operator):
         layout = self.layout
         note = layout.row()
         note.active = False
-        note.label(text=_("使用该功能将清除原本存在的表情骨！"))
+        note.label(text=T("mhws.operators.facial_bones_note"))
         layout.separator()
-        layout.prop(self, "target_armature")
-        layout.prop(self, "increase_blink_amplitude")
+        layout.prop(self, "target_armature", text=T("mhws.operators.target_armature_name"))
+        layout.prop(self, "increase_blink_amplitude", text=T("mhws.operators.increase_blink_amplitude_name"))
 
     def execute(self, context):
         target_arm = bpy.data.objects.get(self.target_armature)
         if target_arm is None or target_arm.type != 'ARMATURE':
-            self.report({'WARNING'}, _("请选择一个有效的骨架"))
+            self.report({'WARNING'}, T("mhws.operators.select_valid_armature"))
             return {'CANCELLED'}
 
         if context.mode != 'OBJECT':
@@ -700,7 +722,7 @@ class MHWS_OT_AddFacialBones(bpy.types.Operator):
         # Step 1: 导入参考猎人骨架（内置资源，不依赖外部插件）
         ref_arm_obj = ref_skeleton.import_reference_armature('mhws', _MHWS_REF_SKELETON_FILE)
         if ref_arm_obj is None:
-            self.report({'ERROR'}, _("参考骨架导入失败（请确认 assets/reference_skeletons/mhws/%s 存在）") % _MHWS_REF_SKELETON_FILE)
+            self.report({'ERROR'}, T("mhws.operators.ref_skeleton_import_failed").format(name=_MHWS_REF_SKELETON_FILE))
             return {'CANCELLED'}
 
         # Step 2: 让参考骨架与选中骨架对齐（按同名骨骼对齐，仅位置）
@@ -709,7 +731,7 @@ class MHWS_OT_AddFacialBones(bpy.types.Operator):
         # Step 3: 移植 HeadAll_SCL 及其所有子级
         created = facial_bones.graft_facial_bones(ref_arm_obj, target_arm, _FACIAL_ROOT_BONE)
         if created == 0:
-            self.report({'WARNING'}, _("参考骨架中未找到表情骨根骨骼 (%s)") % _FACIAL_ROOT_BONE)
+            self.report({'WARNING'}, T("mhws.operators.no_facial_root_bone").format(name=_FACIAL_ROOT_BONE))
             return {'CANCELLED'}
 
         # Step 4: 假头法增加眨眼幅度
@@ -724,9 +746,9 @@ class MHWS_OT_AddFacialBones(bpy.types.Operator):
         bpy.ops.object.select_all(action='DESELECT')
         target_arm.select_set(True)
 
-        msg = _("已添加 %d 根表情骨") % created
+        msg = T("mhws.operators.facial_bones_added").format(n=created)
         if self.increase_blink_amplitude:
-            msg += _("，%d 侧已增加眨眼幅度") % fake_count
+            msg += T("mhws.operators.blink_amplitude_added").format(n=fake_count)
         self.report({'INFO'}, msg)
         return {'FINISHED'}
 
@@ -766,10 +788,13 @@ def _opt_move_head_keep_direction(edit_bones, bone_name, new_head):
 
 
 class MHWS_OT_OptimizeSkeleton(bpy.types.Operator):
-    """调整部分骨骼的位置，以缓解曲腿等问题，非二次元模型不建议使用"""
     bl_idname = "mhws.optimize_skeleton"
-    bl_label = "优化荒野骨架"
+    bl_label = "Optimize Wilds Skeleton"
     bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhws.operators.optimize_skeleton_desc")
 
     @classmethod
     def poll(cls, context):
@@ -840,7 +865,7 @@ class MHWS_OT_OptimizeSkeleton(bpy.types.Operator):
                 _opt_move_head_keep_direction(edit_bones, name, hip_head)
 
         bpy.ops.object.mode_set(mode='OBJECT')
-        self.report({'INFO'}, _("荒野骨架优化完成"))
+        self.report({'INFO'}, T("mhws.operators.optimize_skeleton_done"))
         return {'FINISHED'}
 
 
@@ -955,10 +980,13 @@ _HJ_WEIGHT_PAIRS = [
 
 
 class MHWS_OT_OptimizeAuxBones(bpy.types.Operator):
-    """将全部 HJ 辅助骨吸附到对应基础骨位置（扭转类取肢段中点），并把身体权重转移至主要辅助骨。通常能让这些部位的运动更自然"""
     bl_idname = "mhws.optimize_aux_bones"
-    bl_label = "优化辅助骨骼及权重"
+    bl_label = "Optimize Auxiliary Bones & Weights"
     bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhws.operators.optimize_aux_bones_desc")
 
     @classmethod
     def poll(cls, context):
@@ -1022,7 +1050,7 @@ class MHWS_OT_OptimizeAuxBones(bpy.types.Operator):
 
         self.report(
             {'INFO'},
-            f"完成：{moved} 根辅助骨已吸附，{renamed} 个顶点组已转移权重"
+            T("mhws.operators.optimize_aux_bones_done").format(moved=moved, renamed=renamed)
         )
         return {'FINISHED'}
 

@@ -1,4 +1,5 @@
 import bpy
+from .i18n import T
 
 # 单个辅助骨条目
 class AuxBoneItem(bpy.types.PropertyGroup):
@@ -14,8 +15,8 @@ class MappingSlot(bpy.types.PropertyGroup):
     
     # 用户指定的主骨名 (对应 main)
     source_bone_name: bpy.props.StringProperty(
-        name="Source Bone", 
-        description="对应的主骨骼名称",
+        name="Source Bone",
+        description="The corresponding main bone name",
         default=""
     )
     
@@ -25,16 +26,27 @@ class MappingSlot(bpy.types.PropertyGroup):
     # UI 状态：是否展开显示辅助骨
     is_expanded: bpy.props.BoolProperty(default=False)
 
+_edit_mode_items_cache = []
+
+def get_edit_mode_items(self, context):
+    global _edit_mode_items_cache
+    _edit_mode_items_cache = [
+        ('X', T("core.editor_props.edit_mode_x"), T("core.editor_props.edit_mode_x_desc")),
+        ('Y', T("core.editor_props.edit_mode_y"), T("core.editor_props.edit_mode_y_desc")),
+    ]
+    return _edit_mode_items_cache
+
+
 # 编辑器全局设置
 class EditorSettings(bpy.types.PropertyGroup):
     # 存放标准骨骼的槽位
     slots: bpy.props.CollectionProperty(type=MappingSlot)
     
     # 新建预设的文件名
-    new_preset_name: bpy.props.StringProperty(name="预设名称", default="New_Game_Preset")
-    
+    new_preset_name: bpy.props.StringProperty(name="Preset Name", default="New_Game_Preset")
+
     # 搜索过滤
-    search_filter: bpy.props.StringProperty(name="搜索", description="过滤骨骼名称", options={'TEXTEDIT_UPDATE'})
+    search_filter: bpy.props.StringProperty(name="Search", description="Filter bone names", options={'TEXTEDIT_UPDATE'})
     
     # 折叠状态 (UI分组用)
     show_torso: bpy.props.BoolProperty(default=True)
@@ -46,12 +58,8 @@ class EditorSettings(bpy.types.PropertyGroup):
 
     # 编辑模式：X 预设（来源）或 Y 预设（目标）
     edit_mode: bpy.props.EnumProperty(
-        name="编辑模式",
-        items=[
-            ('X', 'X 预设 (来源)', '编辑来源游戏的骨骼映射预设'),
-            ('Y', 'Y 预设 (目标)', '编辑目标游戏的骨骼映射预设'),
-        ],
-        default='X',
+        name="Edit Mode",
+        items=get_edit_mode_items,
     )
 
 classes = [

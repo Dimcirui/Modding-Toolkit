@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 
+from ...core.i18n import T
 from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
 from ...core.bone_utils import align_armatures_by_name
 
@@ -23,11 +24,22 @@ MHRS_PARTS = [
     ("leg",  "腿部"),
 ]
 
-# 2种性别
-MHRS_GENDERS = [
-    ("f", "女", ""),
-    ("m", "男", ""),
-]
+# part_id -> i18n key，供 batch_export_ui.py 在界面上显示双语部位名
+# （MHRS_PARTS 里的中文名本身仅用于内部日志/print，不直接过 T()）
+MHRS_PART_LABEL_KEYS = {
+    "arm":  "mhrs.batch_export.part_arm",
+    "body": "mhrs.batch_export.part_body",
+    "wst":  "mhrs.batch_export.part_wst",
+    "helm": "mhrs.batch_export.part_helm",
+    "leg":  "mhrs.batch_export.part_leg",
+}
+
+# Hunter gender (2 options)
+def get_mhrs_genders(self=None, context=None):
+    return [
+        ("f", T("mhrs.batch_export.gender_f"), ""),
+        ("m", T("mhrs.batch_export.gender_m"), ""),
+    ]
 
 # 头盔部位代码（user.2 仅头盔存在，其余部位无此文件）
 HELM_PART = "helm"
@@ -98,7 +110,7 @@ def get_mhrs_schemes_callback(self, context):
             name = os.path.splitext(f)[0]
             _scheme_cache.append((f, name, ""))
     if not _scheme_cache:
-        _scheme_cache.append(('NONE', "无装备包", ""))
+        _scheme_cache.append(('NONE', T("mhrs.batch_export.no_armor_pack"), ""))
     return _scheme_cache
 
 
@@ -126,7 +138,7 @@ def get_mhrs_armor_callback(self, context):
             name = armor.get("name", armor_id)
             _armor_cache.append((armor_id, f"{name}  ({armor_id})", ""))
     if not _armor_cache:
-        _armor_cache.append(('NONE', "无装备", ""))
+        _armor_cache.append(('NONE', T("mhrs.batch_export.no_armor"), ""))
     return _armor_cache
 
 
@@ -220,13 +232,13 @@ def _do_shadow_export(context, natives_root, gender, align_arm):
     返回 (ok: bool, message: str)。
     """
     if not re_mesh_op_available('importfile'):
-        return False, "Shadow 导出: 需要 RE Mesh Editor 的网格导入器"
+        return False, T("mhrs.batch_export.shadow_need_importer")
     if align_arm is None or align_arm.type != 'ARMATURE':
-        return False, "Shadow 导出: 请选择一个用于对齐的骨架"
+        return False, T("mhrs.batch_export.shadow_need_align_arm")
 
     asset_path = _get_shadow_asset_path(gender)
     if not os.path.isfile(asset_path):
-        return False, f"Shadow 导出: 缺少内置参考模型 {os.path.basename(asset_path)}（需放入 assets/mhrs/shadow/）"
+        return False, T("mhrs.batch_export.shadow_missing_asset").format(name=os.path.basename(asset_path))
 
     prev_active   = context.view_layer.objects.active
     prev_selected = [o for o in context.selected_objects]
@@ -252,11 +264,11 @@ def _do_shadow_export(context, natives_root, gender, align_arm):
         )
         imported_col_name = context.scene.get("REMeshLastImportedCollection", "")
         if not imported_col_name or imported_col_name not in bpy.data.collections:
-            raise RuntimeError(f"导入参考模型失败: {asset_path}")
+            raise RuntimeError(T("mhrs.batch_export.shadow_import_failed").format(path=asset_path))
 
         shadow_arm = _get_armature_from_collection(imported_col_name)
         if shadow_arm is None:
-            raise RuntimeError("参考模型集合中未找到唯一骨架")
+            raise RuntimeError(T("mhrs.batch_export.shadow_no_unique_armature"))
 
         align_armatures_by_name(align_arm, shadow_arm, mode='FULL')
 
@@ -264,12 +276,12 @@ def _do_shadow_export(context, natives_root, gender, align_arm):
         os.makedirs(os.path.dirname(dest_path), exist_ok=True)
         call_re_mesh_op('exportfile', filepath=dest_path, targetCollection=imported_col_name, **MESH_SETTINGS)
 
-        return True, f"Shadow 导出完成: {os.path.basename(dest_path)}"
+        return True, T("mhrs.batch_export.shadow_export_done").format(name=os.path.basename(dest_path))
 
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return False, f"Shadow 导出失败: {e}"
+        return False, T("mhrs.batch_export.shadow_export_failed").format(err=e)
 
     finally:
         if imported_col_name and imported_col_name in bpy.data.collections:
@@ -286,15 +298,19 @@ def _do_shadow_export(context, natives_root, gender, align_arm):
 # ── 导出 Operator ──────────────────────────────────────────────
 
 class MHRS_OT_BatchExport(bpy.types.Operator):
-    """MHRS 装备批量导出"""
+    """Batch-export MHRS armor"""
     bl_idname = "mhrs.batch_export"
     bl_label = "MHRS Batch Export"
     bl_options = {'REGISTER'}
 
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhrs.batch_export.batch_export_desc")
+
     def _cleanup_mesh_collections(self, context, scene, settings, armor_id, gender):
         """Run RE Mesh cleanup operators on all bound mesh collections before export."""
         if not re_mesh_op_available('delete_loose'):
-            self.report({'WARNING'}, "RE Mesh Editor 未安装，跳过导出前清理")
+            self.report({'WARNING'}, T("mhrs.batch_export.remesh_not_installed"))
             return
 
         seen = set()
@@ -343,22 +359,22 @@ class MHRS_OT_BatchExport(bpy.types.Operator):
 
         natives_root = scene.get("mhrs_natives_root", "")
         if not natives_root or not os.path.isdir(natives_root):
-            self.report({'ERROR'}, "请先设置 Mod Root 目录（natives 的上级文件夹）")
+            self.report({'ERROR'}, T("mhrs.batch_export.set_mod_root_first"))
             return {'CANCELLED'}
 
         scheme = _load_scheme(settings.mhrs_armor_scheme)
         if not scheme:
-            self.report({'ERROR'}, "无法加载装备包")
+            self.report({'ERROR'}, T("mhrs.batch_export.load_scheme_failed"))
             return {'CANCELLED'}
 
         armor_id = settings.mhrs_selected_armor
         if not armor_id or armor_id == 'NONE':
-            self.report({'ERROR'}, "请先选择一套装备")
+            self.report({'ERROR'}, T("mhrs.batch_export.select_armor_first"))
             return {'CANCELLED'}
 
         armor_set = next((a for a in scheme.get("armor_sets", []) if a["id"] == armor_id), None)
         if not armor_set:
-            self.report({'ERROR'}, f"在装备包中未找到: {armor_id}")
+            self.report({'ERROR'}, T("mhrs.batch_export.armor_not_found_in_scheme").format(id=armor_id))
             return {'CANCELLED'}
 
         gender = settings.mhrs_gender
@@ -422,18 +438,26 @@ class MHRS_OT_BatchExport(bpy.types.Operator):
                 fail_count += 1
 
         if fail_count > 0:
-            self.report({'WARNING'}, f"完成: 导出 {export_count}, 失败 {fail_count}, 跳过 {skip_count}")
+            self.report({'WARNING'}, T("mhrs.batch_export.export_done_with_fail").format(
+                export=export_count, fail=fail_count, skip=skip_count))
         else:
-            self.report({'INFO'}, f"完成: 导出 {export_count}, 跳过 {skip_count}")
+            self.report({'INFO'}, T("mhrs.batch_export.export_done").format(
+                export=export_count, skip=skip_count))
         return {'FINISHED'}
 
 
 class MHRS_OT_SetNativesRoot(bpy.types.Operator):
-    """选择 MHRS Mod 根目录（natives 的上级）。若选中的文件夹本身名为 natives，自动取其上级"""
+    """Select the MHRS mod root folder (the parent of natives). If the selected folder is itself
+    named natives, its parent is used automatically"""
     bl_idname = "mhrs.set_natives_root"
     bl_label = "Set Mod Root"
     bl_options = {'REGISTER'}
     directory: bpy.props.StringProperty(subtype='DIR_PATH')
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhrs.batch_export.set_natives_root_desc")
+
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}

@@ -2,17 +2,18 @@ import bpy
 
 from .mdf_generator import MHWS_GEN_GAME
 from ...core.mdf_generator_base import get_preset_dir_for_game, preset_has_emissive_slots
+from ...core.i18n import T
 
 GENERATOR_WINDOW_WIDTH = 580
 _SETTINGS_ATTR = "mhws_mdf_generator"
 
-_STRAT_LABELS = {
-    'color':     "基础色",
-    'normal':    "法线",
-    'roughness': "粗糙度",
-    'metallic':  "金属度",
-    'alpha':     "Alpha",
-    'emissive':  "自发光",
+_STRAT_LABEL_KEYS = {
+    'color':     "mhws.mdf_generator_ui.strat_color",
+    'normal':    "mhws.mdf_generator_ui.strat_normal",
+    'roughness': "mhws.mdf_generator_ui.strat_roughness",
+    'metallic':  "mhws.mdf_generator_ui.strat_metallic",
+    'alpha':     "mhws.mdf_generator_ui.strat_alpha",
+    'emissive':  "mhws.mdf_generator_ui.strat_emissive",
 }
 
 _STRAT_ICONS = {
@@ -24,10 +25,13 @@ _STRAT_ICONS = {
 
 
 class MHWS_OT_MdfGeneratorDialog(bpy.types.Operator):
-    """MDF2 Generator — 从 Blender 网格材质创建 MDF2 + 贴图。需要有现成的 mesh 集合，并在材质里连好 Principled BSDF"""
     bl_idname  = "mhws.mdf_generator_dialog"
     bl_label   = "MDF2 Generator"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhws.mdf_generator_ui.dialog_desc")
 
     def invoke(self, context, event):
         settings = context.scene.mhws_mdf_generator
@@ -74,7 +78,8 @@ class MHWS_OT_MdfGeneratorDialog(bpy.types.Operator):
             mc       = settings.mesh_collection.name
             auto_name = (mc.replace('.mesh', '.mdf2')
                          if '.mesh' in mc else mc + ".mdf2")
-            layout.row().label(text=f"    自动: {auto_name}", icon='INFO')
+            layout.row().label(
+                text=f"    {T('mhws.mdf_generator_ui.auto_name').format(name=auto_name)}", icon='INFO')
 
         # ── Base path ──────────────────────────────────────────────────────────
         row = layout.row(align=True)
@@ -83,18 +88,18 @@ class MHWS_OT_MdfGeneratorDialog(bpy.types.Operator):
         if not settings.texture_base_path.strip():
             layout.row().label(text="    e.g. Author/CharacterName/", icon='INFO')
 
-        layout.prop(settings, "flip_normal_g")
+        layout.prop(settings, "flip_normal_g", text=T("mhws.mdf_generator.flip_normal_g_name"))
 
         # ── Preset dir status ──────────────────────────────────────────────────
         preset_dir = get_preset_dir_for_game(MHWS_GEN_GAME)
         if not preset_dir:
             layout.separator()
-            layout.label(text="未找到 RE Mesh Editor MHWILDS 预设目录", icon='ERROR')
+            layout.label(text=T("mhws.mdf_generator_ui.preset_dir_not_found"), icon='ERROR')
 
         # ── Material list ──────────────────────────────────────────────────────
         if not settings.material_list:
             layout.separator()
-            layout.label(text="选择网格集合后点击刷新", icon='INFO')
+            layout.label(text=T("mhws.mdf_generator_ui.select_mesh_collection_hint"), icon='INFO')
             return
 
         layout.separator()
@@ -114,16 +119,16 @@ class MHWS_OT_MdfGeneratorDialog(bpy.types.Operator):
 
             # Expanded: show per-channel strategy
             strat_box = box.box()
-            strat_box.label(text="节点树分析 (贴图来源策略)", icon='NODETREE')
+            strat_box.label(text=T("mhws.mdf_generator_ui.node_tree_analysis"), icon='NODETREE')
             grid = strat_box.grid_flow(row_major=True, columns=3,
                                        even_columns=True, align=True)
-            for pt, label in _STRAT_LABELS.items():
+            for pt, label_key in _STRAT_LABEL_KEYS.items():
                 strat       = getattr(mat_entry, f"strat_{pt}", "?")
                 icon        = _STRAT_ICONS.get(strat, 'QUESTION')
                 native_size = getattr(mat_entry, f"native_size_{pt}", 0)
                 override    = getattr(mat_entry, f"bake_size_{pt}", 0)
                 cell = grid.row(align=True)
-                cell.label(text=f"{label}:", icon='BLANK1')
+                cell.label(text=f"{T(label_key)}:", icon='BLANK1')
                 cell.label(text=strat, icon=icon)
                 if strat != 'Solid' and native_size > 0:
                     btn_label = f"→{override}px" if override > 0 and override != native_size else ""
@@ -135,10 +140,10 @@ class MHWS_OT_MdfGeneratorDialog(bpy.types.Operator):
                     op.native_size   = native_size
 
             if preset_has_emissive_slots(mat_entry.material_preset):
-                box.prop(mat_entry, "use_toon")
-            box.prop(mat_entry, "generate_mipmaps")
-            box.prop(mat_entry, "skip_textures")
-            box.prop(mat_entry, "use_ao")
+                box.prop(mat_entry, "use_toon", text=T("mhws.mdf_generator.use_toon_name"))
+            box.prop(mat_entry, "generate_mipmaps", text=T("mhws.mdf_generator.generate_mipmaps_name"))
+            box.prop(mat_entry, "skip_textures", text=T("mhws.mdf_generator.skip_textures_name"))
+            box.prop(mat_entry, "use_ao", text=T("mhws.mdf_generator.use_ao_name"))
             if mat_entry.use_ao:
                 box.prop(mat_entry, "ao_image")
 

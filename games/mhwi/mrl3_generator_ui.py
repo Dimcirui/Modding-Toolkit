@@ -1,17 +1,18 @@
 import bpy
 
+from ...core.i18n import T
 from ...core.mdf_generator_base import get_mhwi_preset_dir, preset_has_emissive_slots, preset_has_albedo_blend_map
 
 GENERATOR_WINDOW_WIDTH = 580
 _SETTINGS_ATTR = "mhwi_mrl3_generator"
 
 _STRAT_LABELS = {
-    'color':     "基础色",
-    'normal':    "法线",
-    'roughness': "粗糙度",
-    'metallic':  "金属度",
-    'alpha':     "Alpha",
-    'emissive':  "自发光",
+    'color':     "mhwi.mrl3_generator_ui.strat_color",
+    'normal':    "mhwi.mrl3_generator_ui.strat_normal",
+    'roughness': "mhwi.mrl3_generator_ui.strat_roughness",
+    'metallic':  "mhwi.mrl3_generator_ui.strat_metallic",
+    'alpha':     "mhwi.mrl3_generator_ui.strat_alpha",
+    'emissive':  "mhwi.mrl3_generator_ui.strat_emissive",
 }
 
 _STRAT_ICONS = {
@@ -23,10 +24,13 @@ _STRAT_ICONS = {
 
 
 class MHWI_OT_Mrl3GeneratorDialog(bpy.types.Operator):
-    """MRL3 Generator — 从 Blender 网格材质创建 MRL3 + 贴图。需要有现成的 MOD3 集合，并在材质里连好 Principled BSDF"""
     bl_idname  = "mhwi.mrl3_generator_dialog"
     bl_label   = "MRL3 Generator"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.mrl3_generator_ui.dialog_desc")
 
     def invoke(self, context, event):
         settings = context.scene.mhwi_mrl3_generator
@@ -62,7 +66,7 @@ class MHWI_OT_Mrl3GeneratorDialog(bpy.types.Operator):
             short = "/".join(parts[-3:]) if len(parts) > 3 else natives_root
             row.label(text=f".../{short}")
         else:
-            row.label(text="Not set", icon='ERROR')
+            row.label(text=T("mhwi.batch_import_ui.not_set"), icon='ERROR')
 
         # ── MRL3 collection name ───────────────────────────────────────────────
         row = layout.row(align=True)
@@ -72,7 +76,7 @@ class MHWI_OT_Mrl3GeneratorDialog(bpy.types.Operator):
             mc       = settings.mesh_collection.name
             auto_name = (mc.replace('.mod3', '.mrl3')
                          if '.mod3' in mc else mc + ".mrl3")
-            layout.row().label(text=f"    自动: {auto_name}", icon='INFO')
+            layout.row().label(text=f"    {T('mhwi.mrl3_generator_ui.auto_prefix')}: {auto_name}", icon='INFO')
 
         # ── Base path ──────────────────────────────────────────────────────────
         row = layout.row(align=True)
@@ -82,18 +86,18 @@ class MHWI_OT_Mrl3GeneratorDialog(bpy.types.Operator):
             layout.row().label(
                 text="    e.g. pl/f_equip/pl042_0500/helm/tex", icon='INFO')
 
-        layout.prop(settings, "flip_normal_g")
+        layout.prop(settings, "flip_normal_g", text=T("mhwi.mrl3_generator.flip_normal_g_name"))
 
         # ── Preset dir status ──────────────────────────────────────────────────
         preset_dir = get_mhwi_preset_dir()
         if not preset_dir:
             layout.separator()
-            layout.label(text="未找到 MHW Model Editor MaterialPresets 目录", icon='ERROR')
+            layout.label(text=T("mhwi.mrl3_generator_ui.preset_dir_not_found"), icon='ERROR')
 
         # ── Material list ──────────────────────────────────────────────────────
         if not settings.material_list:
             layout.separator()
-            layout.label(text="选择 MOD3 集合后点击刷新", icon='INFO')
+            layout.label(text=T("mhwi.mrl3_generator_ui.select_mod3_then_refresh"), icon='INFO')
             return
 
         layout.separator()
@@ -111,7 +115,7 @@ class MHWI_OT_Mrl3GeneratorDialog(bpy.types.Operator):
                 continue
 
             strat_box = box.box()
-            strat_box.label(text="节点树分析 (贴图来源策略)", icon='NODETREE')
+            strat_box.label(text=T("mhwi.mrl3_generator_ui.node_tree_analysis"), icon='NODETREE')
             grid = strat_box.grid_flow(row_major=True, columns=3,
                                        even_columns=True, align=True)
             for pt, label in _STRAT_LABELS.items():
@@ -120,7 +124,7 @@ class MHWI_OT_Mrl3GeneratorDialog(bpy.types.Operator):
                 native_size = getattr(mat_entry, f"native_size_{pt}", 0)
                 override    = getattr(mat_entry, f"bake_size_{pt}", 0)
                 cell = grid.row(align=True)
-                cell.label(text=f"{label}:", icon='BLANK1')
+                cell.label(text=f"{T(label)}:", icon='BLANK1')
                 cell.label(text=strat, icon=icon)
                 if strat != 'Solid' and native_size > 0:
                     btn_label = f"→{override}px" if override > 0 and override != native_size else ""
@@ -132,14 +136,14 @@ class MHWI_OT_Mrl3GeneratorDialog(bpy.types.Operator):
                     op.native_size   = native_size
 
             if preset_has_emissive_slots(mat_entry.material_preset, is_mrl3=True):
-                box.prop(mat_entry, "use_toon")
-            box.prop(mat_entry, "generate_mipmaps")
-            box.prop(mat_entry, "skip_textures")
-            box.prop(mat_entry, "use_ao")
+                box.prop(mat_entry, "use_toon", text=T("mhwi.mrl3_generator.use_toon_name"))
+            box.prop(mat_entry, "generate_mipmaps", text=T("mhwi.mrl3_generator.generate_mipmaps_name"))
+            box.prop(mat_entry, "skip_textures", text=T("mhwi.mrl3_generator.skip_textures_name"))
+            box.prop(mat_entry, "use_ao", text=T("mhwi.mrl3_generator.use_ao_name"))
             if mat_entry.use_ao:
                 box.prop(mat_entry, "ao_image")
             if preset_has_albedo_blend_map(mat_entry.material_preset):
-                box.prop(mat_entry, "hide_snow_overlay")
+                box.prop(mat_entry, "hide_snow_overlay", text=T("mhwi.mrl3_generator.hide_snow_overlay_name"))
 
 
 classes = [MHWI_OT_Mrl3GeneratorDialog]

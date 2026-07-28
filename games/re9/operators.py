@@ -1,5 +1,5 @@
 import bpy
-from ...core.i18n import _
+from ...core.i18n import T
 from ...core.re_chain_utils import REChainConfig, auto_create_re_chains, _is_valid_chain_collection
 from ...core.bone_mapper import auto_detect_preset, BoneMapManager
 from ...core.standard_ops import _build_fuzzy_preset_bones, _run_bone_color_refresh
@@ -93,56 +93,66 @@ def _get_re9_chain_col_items(self, context):
     return _re9_chain_col_items
 
 
+def _get_settings_mode_items(self, context):
+    return [
+        ('SHARED',   T("re9.operators.settings_mode_shared"),   T("re9.operators.settings_mode_shared_desc")),
+        ('SEPARATE', T("re9.operators.settings_mode_separate"), T("re9.operators.settings_mode_separate_desc")),
+        ('GUESS',    T("re9.operators.settings_mode_guess"),    T("re9.operators.settings_mode_guess_desc")),
+    ]
+
+
+def _get_chain_format_items(self, context):
+    return [
+        (".chain2", "Chain2", T("re9.operators.chain_format_chain2_desc")),
+        (".chain", "Chain", T("re9.operators.chain_format_chain_desc")),
+    ]
+
+
 class RE9_OT_AutoCreateChains(bpy.types.Operator):
-    """一键创建 RE Chain（RE9 默认 .chain2 格式）。"""
     bl_idname = "re9.auto_create_chains"
-    bl_label = "一键创建 RE Chain"
+    bl_label = "Auto Create RE Chain"
     bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("re9.operators.auto_create_chains_desc")
 
     chain_collection: bpy.props.EnumProperty(
         name="Chain Collection",
-        description="选择要写入的 Chain Collection",
+        description="Select the Chain Collection to write into",
         items=_get_re9_chain_col_items,
     )
     settings_mode: bpy.props.EnumProperty(
-        name="Settings 模式",
-        items=[
-            ('SEPARATE', "各自独立", "每条链拥有独立的 Chain Settings"),
-            ('SHARED',   "共享同一", "所有链共用同一个 Chain Settings"),
-            ('GUESS',    "猜测分组", "根据骨骼名自动分类，同类型共享一组 Chain Settings 并写入推测物理参数；无法识别的归入第一组"),
-        ],
-        default='SHARED',
+        name="Settings Mode",
+        items=_get_settings_mode_items,
     )
     auto_create_collection: bpy.props.BoolProperty(
-        name="自动创建集合",
+        name="Auto Create Collection",
         default=False,
     )
     collection_name: bpy.props.StringProperty(
-        name="集合名称",
+        name="Collection Name",
         default="",
     )
     chain_format: bpy.props.EnumProperty(
-        name="Chain 格式",
-        items=[
-            (".chain", "Chain", "旧格式，用于 RE4 等早期游戏"),
-            (".chain2", "Chain2", "新格式，用于 MHWilds / RE9"),
-        ],
-        default='.chain2',
+        name="Chain Format",
+        items=_get_chain_format_items,
     )
     sync_orientation: bpy.props.BoolProperty(
-        name="同步链首朝向",
-        description="创建前自动对齐所有物理链首（及其物理子孙）到各自身体父级的朝向和扭转",
+        name="Sync Chain Head Orientation",
+        description="Automatically align all physics chain heads (and their physics descendants) "
+                    "to their body parent's orientation and twist before creating chains",
         default=False,
     )
     has_no_markers: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
     auto_refresh: bpy.props.BoolProperty(
-        name="直接创建（自动刷新骨骼颜色）",
-        description="先自动运行骨骼颜色刷新，再尝试创建",
+        name="Auto Create (Refresh Bone Colors)",
+        description="Automatically run bone color refresh first, then attempt to create",
         default=False,
     )
     apply_angle_ramp: bpy.props.BoolProperty(
-        name="自动应用角度坡度",
-        description="链创建完成后自动调用 apply_angle_limit_ramp（最大60°，4级梯度）",
+        name="Auto Apply Angle Ramp",
+        description="Automatically call apply_angle_limit_ramp after chain creation (max 60°, 4 gradient levels)",
         default=False,
     )
 
@@ -185,22 +195,22 @@ class RE9_OT_AutoCreateChains(bpy.types.Operator):
             box = layout.box()
             box.alert = True
             col = box.column(align=True)
-            col.label(text=_("当前骨架没有任何标记！"), icon='ERROR')
-            col.label(text=_("建议先使用物理链工具手动标记后再使用此功能。"))
-            layout.prop(self, "auto_refresh")
+            col.label(text=T("re9.operators.no_markers_warning"), icon='ERROR')
+            col.label(text=T("re9.operators.no_markers_suggestion"))
+            layout.prop(self, "auto_refresh", text=T("re9.operators.auto_refresh"))
             if not self.auto_refresh:
                 return
             layout.separator()
         row = layout.row()
-        row.prop(self, "auto_create_collection", text="自动创建集合")
+        row.prop(self, "auto_create_collection", text=T("re9.operators.auto_create_collection"))
         if self.auto_create_collection:
-            layout.prop(self, "collection_name")
+            layout.prop(self, "collection_name", text=T("re9.operators.collection_name"))
             layout.prop(self, "chain_format", expand=True)
         else:
             layout.prop(self, "chain_collection")
         layout.prop(self, "settings_mode", expand=True)
-        layout.prop(self, "sync_orientation")
-        layout.prop(self, "apply_angle_ramp")
+        layout.prop(self, "sync_orientation", text=T("re9.operators.sync_orientation"))
+        layout.prop(self, "apply_angle_ramp", text=T("re9.operators.apply_angle_ramp"))
 
     def execute(self, context):
         armature = context.active_object
@@ -225,9 +235,9 @@ class RE9_OT_AutoCreateChains(bpy.types.Operator):
         )
         status = auto_create_re_chains(context, armature, config)
         if status == {'CANCELLED'}:
-            self.report({'ERROR'}, _("创建 RE Chain 失败"))
+            self.report({'ERROR'}, T("re9.operators.create_chain_failed"))
             return {'CANCELLED'}
-        self.report({'INFO'}, _("RE Chain 创建完成"))
+        self.report({'INFO'}, T("re9.operators.create_chain_done"))
         return {'FINISHED'}
 
 
@@ -241,24 +251,28 @@ _RE9_BLINK_TARGET_BONES = ("L_UprLdEdge_02", "R_UprLdEdge_02")
 
 
 class RE9_OT_AddFacialBones(bpy.types.Operator):
-    """将原生角色骨架的表情骨骼移植到当前骨架，可选择使用假头法调整眨眼幅度"""
     bl_idname = "re9.add_facial_bones"
-    bl_label = "一键添加表情骨"
+    bl_label = "Add Facial Bones"
     bl_options = {'REGISTER', 'UNDO'}
 
+    @classmethod
+    def description(cls, context, properties):
+        return T("re9.operators.add_facial_bones_desc")
+
     target_armature: bpy.props.EnumProperty(
-        name="骨架",
-        description="选择要添加表情骨的骨架",
+        name="Armature",
+        description="Select the armature to add facial bones to",
         items=bone_utils.get_armature_enum_items,
     )
     reference_character: bpy.props.EnumProperty(
-        name="参考角色",
-        description="选择用作表情骨来源的角色参考骨架",
+        name="Reference Character",
+        description="Select the reference character armature to use as the facial bone source",
         items=lambda self, ctx: ref_skeleton.get_reference_skeleton_items('re9'),
     )
     increase_blink_amplitude: bpy.props.BoolProperty(
-        name="增加眨眼幅度（二次元模型用）",
-        description="对上眼皮骨骼使用假头法，增大闭眼动作的形变幅度",
+        name="Increase Blink Amplitude",
+        description="Use the fake-head trick on the upper eyelid bones, increasing the "
+                    "deformation amplitude of the blink motion",
         default=False,
     )
 
@@ -276,41 +290,41 @@ class RE9_OT_AddFacialBones(bpy.types.Operator):
         layout = self.layout
         note = layout.row()
         note.active = False
-        note.label(text=_("使用该功能将清除原本存在的表情骨！"))
+        note.label(text=T("re9.operators.facial_bones_warning"))
         layout.separator()
-        layout.prop(self, "target_armature")
-        layout.prop(self, "reference_character")
-        layout.prop(self, "increase_blink_amplitude")
+        layout.prop(self, "target_armature", text=T("re9.operators.target_armature"))
+        layout.prop(self, "reference_character", text=T("re9.operators.reference_character"))
+        layout.prop(self, "increase_blink_amplitude", text=T("re9.operators.increase_blink_amplitude"))
 
     def execute(self, context):
         target_arm = bpy.data.objects.get(self.target_armature)
         if target_arm is None or target_arm.type != 'ARMATURE':
-            self.report({'WARNING'}, _("请选择一个有效的骨架"))
+            self.report({'WARNING'}, T("re9.operators.select_valid_armature"))
             return {'CANCELLED'}
 
         if not self.reference_character or self.reference_character == 'NONE':
-            self.report({'ERROR'}, _("请选择参考角色（添加文件到 assets/reference_skeletons/re9/）"))
+            self.report({'ERROR'}, T("re9.operators.select_reference_character"))
             return {'CANCELLED'}
 
         if context.mode != 'OBJECT':
             bpy.ops.object.mode_set(mode='OBJECT')
 
-        # Step 1: 导入参考角色骨架（内置资源，不依赖外部插件）
+        # Step 1: import the reference character armature (bundled asset, no external add-on dependency)
         ref_arm_obj = ref_skeleton.import_reference_armature('re9', self.reference_character)
         if ref_arm_obj is None:
-            self.report({'ERROR'}, _("参考骨架导入失败: %s") % self.reference_character)
+            self.report({'ERROR'}, T("re9.operators.reference_import_failed").format(name=self.reference_character))
             return {'CANCELLED'}
 
-        # Step 2: 让参考骨架与选中骨架对齐（按同名骨骼对齐，仅位置）
+        # Step 2: align the reference armature to the selected armature (by matching bone names, position only)
         bone_utils.align_armatures_by_name(target_arm, ref_arm_obj, mode='POS_ONLY')
 
-        # Step 3: 移植表情骨根骨骼及其所有子级
+        # Step 3: graft the facial bone root and all its children
         created = facial_bones.graft_facial_bones(ref_arm_obj, target_arm, _RE9_FACIAL_ROOT_BONE)
         if created == 0:
-            self.report({'WARNING'}, _("参考骨架中未找到表情骨根骨骼 (%s)") % _RE9_FACIAL_ROOT_BONE)
+            self.report({'WARNING'}, T("re9.operators.facial_root_not_found").format(name=_RE9_FACIAL_ROOT_BONE))
             return {'CANCELLED'}
 
-        # Step 4: 假头法增加眨眼幅度
+        # Step 4: fake-head trick to increase blink amplitude
         fake_count = 0
         if self.increase_blink_amplitude:
             for bone_name in _RE9_BLINK_TARGET_BONES:
@@ -322,9 +336,9 @@ class RE9_OT_AddFacialBones(bpy.types.Operator):
         bpy.ops.object.select_all(action='DESELECT')
         target_arm.select_set(True)
 
-        msg = _("已添加 %d 根表情骨") % created
+        msg = T("re9.operators.facial_bones_added").format(n=created)
         if self.increase_blink_amplitude:
-            msg += _("，%d 侧已增加眨眼幅度") % fake_count
+            msg += T("re9.operators.blink_amplitude_added").format(n=fake_count)
         self.report({'INFO'}, msg)
         return {'FINISHED'}
 

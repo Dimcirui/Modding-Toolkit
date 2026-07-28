@@ -1,7 +1,7 @@
 import bpy
 import os
 import re
-from ..core.i18n import _
+from ..core.i18n import T, draw_language_toggle, get_lang
 from ..core import bone_utils, weight_utils, ui_config
 from ..core.re_mesh_compat import re_mesh_op_available
 from ..core.mdf_generator_base import MHW_OT_SetChannelSize
@@ -9,46 +9,84 @@ from ..core.bone_utils import get_import_presets_callback, get_target_presets_ca
 from ..core.pose_ops import get_pose_presets_callback
 from ..games.re9.batch_export import get_schemes_callback
 from ..games.re4.batch_export import get_schemes_callback as get_re4_schemes_callback
-from ..games.mhws.batch_export import get_mhws_schemes_callback, get_mhws_armor_callback, MHWS_VARIANTS
-from ..games.mhrs.batch_export import get_mhrs_schemes_callback, get_mhrs_armor_callback, MHRS_GENDERS
+from ..games.mhws.batch_export import get_mhws_schemes_callback, get_mhws_armor_callback, get_mhws_variants
+from ..games.mhrs.batch_export import get_mhrs_schemes_callback, get_mhrs_armor_callback, get_mhrs_genders
 from ..games.mhwi.batch_export import (
     get_mhwi_armor_sets_callback,
     get_mhwi_hr_armor_callback,
     get_mhwi_mr_armor_callback,
     get_mhwi_sp_armor_callback,
 )
-from ..games.mhwi.weapon_data import get_mhwi_weapon_sets_callback, WEAPON_TYPES
+from ..games.mhwi.weapon_data import get_mhwi_weapon_sets_callback, get_weapon_type_items
 from ..core.bone_mapper import BoneMapManager
 
-# 映射详情预览缓存：{(x_preset, y_preset): (mapper_x, mapper_y)}
+# Mapping detail preview cache: {(x_preset, y_preset): (mapper_x, mapper_y)}
 _mapping_detail_cache = {}
 
 
+def _align_mode_items(self, context):
+    return [
+        ('POS_ONLY', T("ui.main_panel.align_mode_pos_only"), T("ui.main_panel.align_mode_pos_only_desc")),
+        ('POS_ROLL', T("ui.main_panel.align_mode_pos_roll"), T("ui.main_panel.align_mode_pos_roll_desc")),
+        ('FULL',     T("ui.main_panel.align_mode_full"),     T("ui.main_panel.align_mode_full_desc")),
+    ]
+
+
+def _mhwi_export_mode_items(self, context):
+    return [
+        ('ARMOR',  T("ui.main_panel.mhwi_mode_armor"),  T("ui.main_panel.mhwi_mode_armor_desc")),
+        ('WEAPON', T("ui.main_panel.mhwi_mode_weapon"), T("ui.main_panel.mhwi_mode_weapon_desc")),
+    ]
+
+
+def _mhwi_rank_tab_items(self, context):
+    return [
+        ('HR', T("ui.main_panel.mhwi_rank_hr"), T("ui.main_panel.mhwi_rank_hr_desc")),
+        ('MR', T("ui.main_panel.mhwi_rank_mr"), T("ui.main_panel.mhwi_rank_mr_desc")),
+        ('SP', T("ui.main_panel.mhwi_rank_sp"), T("ui.main_panel.mhwi_rank_sp_desc")),
+    ]
+
+
+def _mhwi_gender_items(self, context):
+    return [
+        ('F',    T("ui.main_panel.mhwi_gender_f"),    T("ui.main_panel.mhwi_gender_f_desc")),
+        ('M',    T("ui.main_panel.mhwi_gender_m"),    T("ui.main_panel.mhwi_gender_m_desc")),
+        ('BOTH', T("ui.main_panel.mhwi_gender_both"), T("ui.main_panel.mhwi_gender_both_desc")),
+    ]
+
+
+def _mhws_bs_bind_part_items(self, context):
+    return [
+        ("1", T("ui.main_panel.mhws_bind_part_helmet"), ""),
+        ("2", T("ui.main_panel.mhws_bind_part_body"), ""),
+    ]
+
+
 class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
-    # 顶部开关
+    # Top toggle row
     show_mhwi: bpy.props.BoolProperty(name="MHWI", default=False)
     show_mhws: bpy.props.BoolProperty(name="MHWS", default=False)
     show_mhrs: bpy.props.BoolProperty(name="MHRS", default=False)
     show_re4: bpy.props.BoolProperty(name="RE4", default=False)
     show_re9: bpy.props.BoolProperty(name="RE9", default=False)
-    
-    # 基础工具开关
-    show_basic_tools: bpy.props.BoolProperty(name="基础工具", default=True)
 
-    # 通用转换器开关
-    show_std_converter: bpy.props.BoolProperty(name="通用骨架转换", default=True)
-    show_experimental: bpy.props.BoolProperty(name="实验性功能", default=False)
+    # Basic tools toggle
+    show_basic_tools: bpy.props.BoolProperty(name="Basic Tools", default=True)
 
-    # 预设选择 (X/Y) - 标准转换用
+    # Universal converter toggle
+    show_std_converter: bpy.props.BoolProperty(name="Universal Skeleton Conversion", default=True)
+    show_experimental: bpy.props.BoolProperty(name="Experimental Features", default=False)
+
+    # Preset selection (X/Y) - used by the standard converter
     import_preset_enum: bpy.props.EnumProperty(
-        name="来源预设 (X)",
-        description="选择导入模型的骨架结构",
+        name="Source Preset (X)",
+        description="Select the skeleton structure of the imported model",
         items=get_import_presets_callback,
     )
 
     target_preset_enum: bpy.props.EnumProperty(
-        name="目标游戏 (Y)",
-        description="选择要导出的目标游戏",
+        name="Target Game (Y)",
+        description="Select the target game to export to",
         items=get_target_presets_callback,
         update=lambda self, context: setattr(
             self, "align_mode_override", bone_utils.get_default_align_mode(self.target_preset_enum)
@@ -56,17 +94,13 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     )
 
     align_mode_override: bpy.props.EnumProperty(
-        name="对齐模式",
-        description="骨骼对齐 (Snap) 的对齐方式，切换目标游戏 (Y) 时会自动同步为该预设的默认值",
-        items=[
-            ('POS_ONLY', "仅位置", "只对齐骨骼头部位置，保留目标骨架原有的方向和长度"),
-            ('POS_ROLL', "位置+扭转", "对齐头部位置并复制来源骨骼的扭转(Roll)，长度方向不变"),
-            ('FULL', "完全对齐", "头部、尾部、扭转全部对齐到来源骨骼 (骨骼长度和方向都会跟随来源)"),
-        ],
-        default='POS_ONLY',
+        name="Align Mode",
+        description="Bone alignment (Snap) mode; automatically syncs to the preset's default when the target game (Y) changes",
+        items=_align_mode_items,
+        default=0,
     )
 
-    show_mapping_details: bpy.props.BoolProperty(name="显示映射细节", default=False)
+    show_mapping_details: bpy.props.BoolProperty(name="Show Mapping Details", default=False)
 
     bone_view_mode: bpy.props.EnumProperty(
         items=[
@@ -76,24 +110,24 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         ],
         default='ALL'
     )
-    
-    # 姿态转换区域
-    show_pose_convert: bpy.props.BoolProperty(name="姿态转换", default=False)
-    
-    # 姿态转换专用预设（独立于标准转换的 X/Y 预设）
+
+    # Pose convert section
+    show_pose_convert: bpy.props.BoolProperty(name="Pose Convert", default=False)
+
+    # Pose-convert-only preset (independent of the standard converter's X/Y presets)
     pose_import_preset_enum: bpy.props.EnumProperty(
-        name="骨架预设",
-        description="用于识别骨骼名称的预设",
+        name="Skeleton Preset",
+        description="Preset used to recognize bone names",
         items=get_import_presets_callback,
     )
-    
-    # 姿态记录文件选择
+
+    # Saved pose record selection
     pose_preset_enum: bpy.props.EnumProperty(
-        name="姿态记录",
-        description="选择已保存的姿态矩阵记录",
+        name="Pose Record",
+        description="Select a saved pose matrix record",
         items=get_pose_presets_callback
     )
-    
+
     # RE9 batch export scheme
     re9_export_scheme: bpy.props.EnumProperty(
         name="Export Scheme",
@@ -103,172 +137,165 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
 
     # MHWI batch export
     mhwi_export_mode: bpy.props.EnumProperty(
-        name="导出模式",
-        items=[
-            ('ARMOR',  "装备", "导出人物装备（护甲/幻化）"),
-            ('WEAPON', "武器", "导出武器模型（暂不支持空模替换）"),
-        ],
-        default='ARMOR',
+        name="Export Mode",
+        items=_mhwi_export_mode_items,
+        default=0,
     )
     mhwi_armor_sets_file: bpy.props.EnumProperty(
-        name="预设组",
-        description="选择 MHWI 装备预设组 JSON",
+        name="Preset Group",
+        description="Select an MHWI armor preset group JSON",
         items=get_mhwi_armor_sets_callback,
     )
     mhwi_weapon_sets_file: bpy.props.EnumProperty(
-        name="预设组",
-        description="选择 MHWI 武器预设组 JSON",
+        name="Preset Group",
+        description="Select an MHWI weapon preset group JSON",
         items=get_mhwi_weapon_sets_callback,
     )
     mhwi_weapon_type_tab: bpy.props.EnumProperty(
-        name="武器类型",
-        items=[(code, name, "") for code, name, _secondary in WEAPON_TYPES],
-        default='two',
+        name="Weapon Type",
+        items=get_weapon_type_items,
     )
     mhwi_rank_tab: bpy.props.EnumProperty(
-        name="位阶",
-        items=[
-            ('HR', "上下位", "低位/高位装备"),
-            ('MR', "大师位", "冰原大师位装备"),
-            ('SP', "整套幻化", "独立幻化套装（含头部/头发模型）"),
-        ],
-        default='HR',
+        name="Rank",
+        items=_mhwi_rank_tab_items,
+        default=0,
     )
     mhwi_gender: bpy.props.EnumProperty(
-        name="性别",
-        items=[
-            ('F',    "女",   "仅导出女猎装备文件"),
-            ('M',    "男",   "仅导出男猎装备文件"),
-            ('BOTH', "双性", "同时导出男女猎装备文件"),
-        ],
-        default='F',
+        name="Gender",
+        items=_mhwi_gender_items,
+        default=0,
     )
     mhwi_selected_hr_armor: bpy.props.EnumProperty(
-        name="上下位装备",
-        description="选择要导出的上下位装备",
+        name="LR/HR Armor",
+        description="Select the LR/HR armor to export",
         items=get_mhwi_hr_armor_callback,
     )
     mhwi_selected_mr_armor: bpy.props.EnumProperty(
-        name="大师位装备",
-        description="选择要导出的大师位装备",
+        name="MR Armor",
+        description="Select the MR armor to export",
         items=get_mhwi_mr_armor_callback,
     )
     mhwi_selected_sp_armor: bpy.props.EnumProperty(
-        name="整套幻化",
-        description="选择要导出的整套幻化",
+        name="Full Transmog Set",
+        description="Select the full transmog set to export",
         items=get_mhwi_sp_armor_callback,
     )
     mhwi_cleanup_before_export: bpy.props.BoolProperty(
-        name="导出前清理网格",
-        description="导出前对所有已绑定的 mod3 集合执行: 删除松散几何、修复重复UV、清除零权重顶点组、限制并归一化权重（需要 RE Mesh Editor，未安装则静默跳过）",
+        name="Clean Mesh Before Export",
+        description="Before export, run on all bound mod3 collections: remove loose geometry, fix duplicate UVs, "
+                     "clear zero-weight vertex groups, limit and normalize weights "
+                     "(requires RE Mesh Editor; silently skipped if not installed)",
         default=True,
     )
     mhwi_confuse_before_export: bpy.props.BoolProperty(
-        name="防石化",
-        description="在 mod3 和 mrl3 中添加一些混淆内容，不影响使用，但可以有效防止一些拿别人 mod 改改就当自己的东西的倒狗",
+        name="Anti-Plagiarism",
+        description="Adds confusion content to mod3/mrl3 that doesn't affect normal use, but helps deter people "
+                     "who repackage others' mods as their own",
         default=False,
     )
 
     # MHWs batch export
     mhws_armor_scheme: bpy.props.EnumProperty(
-        name="装备包",
-        description="选择 MHWs 装备包 JSON",
+        name="Armor Pack",
+        description="Select an MHWs armor pack JSON",
         items=get_mhws_schemes_callback
     )
     mhws_armor_variant: bpy.props.EnumProperty(
-        name="套装种类",
-        description="选择套装变体（男猎/女猎 × 男套/女套）",
-        items=MHWS_VARIANTS,
-        default='ff'
+        name="Set Variant",
+        description="Select the set variant (male/female hunter x male/female set)",
+        items=get_mhws_variants,
     )
     mhws_selected_armor: bpy.props.EnumProperty(
-        name="装备",
-        description="选择要导出的装备",
+        name="Armor",
+        description="Select the armor to export",
         items=get_mhws_armor_callback
     )
 
     # MHWs Bonesystem
     mhws_use_bonesystem: bpy.props.BoolProperty(
-        name="使用 Bonesystem",
-        description="导出时同时生成 fbxskel.7 和 BoneSystem JSON（需要 Bonesystem 框架）",
+        name="Use Bonesystem",
+        description="Also generate fbxskel.7 and BoneSystem JSON on export (requires the Bonesystem framework)",
         default=False,
     )
     mhws_fbxskel_name: bpy.props.StringProperty(
-        name="FBXSkel 定义名",
-        description="写入 JSON 的 FbxPath 字段，同时作为 .fbxskel.7 文件名（如 ch03_000_9000）",
+        name="FBXSkel Definition Name",
+        description="Written to the JSON's FbxPath field, also used as the .fbxskel.7 filename (e.g. ch03_000_9000)",
     )
     mhws_bs_armature: bpy.props.PointerProperty(
         type=bpy.types.Object,
         poll=lambda self, obj: obj.type == 'ARMATURE',
-        name="骨架",
-        description="用于生成 fbxskel 的 MHWs 角色骨架",
+        name="Armature",
+        description="MHWs character armature used to generate the fbxskel",
     )
     mhws_bs_hide_face: bpy.props.BoolProperty(
-        name="隐藏面部",    default=True)
+        name="Hide Face",    default=True)
     mhws_bs_hide_hair: bpy.props.BoolProperty(
-        name="隐藏头发",    default=True)
+        name="Hide Hair",    default=True)
     mhws_bs_hide_slinger: bpy.props.BoolProperty(
-        name="隐藏投射器",  default=True)
+        name="Hide Slinger",  default=True)
     mhws_bs_bind_face: bpy.props.BoolProperty(
-        name="绑定面部",    default=True)
+        name="Bind Face",    default=True)
     mhws_bs_bind_part: bpy.props.EnumProperty(
-        name="绑定部位",
-        items=[("1", "头盔", ""), ("2", "身体", "")],
-        default="1",
+        name="Bind Part",
+        items=_mhws_bs_bind_part_items,
+        default=0,
     )
     mhws_use_blank_export: bpy.props.BoolProperty(
-        name="未选项使用空模型",
-        description="导出时对未选择集合的栏位，复制内置空文件代替跳过",
+        name="Use Blank Model for Unselected",
+        description="For slots with no collection selected, copy in the built-in blank file instead of skipping",
         default=False,
     )
     mhws_cleanup_before_export: bpy.props.BoolProperty(
-        name="导出前清理网格",
-        description="导出前对所有已绑定的 mesh 集合执行: 删除松散几何、修复重复UV、清除零权重顶点组、限制并归一化权重（需要 RE Mesh Editor）",
+        name="Clean Mesh Before Export",
+        description="Before export, run on all bound mesh collections: remove loose geometry, fix duplicate UVs, "
+                     "clear zero-weight vertex groups, limit and normalize weights (requires RE Mesh Editor)",
         default=True,
     )
     re9_use_blank_export: bpy.props.BoolProperty(
-        name="未选项使用空模型",
-        description="导出时对未选择集合的栏位，复制内置空文件代替跳过",
+        name="Use Blank Model for Unselected",
+        description="For slots with no collection selected, copy in the built-in blank file instead of skipping",
         default=True,
     )
 
     # MHRS batch export
     mhrs_armor_scheme: bpy.props.EnumProperty(
-        name="装备包",
-        description="选择 MHRS 装备包 JSON",
+        name="Armor Pack",
+        description="Select an MHRS armor pack JSON",
         items=get_mhrs_schemes_callback
     )
     mhrs_gender: bpy.props.EnumProperty(
-        name="性别",
-        description="选择猎人性别",
-        items=MHRS_GENDERS,
-        default='f'
+        name="Gender",
+        description="Select hunter gender",
+        items=get_mhrs_genders,
     )
     mhrs_selected_armor: bpy.props.EnumProperty(
-        name="装备",
-        description="选择要导出的装备",
+        name="Armor",
+        description="Select the armor to export",
         items=get_mhrs_armor_callback
     )
     mhrs_use_blank_export: bpy.props.BoolProperty(
-        name="未选项使用空模型",
-        description="导出时对未选择集合的栏位，复制内置空文件代替跳过",
+        name="Use Blank Model for Unselected",
+        description="For slots with no collection selected, copy in the built-in blank file instead of skipping",
         default=False,
     )
     mhrs_cleanup_before_export: bpy.props.BoolProperty(
-        name="导出前清理网格",
-        description="导出前对所有已绑定的 mesh 集合执行: 删除松散几何、修复重复UV、清除零权重顶点组、限制并归一化权重（需要 RE Mesh Editor）",
+        name="Clean Mesh Before Export",
+        description="Before export, run on all bound mesh collections: remove loose geometry, fix duplicate UVs, "
+                     "clear zero-weight vertex groups, limit and normalize weights (requires RE Mesh Editor)",
         default=True,
     )
     mhrs_use_shadow_export: bpy.props.BoolProperty(
-        name="使用 Shadow Mesh",
-        description="导出时将内置的 Shadow 参考模型骨架对齐到所选骨架，并导出到固定的 mod/{性别}/bone/ 路径",
+        name="Use Shadow Mesh",
+        description="On export, align the built-in Shadow reference model's skeleton to the selected armature and "
+                     "export it to the fixed mod/{gender}/bone/ path",
         default=False,
     )
     mhrs_shadow_armature: bpy.props.PointerProperty(
         type=bpy.types.Object,
         poll=lambda self, obj: obj.type == 'ARMATURE',
-        name="对齐骨架",
-        description="用于对齐 Shadow 参考模型骨架的目标骨架；留空且本次仅绑定了一个 Mesh 集合时，将自动使用该集合内的骨架",
+        name="Align Armature",
+        description="Target armature to align the Shadow reference model's skeleton to; if left empty and only "
+                     "one Mesh collection is bound this run, that collection's armature is used automatically",
     )
 
     # RE4 batch export
@@ -278,82 +305,86 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         items=get_re4_schemes_callback
     )
     re4_use_blank_export: bpy.props.BoolProperty(
-        name="未选项使用空模型",
-        description="导出时对未选择集合的栏位，复制内置空文件代替跳过",
+        name="Use Blank Model for Unselected",
+        description="For slots with no collection selected, copy in the built-in blank file instead of skipping",
         default=True,
     )
     re4_use_fakebone: bpy.props.BoolProperty(
-        name="使用假头法",
-        description="导出 fbxskel 前自动生成身体+手指 End 骨骼（原生骨架由预设 native_skeleton 字段指定）",
+        name="Use Fake Head Method",
+        description="Before exporting fbxskel, auto-generate body+finger End bones "
+                     "(the native skeleton is specified by the preset's native_skeleton field)",
         default=False,
     )
     re4_use_body_arm: bpy.props.BoolProperty(
-        name="使用身体骨架",
-        description="自动从身体 Mesh 集合获取骨架并对齐原生骨架，省去手动绑定 fbxskel 骨架",
+        name="Use Body Armature",
+        description="Automatically get the armature from the body Mesh collection and align it to the native "
+                     "skeleton, skipping manual fbxskel armature binding",
         default=False,
     )
 
 
+# (action_id, label_key, description_key) — single source of truth for the
+# "action" EnumProperty items= callback below AND MHW_OT_GeneralTools's
+# per-action dynamic classmethod description() (they describe the same
+# thing: what a given action does).
+_GENERAL_TOOLS_ACTIONS = [
+    ('ROLL_ZERO',        "ui.main_panel.gt_action_roll_zero",        "ui.main_panel.gt_desc_roll_zero"),
+    ('ADD_TAIL',         "ui.main_panel.gt_action_add_tail",         "ui.main_panel.gt_desc_add_tail"),
+    ('MIRROR_X',         "ui.main_panel.gt_action_mirror_x",         "ui.main_panel.gt_desc_mirror_x"),
+    ('SIMPLIFY_CHAIN',   "ui.main_panel.gt_action_simplify_chain",   "ui.main_panel.gt_desc_simplify_chain"),
+    ('MERGE_TO_ACTIVE',  "ui.main_panel.gt_action_merge_to_active",  "ui.main_panel.gt_desc_merge_to_active"),
+    ('ALIGN_POS',        "ui.main_panel.gt_action_align_pos",        "ui.main_panel.gt_desc_align_pos"),
+    ('ALIGN_POS_ROLL',   "ui.main_panel.gt_action_align_pos_roll",   "ui.main_panel.gt_desc_align_pos_roll"),
+    ('ALIGN_FULL',       "ui.main_panel.gt_action_align_full",       "ui.main_panel.gt_desc_align_full"),
+    ('MERGE_CHAINS',     "ui.main_panel.gt_action_merge_chains",     "ui.main_panel.gt_desc_merge_chains"),
+]
+
+
+def _general_tools_action_items(self, context):
+    return [(action_id, T(label_key), T(desc_key)) for action_id, label_key, desc_key in _GENERAL_TOOLS_ACTIONS]
+
+
 class MHW_OT_GeneralTools(bpy.types.Operator):
-    """通用工具集合"""
+    """General bone tools; see the Redo panel / button tooltip for the selected action's description"""
     bl_idname = "mhw.general_tools"
-    bl_label = "通用工具"
+    bl_label = "General Tools"
     bl_options = {'REGISTER', 'UNDO'}
-    
+
     action: bpy.props.EnumProperty(
-        items=[
-            ('ROLL_ZERO',     "扭转归零",     "递归将选中骨骼的 Roll 设为 0"),
-            ('ADD_TAIL',      "添加尾骨",     "在选中骨骼末端添加垂直骨骼"),
-            ('MIRROR_X',      "镜像对齐 X",   "以 X+ 为基准镜像对齐 X- 骨骼"),
-            ('SIMPLIFY_CHAIN',"骨链简化",     "按链结构两两配对删减骨骼并合并权重，自动跳过尾骨"),
-            ('MERGE_TO_ACTIVE',"合并到激活骨","将其余选中骨骼的权重全部合并到激活骨（最后点击的那根），并删除其余骨骼"),
-            ('ALIGN_POS',     "对齐 (位置)",    "将目标骨骼 head 对齐到源，不改变长度方向"),
-            ('ALIGN_POS_ROLL',"对齐 (位置+扭转)", "对齐 head 和 roll，不改变长度方向"),
-            ('ALIGN_FULL',    "对齐 (完全)",    "按骨骼名完全对齐两个骨架 (head+tail+roll)"),
-            ('MERGE_CHAINS',  "合并链到激活链","选中多条链的链首，将其余链按位置逐骨合并到激活骨所在链，超出部分合并到链末"),
-        ]
+        items=_general_tools_action_items,
     )
 
-    _ACTION_DESCRIPTIONS = {
-        'ROLL_ZERO':      "递归将选中骨骼及其所有子骨的 Roll 值归零",
-        'ADD_TAIL':       "在每根选中骨骼的末端添加一根垂直向上的尾骨",
-        'MIRROR_X':       "正好选中两根骨骼：以 X+ 侧那根为基准，镜像覆盖 X- 侧那根的位置与扭转",
-        'SIMPLIFY_CHAIN': "按链结构将骨骼两两配对合并权重并删除多余骨骼；链末无权重骨（尾骨）自动跳过不参与配对",
-        'MERGE_TO_ACTIVE':"将其余选中骨骼的权重全部并入激活骨（最后点击的那根），然后删除其余骨骼",
-        'MERGE_CHAINS':   "选中多条链的链首，将其余链按位置逐骨合并到激活骨所在链；源链超出长度的部分并入链末骨",
-        'ALIGN_POS':      "选中两个骨架：将激活骨架中同名骨骼的 head 位置对齐到源骨架，不改变骨骼长度与方向",
-        'ALIGN_POS_ROLL': "选中两个骨架：对齐同名骨骼的 head 位置和 roll 扭转，不改变骨骼长度与方向",
-        'ALIGN_FULL':     "选中两个骨架：按骨骼名完全对齐 head、tail 和 roll（骨骼长度也会跟随源骨架）",
-    }
+    _ACTION_DESCRIPTIONS = {action_id: desc_key for action_id, _label_key, desc_key in _GENERAL_TOOLS_ACTIONS}
 
     @classmethod
     def description(cls, context, properties):
-        return cls._ACTION_DESCRIPTIONS.get(properties.action, cls.__doc__)
+        key = cls._ACTION_DESCRIPTIONS.get(properties.action)
+        return T(key) if key else (cls.__doc__ or "")
 
     def execute(self, context):
         arm_obj = context.active_object
         if not arm_obj or arm_obj.type != 'ARMATURE':
-            self.report({'ERROR'}, _("请先选中一个骨架"))
+            self.report({'ERROR'}, T("ui.main_panel.gt_err_select_armature"))
             return {'CANCELLED'}
 
         if self.action == 'ROLL_ZERO':
             bpy.ops.object.mode_set(mode='EDIT')
             selected_bones = context.selected_editable_bones
             if not selected_bones:
-                self.report({'WARNING'}, _("请在编辑模式下至少选中一根骨骼"))
+                self.report({'WARNING'}, T("ui.main_panel.gt_warn_select_bone_edit"))
                 return {'CANCELLED'}
             count = bone_utils.set_roll_to_zero_recursive(selected_bones)
-            self.report({'INFO'}, _("已重置 %d 根骨骼的 Roll") % count)
+            self.report({'INFO'}, T("ui.main_panel.gt_info_roll_reset").format(n=count))
 
         elif self.action == 'ADD_TAIL':
             bpy.ops.object.mode_set(mode='EDIT')
             edit_bones = arm_obj.data.edit_bones
             selected_bones = context.selected_editable_bones
             if not selected_bones:
-                self.report({'WARNING'}, _("请选中需要加尾巴的骨骼"))
+                self.report({'WARNING'}, T("ui.main_panel.gt_warn_select_tail_bone"))
                 return {'CANCELLED'}
             count = bone_utils.add_vertical_tail_bone(edit_bones, selected_bones)
-            self.report({'INFO'}, _("添加了 %d 根尾骨") % count)
+            self.report({'INFO'}, T("ui.main_panel.gt_info_tail_added").format(n=count))
 
         elif self.action == 'MIRROR_X':
             selected_names = []
@@ -365,7 +396,7 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
                 selected_names = [b.name for b in arm_obj.data.bones if b.select]
 
             if len(selected_names) != 2:
-                self.report({'ERROR'}, _("请正好选中两个骨骼进行镜像对齐"))
+                self.report({'ERROR'}, T("ui.main_panel.gt_err_mirror_need_two"))
                 return {'CANCELLED'}
 
             bpy.ops.object.mode_set(mode='EDIT')
@@ -374,7 +405,10 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
             success = result[0]
             msg_template = result[1]
             msg_args = result[2:] if len(result) > 2 else ()
-            translated = _(msg_template) % msg_args if msg_args else _(msg_template)
+            # NOTE: bone_utils.mirror_bone_transform() (out of this migration's
+            # scope) returns fixed Chinese message templates; they're bridged
+            # into T() via literal-text keys in core/i18n_strings/ui.py.
+            translated = T(msg_template) % msg_args if msg_args else T(msg_template)
             if success:
                 self.report({'INFO'}, translated)
             else:
@@ -386,39 +420,39 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
 
             selected_bones = list(context.selected_editable_bones)
             if len(selected_bones) < 2:
-                self.report({'ERROR'}, _("至少需要选中两个骨骼"))
+                self.report({'ERROR'}, T("ui.main_panel.gt_err_need_two_bones"))
                 return {'CANCELLED'}
 
             selected_names = [b.name for b in selected_bones]
 
-            # 获取绑定网格（用于尾骨检测）
+            # Gather bound meshes (used for tail-bone detection)
             mesh_objects = [o for o in bpy.data.objects
                             if o.type == 'MESH' and
                             any(m.type == 'ARMATURE' and m.object == arm_obj
                                 for m in o.modifiers)]
 
-            # 按链结构分组
+            # Group into chains
             chains = weight_utils.build_bone_chains(selected_names, arm_obj)
 
-            # 对每条链生成配对，末端无权重骨骼视为尾骨跳过
+            # Pair up bones per chain; a weightless tail bone at the chain end is skipped
             pairs = []
             for chain in chains:
                 if len(chain) < 2:
                     continue
                 effective = list(chain)
-                # 检测尾骨：链末尾骨骼无顶点权重则排除出配对（保留但不删除）
+                # Detect tail bone: exclude it from pairing (kept but not deleted) if it has no vertex weights
                 if not weight_utils.bone_has_weights(effective[-1], mesh_objects):
                     effective = effective[:-1]
                 for i in range(0, len(effective) - 1, 2):
                     pairs.append((effective[i], effective[i + 1]))
 
             if not pairs:
-                self.report({'WARNING'}, _("未生成任何配对（骨骼数不足或全为尾骨）"))
+                self.report({'WARNING'}, T("ui.main_panel.gt_warn_no_pairs"))
                 return {'CANCELLED'}
 
             bpy.ops.object.mode_set(mode='OBJECT')
             weight_utils.merge_weights_and_delete_bones(arm_obj, pairs)
-            self.report({'INFO'}, _("骨链简化完成: 处理 %d 对骨骼") % len(pairs))
+            self.report({'INFO'}, T("ui.main_panel.gt_info_chain_simplified").format(n=len(pairs)))
 
         elif self.action == 'MERGE_TO_ACTIVE':
             if context.mode != 'EDIT':
@@ -426,22 +460,22 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
 
             active = context.active_bone
             if not active:
-                self.report({'ERROR'}, _("请确保有激活骨骼（最后点击的那根为保留目标）"))
+                self.report({'ERROR'}, T("ui.main_panel.gt_err_need_active_bone"))
                 return {'CANCELLED'}
 
             others = [b for b in context.selected_editable_bones if b.name != active.name]
             if not others:
-                self.report({'ERROR'}, _("请至少选中两根骨骼（激活骨保留，其余骨并入）"))
+                self.report({'ERROR'}, T("ui.main_panel.gt_err_need_two_for_merge"))
                 return {'CANCELLED'}
 
             active_name = active.name
             pairs = [(active_name, b.name) for b in others]
             bpy.ops.object.mode_set(mode='OBJECT')
             weight_utils.merge_weights_and_delete_bones(arm_obj, pairs)
-            self.report({'INFO'}, _("已将 %d 根骨骼并入 [%s]") % (len(pairs), active_name))
+            self.report({'INFO'}, T("ui.main_panel.gt_info_merged_into").format(n=len(pairs), name=active_name))
 
         elif self.action == 'MERGE_CHAINS':
-            # 获取激活骨名和选中骨名（兼容 EDIT 和 POSE 模式）
+            # Get the active bone name and selected bone names (EDIT and POSE mode both supported)
             if context.mode == 'EDIT':
                 active = context.active_bone
                 selected_names = [b.name for b in context.selected_editable_bones]
@@ -454,13 +488,13 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
                 selected_names = [b.name for b in context.selected_editable_bones]
 
             if not active:
-                self.report({'ERROR'}, _("请确保有激活骨骼（最后点击的那根为保留目标）"))
+                self.report({'ERROR'}, T("ui.main_panel.gt_err_need_active_bone"))
                 return {'CANCELLED'}
 
             active_name = active.name
             selected_set = set(selected_names)
 
-            # 过滤出非激活的候选链首：去除祖先也在选中集合中的骨骼
+            # Filter out non-active candidate chain heads: skip bones whose ancestor is also selected
             if context.mode != 'EDIT':
                 bpy.ops.object.mode_set(mode='EDIT')
 
@@ -472,7 +506,7 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
                 bone = edit_bones.get(name)
                 if bone is None:
                     continue
-                # 向上遍历父骨，若父骨在选中集合中则跳过（非链首）
+                # Walk up the parent chain; skip if a parent is in the selected set (not a chain head)
                 is_descendant = False
                 parent = bone.parent
                 while parent:
@@ -484,10 +518,10 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
                     candidate_heads.append(name)
 
             if not candidate_heads:
-                self.report({'WARNING'}, _("未找到有效的待合并链首（请选中其他链的链首骨骼）"))
+                self.report({'WARNING'}, T("ui.main_panel.gt_warn_no_valid_chain_heads"))
                 return {'CANCELLED'}
 
-            # 构建激活链和各源链，生成配对列表
+            # Build the active chain and each source chain, generating the pair list
             active_chain = weight_utils.build_chain_from_head(active_name, arm_obj)
             pairs = []
             chain_count = 0
@@ -503,33 +537,34 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
 
             bpy.ops.object.mode_set(mode='OBJECT')
             weight_utils.merge_weights_and_delete_bones(arm_obj, pairs)
-            self.report({'INFO'}, _("已将 %d 条链合并到 [%s]，共处理 %d 对骨骼") % (chain_count, active_name, len(pairs)))
+            self.report({'INFO'}, T("ui.main_panel.gt_info_chains_merged").format(
+                chains=chain_count, name=active_name, pairs=len(pairs)))
 
         elif self.action in ('ALIGN_FULL', 'ALIGN_POS', 'ALIGN_POS_ROLL'):
             selected_arms = [o for o in context.selected_objects if o.type == 'ARMATURE']
             if len(selected_arms) != 2:
-                self.report({'ERROR'}, _("请选中两个骨架（激活的为目标，另一个为源）"))
+                self.report({'ERROR'}, T("ui.main_panel.gt_err_need_two_armatures"))
                 return {'CANCELLED'}
             target = arm_obj
             source = [o for o in selected_arms if o != target][0]
             if context.mode != 'OBJECT':
                 bpy.ops.object.mode_set(mode='OBJECT')
-            
+
             if self.action == 'ALIGN_FULL':
                 mode = 'FULL'
             elif self.action == 'ALIGN_POS_ROLL':
                 mode = 'POS_ROLL'
             else:
                 mode = 'POS_ONLY'
-                
+
             count = bone_utils.align_armatures_by_name(source, target, mode=mode)
-            
+
             label_map = {
-                'ALIGN_FULL': _("完全对齐"),
-                'ALIGN_POS': _("位置对齐"),
-                'ALIGN_POS_ROLL': _("对齐 (位置+扭转)")
+                'ALIGN_FULL': T("ui.main_panel.align_mode_full"),
+                'ALIGN_POS': T("ui.main_panel.gt_label_align_pos"),
+                'ALIGN_POS_ROLL': T("ui.main_panel.align_mode_pos_roll"),
             }
-            self.report({'INFO'}, _("%s: %d 根骨骼") % (label_map[self.action], count))
+            self.report({'INFO'}, T("ui.main_panel.gt_info_align_result").format(label=label_map[self.action], n=count))
 
         return {'FINISHED'}
 
@@ -545,9 +580,12 @@ class MHW_PT_MainPanel(bpy.types.Panel):
         layout = self.layout
         settings = context.scene.mhw_suite_settings
         arm_obj = context.active_object
-        
+
+        draw_language_toggle(layout)
+        layout.separator()
+
         # =========================================
-        # 1. 顶部开关区域
+        # 1. Top toggle row
         # =========================================
         row = layout.row(align=True)
         row.prop(settings, "show_mhwi", toggle=True, text="MHWI")
@@ -559,128 +597,128 @@ class MHW_PT_MainPanel(bpy.types.Panel):
         layout.separator()
 
         # =========================================
-        # 2. 通用基础工具
+        # 2. Basic tools
         # =========================================
         basic_box = layout.box()
         row = basic_box.row()
         row.prop(settings, "show_basic_tools",
                  icon="TRIA_DOWN" if settings.show_basic_tools else "TRIA_RIGHT",
                  icon_only=True, emboss=False)
-        row.label(text="基础工具", icon='TOOL_SETTINGS')
+        row.label(text=T("ui.main_panel.basic_tools_header"), icon='TOOL_SETTINGS')
 
         if settings.show_basic_tools:
             col = basic_box.column(align=True)
 
-            col.label(text="骨骼合并", icon='AUTOMERGE_ON')
-            col.operator("mhw.general_tools", text=_("骨链简化")).action = 'SIMPLIFY_CHAIN'
+            col.label(text=T("ui.main_panel.label_bone_merge"), icon='AUTOMERGE_ON')
+            col.operator("mhw.general_tools", text=T("ui.main_panel.gt_action_simplify_chain")).action = 'SIMPLIFY_CHAIN'
             row = col.row(align=True)
-            row.operator("mhw.general_tools", text=_("合并到激活骨")).action = 'MERGE_TO_ACTIVE'
-            row.operator("mhw.general_tools", text=_("合并链到激活链")).action = 'MERGE_CHAINS'
+            row.operator("mhw.general_tools", text=T("ui.main_panel.gt_action_merge_to_active")).action = 'MERGE_TO_ACTIVE'
+            row.operator("mhw.general_tools", text=T("ui.main_panel.gt_action_merge_chains")).action = 'MERGE_CHAINS'
 
             col.separator(factor=0.8)
-            col.label(text="骨骼处理", icon='BONE_DATA')
+            col.label(text=T("ui.main_panel.label_bone_processing"), icon='BONE_DATA')
             row = col.row(align=True)
-            row.operator("mhw.general_tools", text=_("扭转归零")).action = 'ROLL_ZERO'
-            row.operator("mhw.general_tools", text=_("镜像对齐 X")).action = 'MIRROR_X'
+            row.operator("mhw.general_tools", text=T("ui.main_panel.gt_action_roll_zero")).action = 'ROLL_ZERO'
+            row.operator("mhw.general_tools", text=T("ui.main_panel.gt_action_mirror_x")).action = 'MIRROR_X'
 
             col.separator(factor=0.8)
-            col.label(text="骨架对齐", icon='ORIENTATION_GIMBAL')
+            col.label(text=T("ui.main_panel.label_armature_align"), icon='ORIENTATION_GIMBAL')
             row = col.row(align=True)
-            row.operator("mhw.general_tools", text=_("位置")).action = 'ALIGN_POS'
-            row.operator("mhw.general_tools", text=_("位置+扭转")).action = 'ALIGN_POS_ROLL'
-            row.operator("mhw.general_tools", text=_("完全")).action = 'ALIGN_FULL'
+            row.operator("mhw.general_tools", text=T("ui.main_panel.gt_btn_align_pos")).action = 'ALIGN_POS'
+            row.operator("mhw.general_tools", text=T("ui.main_panel.align_mode_pos_roll")).action = 'ALIGN_POS_ROLL'
+            row.operator("mhw.general_tools", text=T("ui.main_panel.gt_btn_align_full")).action = 'ALIGN_FULL'
 
             col.separator(factor=0.8)
-            col.label(text="权重处理", icon='GROUP_VERTEX')
+            col.label(text=T("ui.main_panel.label_weight_processing"), icon='GROUP_VERTEX')
             row = col.row(align=True)
-            row.operator("mhw.sk_to_weights", text=_("形态键转权重"), icon='SHAPEKEY_DATA')
-            row.operator("mhw.merge_renamed_vgroups", text=_("合并重名顶点组"), icon='AUTOMERGE_ON')
+            row.operator("mhw.sk_to_weights", text=T("ui.main_panel.btn_sk_to_weights"), icon='SHAPEKEY_DATA')
+            row.operator("mhw.merge_renamed_vgroups", text=T("ui.main_panel.btn_merge_renamed_vgroups"), icon='AUTOMERGE_ON')
 
         layout.separator()
 
         # =========================================
-        # 3. 通用骨架转换系统
+        # 3. Universal skeleton conversion system
         # =========================================
         main_box = layout.box()
         row = main_box.row()
-        row.prop(settings, "show_std_converter", 
-                 icon="TRIA_DOWN" if settings.show_std_converter else "TRIA_RIGHT", 
+        row.prop(settings, "show_std_converter",
+                 icon="TRIA_DOWN" if settings.show_std_converter else "TRIA_RIGHT",
                  icon_only=True, emboss=False)
-        row.label(text="通用标准转换", icon='ARMATURE_DATA')
+        row.label(text=T("ui.main_panel.std_converter_header"), icon='ARMATURE_DATA')
 
         if settings.show_std_converter:
             col = main_box.column(align=True)
             row = col.row(align=True)
-            row.prop(settings, "import_preset_enum", icon='IMPORT')
+            row.prop(settings, "import_preset_enum", text=T("ui.main_panel.import_preset_label"), icon='IMPORT')
             op = row.operator("modder.auto_detect_preset", text="", icon='VIEWZOOM')
             op.attr_name = 'import_preset_enum'
             op.is_import_x = True
             row = col.row(align=True)
-            row.prop(settings, "target_preset_enum", icon='EXPORT')
+            row.prop(settings, "target_preset_enum", text=T("ui.main_panel.target_preset_label"), icon='EXPORT')
             op = row.operator("modder.auto_detect_preset", text="", icon='VIEWZOOM')
             op.attr_name = 'target_preset_enum'
             op.is_import_x = False
-            
+
             col.separator()
-            
-            # 核心功能（带预设依赖提示）
+
+            # Core actions (with preset-dependency hints)
             row = col.row(align=True)
             row.scale_y = 1.2
             row.prop(settings, "align_mode_override", text="")
-            row.operator("modder.universal_snap", text=_("对齐骨骼 [X+Y, 双骨架]"), icon='SNAP_ON')
-            
+            row.operator("modder.universal_snap", text=T("ui.main_panel.btn_universal_snap"), icon='SNAP_ON')
+
             row = col.row(align=True)
             row.scale_y = 1.2
-            row.operator("modder.direct_convert", text=_("重命名顶点组 [X+Y]"), icon='MOD_VERTEX_WEIGHT')
-            
-            # 实验性功能（折叠）
+            row.operator("modder.direct_convert", text=T("ui.main_panel.btn_direct_convert"), icon='MOD_VERTEX_WEIGHT')
+
+            # Experimental features (collapsible)
             col.separator()
             row = col.row()
             row.prop(settings, "show_experimental",
                      icon="TRIA_DOWN" if settings.show_experimental else "TRIA_RIGHT",
                      icon_only=True, emboss=False)
-            row.label(text="实验性功能", icon='ERROR')
-            
+            row.label(text=T("ui.main_panel.experimental_header"), icon='ERROR')
+
             if settings.show_experimental:
                 exp_col = col.column(align=True)
 
-                exp_col.label(text="骨架清理:", icon='TOOL_SETTINGS')
-                exp_col.operator("modder.merge_physics_weights", text=_("物理权重降级 [X]"), icon='TRASH')
-                exp_col.operator("modder.remove_non_base_bones", text=_("剔除非基础骨骼 [X]"), icon='X')
-                exp_col.operator("modder.rename_bones_to_target", text=_("基础骨骼改名 [X+Y]"), icon='SORTALPHA')
+                exp_col.label(text=T("ui.main_panel.label_skeleton_cleanup"), icon='TOOL_SETTINGS')
+                exp_col.operator("modder.merge_physics_weights", text=T("ui.main_panel.btn_merge_physics_weights"), icon='TRASH')
+                exp_col.operator("modder.remove_non_base_bones", text=T("ui.main_panel.btn_remove_non_base_bones"), icon='X')
+                exp_col.operator("modder.rename_bones_to_target", text=T("ui.main_panel.btn_rename_bones_to_target"), icon='SORTALPHA')
 
                 exp_col.separator()
-                exp_col.label(text="物理链工具:", icon='BONE_DATA')
-                exp_col.operator("modder.smart_graft", text=_("移植物理骨骼 [X+Y, 双骨架]"), icon='BONE_DATA')
+                exp_col.label(text=T("ui.main_panel.label_physics_chain_tools"), icon='BONE_DATA')
+                exp_col.operator("modder.smart_graft", text=T("ui.main_panel.btn_smart_graft"), icon='BONE_DATA')
                 row = exp_col.row(align=True)
-                row.operator("modder.merge_into_parent", text=_("合并到父骨"), icon='SNAP_MIDPOINT')
-                row.operator("mhw.general_tools", text=_("添加尾骨"), icon='RIGID_BODY').action = 'ADD_TAIL'
+                row.operator("modder.merge_into_parent", text=T("ui.main_panel.btn_merge_into_parent"), icon='SNAP_MIDPOINT')
+                row.operator("mhw.general_tools", text=T("ui.main_panel.gt_action_add_tail"), icon='RIGID_BODY').action = 'ADD_TAIL'
                 row = exp_col.row(align=True)
-                row.operator("modder.mark_as_main_continue", text=_("标记为主链延伸"), icon='HANDLE_ALIGNED')
-                row.operator("modder.clear_chain_role", text=_("清除标记"), icon='X')
-                exp_col.operator("modder.refresh_physics_bone_colors", text=_("刷新骨骼颜色"), icon='COLOR')
+                row.operator("modder.mark_as_main_continue", text=T("ui.main_panel.btn_mark_main_continue"), icon='HANDLE_ALIGNED')
+                row.operator("modder.clear_chain_role", text=T("ui.main_panel.btn_clear_chain_role"), icon='X')
+                exp_col.operator("modder.refresh_physics_bone_colors", text=T("ui.main_panel.btn_refresh_bone_colors"), icon='COLOR')
                 exp_col.separator()
                 row = exp_col.row(align=True)
-                row.label(text="骨骼显示 [X]:", icon='HIDE_OFF')
+                row.label(text=T("ui.main_panel.label_bone_visibility"), icon='HIDE_OFF')
                 row = exp_col.row(align=True)
-                row.operator("modder.set_bone_visibility", text=_("全显"),
+                row.operator("modder.set_bone_visibility", text=T("ui.main_panel.bone_view_all"),
                              depress=(settings.bone_view_mode == 'ALL')).mode = 'ALL'
-                row.operator("modder.set_bone_visibility", text=_("仅基础骨"),
+                row.operator("modder.set_bone_visibility", text=T("ui.main_panel.bone_view_base"),
                              depress=(settings.bone_view_mode == 'BASE')).mode = 'BASE'
-                row.operator("modder.set_bone_visibility", text=_("仅物理骨"),
+                row.operator("modder.set_bone_visibility", text=T("ui.main_panel.bone_view_physics"),
                              depress=(settings.bone_view_mode == 'PHYSICS')).mode = 'PHYSICS'
-            
-            # 映射详情预览
+
+            # Mapping detail preview
             col.separator()
             row = col.row()
-            row.prop(settings, "show_mapping_details", 
-                     icon='TRIA_DOWN' if settings.show_mapping_details else 'TRIA_RIGHT', 
+            row.prop(settings, "show_mapping_details", text=T("ui.main_panel.show_mapping_details_label"),
+                     icon='TRIA_DOWN' if settings.show_mapping_details else 'TRIA_RIGHT',
                      emboss=False)
-            
+
             if settings.show_mapping_details:
                 if arm_obj and arm_obj.type == 'ARMATURE':
                     if 'AUTO' in (settings.import_preset_enum, settings.target_preset_enum):
-                        col.label(text="映射详情预览需要选定具体预设（非自动识别）", icon='INFO')
+                        col.label(text=T("ui.main_panel.label_mapping_preview_need_preset"), icon='INFO')
                     else:
                         cache_key = (settings.import_preset_enum, settings.target_preset_enum)
                         if cache_key not in _mapping_detail_cache:
@@ -715,118 +753,120 @@ class MHW_PT_MainPanel(bpy.types.Panel):
                                         if aux_list: status += f" (+{len(aux_list)})"
                                         m_row.label(text=status, icon='CHECKMARK')
                                     else:
-                                        m_row.label(text="缺失", icon='CANCEL')
+                                        m_row.label(text=T("ui.main_panel.label_missing"), icon='CANCEL')
                 else:
-                    col.label(text="请选中骨架以预览", icon='INFO')
+                    col.label(text=T("ui.main_panel.label_select_armature_preview"), icon='INFO')
 
         layout.separator()
 
         # =========================================
-        # 4. 姿态转换 (独立区块)
+        # 4. Pose convert (standalone section)
         # =========================================
         pose_box = layout.box()
         row = pose_box.row()
         row.prop(settings, "show_pose_convert",
                  icon="TRIA_DOWN" if settings.show_pose_convert else "TRIA_RIGHT",
                  icon_only=True, emboss=False)
-        row.label(text="姿态转换 (Pose Convert)", icon='OUTLINER_OB_ARMATURE')
-        
+        row.label(text=T("ui.main_panel.pose_convert_header"), icon='OUTLINER_OB_ARMATURE')
+
         if settings.show_pose_convert:
             col = pose_box.column(align=True)
-            
+
             row = col.row(align=True)
-            row.prop(settings, "pose_import_preset_enum", text="骨架预设", icon='IMPORT')
+            row.prop(settings, "pose_import_preset_enum", text=T("ui.main_panel.pose_preset_field_label"), icon='IMPORT')
             op = row.operator("modder.auto_detect_preset", text="", icon='VIEWZOOM')
             op.attr_name = 'pose_import_preset_enum'
             op.is_import_x = True
-            
+
             col.separator()
-            col.label(text="简易工具:")
+            col.label(text=T("ui.main_panel.label_simple_tools"))
             col.operator("modder.tpose_direction", icon='EMPTY_SINGLE_ARROW')
-            col.operator("modder.tpose_matrix_zero", text=_("RE Engine 矩阵归零 (生化9除外)"), icon='MESH_GRID')
-            
+            col.operator("modder.tpose_matrix_zero", text=T("ui.main_panel.btn_tpose_matrix_zero"), icon='MESH_GRID')
+
             col.separator()
-            col.label(text="姿态变换记录器:")
-            
+            col.label(text=T("ui.main_panel.label_pose_recorder"))
+
             row = col.row(align=True)
             row.prop(settings, "pose_preset_enum", text="")
             row.operator("modder.delete_pose_preset", text="", icon='TRASH')
-            
-            col.operator("modder.record_transform", text=_("录制变换 (选两个骨架)"), icon='REC')
+
+            col.operator("modder.record_transform", text=T("ui.main_panel.btn_record_transform"), icon='REC')
 
             row = col.row(align=True)
             row.scale_y = 1.3
-            row.operator("modder.apply_transform_forward", text=_("▶ 正向 (A→B)"), icon='PLAY')
-            row.operator("modder.apply_transform_inverse", text=_("◀ 逆向 (B→A)"), icon='LOOP_BACK')
+            row.operator("modder.apply_transform_forward", text=T("ui.main_panel.btn_apply_forward"), icon='PLAY')
+            row.operator("modder.apply_transform_inverse", text=T("ui.main_panel.btn_apply_inverse"), icon='LOOP_BACK')
 
         layout.separator()
 
         # =========================================
-        # 5. 游戏专用工具栏
+        # 5. Game-specific toolbars
         # =========================================
         
         if settings.show_mhwi:
             box = layout.box()
             box.label(text="MHWI Tools", icon='ARMATURE_DATA')
+            box.operator("mt.tex_convert_dialog", text=T("ui.main_panel.btn_tex_process"), icon='TEXTURE').game = 'MHWI'
             col = box.column(align=True)
-            col.operator("mhwi.align_non_physics", text=_("对齐非物理骨骼"), icon='BONE_DATA')
+            col.operator("mhwi.align_non_physics", text=T("ui.main_panel.btn_align_non_physics"), icon='BONE_DATA')
 
             col.separator()
-            col.label(text=_("规范化:"), icon='BONE_DATA')
-            col.operator("mhwi.split_physics_bones", text=_("拆分物理骨"), icon='BONE_DATA')
-            col.operator("mhwi.batch_rename_physics_bones", text=_("一键重命名"), icon='SORTALPHA')
+            col.label(text=T("ui.main_panel.label_normalize"), icon='BONE_DATA')
+            col.operator("mhwi.split_physics_bones", text=T("ui.main_panel.btn_split_physics_bones"), icon='BONE_DATA')
+            col.operator("mhwi.batch_rename_physics_bones", text=T("ui.main_panel.btn_batch_rename_physics"), icon='SORTALPHA')
 
             col.separator()
             has_mhw_model = hasattr(bpy.ops, 'mhw_mod3') and hasattr(bpy.ops.mhw_mod3, 'export_mhw_mod3')
             sub = col.row(align=True)
             sub.enabled = has_mhw_model
-            sub.operator("mhwi.mrl3_tex_processor_dialog", text=_("MRL3 处理器"), icon='TEXTURE')
-            sub.operator("mhwi.mrl3_generator_dialog",     text=_("MRL3 生成器"), icon='SHADERFX')
+            sub.operator("mhwi.mrl3_tex_processor_dialog", text=T("ui.main_panel.btn_mrl3_tex_processor"), icon='TEXTURE')
+            sub.operator("mhwi.mrl3_generator_dialog",     text=T("ui.main_panel.btn_mrl3_generator"), icon='SHADERFX')
 
             col.separator()
             has_mhw_ctc = hasattr(bpy.ops, 'mhw_ctc') and hasattr(bpy.ops.mhw_ctc, 'create_chain_from_bone')
             row = col.row()
             row.enabled = has_mhw_ctc
-            row.operator("mhwi.auto_create_chains", text=_("一键创建 Chain"), icon='LINKED')
+            row.operator("mhwi.auto_create_chains", text=T("ui.main_panel.btn_create_chain"), icon='LINKED')
             if not has_mhw_ctc:
-                col.label(text="需要 MHW Model Editor!", icon='ERROR')
+                col.label(text=T("ui.main_panel.label_need_mhw_model_editor"), icon='ERROR')
 
             col.separator()
-            col.operator("mhw.mmd_face_weights", text=_("MMD 形态键转表情权重"), icon='SHAPEKEY_DATA').target_game = 'MHWI'
+            col.operator("mhw.mmd_face_weights", text=T("ui.main_panel.btn_mmd_face_weights"), icon='SHAPEKEY_DATA').target_game = 'MHWI'
 
             col.separator()
             row = col.row()
             row.enabled = has_mhw_model
-            row.operator("mhwi.batch_export_dialog", text=_("批量导出"), icon='EXPORT')
+            row.operator("mhwi.batch_export_dialog", text=T("ui.main_panel.btn_batch_export"), icon='EXPORT')
             row = col.row()
             row.enabled = has_mhw_model
-            row.operator("mhwi.batch_import_dialog", text=_("批量导入"), icon='IMPORT')
+            row.operator("mhwi.batch_import_dialog", text=T("ui.main_panel.btn_batch_import"), icon='IMPORT')
 
         if settings.show_mhws:
             box = layout.box()
             box.label(text="MHWS Tools", icon='WORLD')
+            box.operator("mt.tex_convert_dialog", text=T("ui.main_panel.btn_tex_process"), icon='TEXTURE').game = 'MHWS'
             col = box.column(align=True)
 
-            # 一键模型预处理
-            col.operator("mhws.preprocess_model", text=_("一键导入并对齐荒野模型"), icon='ARMATURE_DATA')
+            # One-click model preprocessing
+            col.operator("mhws.preprocess_model", text=T("ui.main_panel.btn_mhws_preprocess"), icon='ARMATURE_DATA')
 
-            col.operator("mhws.optimize_skeleton", text=_("优化荒野骨架"), icon='MOD_ARMATURE')
-            col.operator("mhws.optimize_aux_bones", text=_("优化辅助骨骼及权重"), icon='GROUP_VERTEX')
-            col.operator("mhw.mmd_face_weights", text=_("MMD 形态键转表情权重"), icon='SHAPEKEY_DATA').target_game = 'MHWS'
-            col.operator("mhws.add_facial_bones", text=_("一键添加表情骨"), icon='SHAPEKEY_DATA')
+            col.operator("mhws.optimize_skeleton", text=T("ui.main_panel.btn_mhws_optimize_skeleton"), icon='MOD_ARMATURE')
+            col.operator("mhws.optimize_aux_bones", text=T("ui.main_panel.btn_mhws_optimize_aux"), icon='GROUP_VERTEX')
+            col.operator("mhw.mmd_face_weights", text=T("ui.main_panel.btn_mmd_face_weights"), icon='SHAPEKEY_DATA').target_game = 'MHWS'
+            col.operator("mhws.add_facial_bones", text=T("ui.main_panel.btn_add_facial_bones"), icon='SHAPEKEY_DATA')
 
             col.separator()
             sub = col.row(align=True)
-            sub.operator("mhws.mdf_tex_processor_dialog", text=_("MDF2 处理器"), icon='TEXTURE')
-            sub.operator("mhws.mdf_generator_dialog",     text=_("MDF2 生成器"), icon='SHADERFX')
+            sub.operator("mhws.mdf_tex_processor_dialog", text=T("ui.main_panel.btn_mdf_tex_processor"), icon='TEXTURE')
+            sub.operator("mhws.mdf_generator_dialog",     text=T("ui.main_panel.btn_mdf_generator"), icon='SHADERFX')
 
             col.separator()
             has_re_chain = hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
             row = col.row()
             row.enabled = has_re_chain
-            row.operator("mhws.auto_create_chains", text=_("一键创建 RE Chain"), icon='LINKED')
+            row.operator("mhws.auto_create_chains", text=T("ui.main_panel.btn_create_re_chain"), icon='LINKED')
             if not has_re_chain:
-                col.label(text="需要 RE Chain Editor!", icon='ERROR')
+                col.label(text=T("ui.main_panel.label_need_re_chain_editor"), icon='ERROR')
 
             col.separator()
             has_re_mesh = re_mesh_op_available('exportfile')
@@ -837,33 +877,34 @@ class MHW_PT_MainPanel(bpy.types.Panel):
         if settings.show_re4:
             box = layout.box()
             box.label(text="RE4 Tools", icon='GHOST_ENABLED')
+            box.operator("mt.tex_convert_dialog", text=T("ui.main_panel.btn_tex_process"), icon='TEXTURE').game = 'RE4'
 
             box_fake = box.box()
-            box_fake.label(text="假头法 (FakeBone)", icon='BONE_DATA')
+            box_fake.label(text=T("ui.main_panel.label_fakebone_section"), icon='BONE_DATA')
             has_re_fbxskel = hasattr(bpy.ops, 're_fbxskel') and hasattr(bpy.ops.re_fbxskel, 'exportfile')
             row_fb = box_fake.row()
             row_fb.enabled = has_re_fbxskel
-            row_fb.operator("re4.fakebone_one_click", text=_("生成假骨骼"), icon='ARMATURE_DATA')
+            row_fb.operator("re4.fakebone_one_click", text=T("ui.main_panel.btn_gen_fakebone"), icon='ARMATURE_DATA')
             if not has_re_fbxskel:
-                box_fake.label(text="需要 RE Mesh Editor!", icon='ERROR')
+                box_fake.label(text=T("ui.main_panel.label_need_re_mesh_editor"), icon='ERROR')
 
             col = box.column(align=True)
             col.separator()
             sub = col.row(align=True)
-            sub.operator("re4.mdf_tex_processor_dialog", text=_("MDF2 处理器"), icon='TEXTURE')
-            sub.operator("re4.mdf_generator_dialog",     text=_("MDF2 生成器"), icon='SHADERFX')
+            sub.operator("re4.mdf_tex_processor_dialog", text=T("ui.main_panel.btn_mdf_tex_processor"), icon='TEXTURE')
+            sub.operator("re4.mdf_generator_dialog",     text=T("ui.main_panel.btn_mdf_generator"), icon='SHADERFX')
 
             col.separator()
             has_re_chain = hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
             row = col.row()
             row.enabled = has_re_chain
-            row.operator("re4.auto_create_chains", text=_("一键创建 RE Chain"), icon='LINKED')
+            row.operator("re4.auto_create_chains", text=T("ui.main_panel.btn_create_re_chain"), icon='LINKED')
             if not has_re_chain:
-                col.label(text="需要 RE Chain Editor!", icon='ERROR')
+                col.label(text=T("ui.main_panel.label_need_re_chain_editor"), icon='ERROR')
 
             col.separator()
-            col.operator("mhw.mmd_face_weights", text=_("MMD 形态键转表情权重"), icon='SHAPEKEY_DATA').target_game = 'RE4'
-            col.operator("re4.add_facial_bones", text=_("一键添加表情骨"), icon='SHAPEKEY_DATA')
+            col.operator("mhw.mmd_face_weights", text=T("ui.main_panel.btn_mmd_face_weights"), icon='SHAPEKEY_DATA').target_game = 'RE4'
+            col.operator("re4.add_facial_bones", text=T("ui.main_panel.btn_add_facial_bones"), icon='SHAPEKEY_DATA')
 
             col.separator()
             has_re_mesh = re_mesh_op_available('exportfile')
@@ -874,19 +915,20 @@ class MHW_PT_MainPanel(bpy.types.Panel):
         if settings.show_mhrs:
             box = layout.box()
             box.label(text="MHRS Tools", icon='GHOST_ENABLED')
+            box.operator("mt.tex_convert_dialog", text=T("ui.main_panel.btn_tex_process"), icon='TEXTURE').game = 'MHRS'
             col = box.column(align=True)
 
             sub = col.row(align=True)
-            sub.operator("mhrs.mdf_tex_processor_dialog", text=_("MDF2 处理器"), icon='TEXTURE')
-            sub.operator("mhrs.mdf_generator_dialog",     text=_("MDF2 生成器"), icon='SHADERFX')
+            sub.operator("mhrs.mdf_tex_processor_dialog", text=T("ui.main_panel.btn_mdf_tex_processor"), icon='TEXTURE')
+            sub.operator("mhrs.mdf_generator_dialog",     text=T("ui.main_panel.btn_mdf_generator"), icon='SHADERFX')
 
             col.separator()
             has_re_chain = hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
             row = col.row()
             row.enabled = has_re_chain
-            row.operator("mhrs.auto_create_chains", text=_("一键创建 RE Chain"), icon='LINKED')
+            row.operator("mhrs.auto_create_chains", text=T("ui.main_panel.btn_create_re_chain"), icon='LINKED')
             if not has_re_chain:
-                col.label(text="需要 RE Chain Editor!", icon='ERROR')
+                col.label(text=T("ui.main_panel.label_need_re_chain_editor"), icon='ERROR')
 
             col.separator()
             has_re_mesh = re_mesh_op_available('exportfile')
@@ -897,34 +939,36 @@ class MHW_PT_MainPanel(bpy.types.Panel):
         if settings.show_re9:
             box = layout.box()
             box.label(text="RE9 Tools", icon='GHOST_ENABLED')
+            box.operator("mt.tex_convert_dialog", text=T("ui.main_panel.btn_tex_process"), icon='TEXTURE').game = 'RE9'
             col = box.column(align=True)
-            col.operator("re9.sync_child_orientation", text=_("同步子级朝向及扭转"), icon='CON_ROTLIKE')
+            col.operator("re9.sync_child_orientation", text=T("ui.main_panel.btn_sync_child_orientation"), icon='CON_ROTLIKE')
 
             col.separator()
             sub = col.row(align=True)
-            sub.operator("re9.mdf_tex_processor_dialog", text=_("MDF2 处理器"), icon='TEXTURE')
-            sub.operator("re9.mdf_generator_dialog",     text=_("MDF2 生成器"), icon='SHADERFX')
+            sub.operator("re9.mdf_tex_processor_dialog", text=T("ui.main_panel.btn_mdf_tex_processor"), icon='TEXTURE')
+            sub.operator("re9.mdf_generator_dialog",     text=T("ui.main_panel.btn_mdf_generator"), icon='SHADERFX')
 
             col.separator()
             has_re_chain = hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
             row = col.row()
             row.enabled = has_re_chain
-            row.operator("re9.auto_create_chains", text=_("一键创建 RE Chain"), icon='LINKED')
+            row.operator("re9.auto_create_chains", text=T("ui.main_panel.btn_create_re_chain"), icon='LINKED')
             if not has_re_chain:
-                col.label(text="需要 RE Chain Editor!", icon='ERROR')
+                col.label(text=T("ui.main_panel.label_need_re_chain_editor"), icon='ERROR')
 
             col.separator()
-            col.operator("mhw.mmd_face_weights", text=_("MMD 形态键转表情权重"), icon='SHAPEKEY_DATA').target_game = 'RE9'
-            col.operator("re9.add_facial_bones", text=_("一键添加表情骨"), icon='SHAPEKEY_DATA')
+            col.operator("mhw.mmd_face_weights", text=T("ui.main_panel.btn_mmd_face_weights"), icon='SHAPEKEY_DATA').target_game = 'RE9'
+            col.operator("re9.add_facial_bones", text=T("ui.main_panel.btn_add_facial_bones"), icon='SHAPEKEY_DATA')
 
             col.separator()
             has_re_mesh = re_mesh_op_available('exportfile')
             row = col.row()
             row.enabled = has_re_mesh
             row.operator("re9.batch_export_dialog", text="RE9 Batch Exporter", icon='EXPORT')
-# Blender 动态枚举的已知限制：回调返回的列表若为局部变量，Python GC 会回收其中的
-# 字符串，C 层继续持有悬空指针，导致非 ASCII 字符（中/日文等）显示乱码。
-# 解决方法：将列表保存到模块级变量，阻止 GC 回收。
+# Known Blender dynamic-enum limitation: if the list returned by an items=
+# callback is a local variable, Python's GC can free the strings while the C
+# side still holds a pointer to them, corrupting non-ASCII (CJK, etc.) text.
+# Fix: stash the list in a module-level variable so GC can't collect it.
 _sk_enum_cache: list = []
 
 
@@ -943,57 +987,64 @@ def _sk_enum_items(self, context):
     return _sk_enum_cache
 
 
+def _sk_filter_sign_items(self, context):
+    return [
+        ('+', T("ui.main_panel.sk_sign_pos"), ""),
+        ('-', T("ui.main_panel.sk_sign_neg"), ""),
+    ]
+
+
 class MHW_OT_ShapeKeyToWeights(bpy.types.Operator):
     # Method inspired by: 光之影V, 幽玲乃昕
     """Convert a shape key to a vertex group (normalized weights + Laplacian smoothing + seam sync)"""
     bl_idname = "mhw.sk_to_weights"
-    bl_label = "形态键转权重"
+    bl_label = "Shape Key to Weights"
     bl_options = {'REGISTER', 'UNDO'}
 
     shape_key_enum: bpy.props.EnumProperty(
-        name="形态键",
+        name="Shape Key",
         items=_sk_enum_items,
         description="Shape key to convert (Basis is excluded)",
     )
     ignore_threshold: bpy.props.FloatProperty(
-        name="忽略阈值",
+        name="Ignore Threshold",
         default=0.001, min=0.0,
         description="Vertices with displacement smaller than this are ignored",
     )
     weight_strength: bpy.props.FloatProperty(
-        name="权重强度",
+        name="Weight Strength",
         default=1.0, min=0.1, max=5.0,
         description="Multiplier applied after normalization",
     )
     smooth_factor: bpy.props.FloatProperty(
-        name="平滑扩散率",
+        name="Smooth Factor",
         default=0.5, min=0.0, max=1.0,
         description="How much weight diffuses to neighbors each Laplacian pass",
     )
     smooth_iters: bpy.props.IntProperty(
-        name="平滑迭代次数",
+        name="Smooth Iterations",
         default=10, min=0, max=100,
         description="Number of Laplacian smoothing passes",
     )
     sync_seams: bpy.props.BoolProperty(
-        name="缝合重合顶点",
+        name="Sync Seam Vertices",
         default=True,
         description="Force identical weights on spatially coincident vertices to prevent UV seam tearing",
     )
     use_direction_filter: bpy.props.BoolProperty(
-        name="方向过滤",
+        name="Direction Filter",
         default=False,
         description="Only include vertices whose displacement projects positively onto the chosen axis",
     )
     filter_axis: bpy.props.EnumProperty(
-        name="轴",
+        name="Axis",
         items=[('X', "X", ""), ('Y', "Y", ""), ('Z', "Z", "")],
         default='Z',
     )
     filter_sign: bpy.props.EnumProperty(
-        name="方向",
-        items=[('+', "+（正向）", ""), ('-', "-（负向）", "")],
-        default='+',
+        name="Direction",
+        items=_sk_filter_sign_items,
+        default=0,
     )
 
     @classmethod
@@ -1013,15 +1064,15 @@ class MHW_OT_ShapeKeyToWeights(bpy.types.Operator):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
-        col.prop(self, "shape_key_enum", text="形态键")
+        col.prop(self, "shape_key_enum", text=T("ui.main_panel.sk_field_shape_key"))
         col.separator()
-        col.prop(self, "ignore_threshold")
-        col.prop(self, "weight_strength", slider=True)
-        col.prop(self, "smooth_factor", slider=True)
-        col.prop(self, "smooth_iters")
-        col.prop(self, "sync_seams")
+        col.prop(self, "ignore_threshold", text=T("ui.main_panel.sk_field_ignore_threshold"))
+        col.prop(self, "weight_strength", text=T("ui.main_panel.sk_field_weight_strength"), slider=True)
+        col.prop(self, "smooth_factor", text=T("ui.main_panel.sk_field_smooth_factor"), slider=True)
+        col.prop(self, "smooth_iters", text=T("ui.main_panel.sk_field_smooth_iters"))
+        col.prop(self, "sync_seams", text=T("ui.main_panel.sk_field_sync_seams"))
         col.separator()
-        col.prop(self, "use_direction_filter")
+        col.prop(self, "use_direction_filter", text=T("ui.main_panel.sk_field_direction_filter"))
         if self.use_direction_filter:
             row = col.row(align=True)
             row.prop(self, "filter_axis", expand=True)
@@ -1034,7 +1085,7 @@ class MHW_OT_ShapeKeyToWeights(bpy.types.Operator):
         idx = int(self.shape_key_enum)
 
         if idx <= 0 or idx >= len(key_blocks):
-            self.report({'ERROR'}, "请选择一个非 Basis 的形态键")
+            self.report({'ERROR'}, T("ui.main_panel.sk_err_select_non_basis"))
             return {'CANCELLED'}
 
         active_kb = key_blocks[idx]
@@ -1059,29 +1110,45 @@ class MHW_OT_ShapeKeyToWeights(bpy.types.Operator):
         )
 
         if result is None:
-            self.report({'WARNING'}, f"形态键 '{active_kb.name}' 未检测到有效形变，请调低忽略阈值")
+            self.report({'WARNING'}, T("ui.main_panel.sk_warn_no_deformation").format(name=active_kb.name))
             return {'CANCELLED'}
 
-        self.report({'INFO'}, f"已生成顶点组 '{active_kb.name}'（{result} 个有效顶点）")
+        self.report({'INFO'}, T("ui.main_panel.sk_info_generated").format(name=active_kb.name, n=result))
         return {'FINISHED'}
 
 
-# (shape_key_name, direction_xyz, part_label, mhwi_vg, mhws_vg, re4_vg, re9_vg)
+# (shape_key_name, direction_xyz, part_id, mhwi_vg, mhws_vg, re4_vg, re9_vg)
+# part_id is an internal English identifier (translated for display via
+# _MMD_FACE_PART_KEYS below); it used to be the raw Chinese label itself.
 _MMD_FACE_ENTRIES = [
-    ("ウィンク２",  ( 0,  0, -1), "左眼上眼皮", "MhBone_321", "L_UpEyeLid_LOD01",    "L_U_Eyelid03",  "L_UprLdEdge_02"),
-    ("ウィンク２",  ( 0,  0,  1), "左眼下眼皮", "MhBone_325", "L_LoEyeLid_LOD01",    "L_D_Eyelid03",  "L_LwrLdEdge_02"),
-    ("ｳｨﾝｸ２右",  ( 0,  0, -1), "右眼上眼皮", "MhBone_334", "R_UpEyeLid_LOD01",    "R_U_Eyelid03",  "R_UprLdEdge_02"),
-    ("ｳｨﾝｸ２右",  ( 0,  0,  1), "右眼下眼皮", "MhBone_338", "R_LoEyeLid_LOD01",    "R_D_Eyelid03",  "R_LwrLdEdge_02"),
-    ("あ",          ( 0,  0,  1), "上嘴唇",     "MhBone_381", "C_upLip_T_LOD01",     "C_UpperLip",    "C_UprLp_02"),
-    ("あ",          ( 0,  0, -1), "下嘴唇",     "MhBone_388", "C_loLip_T_LOD01",     "C_LowerLip",    "C_LwrLp_02"),
-    ("あ",          ( 1,  0,  0), "左嘴角",     "MhBone_384", "L_cornerLip_B_LOD01", "L_MouthCorner", "L_LipCorner_02"),
-    ("あ",          (-1,  0,  0), "右嘴角",     "MhBone_385", "R_cornerLip_B_LOD01", "R_MouthCorner", "R_LipCorner_02"),
+    ("ウィンク２",  ( 0,  0, -1), "l_upper_eyelid", "MhBone_321", "L_UpEyeLid_LOD01",    "L_U_Eyelid03",  "L_UprLdEdge_02"),
+    ("ウィンク２",  ( 0,  0,  1), "l_lower_eyelid", "MhBone_325", "L_LoEyeLid_LOD01",    "L_D_Eyelid03",  "L_LwrLdEdge_02"),
+    ("ｳｨﾝｸ２右",  ( 0,  0, -1), "r_upper_eyelid", "MhBone_334", "R_UpEyeLid_LOD01",    "R_U_Eyelid03",  "R_UprLdEdge_02"),
+    ("ｳｨﾝｸ２右",  ( 0,  0,  1), "r_lower_eyelid", "MhBone_338", "R_LoEyeLid_LOD01",    "R_D_Eyelid03",  "R_LwrLdEdge_02"),
+    ("あ",          ( 0,  0,  1), "upper_lip",      "MhBone_381", "C_upLip_T_LOD01",     "C_UpperLip",    "C_UprLp_02"),
+    ("あ",          ( 0,  0, -1), "lower_lip",      "MhBone_388", "C_loLip_T_LOD01",     "C_LowerLip",    "C_LwrLp_02"),
+    ("あ",          ( 1,  0,  0), "l_mouth_corner", "MhBone_384", "L_cornerLip_B_LOD01", "L_MouthCorner", "L_LipCorner_02"),
+    ("あ",          (-1,  0,  0), "r_mouth_corner", "MhBone_385", "R_cornerLip_B_LOD01", "R_MouthCorner", "R_LipCorner_02"),
 ]
 _MMD_FACE_GAME_COL = {'MHWI': 3, 'MHWS': 4, 'RE4': 5, 'RE9': 6}
 
-# 不允许自定义忽略阈值/权重强度/平滑扩散率/平滑迭代次数，改为按部位使用固定值；
-# 上眼皮单独调高形变捕捉精度 (阈值0、扩散率0，避免眨眼权重被过度平滑)
-_MMD_FACE_UPPER_EYELID_LABELS = {"左眼上眼皮", "右眼上眼皮"}
+# T() keys for each part_id's display label (used in the done/skipped report message)
+_MMD_FACE_PART_KEYS = {
+    "l_upper_eyelid": "ui.main_panel.mmd_part_l_upper_eyelid",
+    "l_lower_eyelid": "ui.main_panel.mmd_part_l_lower_eyelid",
+    "r_upper_eyelid": "ui.main_panel.mmd_part_r_upper_eyelid",
+    "r_lower_eyelid": "ui.main_panel.mmd_part_r_lower_eyelid",
+    "upper_lip":      "ui.main_panel.mmd_part_upper_lip",
+    "lower_lip":      "ui.main_panel.mmd_part_lower_lip",
+    "l_mouth_corner": "ui.main_panel.mmd_part_l_mouth_corner",
+    "r_mouth_corner": "ui.main_panel.mmd_part_r_mouth_corner",
+}
+
+# Custom ignore-threshold/weight-strength/smooth-factor/smooth-iterations are
+# not user-configurable here; fixed per-part values are used instead.
+# Upper eyelids get a higher deformation-capture precision (threshold 0,
+# smooth factor 0) to avoid blink weights being over-smoothed.
+_MMD_FACE_UPPER_EYELID_LABELS = {"l_upper_eyelid", "r_upper_eyelid"}
 _MMD_FACE_FIXED_PARAMS = {
     True:  dict(ignore_threshold=0.0,   weight_strength=1.0, smooth_factor=0.0, smooth_iters=10),
     False: dict(ignore_threshold=0.001, weight_strength=1.0, smooth_factor=0.5, smooth_iters=10),
@@ -1089,13 +1156,13 @@ _MMD_FACE_FIXED_PARAMS = {
 
 
 class MHW_OT_MMDFaceWeights(bpy.types.Operator):
-    """将 MMD 眼皮/嘴型形态键按方向拆分为目标游戏表情顶点组"""
+    """Split MMD eyelid/mouth shape keys by direction into target-game facial vertex groups"""
     bl_idname = "mhw.mmd_face_weights"
-    bl_label = "MMD 形态键转表情权重"
+    bl_label = "MMD Face Weights"
     bl_options = {'REGISTER', 'UNDO'}
 
     target_game: bpy.props.EnumProperty(
-        name="目标游戏",
+        name="Target Game",
         items=[
             ('MHWI', "MHWI", ""),
             ('MHWS', "MHWS", ""),
@@ -1104,9 +1171,13 @@ class MHW_OT_MMDFaceWeights(bpy.types.Operator):
         ],
     )
     sync_seams: bpy.props.BoolProperty(
-        name="缝合重合顶点",
+        name="Sync Seam Vertices",
         default=True,
     )
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("ui.main_panel.mmd_face_weights_tip")
 
     @classmethod
     def poll(cls, context):
@@ -1121,9 +1192,9 @@ class MHW_OT_MMDFaceWeights(bpy.types.Operator):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
-        col.prop(self, "target_game")
+        col.prop(self, "target_game", text=T("ui.main_panel.mmd_target_game_label"))
         col.separator()
-        col.prop(self, "sync_seams")
+        col.prop(self, "sync_seams", text=T("ui.main_panel.mmd_sync_seams_label"))
 
     def execute(self, context):
         obj = context.active_object
@@ -1135,13 +1206,13 @@ class MHW_OT_MMDFaceWeights(bpy.types.Operator):
         vg_col = _MMD_FACE_GAME_COL[self.target_game]
 
         done, skipped = [], []
-        for sk_name, direction, part_label, *vg_names in _MMD_FACE_ENTRIES:
+        for sk_name, direction, part_id, *vg_names in _MMD_FACE_ENTRIES:
             kb = key_blocks.get(sk_name)
             if kb is None:
-                skipped.append(part_label)
+                skipped.append(part_id)
                 continue
             target_vg = vg_names[vg_col - 3]
-            params = _MMD_FACE_FIXED_PARAMS[part_label in _MMD_FACE_UPPER_EYELID_LABELS]
+            params = _MMD_FACE_FIXED_PARAMS[part_id in _MMD_FACE_UPPER_EYELID_LABELS]
 
             result = weight_utils.shape_key_to_weights(
                 obj, kb, basis_kb,
@@ -1151,17 +1222,20 @@ class MHW_OT_MMDFaceWeights(bpy.types.Operator):
                 **params,
             )
             if result is None:
-                skipped.append(part_label)
+                skipped.append(part_id)
             else:
-                done.append(part_label)
+                done.append(part_id)
 
         if not done:
-            self.report({'WARNING'}, "未找到任何有效形态键，请检查 MMD 形态键名称")
+            self.report({'WARNING'}, T("ui.main_panel.mmd_warn_no_valid_shapekeys"))
             return {'CANCELLED'}
 
-        msg = f"已生成 {len(done)} 个表情顶点组：{'、'.join(done)}"
+        join_sep = "、" if get_lang() == 'ZH' else ", "
+        done_labels = [T(_MMD_FACE_PART_KEYS[p]) for p in done]
+        msg = T("ui.main_panel.mmd_info_generated").format(n=len(done), parts=join_sep.join(done_labels))
         if skipped:
-            msg += f"；跳过：{'、'.join(skipped)}"
+            skipped_labels = [T(_MMD_FACE_PART_KEYS[p]) for p in skipped]
+            msg += T("ui.main_panel.mmd_info_skipped_suffix").format(parts=join_sep.join(skipped_labels))
         self.report({'INFO'}, msg)
         return {'FINISHED'}
 
@@ -1173,7 +1247,7 @@ class MHW_OT_MergeRenamedVGroups(bpy.types.Operator):
     """Merge vertex groups named 'a.001', 'a.002', etc. into 'a' for all selected meshes.
 Groups whose suffixed name matches a real bone in the bound armature are skipped."""
     bl_idname = "mhw.merge_renamed_vgroups"
-    bl_label = "合并重名顶点组"
+    bl_label = "Merge Renamed Vertex Groups"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -1210,13 +1284,13 @@ Groups whose suffixed name matches a real bone in the bound armature are skipped
 
         self.report(
             {'INFO'},
-            f"合并完成: {total_merged} 个顶点组已合并，{total_skipped} 个已跳过（对应真实骨骼）"
+            T("ui.main_panel.merge_vg_done").format(merged=total_merged, skipped=total_skipped)
         )
         return {'FINISHED'}
 
 
 # ==========================================
-# 注册/注销
+# register / unregister
 # ==========================================
 classes = [
     MHW_PT_SuiteSettings,
@@ -1230,18 +1304,22 @@ classes = [
 
 
 class MODDER_OT_AutoDetectPreset(bpy.types.Operator):
-    """检测当前选中骨架的骨骼覆盖率，自动匹配最合适的预设"""
+    """Detect the selected armature's bone coverage and auto-match the best-fitting preset"""
     bl_idname = "modder.auto_detect_preset"
-    bl_label = "识别预设"
+    bl_label = "Detect Preset"
     bl_options = {'REGISTER', 'UNDO'}
 
     attr_name: bpy.props.StringProperty()
     is_import_x: bpy.props.BoolProperty(default=True)
 
+    @classmethod
+    def description(cls, context, properties):
+        return T("ui.main_panel.auto_detect_preset_tip")
+
     def execute(self, context):
         arm = context.active_object
         if not arm or arm.type != 'ARMATURE':
-            self.report({'WARNING'}, "请先选中骨架")
+            self.report({'WARNING'}, T("ui.main_panel.err_select_armature_first"))
             return {'CANCELLED'}
 
         from ..core.bone_mapper import auto_detect_preset
@@ -1250,9 +1328,9 @@ class MODDER_OT_AutoDetectPreset(bpy.types.Operator):
             settings = context.scene.mhw_suite_settings
             setattr(settings, self.attr_name, result)
             display = os.path.splitext(result)[0]
-            self.report({'INFO'}, f"已识别: {display}")
+            self.report({'INFO'}, T("ui.main_panel.info_detected").format(name=display))
         else:
-            self.report({'WARNING'}, "未找到覆盖率 >= 95% 的预设，请手动选择")
+            self.report({'WARNING'}, T("ui.main_panel.warn_no_preset_found"))
         return {'FINISHED'}
 
 

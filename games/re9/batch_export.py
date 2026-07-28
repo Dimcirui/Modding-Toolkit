@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 
+from ...core.i18n import T
 from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
 from ...core.bone_utils import align_armatures_by_name
 
@@ -441,10 +442,14 @@ class RE9_OT_BatchExport(bpy.types.Operator):
 
 
 class RE9_OT_SetNativesRoot(bpy.types.Operator):
-    """选择 RE9 Mod 根目录（natives 的上级）。若选中的文件夹本身名为 natives，自动取其上级"""
     bl_idname = "re9.set_natives_root"
     bl_label = "Set Natives Root"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("re9.batch_export.set_natives_root_desc")
+
     directory: bpy.props.StringProperty(subtype='DIR_PATH')
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)

@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 
+from ...core.i18n import T
 from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
 from .weapon_data import (
     WEAPON_FILE_TYPES,
@@ -14,13 +15,13 @@ from .weapon_data import (
 )
 
 
-# 部位定义：(代码, 显示名, mask索引)  mask顺序：手腿铠头腰
+# 部位定义：(代码, 显示名 i18n key, mask索引)  mask顺序：手腿铠头腰
 MHWI_PARTS = [
-    ("arm",  "手臂", 0),
-    ("leg",  "腿部", 1),
-    ("body", "身体", 2),
-    ("helm", "头盔", 3),
-    ("wst",  "腰部", 4),
+    ("arm",  "mhwi.batch_import.part_arm",  0),
+    ("leg",  "mhwi.batch_import.part_leg",  1),
+    ("body", "mhwi.batch_import.part_body", 2),
+    ("helm", "mhwi.batch_import.part_helm", 3),
+    ("wst",  "mhwi.batch_import.part_wst",  4),
 ]
 
 # 头盔部位代码（特殊处理：无 ctc/ccl，可选 evhl）
@@ -111,7 +112,7 @@ def get_mhwi_armor_sets_callback(self, context):
             name = os.path.splitext(f)[0]
             _armor_sets_cache.append((f, name, ""))
     if not _armor_sets_cache:
-        _armor_sets_cache.append(('NONE', "无装备包", ""))
+        _armor_sets_cache.append(('NONE', T("mhwi.batch_export.no_armor_sets"), ""))
     return _armor_sets_cache
 
 
@@ -138,7 +139,7 @@ def get_mhwi_hr_armor_callback(self, context):
             if armor.get("rank", "HR") == "HR":
                 _hr_armor_cache.append(_armor_enum_item(armor, len(_hr_armor_cache)))
     if not _hr_armor_cache:
-        _hr_armor_cache.append(('NONE', "无装备", "", 0))
+        _hr_armor_cache.append(('NONE', T("mhwi.batch_export.no_armor"), "", 0))
     return _hr_armor_cache
 
 def get_mhwi_mr_armor_callback(self, context):
@@ -150,7 +151,7 @@ def get_mhwi_mr_armor_callback(self, context):
             if armor.get("rank", "HR") == "MR":
                 _mr_armor_cache.append(_armor_enum_item(armor, len(_mr_armor_cache)))
     if not _mr_armor_cache:
-        _mr_armor_cache.append(('NONE', "无装备", "", 0))
+        _mr_armor_cache.append(('NONE', T("mhwi.batch_export.no_armor"), "", 0))
     return _mr_armor_cache
 
 def get_mhwi_sp_armor_callback(self, context):
@@ -162,7 +163,7 @@ def get_mhwi_sp_armor_callback(self, context):
             if armor.get("rank") == "SP":
                 _sp_armor_cache.append(_armor_enum_item(armor, len(_sp_armor_cache)))
     if not _sp_armor_cache:
-        _sp_armor_cache.append(('NONE', "无装备", "", 0))
+        _sp_armor_cache.append(('NONE', T("mhwi.batch_export.no_armor"), "", 0))
     return _sp_armor_cache
 
 def _armor_enum_item(armor, idx):
@@ -348,7 +349,7 @@ def _export_gender(context, settings, armor_entry, gender, natives_root):
 
         for ft in file_types:
             col = get_binding(scene, model_id, part_code, ft)
-            label = f"{gender}/{part_name}/{ft.upper()}"
+            label = f"{gender}/{T(part_name)}/{ft.upper()}"
 
             if not col:
                 skip_count += 1
@@ -435,7 +436,7 @@ def _export_sp(context, armor_entry, natives_root):
 
         for ft in file_types:
             col   = get_binding(scene, model_id, part_code, ft)
-            label = f"SP/{part_name}/{ft.upper()}"
+            label = f"SP/{T(part_name)}/{ft.upper()}"
 
             if not col:
                 skip_count += 1
@@ -542,10 +543,13 @@ def _export_weapon(context, weapon_type, entry, natives_root):
 # ── Operator ──────────────────────────────────────────────────────
 
 class MHWI_OT_BatchExport(bpy.types.Operator):
-    """MHWI 装备批量导出"""
     bl_idname = "mhwi.batch_export"
     bl_label  = "MHWI Batch Export"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.batch_export.batch_export_desc")
 
     def _cleanup_mesh_collections(self, context, scene, settings):
         """Run RE Mesh cleanup on all bound mod3 collections; silently skip if RE Mesh Editor unavailable."""
@@ -729,23 +733,24 @@ class MHWI_OT_BatchExport(bpy.types.Operator):
         weapon_id   = get_selected_weapon(scene, weapon_type)
 
         if not weapon_id or weapon_id == 'NONE':
-            self.report({'ERROR'}, "请先选择一件武器")
+            self.report({'ERROR'}, T("mhwi.batch_export.select_weapon_first"))
             return {'CANCELLED'}
 
         data  = _load_weapon_sets_json(settings.mhwi_weapon_sets_file)
         entry = get_weapon_entry(data, weapon_type, weapon_id)
         if not entry:
-            self.report({'ERROR'}, f"武器预设组中未找到: {weapon_id}")
+            self.report({'ERROR'}, T("mhwi.batch_export.weapon_not_found").format(id=weapon_id))
             return {'CANCELLED'}
 
         total_export, total_fail, total_skip = _export_weapon(context, weapon_type, entry, natives_root)
 
         if total_fail > 0:
             self.report({'WARNING'},
-                f"完成: 导出 {total_export}, 失败 {total_fail}, 跳过 {total_skip}")
+                T("mhwi.batch_export.export_done_with_fail").format(
+                    export=total_export, fail=total_fail, skip=total_skip))
         else:
             self.report({'INFO'},
-                f"完成: 导出 {total_export}, 跳过 {total_skip}")
+                T("mhwi.batch_export.export_done").format(export=total_export, skip=total_skip))
         return {'FINISHED'}
 
     def execute(self, context):
@@ -753,12 +758,12 @@ class MHWI_OT_BatchExport(bpy.types.Operator):
         settings = scene.mhw_suite_settings
 
         if not hasattr(bpy.ops, 'mhw_mod3') or not hasattr(bpy.ops.mhw_mod3, 'export_mhw_mod3'):
-            self.report({'ERROR'}, "MHW Model Editor 未安装")
+            self.report({'ERROR'}, T("mhwi.batch_import.model_editor_missing"))
             return {'CANCELLED'}
 
         natives_root = scene.get("mhwi_natives_root", "")
         if not natives_root or not os.path.isdir(natives_root):
-            self.report({'ERROR'}, "请先设置 Mod Root 目录（nativePC 的上级文件夹）")
+            self.report({'ERROR'}, T("mhwi.batch_import.set_mod_root_first"))
             return {'CANCELLED'}
 
         if settings.mhwi_export_mode == 'WEAPON':
@@ -773,13 +778,13 @@ class MHWI_OT_BatchExport(bpy.types.Operator):
             model_id = settings.mhwi_selected_sp_armor
 
         if not model_id or model_id == 'NONE':
-            self.report({'ERROR'}, "请先选择一套装备")
+            self.report({'ERROR'}, T("mhwi.batch_export.select_armor_first"))
             return {'CANCELLED'}
 
         data        = _load_armor_sets(settings.mhwi_armor_sets_file)
         armor_entry = get_armor_entry(data, model_id)
         if not armor_entry:
-            self.report({'ERROR'}, f"装备包中未找到: {model_id}")
+            self.report({'ERROR'}, T("mhwi.batch_export.armor_not_found").format(id=model_id))
             return {'CANCELLED'}
 
         if settings.mhwi_cleanup_before_export:
@@ -807,10 +812,11 @@ class MHWI_OT_BatchExport(bpy.types.Operator):
 
         if total_fail > 0:
             self.report({'WARNING'},
-                f"完成: 导出 {total_export}, 失败 {total_fail}, 跳过 {total_skip}")
+                T("mhwi.batch_export.export_done_with_fail").format(
+                    export=total_export, fail=total_fail, skip=total_skip))
         else:
             self.report({'INFO'},
-                f"完成: 导出 {total_export}, 跳过 {total_skip}")
+                T("mhwi.batch_export.export_done").format(export=total_export, skip=total_skip))
         return {'FINISHED'}
 
 
@@ -823,10 +829,14 @@ def _resolve_genders(gender_setting):
 
 
 class MHWI_OT_SetNativesRoot(bpy.types.Operator):
-    """选择 MHWI Mod 根目录（nativePC 的上级文件夹）"""
     bl_idname = "mhwi.set_natives_root"
     bl_label  = "Set Mod Root"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.batch_export.set_natives_root_desc")
+
     directory: bpy.props.StringProperty(subtype='DIR_PATH')
 
     def invoke(self, context, event):

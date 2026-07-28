@@ -1,5 +1,6 @@
 import bpy
 
+from ...core.i18n import T
 from .mdf_tex_processor import (
     RE4_SLOT_CHANNEL_MAPS, RE4_NULL_TEX_BY_TYPE, RE4_TEXTURE_TYPE_ABBREV,
     RE4_TEX_VERSION,
@@ -39,24 +40,24 @@ class RE4GenMaterialEntry(bpy.types.PropertyGroup):
     strat_alpha:      bpy.props.StringProperty(default="?")
     strat_emissive:   bpy.props.StringProperty(default="?")
     use_toon:         bpy.props.BoolProperty(
-        name="使用三渲二",
-        description="跳过自发光贴图处理，将自发光槽位路径设为与基础色槽位相同",
+        name="Toon Shading",
+        description="Skip emissive texture processing; set the emissive slot path the same as the base color slot",
         default=False,
     )
-    generate_mipmaps: bpy.props.BoolProperty(name="生成 MipMaps", default=True)
+    generate_mipmaps: bpy.props.BoolProperty(name="Generate MipMaps", default=True)
     skip_textures:    bpy.props.BoolProperty(
-        name="仅生成材质",
-        description="跳过贴图合成与转换，仅创建材质定义并填入贴图路径",
+        name="Materials Only",
+        description="Skip texture composition/conversion; only create the material definition and fill in texture paths",
         default=False,
     )
     use_ao:           bpy.props.BoolProperty(
-        name="添加 AO",
-        description="手动指定 AO 贴图 (Blender 无内置 AO 节点)",
+        name="Add AO",
+        description="Manually specify an AO texture (Blender has no built-in AO node)",
         default=False,
     )
     ao_image:         bpy.props.StringProperty(
         name="AO",
-        description="AO 贴图路径",
+        description="AO texture path",
         subtype='FILE_PATH',
     )
     native_size_color:     bpy.props.IntProperty(default=0)
@@ -99,9 +100,9 @@ class RE4GenSettings(bpy.types.PropertyGroup):
     material_list:     bpy.props.CollectionProperty(type=RE4GenMaterialEntry)
     material_list_idx: bpy.props.IntProperty()
     flip_normal_g:     bpy.props.BoolProperty(
-        name="法线 OpenGL → DirectX",
-        description="启用后，将连接的 OpenGL 法线贴图直接转为 DX 格式，"
-                    "不再需要在着色器内手动进行 G 通道反相",
+        name="Normal Map: OpenGL -> DirectX",
+        description="When enabled, converts a connected OpenGL normal texture directly to DX format, "
+                    "so you no longer need to manually invert the G channel in the shader",
         default=False,
     )
 
@@ -131,7 +132,7 @@ class RE4_OT_MdfGenProcess(MdfGenProcessBase):
 # ── Select Same Material operator ────────────────────────────────────────────────
 
 class RE4_OT_SelectSameMaterial(bpy.types.Operator):
-    """选中 Mesh Collection 中所有使用当前材质的网格物体（阶段二：智能筛选）"""
+    """Select all mesh objects in the Mesh Collection using the current material (stage 2: smart filtering)"""
     bl_idname  = "re4.select_same_material"
     bl_label   = "Select Same Material Meshes"
     bl_options = {'REGISTER', 'UNDO'}
@@ -139,8 +140,12 @@ class RE4_OT_SelectSameMaterial(bpy.types.Operator):
     _log_tag = "RE4 Gen"
 
     @classmethod
+    def description(cls, context, properties):
+        return T("re4.mdf_generator.select_same_material_desc")
+
+    @classmethod
     def poll(cls, context):
-        """必须有激活 MESH 物体，且其材质已设置，mesh_collection 已选择"""
+        """Requires an active MESH object with a material set and mesh_collection selected"""
         obj = context.active_object
         if not obj or obj.type != 'MESH':
             return False
@@ -156,38 +161,39 @@ class RE4_OT_SelectSameMaterial(bpy.types.Operator):
         settings = context.scene.re4_mdf_generator
         mesh_col = settings.mesh_collection
         if not mesh_col:
-            self.report({'ERROR'}, "请先选择 Mesh Collection")
+            self.report({'ERROR'}, T("re4.mdf_generator.select_mesh_collection_first"))
             return {'CANCELLED'}
 
         active_obj = context.active_object
         target_mat = active_obj.material_slots[active_obj.active_material_index].material
         if not target_mat:
-            self.report({'ERROR'}, "激活物体没有材质")
+            self.report({'ERROR'}, T("re4.mdf_generator.active_object_no_material"))
             return {'CANCELLED'}
 
-        # 查找同集合下共享相同材质的所有网格
+        # Find all meshes in the same collection sharing this material
         matched = _find_meshes_by_material(mesh_col, target_mat.name)
 
-        # 取消所有选中
+        # Deselect everything
         for obj in context.view_layer.objects:
             obj.select_set(False)
 
-        # 选中所有匹配的网格
+        # Select all matched meshes
         for obj in matched:
             obj.select_set(True)
 
-        # 保持原物体激活
+        # Keep the original object active
         if active_obj.name not in {o.name for o in matched}:
             active_obj.select_set(True)
         context.view_layer.objects.active = active_obj
 
-        print(f"[{self._log_tag}] 智能筛选: 材质 '{target_mat.name}' → "
-              f"{len(matched)} 个网格: {', '.join(o.name for o in matched)}")
+        print(f"[{self._log_tag}] " + T("re4.mdf_generator.select_same_material_log").format(
+            mat=target_mat.name, n=len(matched), names=', '.join(o.name for o in matched)))
 
+        total = len(matched) if active_obj.name in {o.name for o in matched} else len(matched) + 1
         self.report(
             {'INFO'},
-            f"已选中 {len(matched)} 个使用 '{target_mat.name}' 的网格"
-            f"（含自身共 {len(matched) if active_obj.name in {o.name for o in matched} else len(matched) + 1} 个）",
+            T("re4.mdf_generator.select_same_material_done").format(
+                n=len(matched), mat=target_mat.name, total=total),
         )
         return {'FINISHED'}
 

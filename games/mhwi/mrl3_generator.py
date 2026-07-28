@@ -5,6 +5,7 @@ import tempfile
 import shutil
 import time
 
+from ...core.i18n import T
 from ...core.mdf_generator_base import (
     MdfGenRefreshBase,
     analyze_material_strategies,
@@ -52,29 +53,30 @@ class MhwiGenMaterialEntry(bpy.types.PropertyGroup):
     strat_alpha:      bpy.props.StringProperty(default="?")
     strat_emissive:   bpy.props.StringProperty(default="?")
     use_toon:         bpy.props.BoolProperty(
-        name="使用三渲二",
-        description="跳过自发光贴图处理，将自发光槽位路径设为与基础色槽位相同",
+        name="Toon Shading",
+        description="Skip emissive texture processing; set the emissive slot path to match the albedo slot",
         default=False,
     )
-    generate_mipmaps: bpy.props.BoolProperty(name="生成 MipMaps", default=True)
+    generate_mipmaps: bpy.props.BoolProperty(name="Generate MipMaps", default=True)
     skip_textures:    bpy.props.BoolProperty(
-        name="仅生成材质",
-        description="跳过贴图合成与转换，仅创建材质定义并填入贴图路径",
+        name="Materials Only",
+        description="Skip texture composition/conversion; only create the material definition and fill in texture paths",
         default=False,
     )
     use_ao:           bpy.props.BoolProperty(
-        name="添加 AO",
-        description="手动指定 AO 贴图 (Blender 无内置 AO 节点)",
+        name="Add AO",
+        description="Manually specify an AO texture (Blender has no built-in AO node)",
         default=False,
     )
     hide_snow_overlay: bpy.props.BoolProperty(
-        name="隐藏覆雪效果（解决雪地腿部发黑）",
-        description="将 AlbedoBlendMap 槽位设为完全透明贴图 snow_Col_CMM，消除覆雪混合导致的腿部发黑",
+        name="Hide Snow Overlay (fixes black legs in snow)",
+        description="Set the AlbedoBlendMap slot to a fully transparent texture (snow_Col_CMM), "
+                    "eliminating the black-leg artifact caused by snow blending",
         default=False,
     )
     ao_image:         bpy.props.StringProperty(
         name="AO",
-        description="AO 贴图路径",
+        description="AO texture path",
         subtype='FILE_PATH',
     )
     native_size_color:     bpy.props.IntProperty(default=0)
@@ -111,19 +113,19 @@ class MhwiGenSettings(bpy.types.PropertyGroup):
     )
     mrl3_collection_name: bpy.props.StringProperty(
         name="MRL3 Collection Name",
-        description="留空则自动从 MOD3 集合名推断",
+        description="Leave blank to auto-infer from the MOD3 collection name",
         default="",
     )
     texture_base_path: bpy.props.StringProperty(
         name="Base Path",
-        description="nativePC/ 下的贴图目录，例：pl/f_equip/pl042_0500/helm/tex",
+        description="Texture directory under nativePC/, e.g. pl/f_equip/pl042_0500/helm/tex",
         default="",
     )
     material_list:    bpy.props.CollectionProperty(type=MhwiGenMaterialEntry)
     flip_normal_g:    bpy.props.BoolProperty(
-        name="法线 OpenGL → DirectX",
-        description="启用后，将连接的 OpenGL 法线贴图直接转为 DX 格式，"
-                    "不再需要在着色器内手动进行 G 通道反相",
+        name="Normal Map OpenGL -> DirectX",
+        description="When enabled, connected OpenGL normal maps are directly converted to DX format, "
+                    "removing the need to manually invert the G channel in the shader",
         default=False,
     )
 
@@ -131,10 +133,13 @@ class MhwiGenSettings(bpy.types.PropertyGroup):
 # ── Refresh operator ───────────────────────────────────────────────────────────
 
 class MHWI_OT_Mrl3GenRefresh(MdfGenRefreshBase):
-    """刷新材质列表"""
     bl_idname      = "mhwi.mrl3_gen_refresh"
     _settings_attr = "mhwi_mrl3_generator"
     _game_name     = "MHWI"
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.mrl3_generator.refresh_desc")
 
     @classmethod
     def _load_preset_items(cls):
@@ -144,10 +149,13 @@ class MHWI_OT_Mrl3GenRefresh(MdfGenRefreshBase):
 # ── Process operator ───────────────────────────────────────────────────────────
 
 class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
-    """从 Blender 材质生成 MRL3 + 贴图"""
     bl_idname  = "mhwi.mrl3_gen_process"
     bl_label   = "Generate MRL3 + Textures"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.mrl3_generator.process_desc")
 
     _log_tag  = "MRL3 Gen"
     _bake_size = BAKE_SIZE_DEFAULT
@@ -158,21 +166,21 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
 
         natives_root = context.scene.get("mhwi_natives_root", "")
         if not natives_root or not os.path.isdir(natives_root):
-            self.report({'ERROR'}, "请先设置 Mod Root 目录")
+            self.report({'ERROR'}, T("mhwi.mrl3_generator.set_mod_root_first"))
             return {'CANCELLED'}
 
         mod3_col = settings.mesh_collection
         if not mod3_col:
-            self.report({'ERROR'}, "请先选择 MOD3 集合")
+            self.report({'ERROR'}, T("mhwi.mrl3_generator.select_mod3_collection_first"))
             return {'CANCELLED'}
 
         base_path = settings.texture_base_path.strip()
         if not base_path:
-            self.report({'ERROR'}, "请填写 Base Path（nativePC/ 下的贴图目录）")
+            self.report({'ERROR'}, T("mhwi.mrl3_generator.fill_base_path"))
             return {'CANCELLED'}
 
         if not settings.material_list:
-            self.report({'ERROR'}, "请先点击 Refresh 加载材质")
+            self.report({'ERROR'}, T("mhwi.mrl3_generator.click_refresh_first"))
             return {'CANCELLED'}
 
         print(f"[{self._log_tag}] {'='*40}", flush=True)
@@ -181,15 +189,14 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
         ConvertDDSToTex = _import_mhwi_tex_convert()
         # print(f"[{self._log_tag}] 加载 MHW Model Editor 模块: {time.time() - _t_import:.2f}s", flush=True)
         if ConvertDDSToTex is None:
-            self.report({'ERROR'},
-                        "无法加载 MHW Model Editor 贴图转换函数，请确认已安装并启用")
+            self.report({'ERROR'}, T("mhwi.mrl3_generator.cannot_load_tex_convert"))
             return {'CANCELLED'}
 
         _t_import = time.time()
         ImageListToDDS, _ddstotex = _import_tex_utils()
         # print(f"[{self._log_tag}] 加载 RE Mesh Editor 模块: {time.time() - _t_import:.2f}s", flush=True)
         if ImageListToDDS is None:
-            self.report({'ERROR'}, "无法加载 RE Mesh Editor 贴图工具，请确认已安装并启用")
+            self.report({'ERROR'}, T("mhwi.mrl3_generator.cannot_load_tex_utils"))
             return {'CANCELLED'}
 
         mrl3_col = self._get_or_create_mrl3_collection(context, mod3_col, settings)
@@ -227,9 +234,10 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
 
         print(f"[{self._log_tag}] ★ 总耗时: {time.time() - _t_total:.2f}s ★", flush=True)
         if fail_count:
-            self.report({'WARNING'}, f"完成: 成功 {export_count}, 失败 {fail_count}")
+            self.report({'WARNING'}, T("mhwi.mrl3_generator.process_done_with_fail").format(
+                success=export_count, fail=fail_count))
         else:
-            self.report({'INFO'}, f"完成: 成功生成 {export_count} 个材质的 MRL3 + 贴图")
+            self.report({'INFO'}, T("mhwi.mrl3_generator.process_done").format(n=export_count))
         return {'FINISHED'}
 
     def _get_or_create_mrl3_collection(self, context, mod3_col, settings):
@@ -549,10 +557,13 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
 # ── Select Same Material operator ────────────────────────────────────────────────
 
 class MHWI_OT_SelectSameMaterial(bpy.types.Operator):
-    """选中 MOD3 集合中所有使用当前材质的网格物体（阶段二：智能筛选）"""
     bl_idname  = "mhwi.select_same_material"
     bl_label   = "Select Same Material Meshes"
     bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.mrl3_generator.select_same_material_desc")
 
     _log_tag = "MRL3 Gen"
 
@@ -574,13 +585,13 @@ class MHWI_OT_SelectSameMaterial(bpy.types.Operator):
         settings = context.scene.mhwi_mrl3_generator
         mod3_col = settings.mesh_collection
         if not mod3_col:
-            self.report({'ERROR'}, "请先选择 MOD3 集合")
+            self.report({'ERROR'}, T("mhwi.mrl3_generator.select_mod3_collection_first"))
             return {'CANCELLED'}
 
         active_obj = context.active_object
         target_mat = active_obj.material_slots[active_obj.active_material_index].material
         if not target_mat:
-            self.report({'ERROR'}, "激活物体没有材质")
+            self.report({'ERROR'}, T("mhwi.mrl3_generator.active_obj_no_material"))
             return {'CANCELLED'}
 
         # 查找同集合下共享相同材质的所有网格
@@ -602,10 +613,12 @@ class MHWI_OT_SelectSameMaterial(bpy.types.Operator):
         print(f"[{self._log_tag}] 智能筛选: 材质 '{target_mat.name}' → "
               f"{len(matched)} 个网格: {', '.join(o.name for o in matched)}")
 
+        total_with_self = (len(matched) if active_obj.name in {o.name for o in matched}
+                           else len(matched) + 1)
         self.report(
             {'INFO'},
-            f"已选中 {len(matched)} 个使用 '{target_mat.name}' 的网格"
-            f"（含自身共 {len(matched) if active_obj.name in {o.name for o in matched} else len(matched) + 1} 个）",
+            T("mhwi.mrl3_generator.selected_matching_meshes").format(
+                n=len(matched), name=target_mat.name, total=total_with_self),
         )
         return {'FINISHED'}
 

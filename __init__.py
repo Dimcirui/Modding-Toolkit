@@ -15,13 +15,14 @@ from bpy.types import AddonPreferences
 from . import addon_updater_ops 
 
 from .core import migrate
+from .core import i18n
 from .core import standard_ops
 from .core import pose_ops
 from .core import editor_props
 from .core import editor_ops
 from .core import mdf_tex_processor_base
+from .core import tex_convert_base
 from . import ui, games
-from . import translations as _translations
 
 class MT_Preferences(AddonPreferences):
     bl_idname = __name__
@@ -54,11 +55,13 @@ class MT_Preferences(AddonPreferences):
 
 
 modules = [
+    i18n,
     editor_props,
     editor_ops,
     standard_ops,
     pose_ops,
     mdf_tex_processor_base,
+    tex_convert_base,
     games,
     ui,
 ]
@@ -68,14 +71,12 @@ def register():
     migrate.run()
 
     bpy.utils.register_class(MT_Preferences)
-    bpy.app.translations.register(__name__, _translations.TRANSLATIONS)
 
     for mod in modules:
         mod.register()
 
 def unregister():
     addon_updater_ops.unregister()
-    bpy.app.translations.unregister(__name__)
     bpy.utils.unregister_class(MT_Preferences)
     
     for mod in reversed(modules):

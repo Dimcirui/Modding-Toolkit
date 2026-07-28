@@ -5,15 +5,18 @@ import re
 import shutil
 import subprocess
 import sys
-from .i18n import _
+from .i18n import T
 from . import ui_config, bone_mapper
 from .bone_mapper import BoneMapManager, STANDARD_BONE_NAMES
 
 # === 初始化/刷新列表 ===
 class MODDER_OT_InitEditor(bpy.types.Operator):
-    """初始化预设编辑器列表"""
     bl_idname = "modder.init_editor"
-    bl_label = "初始化/刷新列表"
+    bl_label = "Initialize / Refresh List"
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.editor_ops.init_editor_desc")
 
     def execute(self, context):
         settings = context.scene.mhw_preset_editor
@@ -22,14 +25,17 @@ class MODDER_OT_InitEditor(bpy.types.Operator):
             item = settings.slots.add()
             item.std_name = std_key
             item.ui_name = std_key
-        self.report({'INFO'}, _("编辑器已重置"))
+        self.report({'INFO'}, T("core.editor_ops.editor_reset"))
         return {'FINISHED'}
 
 # === 拾取骨骼 ===
 class MODDER_OT_PickBone(bpy.types.Operator):
-    """将当前选中的骨骼（或激活顶点组对应的骨骼）填入指定槽位"""
     bl_idname = "modder.pick_bone"
-    bl_label = "拾取"
+    bl_label = "Pick"
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.editor_ops.pick_bone_desc")
 
     slot_index: bpy.props.IntProperty()
     is_aux: bpy.props.BoolProperty(default=False)
@@ -59,25 +65,25 @@ class MODDER_OT_PickBone(bpy.types.Operator):
         elif obj and obj.type == 'MESH' and mode in ('PAINT_WEIGHT', 'EDIT_MESH', 'EDIT'):
             vg = obj.vertex_groups.active
             if vg is None:
-                self.report({'WARNING'}, _("没有激活的顶点组"))
+                self.report({'WARNING'}, T("core.editor_ops.no_active_vgroup"))
                 return {'CANCELLED'}
             arm_obj = obj.find_armature()
             if arm_obj is None:
-                self.report({'WARNING'}, _("找不到绑定骨架，请确认网格有 Armature 修改器"))
+                self.report({'WARNING'}, T("core.editor_ops.no_bound_armature"))
                 return {'CANCELLED'}
             if vg.name not in arm_obj.data.bones:
                 self.report({'WARNING'},
-                            _("顶点组 '%s' 在骨架中没有同名骨骼，跳过") % vg.name)
+                            T("core.editor_ops.vgroup_no_matching_bone").format(name=vg.name))
                 return {'CANCELLED'}
             active_name = vg.name
             selected_names = [vg.name]
 
         else:
-            self.report({'WARNING'}, _("请进入 Pose / Edit 模式选择骨骼，或在权重绘制模式下激活顶点组"))
+            self.report({'WARNING'}, T("core.editor_ops.enter_pose_or_edit_mode"))
             return {'CANCELLED'}
 
         if not selected_names and not active_name:
-            self.report({'WARNING'}, _("没有选中任何骨骼"))
+            self.report({'WARNING'}, T("core.editor_ops.no_bones_selected"))
             return {'CANCELLED'}
 
         if self.is_aux:
@@ -92,9 +98,9 @@ class MODDER_OT_PickBone(bpy.types.Operator):
                 added_count += 1
             if added_count > 0:
                 slot.is_expanded = True
-                self.report({'INFO'}, _("已批量添加 %d 个辅助骨") % added_count)
+                self.report({'INFO'}, T("core.editor_ops.batch_added_aux_bones").format(n=added_count))
             else:
-                self.report({'WARNING'}, _("未添加任何新骨骼 (可能是重复或选重了主骨)"))
+                self.report({'WARNING'}, T("core.editor_ops.no_new_bones_added"))
         else:
             if active_name:
                 slot.source_bone_name = active_name
@@ -103,16 +109,19 @@ class MODDER_OT_PickBone(bpy.types.Operator):
                         slot.aux_bones.remove(i)
                         break
             else:
-                self.report({'WARNING'}, _("无法确定活动骨骼，请点击具体的一根骨骼"))
+                self.report({'WARNING'}, T("core.editor_ops.cannot_determine_active_bone"))
                 return {'CANCELLED'}
 
         return {'FINISHED'}
 
 # === 清除操作 ===
 class MODDER_OT_ClearSlot(bpy.types.Operator):
-    """清除槽位内容"""
     bl_idname = "modder.clear_slot"
-    bl_label = "清除"
+    bl_label = "Clear"
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.editor_ops.clear_slot_desc")
 
     slot_index: bpy.props.IntProperty()
     target: bpy.props.StringProperty()
@@ -133,9 +142,12 @@ class MODDER_OT_ClearSlot(bpy.types.Operator):
 
 # === 镜像功能 ===
 class MODDER_OT_MirrorMapping(bpy.types.Operator):
-    """将左侧映射规则镜像到右侧"""
     bl_idname = "modder.mirror_mapping"
-    bl_label = "镜像左侧 -> 右侧"
+    bl_label = "Mirror Left -> Right"
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.editor_ops.mirror_mapping_desc")
 
     def execute(self, context):
         slots = context.scene.mhw_preset_editor.slots
@@ -185,7 +197,7 @@ class MODDER_OT_MirrorMapping(bpy.types.Operator):
                         new_item.name = mirrored_aux
                         count += 1
 
-        self.report({'INFO'}, _("智能镜像完成: 更新 %d 项") % count)
+        self.report({'INFO'}, T("core.editor_ops.mirror_done").format(n=count))
         return {'FINISHED'}
 
 # === 工具函数 ===
@@ -205,9 +217,12 @@ def _get_selected_filename(context, is_x):
 
 # === 保存预设 ===
 class MODDER_OT_SaveXPreset(bpy.types.Operator):
-    """保存预设 JSON（根据编辑模式保存为 X 或 Y 预设）"""
     bl_idname = "modder.save_x_preset"
-    bl_label = "保存预设"
+    bl_label = "Save Preset"
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.editor_ops.save_preset_desc")
 
     def execute(self, context):
         settings = context.scene.mhw_preset_editor
@@ -257,7 +272,7 @@ class MODDER_OT_SaveXPreset(bpy.types.Operator):
             fill_count += 1
 
         if fill_count == 0:
-            self.report({'ERROR'}, _("列表为空，未保存"))
+            self.report({'ERROR'}, T("core.editor_ops.list_empty_not_saved"))
             return {'CANCELLED'}
 
         final_data["mappings"] = existing_mappings
@@ -265,19 +280,23 @@ class MODDER_OT_SaveXPreset(bpy.types.Operator):
         try:
             with open(filepath, 'w', encoding='utf-8') as f:
                 json.dump(final_data, f, indent=2, ensure_ascii=False)
-            self.report({'INFO'}, _("%s 预设已保存: %s") % ('X' if is_x else 'Y', filename))
+            self.report({'INFO'}, T("core.editor_ops.preset_saved").format(
+                kind=('X' if is_x else 'Y'), filename=filename))
         except Exception as e:
-            self.report({'ERROR'}, _("保存失败: %s") % str(e))
+            self.report({'ERROR'}, T("core.editor_ops.save_failed").format(err=str(e)))
             return {'CANCELLED'}
 
         return {'FINISHED'}
 
 # === 读取预设 ===
 class MODDER_OT_LoadXPreset(bpy.types.Operator):
-    """读取选中的预设到编辑器中进行修改"""
     bl_idname = "modder.load_x_preset"
-    bl_label = "读取预设"
+    bl_label = "Load Preset"
     bl_options = {'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.editor_ops.load_preset_desc")
 
     def execute(self, context):
         editor = context.scene.mhw_preset_editor
@@ -285,12 +304,12 @@ class MODDER_OT_LoadXPreset(bpy.types.Operator):
 
         real_filename = _get_selected_filename(context, is_x)
         if not real_filename:
-            self.report({'WARNING'}, _("未选择任何预设"))
+            self.report({'WARNING'}, T("core.editor_ops.no_preset_selected"))
             return {'CANCELLED'}
 
         mapper = BoneMapManager()
         if not mapper.load_preset(real_filename, is_import_x=is_x):
-            self.report({'ERROR'}, _("无法加载文件: %s") % real_filename)
+            self.report({'ERROR'}, T("core.editor_ops.cannot_load_file").format(name=real_filename))
             return {'CANCELLED'}
 
         bpy.ops.modder.init_editor()
@@ -312,15 +331,19 @@ class MODDER_OT_LoadXPreset(bpy.types.Operator):
         clean_name = real_filename.rsplit('.', 1)[0]
         editor.new_preset_name = clean_name
         display_name = mapper.preset_info.get('name', clean_name)
-        self.report({'INFO'}, _("成功加载%s预设: %s (%d 个映射)") % ('X' if is_x else 'Y', display_name, loaded_count))
+        self.report({'INFO'}, T("core.editor_ops.preset_loaded").format(
+            kind=('X' if is_x else 'Y'), name=display_name, n=loaded_count))
         return {'FINISHED'}
 
 # === 删除预设 ===
 class MODDER_OT_DeleteXPreset(bpy.types.Operator):
-    """删除当前选中的预设文件"""
     bl_idname = "modder.delete_x_preset"
-    bl_label = "删除预设"
+    bl_label = "Delete Preset"
     bl_options = {'INTERNAL'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.editor_ops.delete_preset_desc")
 
     def invoke(self, context, event):
         return context.window_manager.invoke_confirm(self, event)
@@ -342,19 +365,22 @@ class MODDER_OT_DeleteXPreset(bpy.types.Operator):
                     suite.import_preset_enum = "NONE"
                 else:
                     suite.target_preset_enum = "NONE"
-                self.report({'INFO'}, _("已删除: %s") % real_filename)
+                self.report({'INFO'}, T("core.editor_ops.deleted").format(name=real_filename))
             except Exception as e:
-                self.report({'ERROR'}, _("删除失败: %s") % e)
+                self.report({'ERROR'}, T("core.editor_ops.delete_failed").format(err=e))
         else:
-            self.report({'ERROR'}, _("文件不存在"))
+            self.report({'ERROR'}, T("core.editor_ops.file_not_exist"))
 
         return {'FINISHED'}
 
 # === 打开预设文件夹 ===
 class MODDER_OT_OpenPresetFolder(bpy.types.Operator):
-    """在文件管理器中打开当前预设所在的文件夹"""
     bl_idname = "modder.open_preset_folder"
-    bl_label = "打开预设文件夹"
+    bl_label = "Open Preset Folder"
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.editor_ops.open_folder_desc")
 
     def execute(self, context):
         editor = context.scene.mhw_preset_editor
@@ -362,7 +388,7 @@ class MODDER_OT_OpenPresetFolder(bpy.types.Operator):
         folder = _get_preset_dir(is_x)
 
         if not os.path.isdir(folder):
-            self.report({'ERROR'}, _("文件夹不存在: %s") % folder)
+            self.report({'ERROR'}, T("core.editor_ops.folder_not_exist").format(path=folder))
             return {'CANCELLED'}
 
         if sys.platform == 'win32':
@@ -376,9 +402,12 @@ class MODDER_OT_OpenPresetFolder(bpy.types.Operator):
 
 # === 转换预设（X→Y 或 Y→X，复制方式）===
 class MODDER_OT_ConvertPreset(bpy.types.Operator):
-    """复制当前预设到另一类型目录（X→Y 或 Y→X），文件名加转换标记"""
     bl_idname = "modder.convert_preset"
-    bl_label = "转换预设"
+    bl_label = "Convert Preset"
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.editor_ops.convert_preset_desc")
 
     def execute(self, context):
         editor = context.scene.mhw_preset_editor
@@ -386,12 +415,12 @@ class MODDER_OT_ConvertPreset(bpy.types.Operator):
 
         src_filename = _get_selected_filename(context, is_x)
         if not src_filename:
-            self.report({'WARNING'}, _("未选择任何预设"))
+            self.report({'WARNING'}, T("core.editor_ops.no_preset_selected"))
             return {'CANCELLED'}
 
         src_path = os.path.join(_get_preset_dir(is_x), src_filename)
         if not os.path.exists(src_path):
-            self.report({'ERROR'}, _("源文件不存在: %s") % src_filename)
+            self.report({'ERROR'}, T("core.editor_ops.source_file_not_exist").format(name=src_filename))
             return {'CANCELLED'}
 
         # 生成目标文件名：去掉 .json，加上转换标记，再加 .json
@@ -402,7 +431,7 @@ class MODDER_OT_ConvertPreset(bpy.types.Operator):
         dst_path = os.path.join(dst_dir, dst_filename)
 
         if os.path.exists(dst_path):
-            self.report({'WARNING'}, _("目标文件已存在: %s，已跳过覆盖") % dst_filename)
+            self.report({'WARNING'}, T("core.editor_ops.target_file_exists").format(name=dst_filename))
             return {'CANCELLED'}
 
         try:
@@ -417,9 +446,9 @@ class MODDER_OT_ConvertPreset(bpy.types.Operator):
                 json.dump(data, f, indent=2, ensure_ascii=False)
 
             direction = "X → Y" if is_x else "Y → X"
-            self.report({'INFO'}, _("已复制 (%s): %s") % (direction, dst_filename))
+            self.report({'INFO'}, T("core.editor_ops.copied").format(direction=direction, filename=dst_filename))
         except Exception as e:
-            self.report({'ERROR'}, _("转换失败: %s") % e)
+            self.report({'ERROR'}, T("core.editor_ops.convert_failed").format(err=e))
             return {'CANCELLED'}
 
         return {'FINISHED'}

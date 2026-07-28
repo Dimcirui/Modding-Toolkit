@@ -1,4 +1,5 @@
 import bpy
+from ...core.i18n import T
 from .batch_export import (
     MHWI_PARTS, HELM_PART,
     SP_FACE_FILE_TYPES, SP_HAIR_FILE_TYPES,
@@ -56,7 +57,7 @@ def _get_filtered_collections(filetype):
         elif not ct and name_sfx and c.name.endswith(name_sfx):
             result.append((c.name, c.name, "", "OUTLINER_COLLECTION", len(result)))
     if not result:
-        result.append(("NONE", "无匹配集合", "", "ERROR", 0))
+        result.append(("NONE", T("mhwi.batch_export_ui.no_matching_collections"), "", "ERROR", 0))
     return result
 
 
@@ -101,10 +102,13 @@ class MHWI_OT_ClearBinding(bpy.types.Operator):
 
 
 class MHWI_OT_ToggleBlank(bpy.types.Operator):
-    """切换该部位是否使用空模"""
     bl_idname  = "mhwi.toggle_blank"
     bl_label   = "Toggle Blank"
     bl_options = {'INTERNAL'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.batch_export_ui.toggle_blank_desc")
 
     model_id: bpy.props.StringProperty()
     part:     bpy.props.StringProperty()
@@ -116,10 +120,13 @@ class MHWI_OT_ToggleBlank(bpy.types.Operator):
 
 
 class MHWI_OT_ToggleCCL(bpy.types.Operator):
-    """切换该部位 CTC 是否顺带导出 CCL"""
     bl_idname  = "mhwi.toggle_ccl"
     bl_label   = "Toggle CCL"
     bl_options = {'INTERNAL'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.batch_export_ui.toggle_ccl_desc")
 
     model_id: bpy.props.StringProperty()
     part:     bpy.props.StringProperty()
@@ -196,11 +203,14 @@ def _get_armor_label(context, rank, armor_id):
 
 
 class MHWI_OT_PickArmor(bpy.types.Operator):
-    """搜索并选择装备（避免装备过多时下拉表溢出屏幕）"""
     bl_idname  = "mhwi.pick_armor"
     bl_label   = "Pick Armor"
     bl_options = {'INTERNAL'}
     bl_property = "armor_id"
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.batch_export_ui.pick_armor_desc")
 
     rank: bpy.props.StringProperty()   # 'HR' / 'MR' / 'SP'
     armor_id: bpy.props.EnumProperty(
@@ -237,11 +247,14 @@ def _get_weapon_label(context, weapon_type, weapon_id):
 
 
 class MHWI_OT_PickWeapon(bpy.types.Operator):
-    """搜索并选择武器（避免武器过多时下拉表溢出屏幕）"""
     bl_idname  = "mhwi.pick_weapon"
     bl_label   = "Pick Weapon"
     bl_options = {'INTERNAL'}
     bl_property = "weapon_id"
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.batch_export_ui.pick_weapon_desc")
 
     weapon_type: bpy.props.StringProperty()
     weapon_id: bpy.props.EnumProperty(
@@ -262,10 +275,13 @@ class MHWI_OT_PickWeapon(bpy.types.Operator):
 # ── 主对话框 ──────────────────────────────────────────────────────
 
 class MHWI_OT_BatchExportDialog(bpy.types.Operator):
-    """MHWI 装备批量导出对话框"""
     bl_idname  = "mhwi.batch_export_dialog"
     bl_label   = "MHWI Batch Exporter"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.batch_export_ui.dialog_desc")
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self, width=EXPORTER_WINDOW_WIDTH)
@@ -287,7 +303,7 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
             short = "/".join(parts[-3:]) if len(parts) > 3 else natives_root
             row.label(text=f".../{short}")
         else:
-            row.label(text="未设置", icon='ERROR')
+            row.label(text=T("mhwi.batch_import_ui.not_set"), icon='ERROR')
 
         if settings.mhwi_export_mode == 'WEAPON':
             self._draw_weapon_mode(layout, context, scene, settings)
@@ -296,7 +312,7 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
 
     def _draw_armor_mode(self, layout, context, scene, settings):
         # ── 预设组 ──
-        layout.prop(settings, "mhwi_armor_sets_file", text="预设组")
+        layout.prop(settings, "mhwi_armor_sets_file", text=T("mhwi.batch_export_ui.preset_group"))
 
         # ── 性别 + 位阶标签页 ──
         rank = settings.mhwi_rank_tab
@@ -315,19 +331,20 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
             model_id = settings.mhwi_selected_sp_armor
 
         cur_armor_label = _get_armor_label(context, rank, model_id)
-        op = layout.operator("mhwi.pick_armor", text=cur_armor_label if cur_armor_label else "选择装备...",
+        op = layout.operator("mhwi.pick_armor",
+                             text=cur_armor_label if cur_armor_label else T("mhwi.batch_export_ui.pick_armor_placeholder"),
                              icon='DOWNARROW_HLT')
         op.rank = rank
 
         if not model_id or model_id == 'NONE':
             layout.separator()
-            layout.label(text="请选择装备以配置绑定", icon='INFO')
+            layout.label(text=T("mhwi.batch_export_ui.select_armor_hint"), icon='INFO')
             return
 
         data        = _load_armor_sets(settings.mhwi_armor_sets_file)
         armor_entry = get_armor_entry(data, model_id)
         if not armor_entry:
-            layout.label(text="装备包中未找到该装备", icon='ERROR')
+            layout.label(text=T("mhwi.batch_export_ui.armor_not_in_pack"), icon='ERROR')
             return
 
         mask_str  = armor_entry.get("mask", "11111")
@@ -353,22 +370,23 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
 
     def _draw_weapon_mode(self, layout, context, scene, settings):
         # ── 预设组 ──
-        layout.prop(settings, "mhwi_weapon_sets_file", text="预设组")
+        layout.prop(settings, "mhwi_weapon_sets_file", text=T("mhwi.batch_export_ui.preset_group"))
 
         # ── 武器类型 ──
-        layout.prop(settings, "mhwi_weapon_type_tab", text="武器类型")
+        layout.prop(settings, "mhwi_weapon_type_tab", text=T("mhwi.batch_export_ui.weapon_type"))
         weapon_type = settings.mhwi_weapon_type_tab
 
         # ── 武器选择 ──
         weapon_id = get_selected_weapon(scene, weapon_type)
         cur_label = _get_weapon_label(context, weapon_type, weapon_id)
-        op = layout.operator("mhwi.pick_weapon", text=cur_label if cur_label else "选择武器...",
+        op = layout.operator("mhwi.pick_weapon",
+                             text=cur_label if cur_label else T("mhwi.batch_export_ui.pick_weapon_placeholder"),
                              icon='DOWNARROW_HLT')
         op.weapon_type = weapon_type
 
         if not weapon_id or weapon_id == 'NONE':
             layout.separator()
-            layout.label(text="请选择武器以配置绑定", icon='INFO')
+            layout.label(text=T("mhwi.batch_export_ui.select_weapon_hint"), icon='INFO')
             return
 
         data  = _load_weapon_sets(settings.mhwi_weapon_sets_file)
@@ -376,14 +394,14 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
         if not entry:
             # 上次选择属于其他类型或预设组已变更，视为未选择
             layout.separator()
-            layout.label(text="请选择武器以配置绑定", icon='INFO')
+            layout.label(text=T("mhwi.batch_export_ui.select_weapon_hint"), icon='INFO')
             return
 
         layout.separator()
         if has_patch_model(entry):
             sub = layout.row()
             sub.enabled = False
-            sub.label(text="该武器拥有贴片模型，不建议替换！", icon='ERROR')
+            sub.label(text=T("mhwi.batch_export_ui.patch_model_warning"), icon='ERROR')
 
         main_code = entry["id"]
         parts     = get_weapon_parts(weapon_type, entry)
@@ -431,11 +449,12 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
             is_blank = get_blank(scene, model_id, part_code)
 
             row = layout.row(align=False)
-            row.label(text=part_name)
+            row.label(text=T(part_name))
 
             if is_blank:
                 # SP 头盔不写 evhl，所以不显示 "+evhl"
-                blank_label = "空模" if (sp_helm or not is_helm) else "空模+evhl"
+                blank_label = (T("mhwi.batch_export_ui.blank_model") if (sp_helm or not is_helm)
+                               else T("mhwi.batch_export_ui.blank_model_evhl"))
                 sub = row.row()
                 sub.enabled = False
                 sub.label(text="")
@@ -455,7 +474,7 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
             if is_helm:
                 sub = row.row(align=True)
                 sub.enabled = False
-                ctc_ph = sub.operator("mhwi.pick_collection", text="不支持物理", icon='LINKED')
+                ctc_ph = sub.operator("mhwi.pick_collection", text=T("mhwi.batch_export_ui.physics_not_supported"), icon='LINKED')
                 ctc_ph.model_id = model_id
                 ctc_ph.part     = part_code
                 ctc_ph.filetype = "ctc"
@@ -472,7 +491,7 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
                 ccl_op.part     = part_code
 
             # 空模切换（未激活）
-            op = row.operator("mhwi.toggle_blank", text="空模",
+            op = row.operator("mhwi.toggle_blank", text=T("mhwi.batch_export_ui.blank_model"),
                                icon='FILE_BLANK', depress=False)
             op.model_id = model_id
             op.part     = part_code
@@ -484,27 +503,27 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
 
         # ── 独立头部 ──
         layout.separator()
-        layout.label(text=f"独立头部  ({face_id})", icon='OUTLINER_OB_ARMATURE')
+        layout.label(text=f"{T('mhwi.batch_export_ui.standalone_face')}  ({face_id})", icon='OUTLINER_OB_ARMATURE')
         header = layout.row(align=False)
         header.label(text="")
         for ft in SP_FACE_FILE_TYPES:
             header.label(text=_FILETYPE_LABELS[ft], icon=_FILETYPE_ICONS[ft], translate=False)
 
         row = layout.row(align=False)
-        row.label(text="头部")
+        row.label(text=T("mhwi.batch_export_ui.face_label"))
         for ft in SP_FACE_FILE_TYPES:
             self._draw_picker(row, scene, face_id, "face", ft)
 
         # ── 独立头发 ──
         layout.separator()
-        layout.label(text=f"独立头发  ({hair_id})", icon='OUTLINER_OB_CURVES')
+        layout.label(text=f"{T('mhwi.batch_export_ui.standalone_hair')}  ({hair_id})", icon='OUTLINER_OB_CURVES')
         header = layout.row(align=False)
         header.label(text="")
         for ft in ("mod3", "mrl3", "ctc"):
             header.label(text=_FILETYPE_LABELS[ft], icon=_FILETYPE_ICONS[ft], translate=False)
 
         row = layout.row(align=False)
-        row.label(text="头发")
+        row.label(text=T("mhwi.batch_export_ui.hair_label"))
         self._draw_picker(row, scene, hair_id, "hair", "mod3")
         self._draw_picker(row, scene, hair_id, "hair", "mrl3")
         ctc_sub = row.row(align=True)

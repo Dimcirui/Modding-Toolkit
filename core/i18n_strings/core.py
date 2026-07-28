@@ -1,0 +1,497 @@
+"""
+core/i18n_strings/core.py — bilingual STRINGS table for core/*.py.
+
+Covers: core/standard_ops.py, core/pose_ops.py, core/editor_ops.py,
+core/editor_props.py, core/mdf_tex_processor_base.py, core/mdf_generator_base.py,
+core/update_ops.py.
+
+Key naming convention: "core.<module_name_without_.py>.<short_purpose>".
+Keys are namespaced per source module even where wording is repeated, so this
+table stays a straightforward 1:1 mirror of "where does this string live".
+"""
+
+STRINGS = {
+
+    # ══════════════════════════════════════════════════════════════════════
+    # core/standard_ops.py
+    # ══════════════════════════════════════════════════════════════════════
+
+    # ── Operator bl_description (dynamic tooltip via description()) ────────
+    "core.standard_ops.apply_standard_x_desc": {
+        "EN": "Execute Standard X: merge weights and rename to base names",
+        "ZH": "执行标准化 X：合并权重并重命名为基础名"},
+    "core.standard_ops.apply_standard_y_desc": {
+        "EN": "Execute Standard Y: convert base names to target game names",
+        "ZH": "执行标准化 Y：将基础名转为目标游戏名"},
+    "core.standard_ops.direct_convert_desc": {
+        "EN": "Convert vertex groups of selected meshes to the target game format",
+        "ZH": "将选中网格的顶点组转换成目标游戏的格式"},
+    "core.standard_ops.universal_snap_desc": {
+        "EN": "Align the body bones of the target game armature to the source preset bones (select target armature last)",
+        "ZH": "将目标游戏骨架的身体骨骼对齐来源预设骨骼（后选要修改的目标骨架）"},
+    "core.standard_ops.smart_graft_desc": {
+        "EN": "Smart physics bone graft (with end-bone extension):\n"
+              "1. Copy physics bones (direct world-space alignment).\n"
+              "2. Auto-generate _End bones at the tip of physics chains (before verticalizing).\n"
+              "3. Force-disconnect bones to prevent position snapping.\n"
+              "4. Reset all grafted bones to point straight up (Z+).",
+        "ZH": "智能物理骨移植 (末端延伸版):\n"
+              "1. 复制物理骨骼 (直接世界坐标对齐)。\n"
+              "2. 【新功能】自动为物理链末端添加 _End 骨骼 (在竖直重置前生成)。\n"
+              "3. 强制断开连接，防止位置吸附。\n"
+              "4. 统一将所有移植骨骼重置为竖直向上 (Z+)。"},
+    "core.standard_ops.merge_physics_weights_desc": {
+        "EN": "Merge physics bone vertex group weights into their nearest base bone (determined by X preset).\n"
+              "For downgrade scenarios where physics is unsupported or unneeded",
+        "ZH": "将物理骨骼的顶点组权重合并到其最近的基础骨骼上 (通过 X 预设判断)。\n用于不需要物理效果或目标游戏不支持物理的降级场景"},
+    "core.standard_ops.rename_bones_desc": {
+        "EN": "Rename base bones on the armature from source name (X) to target game name (Y).\n"
+              "For manual alignment workflows: renamed bones match the target game for easier alignment and data transfer",
+        "ZH": "将骨架上的基础骨骼名从来源名 (X) 改为目标游戏名 (Y)。\n用于手动对齐工作流: 改名后骨骼名与目标游戏一致, 方便手动对齐和数据传递"},
+    "core.standard_ops.remove_non_base_desc": {
+        "EN": "Delete all non-base bones in the armature (determined by X preset).\n"
+              "Recommended to run Downgrade Physics Weights first",
+        "ZH": "删除骨架中所有非基础骨骼 (通过 X 预设判断)。\n建议先执行物理权重降级再使用此功能"},
+    "core.standard_ops.set_bone_visibility_desc": {
+        "EN": "Control bone visibility by mode (All / Base Only / Physics Only); the latter two require loading the X preset",
+        "ZH": "按模式控制骨骼可见性（全显 / 仅基础骨 / 仅物理骨），后两者需加载 X 预设"},
+    "core.standard_ops.refresh_colors_desc": {
+        "EN": "Refresh physics bone color marks based on the bone's chain_role custom property",
+        "ZH": "根据骨骼的 chain_role 自定义属性刷新物理骨骼的颜色标记"},
+    "core.standard_ops.mark_main_continue_desc": {
+        "EN": "Mark selected bones as main chain continue (chain_role = main_continue) and color them amber gold.\n"
+              "At forks, mark which child bone continues the main chain; unmarked children will be treated as branch heads",
+        "ZH": "将选中骨骼标记为主链延伸 (chain_role = main_continue)，并染为琥珀金色。\n在分叉处标记哪个子骨是主链方向，未标记的子骨将被视为支链头"},
+    "core.standard_ops.clear_chain_role_desc": {
+        "EN": "Clear the chain_role mark on selected bones, reverting them to regular body bones (deep blue)",
+        "ZH": "清除选中骨骼的 chain_role 标记，恢复为普通体骨（深蓝色）"},
+    "core.standard_ops.merge_into_parent_desc": {
+        "EN": "Merge selected bone vertex weights into its parent bone and delete the selected bone.\n"
+              "For cleaning up functional root bones (connector bones without physics simulation, such as hair_root)",
+        "ZH": "将选中骨骼的顶点权重合并到其父骨骼，并删除选中骨骼。\n用于清理功能性根骨（如 hair_root 等无物理模拟的连接器骨骼）"},
+
+    # ── Shared error / status fragments ─────────────────────────────────────
+    "core.standard_ops.preset_load_failed": {"EN": "Preset load failed", "ZH": "预设加载失败"},
+    "core.standard_ops.cannot_load_y_preset": {"EN": "Cannot load Y preset", "ZH": "无法加载 Y 预设"},
+    "core.standard_ops.cannot_load_x_preset": {"EN": "Cannot load X preset", "ZH": "无法加载 X 预设"},
+    "core.standard_ops.select_at_least_one_mesh_paren": {
+        "EN": "Please select at least one mesh", "ZH": "请至少选中一个网格 (Mesh)"},
+    "core.standard_ops.select_at_least_one_mesh": {
+        "EN": "Please select at least one mesh", "ZH": "请至少选中一个网格"},
+    "core.standard_ops.direct_convert_auto_conflict": {
+        "EN": "Cannot auto-detect both presets for Rename Vertex Groups (X+Y): the operation targets meshes, "
+              "which have no independent target armature to identify the Y preset. Please select one of the presets manually",
+        "ZH": "重命名顶点组 (X+Y) 无法同时自动识别两个预设，因为操作对象为网格，没有独立的目标骨架来识别 Y 预设。请手动选择其中一个预设"},
+    "core.standard_ops.source_preset_x_prefix": {"EN": "Source Preset (X): ", "ZH": "来源预设 (X): "},
+    "core.standard_ops.target_preset_y_prefix": {"EN": "Target Preset (Y): ", "ZH": "目标预设 (Y): "},
+    "core.standard_ops.no_common_mapping": {
+        "EN": "No common bone mappings between X and Y presets", "ZH": "X与Y预设之间没有共同的骨骼映射"},
+    "core.standard_ops.snap_selection_error": {
+        "EN": "Operation error: please select source armature (X) first, then Ctrl-select target armature (Y)",
+        "ZH": "操作对象错误: 请先选中源骨架(X)，再按住Ctrl选中目标骨架(Y)"},
+    "core.standard_ops.graft_no_target_arm": {
+        "EN": "Operation failed: please select the In armature first, then Ctrl-select the Out armature (Out must be the active yellow object)",
+        "ZH": "操作失败：请先选择 In 骨架，再 Ctrl 加选 Out 骨架(Out需为黄色激活状态)"},
+    "core.standard_ops.graft_no_source_arm": {
+        "EN": "Operation failed: source (In) armature not found", "ZH": "操作失败：未找到来源(In)骨架"},
+    "core.standard_ops.cannot_load_source_in": {"EN": "Cannot load source preset (In)", "ZH": "无法加载源预设 (In)"},
+    "core.standard_ops.cannot_load_target_out": {"EN": "Cannot load target preset (Out)", "ZH": "无法加载目标预设 (Out)"},
+    "core.standard_ops.no_physics_bones_detected": {"EN": "No physics bones detected", "ZH": "未检测到物理骨骼"},
+    "core.standard_ops.select_armature_first": {"EN": "Please select an armature first", "ZH": "请先选中一个骨架"},
+    "core.standard_ops.mesh_no_armature": {
+        "EN": "Selected meshes have no bound armature", "ZH": "选中的网格没有绑定骨架"},
+    "core.standard_ops.no_physics_vgroups": {
+        "EN": "No physics bone vertex groups detected", "ZH": "未检测到物理骨骼的顶点组"},
+    "core.standard_ops.rename_bones_auto_conflict": {
+        "EN": "Cannot auto-detect both presets for Rename Base Bones (X+Y): the operation targets a single armature, "
+              "so X and Y cannot be distinguished. Please select one of the presets manually",
+        "ZH": "基础骨骼改名 (X+Y) 无法同时自动识别两个预设，因为操作对象为单一骨架，无法区分 X 和 Y。请手动选择其中一个预设"},
+    "core.standard_ops.no_bones_need_rename": {
+        "EN": "No bones need renaming (source and target names already match)",
+        "ZH": "没有需要改名的骨骼 (来源和目标名称已一致)"},
+    "core.standard_ops.no_bones_to_remove": {"EN": "No bones to remove", "ZH": "没有需要剔除的骨骼"},
+    "core.standard_ops.cannot_recognize_base_bones": {
+        "EN": "Cannot recognize base bones, please select a preset manually",
+        "ZH": "无法识别基础骨骼，请手动选择预设"},
+    "core.standard_ops.cannot_load_auto_detected": {
+        "EN": "Cannot load the auto-detected preset", "ZH": "无法加载自动识别的预设"},
+    "core.standard_ops.auto_detect_failed_x": {
+        "EN": "Could not auto-detect a preset; please select the X preset manually",
+        "ZH": "未能自动识别预设，请手动选择 X 预设"},
+    "core.standard_ops.colors_refreshed": {"EN": "Bone colors refreshed", "ZH": "骨骼颜色已刷新"},
+    "core.standard_ops.select_bones_in_pose_mode": {
+        "EN": "Please select bones in Pose Mode", "ZH": "请在姿态模式下选中骨骼"},
+    "core.standard_ops.pose_or_edit_mode_required": {
+        "EN": "Please operate in Pose Mode or Edit Mode", "ZH": "请在姿态模式或编辑模式下操作"},
+    "core.standard_ops.no_valid_parent_bone": {
+        "EN": "Selected bones have no valid parent bone", "ZH": "选中的骨骼没有可用的父骨骼"},
+
+    # ── Template report messages ────────────────────────────────────────────
+    "core.standard_ops.standardize_done": {
+        "EN": "Standardization complete: renamed {rename} bone(s), cleaned {clean} auxiliary bone(s)",
+        "ZH": "标准化完成: 重命名 {rename} 根, 清理 {clean} 根辅助骨"},
+    "core.standard_ops.direct_convert_done": {
+        "EN": "Done: updated vertex groups in {n} mesh(es)", "ZH": "处理完成: 已更新 {n} 个网格的顶点组"},
+    "core.standard_ops.snap_done": {
+        "EN": "Armature snap complete: {n} bone(s)", "ZH": "骨架对齐完成: {n} 根骨骼"},
+    "core.standard_ops.graft_done": {
+        "EN": "Graft complete: processed {n} bone(s) (including auto-generated end bones)",
+        "ZH": "移植完成: 处理 {n} 根骨骼 (含自动生成的末端骨)"},
+    "core.standard_ops.merge_physics_done": {
+        "EN": "Physics weight downgrade complete: merged {groups} physics vertex group(s) across {meshes} mesh(es)",
+        "ZH": "物理权重降级完成: 在 {meshes} 个网格上合并了 {groups} 个物理顶点组"},
+    "core.standard_ops.renamed_to_target_done": {
+        "EN": "Renamed {n} bone(s) to target game names", "ZH": "已将 {n} 根骨骼改名为目标游戏名"},
+    "core.standard_ops.removed_non_base_bones": {
+        "EN": "Removed {n} non-base bone(s)", "ZH": "已剔除 {n} 根非基础骨骼"},
+    "core.standard_ops.bone_display_status": {
+        "EN": "Bone display: {mode}", "ZH": "骨骼显示: {mode}"},
+    "core.standard_ops.auto_detect_fallback": {
+        "EN": "Could not auto-detect the target game preset; falling back to source preset [{name}] — consider switching manually",
+        "ZH": "未能自动识别目标游戏预设，回退至来源预设 [{name}]，建议手动切换"},
+    "core.standard_ops.refreshed_n_bones": {"EN": "Refreshed {n} bone(s)", "ZH": "已刷新 {n} 根骨骼"},
+    "core.standard_ops.auto_detected_suffix": {
+        "EN": " (auto-detected preset: {name})", "ZH": "（自动识别预设：{name}）"},
+    "core.standard_ops.marked_main_continue": {
+        "EN": "Marked {n} bone(s) as main continue", "ZH": "已标记 {n} 根骨骼为主链延伸"},
+    "core.standard_ops.cleared_chain_role": {
+        "EN": "Cleared chain role mark from {n} bone(s)", "ZH": "已清除 {n} 根骨骼的链角色标记"},
+    "core.standard_ops.merged_into_parent": {
+        "EN": "Merged {n} bone(s) into parent", "ZH": "已合并 {n} 根骨骼到父骨"},
+
+    # ── bone_view_mode EnumProperty items (get_bone_view_mode_items callback) ─
+    "core.standard_ops.mode_all": {"EN": "Show All", "ZH": "全显"},
+    "core.standard_ops.mode_all_desc": {"EN": "Show all bones", "ZH": "显示所有骨骼"},
+    "core.standard_ops.mode_base": {"EN": "Base Bones Only", "ZH": "仅基础骨"},
+    "core.standard_ops.mode_base_desc": {
+        "EN": "Hide physics bones, show only preset base bones", "ZH": "隐藏物理骨，只显示预设基础骨"},
+    "core.standard_ops.mode_physics": {"EN": "Physics Bones Only", "ZH": "仅物理骨"},
+    "core.standard_ops.mode_physics_desc": {
+        "EN": "Hide base bones, show only physics bones", "ZH": "隐藏基础骨，只显示物理骨"},
+
+    # ══════════════════════════════════════════════════════════════════════
+    # core/pose_ops.py
+    # ══════════════════════════════════════════════════════════════════════
+
+    "core.pose_ops.no_record": {"EN": "No records", "ZH": "无记录"},
+
+    "core.pose_ops.tpose_direction_desc": {
+        "EN": "Rotate upper arms to horizontal only; suitable for simple A-Pose armatures (e.g. MMD). "
+              "If it does not work correctly, use the more general Pose Transform Recorder",
+        "ZH": "仅将上臂旋转到水平方向，适用于简单的 A-Pose 骨架（如MMD），如果无法正确运作，请使用更通用的姿态变换记录器"},
+    "core.pose_ops.matrix_zero_desc": {
+        "EN": "RE Engine only: reset limb bone rotation matrices to T-Pose (for Wilds/SF6/RE4 etc., except RE9)",
+        "ZH": "RE Engine 专用: 重置肢体骨骼旋转矩阵为 T-Pose (适用于荒野/街霸6/生化4等，生化9除外)"},
+    "core.pose_ops.record_transform_desc": {
+        "EN": "Record relative transform: select A-pose armature first, then Ctrl-select B-pose armature, "
+              "compute and save A->B transform",
+        "ZH": "录制相对变换: 先选 A 姿态骨架，再 Ctrl 选 B 姿态骨架，计算并保存 A->B 的变换"},
+    "core.pose_ops.apply_forward_desc": {
+        "EN": "Apply transform forward (A->B): convert selected armature from A-pose to B-pose",
+        "ZH": "正向应用变换 (A->B): 将选中骨架从 A 姿态转换为 B 姿态"},
+    "core.pose_ops.apply_inverse_desc": {
+        "EN": "Apply transform inverse (B->A): convert selected armature from B-pose back to A-pose",
+        "ZH": "逆向应用变换 (B->A): 将选中骨架从 B 姿态转换回 A 姿态"},
+    "core.pose_ops.delete_preset_desc": {
+        "EN": "Delete the selected transform record", "ZH": "删除选中的变换记录"},
+
+    "core.pose_ops.select_armature_first": {"EN": "Please select an armature first", "ZH": "请先选中一个骨架"},
+    "core.pose_ops.cannot_load_armature_preset": {
+        "EN": "Cannot load armature preset", "ZH": "无法加载骨架预设"},
+    "core.pose_ops.upperarm_not_found": {"EN": "Upper arm bones not found", "ZH": "未找到上臂骨骼"},
+    "core.pose_ops.no_bones_matched": {"EN": "No bones matched in preset", "ZH": "预设中没有匹配到任何骨骼"},
+    "core.pose_ops.record_name_label": {"EN": "Name", "ZH": "名称"},
+    "core.pose_ops.record_name_desc": {
+        "EN": "Filename for the saved transform record (e.g. MMD A-Pose to T-Pose)",
+        "ZH": "保存的变换记录文件名 (例: MMD A-Pose到T-Pose)"},
+    "core.pose_ops.record_transform_hint": {
+        "EN": "Select the A-pose armature first, then Ctrl-select the B-pose armature",
+        "ZH": "先选 A 姿态骨架, 再 Ctrl 选 B 姿态骨架"},
+    "core.pose_ops.select_two_armatures": {
+        "EN": "Please select two armatures: A-pose first, then Ctrl-select B-pose",
+        "ZH": "请选中两个骨架: 先选 A 姿态, 再 Ctrl 选 B 姿态"},
+    "core.pose_ops.name_cannot_be_empty": {"EN": "Name cannot be empty", "ZH": "名称不能为空"},
+    "core.pose_ops.ensure_two_armatures": {
+        "EN": "Please make sure two armature objects are selected", "ZH": "请确保选中了两个骨架对象"},
+    "core.pose_ops.no_common_bones": {
+        "EN": "The two armatures have no bones with the same name", "ZH": "两个骨架没有同名骨骼"},
+    "core.pose_ops.poses_nearly_identical": {
+        "EN": "The two armatures have nearly identical poses; no significant transform to record",
+        "ZH": "两个骨架的姿态几乎相同, 没有显著变换可记录"},
+    "core.pose_ops.no_transform_selected": {"EN": "No transform record selected", "ZH": "未选择变换记录"},
+    "core.pose_ops.file_not_found": {"EN": "File does not exist: {name}", "ZH": "文件不存在: {name}"},
+    "core.pose_ops.read_failed": {"EN": "Read failed: {err}", "ZH": "读取失败: {err}"},
+    "core.pose_ops.no_transform_data": {"EN": "No transform data in record file", "ZH": "记录文件中没有变换数据"},
+    "core.pose_ops.no_matching_bones": {
+        "EN": "No matching bones found between armature and transform record (check armature preset)",
+        "ZH": "骨架与变换记录之间找不到对应的骨骼 (请检查骨架预设)"},
+    "core.pose_ops.save_failed": {"EN": "Save failed: {err}", "ZH": "保存失败: {err}"},
+    "core.pose_ops.deleted": {"EN": "Deleted: {name}", "ZH": "已删除: {name}"},
+    "core.pose_ops.delete_failed": {"EN": "Delete failed: {err}", "ZH": "删除失败: {err}"},
+
+    "core.pose_ops.tpose_direction_done": {
+        "EN": "Direction calc complete: {bones} upper arm bone(s), {meshes} mesh(es)",
+        "ZH": "方向计算完成: {bones} 根上臂骨骼, {meshes} 个网格"},
+    "core.pose_ops.matrix_zero_done": {
+        "EN": "RE Engine matrix reset complete: {bones} bone(s), {meshes} mesh(es)",
+        "ZH": "RE Engine 矩阵归零完成: {bones} 根骨骼, {meshes} 个网格"},
+    "core.pose_ops.recorded_transform": {
+        "EN": "Recorded transforms for {n} bone(s) -> {filename}", "ZH": "已录制 {n} 根骨骼的变换 -> {filename}"},
+    "core.pose_ops.transform_done": {
+        "EN": "Transform complete ({direction}): {bones} bone(s), {meshes} mesh(es)",
+        "ZH": "变换完成 ({direction}): {bones} 根骨骼, {meshes} 个网格"},
+
+    # ══════════════════════════════════════════════════════════════════════
+    # core/editor_ops.py
+    # ══════════════════════════════════════════════════════════════════════
+
+    "core.editor_ops.init_editor_desc": {
+        "EN": "Initialize the preset editor list", "ZH": "初始化预设编辑器列表"},
+    "core.editor_ops.pick_bone_desc": {
+        "EN": "Fill the specified slot with the currently selected bone "
+              "(or the bone matching the active vertex group)",
+        "ZH": "将当前选中的骨骼（或激活顶点组对应的骨骼）填入指定槽位"},
+    "core.editor_ops.clear_slot_desc": {"EN": "Clear slot contents", "ZH": "清除槽位内容"},
+    "core.editor_ops.mirror_mapping_desc": {
+        "EN": "Mirror left-side mapping rules to the right side", "ZH": "将左侧映射规则镜像到右侧"},
+    "core.editor_ops.save_preset_desc": {
+        "EN": "Save preset JSON (saves as X or Y preset depending on edit mode)",
+        "ZH": "保存预设 JSON（根据编辑模式保存为 X 或 Y 预设）"},
+    "core.editor_ops.load_preset_desc": {
+        "EN": "Load the selected preset into the editor for modification", "ZH": "读取选中的预设到编辑器中进行修改"},
+    "core.editor_ops.delete_preset_desc": {
+        "EN": "Delete the currently selected preset file", "ZH": "删除当前选中的预设文件"},
+    "core.editor_ops.open_folder_desc": {
+        "EN": "Open the folder containing the current preset in the file manager",
+        "ZH": "在文件管理器中打开当前预设所在的文件夹"},
+    "core.editor_ops.convert_preset_desc": {
+        "EN": "Copy the current preset to the other type's directory (X→Y or Y→X), appending a conversion marker to the filename",
+        "ZH": "复制当前预设到另一类型目录（X→Y 或 Y→X），文件名加转换标记"},
+
+    "core.editor_ops.editor_reset": {"EN": "Editor has been reset", "ZH": "编辑器已重置"},
+    "core.editor_ops.no_active_vgroup": {"EN": "No active vertex group", "ZH": "没有激活的顶点组"},
+    "core.editor_ops.no_bound_armature": {
+        "EN": "Cannot find a bound armature; make sure the mesh has an Armature modifier",
+        "ZH": "找不到绑定骨架，请确认网格有 Armature 修改器"},
+    "core.editor_ops.vgroup_no_matching_bone": {
+        "EN": "Vertex group '{name}' has no matching bone in the armature, skipped",
+        "ZH": "顶点组 '{name}' 在骨架中没有同名骨骼，跳过"},
+    "core.editor_ops.enter_pose_or_edit_mode": {
+        "EN": "Please enter Pose/Edit mode to select bones, or activate a vertex group in Weight Paint mode",
+        "ZH": "请进入 Pose / Edit 模式选择骨骼，或在权重绘制模式下激活顶点组"},
+    "core.editor_ops.no_bones_selected": {"EN": "No bones selected", "ZH": "没有选中任何骨骼"},
+    "core.editor_ops.batch_added_aux_bones": {
+        "EN": "Batch added {n} auxiliary bone(s)", "ZH": "已批量添加 {n} 个辅助骨"},
+    "core.editor_ops.no_new_bones_added": {
+        "EN": "No new bones added (possibly duplicates or the main bone was reselected)",
+        "ZH": "未添加任何新骨骼 (可能是重复或选重了主骨)"},
+    "core.editor_ops.cannot_determine_active_bone": {
+        "EN": "Cannot determine active bone, please click a specific bone", "ZH": "无法确定活动骨骼，请点击具体的一根骨骼"},
+    "core.editor_ops.mirror_done": {
+        "EN": "Smart mirror complete: updated {n} item(s)", "ZH": "智能镜像完成: 更新 {n} 项"},
+    "core.editor_ops.list_empty_not_saved": {"EN": "List is empty, nothing saved", "ZH": "列表为空，未保存"},
+    "core.editor_ops.preset_saved": {
+        "EN": "{kind} preset saved: {filename}", "ZH": "{kind} 预设已保存: {filename}"},
+    "core.editor_ops.save_failed": {"EN": "Save failed: {err}", "ZH": "保存失败: {err}"},
+    "core.editor_ops.no_preset_selected": {"EN": "No preset selected", "ZH": "未选择任何预设"},
+    "core.editor_ops.cannot_load_file": {"EN": "Cannot load file: {name}", "ZH": "无法加载文件: {name}"},
+    "core.editor_ops.preset_loaded": {
+        "EN": "Successfully loaded {kind} preset: {name} ({n} mapping(s))",
+        "ZH": "成功加载{kind}预设: {name} ({n} 个映射)"},
+    "core.editor_ops.deleted": {"EN": "Deleted: {name}", "ZH": "已删除: {name}"},
+    "core.editor_ops.delete_failed": {"EN": "Delete failed: {err}", "ZH": "删除失败: {err}"},
+    "core.editor_ops.file_not_exist": {"EN": "File does not exist", "ZH": "文件不存在"},
+    "core.editor_ops.folder_not_exist": {"EN": "Folder does not exist: {path}", "ZH": "文件夹不存在: {path}"},
+    "core.editor_ops.source_file_not_exist": {
+        "EN": "Source file does not exist: {name}", "ZH": "源文件不存在: {name}"},
+    "core.editor_ops.target_file_exists": {
+        "EN": "Target file already exists: {name}, skipped overwrite", "ZH": "目标文件已存在: {name}，已跳过覆盖"},
+    "core.editor_ops.copied": {"EN": "Copied ({direction}): {filename}", "ZH": "已复制 ({direction}): {filename}"},
+    "core.editor_ops.convert_failed": {"EN": "Conversion failed: {err}", "ZH": "转换失败: {err}"},
+
+    # ══════════════════════════════════════════════════════════════════════
+    # core/editor_props.py
+    # ══════════════════════════════════════════════════════════════════════
+
+    "core.editor_props.source_bone_desc": {
+        "EN": "The corresponding main bone name", "ZH": "对应的主骨骼名称"},
+    "core.editor_props.new_preset_name_label": {"EN": "Preset Name", "ZH": "预设名称"},
+    "core.editor_props.search_label": {"EN": "Search", "ZH": "搜索"},
+    "core.editor_props.search_desc": {"EN": "Filter bone names", "ZH": "过滤骨骼名称"},
+    "core.editor_props.edit_mode_label": {"EN": "Edit Mode", "ZH": "编辑模式"},
+    "core.editor_props.edit_mode_x": {"EN": "X Preset (Source)", "ZH": "X 预设 (来源)"},
+    "core.editor_props.edit_mode_x_desc": {
+        "EN": "Edit the bone mapping preset for the source game", "ZH": "编辑来源游戏的骨骼映射预设"},
+    "core.editor_props.edit_mode_y": {"EN": "Y Preset (Target)", "ZH": "Y 预设 (目标)"},
+    "core.editor_props.edit_mode_y_desc": {
+        "EN": "Edit the bone mapping preset for the target game", "ZH": "编辑目标游戏的骨骼映射预设"},
+
+    # ══════════════════════════════════════════════════════════════════════
+    # core/mdf_tex_processor_base.py
+    # ══════════════════════════════════════════════════════════════════════
+
+    "core.mdf_tex_processor_base.pbr_color": {"EN": "Base Color (Albedo)", "ZH": "基础色 (Albedo)"},
+    "core.mdf_tex_processor_base.pbr_alpha": {"EN": "Alpha Mask", "ZH": "Alpha 遮罩"},
+    "core.mdf_tex_processor_base.pbr_emissive": {"EN": "Emissive", "ZH": "自发光 (Emissive)"},
+    "core.mdf_tex_processor_base.pbr_normal": {"EN": "Normal", "ZH": "法线 (Normal)"},
+    "core.mdf_tex_processor_base.pbr_roughness": {"EN": "Roughness", "ZH": "粗糙度 (Roughness)"},
+    "core.mdf_tex_processor_base.pbr_metallic": {"EN": "Metallic", "ZH": "金属度 (Metallic)"},
+    "core.mdf_tex_processor_base.pbr_ao": {"EN": "AO", "ZH": "AO"},
+
+    "core.mdf_tex_processor_base.prop_invert": {"EN": "Invert", "ZH": "反相"},
+    "core.mdf_tex_processor_base.normal_flip_g_desc": {
+        "EN": "Flip the normal map's G channel when composing (OpenGL to DirectX)",
+        "ZH": "合成时翻转法线G通道 (OpenGL转DirectX)"},
+
+    "core.mdf_tex_processor_base.slot_mode_label": {"EN": "Mode", "ZH": "模式"},
+    "core.mdf_tex_processor_base.mode_compose": {"EN": "PBR Compose", "ZH": "PBR转换"},
+    "core.mdf_tex_processor_base.mode_compose_desc": {
+        "EN": "Compose channels from the PBR inputs above and convert", "ZH": "从上方 PBR 输入合成通道并转换"},
+    "core.mdf_tex_processor_base.mode_direct": {"EN": "Direct Select", "ZH": "直接选择"},
+    "core.mdf_tex_processor_base.mode_direct_desc": {
+        "EN": "Directly select an already-packed image/DDS/TEX file", "ZH": "直接选择已打包好的图片/DDS/TEX文件"},
+    "core.mdf_tex_processor_base.mode_default": {"EN": "Default Null Texture", "ZH": "默认空贴图"},
+    "core.mdf_tex_processor_base.mode_default_desc": {
+        "EN": "Write this slot's corresponding in-game null texture path", "ZH": "写入该槽位对应的游戏内空贴图路径"},
+    "core.mdf_tex_processor_base.mode_skip": {"EN": "No Change", "ZH": "不修改"},
+    "core.mdf_tex_processor_base.mode_skip_desc": {
+        "EN": "Keep the existing path unchanged", "ZH": "保持现有路径不变"},
+
+    "core.mdf_tex_processor_base.generate_mipmaps_label": {"EN": "Generate MipMaps", "ZH": "生成 MipMaps"},
+    "core.mdf_tex_processor_base.skip_textures_label": {"EN": "Material Only", "ZH": "仅生成材质"},
+    "core.mdf_tex_processor_base.skip_textures_desc": {
+        "EN": "Skip texture composition/conversion; only update texture paths in the material definition",
+        "ZH": "跳过贴图合成与转换，仅更新材质定义中的贴图路径"},
+
+    "core.mdf_tex_processor_base.select_mdf_collection": {
+        "EN": "Please select an MDF collection first", "ZH": "请先选择 MDF 集合"},
+    "core.mdf_tex_processor_base.loaded_materials": {
+        "EN": "Loaded {n} material(s)", "ZH": "已加载 {n} 个材质"},
+    "core.mdf_tex_processor_base.copied_material": {"EN": "Copied {name}", "ZH": "已复制 {name}"},
+    "core.mdf_tex_processor_base.clipboard_empty": {"EN": "Clipboard is empty", "ZH": "剪贴板为空"},
+    "core.mdf_tex_processor_base.pasted_to_material": {"EN": "Pasted to {name}", "ZH": "已粘贴到 {name}"},
+    "core.mdf_tex_processor_base.set_natives_root": {
+        "EN": "Please set the Natives Root directory first (the parent folder of natives)",
+        "ZH": "请先设置 Natives Root 目录（natives 的上级文件夹）"},
+    "core.mdf_tex_processor_base.fill_base_path": {
+        "EN": "Please fill in the Base Path", "ZH": "请填写 Base Path"},
+    "core.mdf_tex_processor_base.click_refresh_first": {
+        "EN": "Please click Refresh to load materials first", "ZH": "请先点击 Refresh 加载材质"},
+    "core.mdf_tex_processor_base.process_done_with_fail": {
+        "EN": "Done: generated {export}, failed {fail}, skipped {skip}",
+        "ZH": "完成: 生成 {export}, 失败 {fail}, 跳过 {skip}"},
+    "core.mdf_tex_processor_base.process_done": {
+        "EN": "Done: generated {export}, skipped {skip}", "ZH": "完成: 生成 {export}, 跳过 {skip}"},
+
+    # ══════════════════════════════════════════════════════════════════════
+    # core/mdf_generator_base.py
+    # ══════════════════════════════════════════════════════════════════════
+
+    "core.mdf_generator_base.set_channel_size_desc": {
+        "EN": "Adjust this channel's output resolution (limited to powers of 2 ≤ native size, minimum 256)",
+        "ZH": "调整该通道的输出分辨率（仅限 ≤ 原生尺寸的 2 的幂次方，最小 256）"},
+    "core.mdf_generator_base.set_channel_size_label": {"EN": "Set Output Size", "ZH": "调整输出尺寸"},
+    "core.mdf_generator_base.output_size_label": {"EN": "Output Size", "ZH": "输出尺寸"},
+    "core.mdf_generator_base.output_size_desc": {
+        "EN": "Final output resolution for the baked/direct channel (square side length)",
+        "ZH": "烘焙 / 直接通道的最终输出分辨率（边长，正方形）"},
+    "core.mdf_generator_base.native_size_label": {
+        "EN": "Native size: {size}×{size}", "ZH": "原生尺寸: {size}×{size}"},
+
+    "core.mdf_generator_base.select_mesh_collection": {
+        "EN": "Please select a mesh collection first", "ZH": "请先选择网格集合"},
+    "core.mdf_generator_base.no_materials_in_collection": {
+        "EN": "No materials found in the collection", "ZH": "集合中没有找到材质"},
+    "core.mdf_generator_base.scanned_materials": {
+        "EN": "Scanned {n} material(s)", "ZH": "已扫描 {n} 个材质"},
+    "core.mdf_generator_base.set_natives_root": {
+        "EN": "Please set the Natives Root directory first (the parent folder of natives)",
+        "ZH": "请先设置 Natives Root 目录（natives 的上级文件夹）"},
+    "core.mdf_generator_base.fill_base_path": {
+        "EN": "Please fill in the Base Path", "ZH": "请填写 Base Path"},
+    "core.mdf_generator_base.click_refresh_first": {
+        "EN": "Please click Refresh to load materials first", "ZH": "请先点击 Refresh 加载材质"},
+    "core.mdf_generator_base.cannot_load_preset_tool": {
+        "EN": "Cannot load the RE Mesh Editor preset tool", "ZH": "无法加载 RE Mesh Editor Preset 工具"},
+    "core.mdf_generator_base.process_done_with_fail": {
+        "EN": "Done: {export} succeeded, {fail} failed", "ZH": "完成: 成功 {export}, 失败 {fail}"},
+    "core.mdf_generator_base.process_done": {
+        "EN": "Done: generated MDF2 + textures for {n} material(s)", "ZH": "完成: 成功生成 {n} 个材质的 MDF2 + 贴图"},
+
+    # ══════════════════════════════════════════════════════════════════════
+    # core/update_ops.py
+    # ══════════════════════════════════════════════════════════════════════
+
+    "core.update_ops.check_updates_desc": {"EN": "Check for addon updates", "ZH": "检查插件更新"},
+    "core.update_ops.new_version_found": {
+        "EN": "New version found: v{remote} (current: v{local})", "ZH": "发现新版本: v{remote} (当前: v{local})"},
+    "core.update_ops.already_latest": {
+        "EN": "You are already on the latest version", "ZH": "当前已是最新版本"},
+    "core.update_ops.check_failed": {
+        "EN": "Update check failed: {err}", "ZH": "检查更新失败: {err}"},
+
+    # ══════════════════════════════════════════════════════════════════════
+    # core/tex_convert_base.py
+    # ══════════════════════════════════════════════════════════════════════
+
+    # ── source-image select EnumProperty items (get_src_items callback) ────
+    "core.tex_convert_base.src_image_a": {"EN": "Image A", "ZH": "图 A"},
+    "core.tex_convert_base.src_image_b": {"EN": "Image B", "ZH": "图 B"},
+    "core.tex_convert_base.src_const0":  {"EN": "Constant 0", "ZH": "常量 0"},
+    "core.tex_convert_base.src_const1":  {"EN": "Constant 1", "ZH": "常量 1"},
+
+    # ── format EnumProperty items (get_format_items callback; only the two
+    #    pinned entries have translatable labels, the rest are format codes) ─
+    "core.tex_convert_base.format_bc7_srgb": {"EN": "BC7_sRGB (Color Map)", "ZH": "BC7_sRGB (色彩贴图)"},
+    "core.tex_convert_base.format_bc5_linear": {"EN": "BC5_Linear (Non-Color / Normal Map)", "ZH": "BC5_Linear (非色彩/法线贴图)"},
+
+    # ── channel_mode EnumProperty items (get_channel_mode_items callback) ──
+    "core.tex_convert_base.mode_single":      {"EN": "Single Image", "ZH": "单图"},
+    "core.tex_convert_base.mode_single_desc": {"EN": "One image provides the full RGBA source", "ZH": "一张图片作为完整 RGBA 来源"},
+    "core.tex_convert_base.mode_rgb_a":        {"EN": "RGB+A", "ZH": "RGB+A"},
+    "core.tex_convert_base.mode_rgb_a_desc":   {"EN": "One image provides RGB, another provides Alpha", "ZH": "一张图片提供 RGB，另一张提供 Alpha"},
+    "core.tex_convert_base.mode_rgba":         {"EN": "R·G·B·A", "ZH": "R·G·B·A"},
+    "core.tex_convert_base.mode_rgba_desc":    {"EN": "Pick a source image/constant and invert flag per channel", "ZH": "逐通道指定来源图片/常量与是否翻转"},
+
+    # ── TexConvertSettings PropertyGroup name= (English fallback only; the
+    #    switchable label lives at each layout.prop() draw-site override) ───
+    "core.tex_convert_base.channel_mode_name":  {"EN": "Channel Source", "ZH": "通道来源"},
+    "core.tex_convert_base.src_a_name":         {"EN": "Source Image", "ZH": "源图片"},
+    "core.tex_convert_base.invert_name":        {"EN": "Invert", "ZH": "翻转"},
+    "core.tex_convert_base.src_b_name":         {"EN": "Alpha Source", "ZH": "Alpha 来源"},
+    "core.tex_convert_base.format_name":        {"EN": "Target Format", "ZH": "目标格式"},
+    "core.tex_convert_base.generate_mipmaps_name": {"EN": "Generate Mipmaps", "ZH": "生成 Mipmaps"},
+    "core.tex_convert_base.output_path_name":   {"EN": "Output Path", "ZH": "输出贴图位置"},
+
+    # ── MT_OT_TexConvertGuessFormat ─────────────────────────────────────────
+    "core.tex_convert_base.guess_format_desc": {
+        "EN": "Re-guess the DXGI format from the source image's filename", "ZH": "根据源图片文件名重新猜测 DXGI 格式"},
+    "core.tex_convert_base.select_src_image_first": {"EN": "Please select a source image first", "ZH": "请先选择源图片"},
+    "core.tex_convert_base.guessed_format": {"EN": "Guessed {fmt} from filename", "ZH": "已按文件名猜测为 {fmt}"},
+    "core.tex_convert_base.guess_failed": {
+        "EN": "Could not recognize the texture type from the filename, please pick a format manually",
+        "ZH": "未能从文件名识别贴图类型，请手动选择格式"},
+
+    # ── MT_OT_TexConvertDialog ───────────────────────────────────────────────
+    "core.tex_convert_base.dialog_title": {"EN": "Texture Conversion", "ZH": "贴图处理"},
+    "core.tex_convert_base.dialog_desc": {
+        "EN": "Convert a single image directly to the target game's .tex texture: manually pick the format "
+              "(with filename pre-guessing), single/RGB+A/per-channel modes for channel filtering and inversion",
+        "ZH": "将单张图片直接转换为目标游戏的 .tex 贴图：手动指定格式（带文件名预猜测），"
+              "支持单图/RGB+A/逐通道三种模式做通道过滤与翻转"},
+    "core.tex_convert_base.guess_fallback_warning": {
+        "EN": "Unrecognized filename, fell back to the current format — please confirm manually", "ZH": "未识别命名，已回退当前格式，请手动确认"},
+    "core.tex_convert_base.rgb_source_label": {"EN": "RGB Source", "ZH": "RGB 来源"},
+    "core.tex_convert_base.adjust_header": {"EN": "Adjust", "ZH": "调整"},
+    "core.tex_convert_base.invert_rgb_name": {"EN": "Invert RGB", "ZH": "RGB 翻转"},
+    "core.tex_convert_base.invert_alpha_name": {"EN": "Invert Alpha", "ZH": "Alpha 翻转"},
+    "core.tex_convert_base.output_empty_hint": {
+        "EN": "Leave empty to output next to the source image", "ZH": "留空时输出到源图片所在目录"},
+    "core.tex_convert_base.channel_compose_failed": {
+        "EN": "Channel composition failed, please check the source image(s)", "ZH": "通道合成失败，请检查源图片"},
+    "core.tex_convert_base.mhwtex_convert_unavailable": {
+        "EN": "Could not load the MHW Model Editor texture conversion function, please make sure it is installed and enabled",
+        "ZH": "无法加载 MHW Model Editor 贴图转换函数，请确认已安装并启用"},
+    "core.tex_convert_base.generated": {"EN": "Generated: {name}", "ZH": "已生成: {name}"},
+    "core.tex_convert_base.convert_failed": {"EN": "Conversion failed: {err}", "ZH": "转换失败: {err}"},
+}

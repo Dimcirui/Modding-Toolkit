@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 
+from ...core.i18n import T
 from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
 
 
@@ -347,12 +348,12 @@ class RE4_OT_BatchExport(bpy.types.Operator):
                 from ...core.bone_utils import align_armatures_by_name
                 native_file = scheme.get("native_skeleton", "")
                 if not native_file:
-                    self.report({'WARNING'}, "使用身体骨架: 预设未配置 native_skeleton，跳过 FBXSKEL")
+                    self.report({'WARNING'}, T("re4.batch_export.body_arm_no_native_preset"))
                     fail_count += 1
                 else:
                     native_path = os.path.join(_get_native_skeletons_dir(), native_file)
                     if not os.path.isfile(native_path):
-                        self.report({'WARNING'}, f"使用身体骨架: 找不到原生骨架文件 {native_file}")
+                        self.report({'WARNING'}, T("re4.batch_export.body_arm_native_missing").format(file=native_file))
                         fail_count += 1
                     else:
                         body_arm_obj = _find_body_arm_for_fbxskel(scene, scheme, use_simplified)
@@ -366,17 +367,18 @@ class RE4_OT_BatchExport(bpy.types.Operator):
                                 bpy.ops.re_fbxskel.importfile(filepath=native_path)
                                 native_copy = context.active_object
                                 if native_copy is None or native_copy.type != 'ARMATURE':
-                                    raise RuntimeError(f"导入原生骨架失败: {native_path}")
+                                    raise RuntimeError(T("re4.batch_export.native_import_failed").format(path=native_path))
                                 native_copy.select_set(False)
                                 align_armatures_by_name(body_arm_obj, native_copy, mode='FULL')
                                 if settings.re4_use_fakebone:
                                     do_fakebone(context, native_copy, native_path)
-                                label_prefix = "FBXSKEL (身体骨架+假头法)" if settings.re4_use_fakebone else "FBXSKEL (身体骨架)"
+                                label_prefix = (T("re4.batch_export.label_body_arm_fakebone") if settings.re4_use_fakebone
+                                                else T("re4.batch_export.label_body_arm"))
                                 for fbxskel_path in fbxskel_paths:
                                     full = os.path.join(natives_root, "natives", "STM", fbxskel_path.replace("/", os.sep))
                                     try_export(_do_export_fbxskel, full, native_copy.name, f"{label_prefix} {os.path.basename(fbxskel_path)}")
                             except Exception as err:
-                                print(f"[RE4] FAILED FBXSKEL (身体骨架): {err}")
+                                print(f"[RE4] FAILED {T('re4.batch_export.label_body_arm')}: {err}")
                                 fail_count += 1
                             finally:
                                 if native_copy is not None and native_copy.name in bpy.data.objects:
@@ -390,17 +392,17 @@ class RE4_OT_BatchExport(bpy.types.Operator):
                     from .operators import do_fakebone, _get_native_skeletons_dir
                     native_file = scheme.get("native_skeleton", "")
                     if not native_file:
-                        self.report({'WARNING'}, "假头法: 未选择原生骨架，跳过 FBXSKEL")
+                        self.report({'WARNING'}, T("re4.batch_export.fakebone_no_native_selected"))
                         fail_count += 1
                     else:
                         native_path = os.path.join(_get_native_skeletons_dir(), native_file)
                         if not os.path.isfile(native_path):
-                            self.report({'WARNING'}, f"假头法: 找不到原生骨架文件 {native_file}")
+                            self.report({'WARNING'}, T("re4.batch_export.fakebone_native_missing").format(file=native_file))
                             fail_count += 1
                         else:
                             user_arm_obj = bpy.data.objects.get(fbx_arm)
                             if user_arm_obj is None:
-                                self.report({'WARNING'}, f"假头法: 骨架对象 '{fbx_arm}' 不存在")
+                                self.report({'WARNING'}, T("re4.batch_export.fakebone_arm_not_found").format(arm=fbx_arm))
                                 fail_count += 1
                             else:
                                 prev_active = context.view_layer.objects.active
@@ -416,16 +418,17 @@ class RE4_OT_BatchExport(bpy.types.Operator):
                                 user_arm_obj.hide_viewport = prev_hidden
                                 user_arm_obj.select_set(False)
                                 if arm_copy is None:
-                                    self.report({'WARNING'}, "假头法: duplicate 失败，无法获取副本对象")
+                                    self.report({'WARNING'}, T("re4.batch_export.fakebone_duplicate_failed"))
                                     fail_count += 1
                                 else:
                                     try:
                                         do_fakebone(context, arm_copy, native_path)
                                         for fbxskel_path in fbxskel_paths:
                                             full = os.path.join(natives_root, "natives", "STM", fbxskel_path.replace("/", os.sep))
-                                            try_export(_do_export_fbxskel, full, arm_copy.name, f"FBXSKEL (假头法) {os.path.basename(fbxskel_path)}")
+                                            label = T("re4.batch_export.label_fakebone")
+                                            try_export(_do_export_fbxskel, full, arm_copy.name, f"{label} {os.path.basename(fbxskel_path)}")
                                     except Exception as err:
-                                        print(f"[RE4] FAILED FBXSKEL (假头法): {err}")
+                                        print(f"[RE4] FAILED {T('re4.batch_export.label_fakebone')}: {err}")
                                         fail_count += 1
                                     finally:
                                         if arm_copy is not None and arm_copy.name in bpy.data.objects:
@@ -447,11 +450,16 @@ class RE4_OT_BatchExport(bpy.types.Operator):
 
 
 class RE4_OT_SetNativesRoot(bpy.types.Operator):
-    """选择 RE4 Mod 根目录（natives 的上级）。若选中的文件夹本身名为 natives，自动取其上级"""
+    """Select the RE4 mod root directory (the parent of natives)"""
     bl_idname = "re4.set_natives_root"
     bl_label = "Set Natives Root"
     bl_options = {'REGISTER'}
     directory: bpy.props.StringProperty(subtype='DIR_PATH')
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("re4.batch_export.set_natives_root_desc")
+
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}

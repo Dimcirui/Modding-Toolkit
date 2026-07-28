@@ -1,4 +1,5 @@
 import bpy
+from ...core.i18n import T
 from .batch_export import (
     _load_scheme, _get_binding, _set_binding,
     _get_enabled, _set_enabled,
@@ -361,7 +362,7 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
                 if native_skel:
                     row2.label(text=native_skel, icon='FILE')
                 else:
-                    row2.label(text="预设未配置 native_skeleton", icon='ERROR')
+                    row2.label(text=T("re4.batch_export_ui.preset_missing_native_skeleton"), icon='ERROR')
             # 使用身体骨架
             row3 = box.row(align=True)
             row3.prop(settings, "re4_use_body_arm", icon='ARMATURE_DATA')
@@ -370,7 +371,7 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
                 if body_groups:
                     row3.label(text=" > ".join(body_groups), icon='INFO')
                 else:
-                    row3.label(text="预设未配置 body_groups_for_fbxskel", icon='ERROR')
+                    row3.label(text=T("re4.batch_export_ui.preset_missing_body_groups"), icon='ERROR')
 
         layout.separator()
         layout.prop(settings, "re4_use_blank_export", icon='FILE_BLANK')

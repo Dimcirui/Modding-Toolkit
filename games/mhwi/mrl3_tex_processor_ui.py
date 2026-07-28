@@ -1,6 +1,7 @@
 import bpy
 import os
 
+from ...core.i18n import T
 from ...core.mdf_tex_processor_base import (
     PBR_TYPES, PBR_TYPE_LABELS, PBR_CHANNEL_SELECTABLE,
 )
@@ -13,10 +14,13 @@ PROCESSOR_WINDOW_WIDTH = 660
 
 
 class MHWI_OT_Mrl3TexProcessorDialog(bpy.types.Operator):
-    """MHWI MRL3 + Tex 处理器"""
     bl_idname  = "mhwi.mrl3_tex_processor_dialog"
     bl_label   = "MRL3 + Tex Processor"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.mrl3_tex_processor_ui.dialog_desc")
 
     def invoke(self, context, event):  # noqa: ARG002
         settings = context.scene.mhwi_mrl3_tex_processor
@@ -37,7 +41,7 @@ class MHWI_OT_Mrl3TexProcessorDialog(bpy.types.Operator):
 
         # ── Collection + Refresh ──
         row = layout.row(align=True)
-        row.prop(settings, "mrl3_collection", text="MRL3 集合")
+        row.prop(settings, "mrl3_collection", text=T("mhwi.mrl3_tex_processor_ui.mrl3_collection_label"))
         row.operator("mhwi.mrl3_tex_refresh", text="", icon='FILE_REFRESH')
 
         # ── Mod Root ──
@@ -49,18 +53,18 @@ class MHWI_OT_Mrl3TexProcessorDialog(bpy.types.Operator):
             short = "/".join(parts[-3:]) if len(parts) > 3 else natives_root
             row.label(text=f".../{short}")
         else:
-            row.label(text="未设置", icon='ERROR')
+            row.label(text=T("mhwi.batch_import_ui.not_set"), icon='ERROR')
 
         # ── Base Path ──
         row = layout.row(align=True)
         row.label(text="nativePC/")
         row.prop(settings, "texture_base_path", text="")
         if not settings.texture_base_path.strip():
-            layout.label(text="    例：pl/f_equip/pl042_0500/helm/tex", icon='INFO')
+            layout.label(text=f"    {T('mhwi.mrl3_tex_processor_ui.base_path_example')}", icon='INFO')
 
         if not settings.materials:
             layout.separator()
-            layout.label(text="选择 MRL3 集合并点击 Refresh", icon='INFO')
+            layout.label(text=T("mhwi.mrl3_tex_processor_ui.select_mrl3_then_refresh"), icon='INFO')
             return
 
         layout.separator()
@@ -145,7 +149,7 @@ class MHWI_OT_Mrl3TexProcessorDialog(bpy.types.Operator):
                 row.prop(slot, "mode", text="")
 
                 if slot.mode == 'COMPOSE' and not is_pbr:
-                    row.label(text="→ 请改用 DIRECT", icon='ERROR')
+                    row.label(text=f"→ {T('mhwi.mrl3_tex_processor_ui.use_direct_instead')}", icon='ERROR')
 
                 elif slot.mode == 'DIRECT':
                     cur     = slot.direct_image
@@ -164,7 +168,8 @@ class MHWI_OT_Mrl3TexProcessorDialog(bpy.types.Operator):
 
                 elif slot.mode == 'DEFAULT':
                     null_val = MHWI_NULL_TEX.get(slot.texture_type, "")
-                    label    = null_val.replace('\\', '/').split('/')[-1] if null_val else "(无默认)"
+                    label    = (null_val.replace('\\', '/').split('/')[-1] if null_val
+                                else T("mhwi.mrl3_tex_processor_ui.no_default"))
                     row.label(text=f"→ {label}", icon='LINKED')
 
                 elif slot.mode == 'SKIP' and slot.original_path:

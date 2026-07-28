@@ -15,7 +15,7 @@ import json
 import os
 import copy
 import mathutils
-from .i18n import _
+from .i18n import T
 from .bone_mapper import BoneMapManager, STANDARD_BONE_NAMES, resolve_preset
 from .bone_utils import get_import_presets_callback
 
@@ -50,7 +50,7 @@ def get_pose_presets_callback(self, context):
                 name = _read_pose_preset_name(os.path.join(d, f), fallback)
                 _pose_preset_cache.append((f, name, ""))
     if not _pose_preset_cache:
-        _pose_preset_cache.append(('NONE', "无记录", ""))
+        _pose_preset_cache.append(('NONE', T("core.pose_ops.no_record"), ""))
     return _pose_preset_cache
 
 
@@ -59,17 +59,20 @@ def get_pose_presets_callback(self, context):
 # ============================================================
 
 class MODDER_OT_TPoseDirection(bpy.types.Operator):
-    """仅将上臂旋转到水平方向，适用于简单的 A-Pose 骨架（如MMD），如果无法正确运作，请使用更通用的姿态变换记录器"""
     bl_idname = "modder.tpose_direction"
-    bl_label = "方向计算 (简单T转A)"
+    bl_label = "Direction Calc (Simple T to A)"
     bl_options = {'REGISTER', 'UNDO'}
-    
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.pose_ops.tpose_direction_desc")
+
     def execute(self, context):
         settings = context.scene.mhw_suite_settings
         arm_obj = context.active_object
 
         if not arm_obj or arm_obj.type != 'ARMATURE':
-            self.report({'ERROR'}, _("请先选中一个骨架"))
+            self.report({'ERROR'}, T("core.pose_ops.select_armature_first"))
             return {'CANCELLED'}
 
         pose_preset, err = resolve_preset(settings.pose_import_preset_enum, arm_obj, True)
@@ -79,7 +82,7 @@ class MODDER_OT_TPoseDirection(bpy.types.Operator):
 
         mapper = BoneMapManager()
         if not mapper.load_preset(pose_preset, is_import_x=True):
-            self.report({'ERROR'}, _("无法加载骨架预设"))
+            self.report({'ERROR'}, T("core.pose_ops.cannot_load_armature_preset"))
             return {'CANCELLED'}
 
         arm_mw = arm_obj.matrix_world
@@ -113,11 +116,11 @@ class MODDER_OT_TPoseDirection(bpy.types.Operator):
         
         if count == 0:
             bpy.ops.object.mode_set(mode='OBJECT')
-            self.report({'WARNING'}, _("未找到上臂骨骼"))
+            self.report({'WARNING'}, T("core.pose_ops.upperarm_not_found"))
             return {'CANCELLED'}
 
         mesh_count = _apply_and_rebind(arm_obj)
-        self.report({'INFO'}, _("方向计算完成: %d 根上臂骨骼, %d 个网格") % (count, mesh_count))
+        self.report({'INFO'}, T("core.pose_ops.tpose_direction_done").format(bones=count, meshes=mesh_count))
         return {'FINISHED'}
 
 
@@ -126,17 +129,20 @@ class MODDER_OT_TPoseDirection(bpy.types.Operator):
 # ============================================================
 
 class MODDER_OT_TPoseMatrixZero(bpy.types.Operator):
-    """RE Engine 专用: 重置肢体骨骼旋转矩阵为 T-Pose (适用于荒野/街霸6/生化4等，生化9除外)"""
     bl_idname = "modder.tpose_matrix_zero"
-    bl_label = "RE Engine 矩阵归零"
+    bl_label = "RE Engine Matrix Reset"
     bl_options = {'REGISTER', 'UNDO'}
-    
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.pose_ops.matrix_zero_desc")
+
     def execute(self, context):
         settings = context.scene.mhw_suite_settings
         arm_obj = context.active_object
 
         if not arm_obj or arm_obj.type != 'ARMATURE':
-            self.report({'ERROR'}, _("请先选中一个骨架"))
+            self.report({'ERROR'}, T("core.pose_ops.select_armature_first"))
             return {'CANCELLED'}
 
         pose_preset, err = resolve_preset(settings.pose_import_preset_enum, arm_obj, True)
@@ -146,7 +152,7 @@ class MODDER_OT_TPoseMatrixZero(bpy.types.Operator):
 
         mapper = BoneMapManager()
         if not mapper.load_preset(pose_preset, is_import_x=True):
-            self.report({'ERROR'}, _("无法加载骨架预设"))
+            self.report({'ERROR'}, T("core.pose_ops.cannot_load_armature_preset"))
             return {'CANCELLED'}
 
         tpose_std_keys = [
@@ -174,7 +180,7 @@ class MODDER_OT_TPoseMatrixZero(bpy.types.Operator):
                 bone_names.append(main_name)
         
         if not bone_names:
-            self.report({'ERROR'}, _("预设中没有匹配到任何骨骼"))
+            self.report({'ERROR'}, T("core.pose_ops.no_bones_matched"))
             return {'CANCELLED'}
         
         bpy.ops.object.mode_set(mode='POSE')
@@ -196,7 +202,7 @@ class MODDER_OT_TPoseMatrixZero(bpy.types.Operator):
             count += 1
         
         mesh_count = _apply_and_rebind(arm_obj)
-        self.report({'INFO'}, _("RE Engine 矩阵归零完成: %d 根骨骼, %d 个网格") % (count, mesh_count))
+        self.report({'INFO'}, T("core.pose_ops.matrix_zero_done").format(bones=count, meshes=mesh_count))
         return {'FINISHED'}
 
 
@@ -205,35 +211,38 @@ class MODDER_OT_TPoseMatrixZero(bpy.types.Operator):
 # ============================================================
 
 class MODDER_OT_RecordTransform(bpy.types.Operator):
-    """录制相对变换: 先选 A 姿态骨架，再 Ctrl 选 B 姿态骨架，计算并保存 A->B 的变换"""
     bl_idname = "modder.record_transform"
-    bl_label = "录制变换"
+    bl_label = "Record Transform"
     bl_options = {'REGISTER', 'UNDO'}
-    
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.pose_ops.record_transform_desc")
+
     preset_name: bpy.props.StringProperty(
-        name="名称",
+        name="Name",
         default="新姿态变换",
-        description="保存的变换记录文件名 (例: MMD A-Pose到T-Pose)"
+        description="Filename for the saved transform record (e.g. MMD A-Pose to T-Pose)"
     )
-    
+
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
-    
+
     def draw(self, context):
-        self.layout.prop(self, "preset_name")
-        self.layout.label(text="先选 A 姿态骨架, 再 Ctrl 选 B 姿态骨架", icon='INFO')
-    
+        self.layout.prop(self, "preset_name", text=T("core.pose_ops.record_name_label"))
+        self.layout.label(text=T("core.pose_ops.record_transform_hint"), icon='INFO')
+
     def execute(self, context):
         # 1. 获取两个骨架
         selected_arms = [o for o in context.selected_objects if o.type == 'ARMATURE']
         if len(selected_arms) < 2:
-            self.report({'ERROR'}, _("请选中两个骨架: 先选 A 姿态, 再 Ctrl 选 B 姿态"))
+            self.report({'ERROR'}, T("core.pose_ops.select_two_armatures"))
             return {'CANCELLED'}
 
         if not self.preset_name.strip():
-            self.report({'ERROR'}, _("名称不能为空"))
+            self.report({'ERROR'}, T("core.pose_ops.name_cannot_be_empty"))
             return {'CANCELLED'}
-        
+
         # 活动对象 = B 姿态 (后选的), 另一个 = A 姿态 (先选的)
         arm_b = context.active_object
         arm_a = None
@@ -241,9 +250,9 @@ class MODDER_OT_RecordTransform(bpy.types.Operator):
             if obj != arm_b:
                 arm_a = obj
                 break
-        
+
         if not arm_a or not arm_b or arm_a.type != 'ARMATURE' or arm_b.type != 'ARMATURE':
-            self.report({'ERROR'}, _("请确保选中了两个骨架对象"))
+            self.report({'ERROR'}, T("core.pose_ops.ensure_two_armatures"))
             return {'CANCELLED'}
         
         # 2. 收集 A 骨架每根骨骼的局部朝向 (相对于父级的 rest pose 朝向)
@@ -268,9 +277,9 @@ class MODDER_OT_RecordTransform(bpy.types.Operator):
         #    这是骨骼相对于自身父级的旋转变化量, 不含父子累积
         transforms = {}
         common_bones = set(local_rots_a.keys()) & set(local_rots_b.keys())
-        
+
         if not common_bones:
-            self.report({'ERROR'}, _("两个骨架没有同名骨骼"))
+            self.report({'ERROR'}, T("core.pose_ops.no_common_bones"))
             return {'CANCELLED'}
         
         significant_count = 0
@@ -292,7 +301,7 @@ class MODDER_OT_RecordTransform(bpy.types.Operator):
             significant_count += 1
         
         if significant_count == 0:
-            self.report({'WARNING'}, _("两个骨架的姿态几乎相同, 没有显著变换可记录"))
+            self.report({'WARNING'}, T("core.pose_ops.poses_nearly_identical"))
             return {'CANCELLED'}
         
         filename = self.preset_name.strip()
@@ -317,9 +326,10 @@ class MODDER_OT_RecordTransform(bpy.types.Operator):
         try:
             with open(filepath, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
-            self.report({'INFO'}, _("已录制 %d 根骨骼的变换 -> %s") % (significant_count, filename + ".json"))
+            self.report({'INFO'}, T("core.pose_ops.recorded_transform").format(
+                n=significant_count, filename=filename + ".json"))
         except Exception as e:
-            self.report({'ERROR'}, _("保存失败: %s") % e)
+            self.report({'ERROR'}, T("core.pose_ops.save_failed").format(err=e))
             return {'CANCELLED'}
         
         # 恢复活动对象
@@ -328,21 +338,27 @@ class MODDER_OT_RecordTransform(bpy.types.Operator):
 
 
 class MODDER_OT_ApplyTransformForward(bpy.types.Operator):
-    """正向应用变换 (A->B): 将选中骨架从 A 姿态转换为 B 姿态"""
     bl_idname = "modder.apply_transform_forward"
-    bl_label = "正向 (A->B)"
+    bl_label = "Forward (A->B)"
     bl_options = {'REGISTER', 'UNDO'}
-    
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.pose_ops.apply_forward_desc")
+
     def execute(self, context):
         return _apply_transform(self, context, inverse=False)
 
 
 class MODDER_OT_ApplyTransformInverse(bpy.types.Operator):
-    """逆向应用变换 (B->A): 将选中骨架从 B 姿态转换回 A 姿态"""
     bl_idname = "modder.apply_transform_inverse"
-    bl_label = "逆向 (B->A)"
+    bl_label = "Inverse (B->A)"
     bl_options = {'REGISTER', 'UNDO'}
-    
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.pose_ops.apply_inverse_desc")
+
     def execute(self, context):
         return _apply_transform(self, context, inverse=True)
 
@@ -351,32 +367,32 @@ def _apply_transform(operator, context, inverse=False):
     """应用相对变换的核心逻辑 (正向或逆向)"""
     settings = context.scene.mhw_suite_settings
     arm_obj = context.active_object
-    
+
     if not arm_obj or arm_obj.type != 'ARMATURE':
-        operator.report({'ERROR'}, _("请先选中一个骨架"))
+        operator.report({'ERROR'}, T("core.pose_ops.select_armature_first"))
         return {'CANCELLED'}
 
     selected_file = settings.pose_preset_enum
     if not selected_file or selected_file == 'NONE':
-        operator.report({'ERROR'}, _("未选择变换记录"))
+        operator.report({'ERROR'}, T("core.pose_ops.no_transform_selected"))
         return {'CANCELLED'}
 
     # 读取 JSON
     filepath = os.path.join(_get_pose_presets_dir(), selected_file)
     if not os.path.exists(filepath):
-        operator.report({'ERROR'}, _("文件不存在: %s") % selected_file)
+        operator.report({'ERROR'}, T("core.pose_ops.file_not_found").format(name=selected_file))
         return {'CANCELLED'}
 
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
             data = json.load(f)
     except Exception as e:
-        operator.report({'ERROR'}, _("读取失败: %s") % e)
+        operator.report({'ERROR'}, T("core.pose_ops.read_failed").format(err=e))
         return {'CANCELLED'}
 
     transforms = data.get("transforms", {})
     if not transforms:
-        operator.report({'ERROR'}, _("记录文件中没有变换数据"))
+        operator.report({'ERROR'}, T("core.pose_ops.no_transform_data"))
         return {'CANCELLED'}
     
     # 通过骨架预设建立骨骼名映射 (变换记录中的名字 -> 目标骨架的名字)
@@ -403,7 +419,7 @@ def _apply_transform(operator, context, inverse=False):
                 bone_mapping[bone.name] = bone.name
     
     if not bone_mapping:
-        operator.report({'ERROR'}, _("骨架与变换记录之间找不到对应的骨骼 (请检查骨架预设)"))
+        operator.report({'ERROR'}, T("core.pose_ops.no_matching_bones"))
         return {'CANCELLED'}
     
     # 按骨骼层级顺序排列 (从根到叶)
@@ -466,32 +482,36 @@ def _apply_transform(operator, context, inverse=False):
     
     direction = "B->A" if inverse else "A->B"
     mesh_count = _apply_and_rebind(arm_obj)
-    operator.report({'INFO'}, _("变换完成 (%s): %d 根骨骼, %d 个网格") % (direction, count, mesh_count))
+    operator.report({'INFO'}, T("core.pose_ops.transform_done").format(
+        direction=direction, bones=count, meshes=mesh_count))
     return {'FINISHED'}
 
 
 class MODDER_OT_DeletePosePreset(bpy.types.Operator):
-    """删除选中的变换记录"""
     bl_idname = "modder.delete_pose_preset"
-    bl_label = "删除记录"
+    bl_label = "Delete Record"
     bl_options = {'INTERNAL'}
-    
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.pose_ops.delete_preset_desc")
+
     def invoke(self, context, event):
         return context.window_manager.invoke_confirm(self, event)
-    
+
     def execute(self, context):
         settings = context.scene.mhw_suite_settings
         selected_file = settings.pose_preset_enum
         if not selected_file or selected_file == 'NONE':
             return {'CANCELLED'}
-        
+
         filepath = os.path.join(_get_pose_presets_dir(), selected_file)
         if os.path.exists(filepath):
             try:
                 os.remove(filepath)
-                self.report({'INFO'}, _("已删除: %s") % selected_file)
+                self.report({'INFO'}, T("core.pose_ops.deleted").format(name=selected_file))
             except Exception as e:
-                self.report({'ERROR'}, _("删除失败: %s") % e)
+                self.report({'ERROR'}, T("core.pose_ops.delete_failed").format(err=e))
         return {'FINISHED'}
 
 

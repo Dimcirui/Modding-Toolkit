@@ -6,6 +6,7 @@ import shutil
 
 from ..re9.batch_export import _do_export_mesh, _do_export_mdf2, _do_export_chain2, _do_export_clsp
 from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
+from ...core.i18n import T
 
 # MHWs 游戏级文件后缀常量
 MHWS_EXTS = {
@@ -16,22 +17,33 @@ MHWS_EXTS = {
     "gpuc":   "gpuc.241111760",
 }
 
-# 5个固定部位
+# 5个固定部位（内部/日志用英文名；UI 绘制处按 id 通过 _PART_LABEL_KEYS 查表动态翻译）
 MHWS_PARTS = [
-    ("1", "手臂"),
-    ("2", "身体"),
-    ("3", "头盔"),
-    ("4", "腿"),
-    ("5", "腰"),
+    ("1", "Arm"),
+    ("2", "Body"),
+    ("3", "Helmet"),
+    ("4", "Leg"),
+    ("5", "Waist"),
 ]
 
+# T() key for each part id, looked up at draw time in batch_export_ui.py
+_PART_LABEL_KEYS = {
+    "1": "mhws.batch_export.part_arm",
+    "2": "mhws.batch_export.part_body",
+    "3": "mhws.batch_export.part_helmet",
+    "4": "mhws.batch_export.part_leg",
+    "5": "mhws.batch_export.part_waist",
+}
+
 # 4种套装变体
-MHWS_VARIANTS = [
-    ("mm", "男猎男套", ""),
-    ("mf", "男猎女套", ""),
-    ("fm", "女猎男套", ""),
-    ("ff", "女猎女套", ""),
-]
+# NOTE: consumed by ui/main_panel.py's `mhws_armor_variant` EnumProperty with a
+def get_mhws_variants(self=None, context=None):
+    return [
+        ("ff", T("mhws.batch_export.variant_ff"), ""),
+        ("fm", T("mhws.batch_export.variant_fm"), ""),
+        ("mf", T("mhws.batch_export.variant_mf"), ""),
+        ("mm", T("mhws.batch_export.variant_mm"), ""),
+    ]
 
 # 默认每套装备包含的文件类型
 # 未来可在 armor_set JSON 中通过 "file_types" 字段覆盖，例如:
@@ -73,7 +85,7 @@ def get_mhws_schemes_callback(self, context):
             name = os.path.splitext(f)[0]
             _scheme_cache.append((f, name, ""))
     if not _scheme_cache:
-        _scheme_cache.append(('NONE', "无装备包", ""))
+        _scheme_cache.append(('NONE', T("mhws.batch_export.no_armor_pack"), ""))
     return _scheme_cache
 
 
@@ -100,7 +112,7 @@ def get_mhws_armor_callback(self, context):
             name = armor.get("name", armor_id)
             _armor_cache.append((armor_id, f"{name}  ({armor_id})", ""))
     if not _armor_cache:
-        _armor_cache.append(('NONE', "无装备", ""))
+        _armor_cache.append(('NONE', T("mhws.batch_export.no_armor"), ""))
     return _armor_cache
 
 
@@ -214,11 +226,11 @@ def _do_bonesystem_export(context, settings, variant_armor_id):
     user_arm      = settings.mhws_bs_armature
 
     if not fbxskel_name:
-        return False, "Bonesystem: 请填写 FBXSkel 定义名"
+        return False, T("mhws.batch_export.bonesystem_fill_name")
     if user_arm is None or user_arm.type != 'ARMATURE':
-        return False, "Bonesystem: 请选择一个骨架对象"
+        return False, T("mhws.batch_export.bonesystem_select_armature")
     if not os.path.isfile(_REFERENCE_FBXSKEL):
-        return False, f"Bonesystem: 找不到参考骨架文件: {_REFERENCE_FBXSKEL}"
+        return False, T("mhws.batch_export.bonesystem_ref_not_found").format(path=_REFERENCE_FBXSKEL)
 
     # Save context state
     prev_active   = context.view_layer.objects.active
@@ -275,12 +287,12 @@ def _do_bonesystem_export(context, settings, variant_armor_id):
             json.dump(json_data, f, indent=4)
         print(f"[MHWs Bonesystem] JSON   → {json_path}")
 
-        return True, f"Bonesystem 完成: {fbxskel_name}.fbxskel.7 / {helmet_id}.json"
+        return True, T("mhws.batch_export.bonesystem_done").format(fbxskel=fbxskel_name, json=helmet_id)
 
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return False, f"Bonesystem 失败: {e}"
+        return False, T("mhws.batch_export.bonesystem_failed").format(err=e)
 
     finally:
         # Clean up reference armature and restore context
@@ -295,15 +307,18 @@ def _do_bonesystem_export(context, settings, variant_armor_id):
 # ── 导出 Operator ──────────────────────────────────────────────
 
 class MHWS_OT_BatchExport(bpy.types.Operator):
-    """MHWs 装备批量导出"""
     bl_idname = "mhws.batch_export"
     bl_label = "MHWs Batch Export"
     bl_options = {'REGISTER'}
 
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhws.batch_export.batch_export_desc")
+
     def _cleanup_mesh_collections(self, context, scene, settings):
         """Run RE Mesh cleanup operators on all bound mesh collections before export."""
         if not re_mesh_op_available('delete_loose'):
-            self.report({'WARNING'}, "RE Mesh Editor 未安装，跳过导出前清理")
+            self.report({'WARNING'}, T("mhws.batch_export.re_mesh_not_installed_cleanup_skip"))
             return
 
         armor_id = settings.mhws_selected_armor
@@ -359,29 +374,29 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
 
         natives_root = scene.get("mhws_natives_root", "")
         if not natives_root or not os.path.isdir(natives_root):
-            self.report({'ERROR'}, "请先设置 Mod Root 目录（natives 的上级文件夹）")
+            self.report({'ERROR'}, T("mhws.batch_export.set_mod_root_first"))
             return {'CANCELLED'}
 
         scheme = _load_scheme(settings.mhws_armor_scheme)
         if not scheme:
-            self.report({'ERROR'}, "无法加载装备包")
+            self.report({'ERROR'}, T("mhws.batch_export.cannot_load_armor_pack"))
             return {'CANCELLED'}
 
         armor_id = settings.mhws_selected_armor
         if not armor_id or armor_id == 'NONE':
-            self.report({'ERROR'}, "请先选择一套装备")
+            self.report({'ERROR'}, T("mhws.batch_export.select_armor_set_first"))
             return {'CANCELLED'}
 
         # 找到对应的 armor_set 条目
         armor_set = next((a for a in scheme.get("armor_sets", []) if a["id"] == armor_id), None)
         if not armor_set:
-            self.report({'ERROR'}, f"在装备包中未找到: {armor_id}")
+            self.report({'ERROR'}, T("mhws.batch_export.armor_not_found_in_pack").format(id=armor_id))
             return {'CANCELLED'}
 
         variant = settings.mhws_armor_variant
         variant_data = armor_set.get("variants", {}).get(variant)
         if not variant_data:
-            self.report({'ERROR'}, f"装备 {armor_id} 没有变体: {variant}")
+            self.report({'ERROR'}, T("mhws.batch_export.armor_no_variant").format(id=armor_id, variant=variant))
             return {'CANCELLED'}
 
         variant_armor_id = variant_data["armor_id"]
@@ -453,18 +468,23 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
                 fail_count += 1
 
         if fail_count > 0:
-            self.report({'WARNING'}, f"完成: 导出 {export_count}, 失败 {fail_count}, 跳过 {skip_count}")
+            self.report({'WARNING'}, T("mhws.batch_export.done_with_fail").format(
+                export=export_count, fail=fail_count, skip=skip_count))
         else:
-            self.report({'INFO'}, f"完成: 导出 {export_count}, 跳过 {skip_count}")
+            self.report({'INFO'}, T("mhws.batch_export.done").format(export=export_count, skip=skip_count))
         return {'FINISHED'}
 
 
 class MHWS_OT_SetNativesRoot(bpy.types.Operator):
-    """选择 MHWs Mod 根目录（natives 的上级）。若选中的文件夹本身名为 natives，自动取其上级"""
     bl_idname = "mhws.set_natives_root"
     bl_label = "Set Mod Root"
     bl_options = {'REGISTER'}
     directory: bpy.props.StringProperty(subtype='DIR_PATH')
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhws.batch_export.set_natives_root_desc")
+
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
@@ -479,10 +499,13 @@ class MHWS_OT_SetNativesRoot(bpy.types.Operator):
 
 
 class MHWS_OT_BonesystemSettings(bpy.types.Operator):
-    """调整 Bonesystem JSON 导出参数"""
     bl_idname = "mhws.bonesystem_settings"
-    bl_label = "Bonesystem 导出设置"
+    bl_label = "Bonesystem Export Settings"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhws.batch_export.bonesystem_settings_desc")
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self, width=280)
@@ -494,15 +517,15 @@ class MHWS_OT_BonesystemSettings(bpy.types.Operator):
         left  = row.column()
         right = row.column()
 
-        left.label(text="隐藏选项:")
+        left.label(text=T("mhws.batch_export.hide_options"))
         left.prop(s, "mhws_bs_hide_face")
         left.prop(s, "mhws_bs_hide_hair")
         left.prop(s, "mhws_bs_hide_slinger")
 
-        right.label(text="绑定选项:")
+        right.label(text=T("mhws.batch_export.bind_options"))
         right.prop(s, "mhws_bs_bind_face")
         if s.mhws_bs_bind_face:
-            right.label(text="绑定部位:")
+            right.label(text=T("mhws.batch_export.bind_part"))
             right.prop(s, "mhws_bs_bind_part", text="")
 
     def execute(self, context):
