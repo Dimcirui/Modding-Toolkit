@@ -24,6 +24,7 @@ from .mdf_tex_processor_base import (
     _import_tex_utils, _compose_channels,
     make_mdf_path, make_disk_path,
 )
+from .slot_sources import find_slot_images, stage_source_file
 
 # ── Principled BSDF socket → PBR type mapping ─────────────────────────────────
 
@@ -1667,6 +1668,10 @@ class MdfGenProcessBase(bpy.types.Operator):
         # print(f"[{cls._log_tag}]   加载Preset JSON: {time.time() - _t:.2f}s", flush=True)
         slot_types = [b["Texture Type"] for b in preset_data.get("Texture Bindings", [])]
 
+        # Image Texture nodes named after a game slot — see slot_sources.
+        slot_direct = find_slot_images(mat, slot_types)
+        prefer_direct = getattr(settings, 'prefer_direct_slot_source', False)
+
         use_toon         = getattr(mat_entry, 'use_toon', False)
         emi_zero         = _emissive_strength_is_zero(mat)
         emissive_slots   = {st for st in slot_types if _is_emissive_slot(st)}
@@ -1684,6 +1689,57 @@ class MdfGenProcessBase(bpy.types.Operator):
                     if null:
                         slot_mdf_paths[slot_type] = null
                     continue
+
+            # --- direct slot source (BY_SLOT_NAME) ---------------------------
+            # Lossless: the packed file goes to the slot as-is, no unpack →
+            # recompose round-trip.  Applied unconditionally for slots absent
+            # from _channel_maps (AO-bearing maps, detail maps — these have no
+            # PBR composition recipe and currently fall through to a null
+            # texture, so sourcing them can only be an improvement).  For slots
+            # that *do* have a recipe it is opt-in, because a user who edited
+            # roughness via nodes would otherwise have that edit silently
+            # discarded in favour of the original packed file.
+            direct_src = slot_direct.get(slot_type)
+            if direct_src is not None and (
+                    slot_type not in cls._channel_maps or prefer_direct):
+                if getattr(mat_entry, 'skip_textures', False):
+                    slot_mdf_paths[slot_type] = make_mdf_path(
+                        base_path, tex_name, slot_type,
+                        cls._abbrev_map, cls._use_art_prefix,
+                    )
+                    continue
+
+                direct_key = (slot_type, 'DIRECT_SLOT', direct_src)
+                cached = comp_cache.get(direct_key)
+                if cached is not None:
+                    slot_mdf_paths[slot_type] = cached[2]
+                    continue
+
+                dds_fmt = ('BC7_UNORM_SRGB' if slot_type in SRGB_SLOT_TYPES
+                           else 'BC7_UNORM')
+                disk_path = make_disk_path(
+                    natives_root, base_path, tex_name, slot_type,
+                    cls._abbrev_map, cls._tex_version, cls._use_art_prefix,
+                )
+                os.makedirs(os.path.dirname(disk_path), exist_ok=True)
+
+                staged, dds_path = stage_source_file(
+                    direct_src, temp_dir, tex_name, slot_type)
+                ImageListToDDS([(staged, dds_fmt)], temp_dir,
+                               mat_entry.generate_mipmaps)
+                if not os.path.isfile(dds_path):
+                    raise FileNotFoundError(f"texconv output not found: {dds_path}")
+                DDSToTex([dds_path], cls._tex_version, disk_path)
+
+                mdf_path = make_mdf_path(
+                    base_path, tex_name, slot_type,
+                    cls._abbrev_map, cls._use_art_prefix,
+                )
+                slot_mdf_paths[slot_type] = mdf_path
+                comp_cache[direct_key] = (staged, disk_path, mdf_path)
+                print(f"[{cls._log_tag}]   {slot_type} -> "
+                      f"{os.path.basename(disk_path)} (槽位直连)")
+                continue
 
             if slot_type not in cls._channel_maps:
                 null = cls._null_tex_by_type.get(slot_type)

@@ -17,6 +17,7 @@ from ...core.mdf_generator_base import (
     BAKE_SIZE_DEFAULT,
 )
 from ...core.mdf_tex_processor_base import _import_tex_utils, _compose_channels
+from ...core.slot_sources import find_slot_images, stage_source_file
 from .mrl3_tex_processor import (
     MHWI_SLOT_CHANNEL_MAPS, MHWI_NULL_TEX,
     MHWI_SRGB_SLOT_TYPES, MHWI_BC5_SLOT_TYPES,
@@ -316,6 +317,10 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
         # print(f"[{self._log_tag}]   加载Preset JSON: {time.time() - _t:.2f}s", flush=True)
         slot_types = [entry["name"] for entry in preset_data.get("Map List", [])]
 
+        # Image Texture nodes named after a game slot — see core.slot_sources.
+        slot_direct   = find_slot_images(mat, slot_types)
+        prefer_direct = getattr(settings, 'prefer_direct_slot_source', False)
+
         use_toon       = getattr(mat_entry, 'use_toon', False)
         emi_zero       = _emissive_strength_is_zero(mat)
         emissive_slots = {st for st in slot_types if _is_emissive_slot(st)}
@@ -333,6 +338,47 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                     if null:
                         slot_binding_values[slot_type] = null
                     continue
+
+            # --- direct slot source (BY_SLOT_NAME) ---------------------------
+            # See mdf_generator_base for the rationale.  MHWI benefits more
+            # than the RE games: only 4 of its 7 slots have a composition
+            # recipe, so ColorMaskMap / FxMap / FurVelocityMap were previously
+            # unreachable and always wrote a null texture.
+            direct_src = slot_direct.get(slot_type)
+            if direct_src is not None and (
+                    slot_type not in MHWI_SLOT_CHANNEL_MAPS or prefer_direct):
+                if getattr(mat_entry, 'skip_textures', False):
+                    slot_binding_values[slot_type] = _mhwi_tex_binding(
+                        base_path, tex_name, slot_type)
+                    continue
+
+                direct_key = (slot_type, 'DIRECT_SLOT', direct_src)
+                cached = comp_cache.get(direct_key)
+                if cached is not None:
+                    slot_binding_values[slot_type] = cached[2]
+                    continue
+
+                dds_fmt = (
+                    'BC7_UNORM_SRGB' if slot_type in MHWI_SRGB_SLOT_TYPES else
+                    'BC5_UNORM'      if slot_type in MHWI_BC5_SLOT_TYPES  else
+                    'BC7_UNORM'
+                )
+                disk_path = _mhwi_disk_path(natives_root, base_path, tex_name, slot_type)
+                os.makedirs(os.path.dirname(disk_path), exist_ok=True)
+
+                staged, dds_path = stage_source_file(
+                    direct_src, temp_dir, tex_name, slot_type)
+                ImageListToDDS([(staged, dds_fmt)], temp_dir, mat_entry.generate_mipmaps)
+                if not os.path.isfile(dds_path):
+                    raise FileNotFoundError(f"texconv output not found: {dds_path}")
+                ConvertDDSToTex([dds_path], disk_path)
+
+                binding = _mhwi_tex_binding(base_path, tex_name, slot_type)
+                slot_binding_values[slot_type] = binding
+                comp_cache[direct_key] = (staged, disk_path, binding)
+                print(f"[{self._log_tag}]   {slot_type} -> "
+                      f"{os.path.basename(disk_path)} (槽位直连)")
+                continue
 
             if slot_type not in MHWI_SLOT_CHANNEL_MAPS:
                 null = MHWI_NULL_TEX.get(slot_type)
