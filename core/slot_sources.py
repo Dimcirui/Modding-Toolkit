@@ -213,6 +213,37 @@ def shader_pbr_contributions(material):
     return out
 
 
+def shader_slot_contributions(material, slot_names):
+    """Which game-slot sockets carry a hand-typed non-default value.
+
+    The SLOT-side counterpart to shader_pbr_contributions: a slot socket left
+    unlinked can still have been deliberately changed away from the group's
+    own default, the same way a PBR input can. Returns {slot_name: 'VALUE'}
+    (a slot socket is texture-only, so there is no 'IMAGE' case here -- that
+    is what find_shader_slot_images already covers).
+    """
+    node = find_packed_shader_node(material)
+    if node is None or not slot_names:
+        return {}
+
+    iface_defaults = {}
+    for item in node.node_tree.interface.items_tree:
+        if getattr(item, 'item_type', None) == 'SOCKET' and item.in_out == 'INPUT':
+            iface_defaults[item.name] = item.default_value
+
+    out = {}
+    for slot_name in slot_names:
+        socket = node.inputs.get(slot_name)
+        if socket is None or socket.is_linked:
+            continue
+        base = iface_defaults.get(slot_name)
+        if base is None:
+            continue
+        if not _values_equal(socket.default_value, base):
+            out[slot_name] = 'VALUE'
+    return out
+
+
 def _values_equal(a, b, tol=1e-4):
     try:
         av, bv = list(a), list(b)

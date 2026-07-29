@@ -28,7 +28,7 @@ from .mdf_tex_processor_base import (
 from .slot_sources import (
     find_slot_sources, stage_source_file,
     find_shader_socket_image, find_shader_socket_value,
-    find_shader_slot_supplies, shader_pbr_contributions,
+    find_shader_slot_supplies, shader_pbr_contributions, shader_slot_contributions,
     find_shader_slot_images,
 )
 from .slot_resolver import resolve_dds_format, write_slot_tex
@@ -432,26 +432,30 @@ def packed_shader_strategies(material, shader_source):
 def guess_shader_source_default(material):
     """Which side to preselect for a freshly refreshed packed-shader material.
 
-    Priority: a connected image beats a hand-typed non-default value, which
-    beats bare defaults; the game slots beat the PBR panel at the same tier
-    (a slot socket is a more deliberate, single-purpose connection than a
-    Principled-style input); a tie (neither side touched at all) keeps the
-    historical PBR default since nothing is lost either way.
+    A strict waterfall, most deliberate connection first: a game-slot image
+    beats a PBR image (a slot socket is a more deliberate, single-purpose
+    connection than a Principled-style input), which beats a hand-typed
+    non-default PBR value, which beats a hand-typed non-default slot value,
+    which beats bare defaults everywhere -- a tie with nothing touched at all
+    keeps the historical PBR default since nothing is lost either way.
     """
-    def _tier(has_image, has_value):
-        return 2 if has_image else (1 if has_value else 0)
-
     supplies = find_shader_slot_supplies(material)
-    slot_images = find_shader_slot_images(material, list(supplies.keys())) if supplies else {}
-    slot_tier = _tier(bool(slot_images), False)
+    slot_names = list(supplies.keys())
+    slot_images = find_shader_slot_images(material, slot_names) if slot_names else {}
+    if slot_images:
+        return 'SLOT'
 
     pbr_given = shader_pbr_contributions(material)
-    pbr_tier = _tier(
-        any(v == 'IMAGE' for v in pbr_given.values()),
-        any(v == 'VALUE' for v in pbr_given.values()),
-    )
+    if any(v == 'IMAGE' for v in pbr_given.values()):
+        return 'PBR'
+    if any(v == 'VALUE' for v in pbr_given.values()):
+        return 'PBR'
 
-    return 'SLOT' if slot_tier > pbr_tier else 'PBR'
+    slot_values = shader_slot_contributions(material, slot_names) if slot_names else {}
+    if slot_values:
+        return 'SLOT'
+
+    return 'PBR'
 
 
 def shader_source_update(self, context):
