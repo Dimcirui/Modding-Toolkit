@@ -7,9 +7,9 @@ import time
 
 from ...core.i18n import T
 from ...core.mdf_generator_base import (
-    get_shader_source_items,
+    get_shader_source_items, shader_source_update,
     MdfGenRefreshBase,
-    analyze_material_strategies,
+    packed_shader_strategies,
     _get_pbr_paths, _slugify, _strip_blender_suffix, _separate_mesh_by_material,
     _emissive_strength_is_zero, _is_emissive_slot, _is_albedo_slot,
     _make_source_id, _try_downgrade_slot, _generate_solid_texture_path,
@@ -22,7 +22,7 @@ from ...core.mdf_tex_processor_base import (
     _import_tex_utils, _compose_channels, channel_maps_consume_ao,
 )
 from ...core.slot_sources import (
-    find_slot_sources, stage_source_file, AUTHORITY_SHADER,
+    find_slot_sources, stage_source_file,
     find_shader_socket_image, find_shader_socket_value,
     find_shader_slot_supplies, shader_pbr_contributions,
 )
@@ -72,6 +72,7 @@ class MhwiGenMaterialEntry(bpy.types.PropertyGroup):
     shader_source: bpy.props.EnumProperty(
         name="Shader Source",
         items=get_shader_source_items,
+        update=shader_source_update,
         default=0,   # dynamic items require an int index default
     )
     generate_mipmaps: bpy.props.BoolProperty(name="Generate MipMaps", default=True)
@@ -318,7 +319,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                   f"{', '.join(o.name for o in mesh_objects)}")
 
         _t = time.time()
-        strategies = analyze_material_strategies(mat)
+        strategies = packed_shader_strategies(mat, getattr(mat_entry, 'shader_source', 'PBR'))
         # print(f"[{self._log_tag}]   分析材质节点: {time.time() - _t:.2f}s", flush=True)
         bake_size  = max(_detect_max_tex_size(mat), self._bake_size)
         _t = time.time()
@@ -365,11 +366,10 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
         # print(f"[{self._log_tag}]   加载Preset JSON: {time.time() - _t:.2f}s", flush=True)
         slot_types = [entry["name"] for entry in preset_data.get("Map List", [])]
 
-        # A slot socket and the PBR inputs it covers can both be filled. That is
-        # ambiguous, and guessing wrong silently discards the user's work, so the
-        # tie goes to the PBR panel -- it is the one they were most likely editing
-        # -- and the material's own shader_source flips it. Only a *contested*
-        # slot is demoted; an uncontested shader socket still wins outright.
+        # A slot socket and the PBR inputs it covers can both be filled, and the
+        # material's own shader_source is a hard switch between them -- not a
+        # tie-break that lets whichever side has data win regardless of the
+        # pick (see mdf_generator_base for the same fix on the other 4 games).
         prefer_slots = getattr(mat_entry, 'shader_source', 'PBR') == 'SLOT'
         _supplies = find_shader_slot_supplies(mat)
         _pbr_given = shader_pbr_contributions(mat)
@@ -416,11 +416,11 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
             # recipe, so ColorMaskMap / FxMap / FurVelocityMap were previously
             # unreachable and always wrote a null texture.
             direct_src, direct_auth = slot_direct.get(slot_type, (None, None))
-            # See mdf_generator_base: an explicit shader socket always wins.
+            # See mdf_generator_base: shader_source is a hard switch, so a slot
+            # socket only wins unconditionally when there is no PBR recipe to
+            # fall back to at all; otherwise it needs the explicit pick.
             if direct_src is not None and (
-                    (direct_auth == AUTHORITY_SHADER
-                     and slot_type not in contested_slots)
-                    or slot_type not in MHWI_SLOT_CHANNEL_MAPS
+                    slot_type not in MHWI_SLOT_CHANNEL_MAPS
                     or prefer_direct):
                 if getattr(mat_entry, 'skip_textures', False):
                     slot_binding_values[slot_type] = _mhwi_tex_binding(

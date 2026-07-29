@@ -26,9 +26,10 @@ from .mdf_tex_processor_base import (
     make_mdf_path, make_disk_path,
 )
 from .slot_sources import (
-    find_slot_sources, stage_source_file, AUTHORITY_SHADER,
+    find_slot_sources, stage_source_file,
     find_shader_socket_image, find_shader_socket_value,
     find_shader_slot_supplies, shader_pbr_contributions,
+    find_shader_slot_images,
 )
 from .slot_resolver import resolve_dds_format, write_slot_tex
 
@@ -395,6 +396,83 @@ def analyze_material_strategies(material):
 
 def strategy_label(strategy):
     return {'DIRECT': 'Direct', 'SOLID': 'Solid', 'BAKE': 'Bake'}.get(strategy, '?')
+
+
+def _slot_side_strategies(material):
+    """Per-PBR-type strategy read from the packed shader's game-slot group,
+    the SLOT counterpart to analyze_material_strategies()'s PBR-panel reading.
+
+    shader_source is a hard switch: whichever side the user picks is what gets
+    analysed and exported, full stop -- no falling back to the other side just
+    because it happens to have data and this one doesn't.
+    """
+    supplies = find_shader_slot_supplies(material)
+    slot_images = find_shader_slot_images(material, list(supplies.keys())) if supplies else {}
+    result = {}
+    for slot_type, pbr_types in supplies.items():
+        path = slot_images.get(slot_type)
+        for pt in pbr_types:
+            if path:
+                result[pt] = ('DIRECT', path, 'R')
+            elif pt not in result:
+                result[pt] = ('SOLID', PBR_DEFAULTS.get(pt, [1.0])[0] if pt not in ('color', 'emissive', 'normal')
+                              else tuple(PBR_DEFAULTS.get(pt, [1.0])))
+    for pt in PBR_TYPES:
+        if pt not in result:
+            neutral = PBR_DEFAULTS.get(pt, [1.0])
+            result[pt] = ('SOLID', tuple(neutral) if pt in ('color', 'emissive', 'normal') else neutral[0])
+    return result
+
+
+def packed_shader_strategies(material, shader_source):
+    """PBR-panel or game-slot analysis, whichever `shader_source` names."""
+    return _slot_side_strategies(material) if shader_source == 'SLOT' else analyze_material_strategies(material)
+
+
+def guess_shader_source_default(material):
+    """Which side to preselect for a freshly refreshed packed-shader material.
+
+    Priority: a connected image beats a hand-typed non-default value, which
+    beats bare defaults; the game slots beat the PBR panel at the same tier
+    (a slot socket is a more deliberate, single-purpose connection than a
+    Principled-style input); a tie (neither side touched at all) keeps the
+    historical PBR default since nothing is lost either way.
+    """
+    def _tier(has_image, has_value):
+        return 2 if has_image else (1 if has_value else 0)
+
+    supplies = find_shader_slot_supplies(material)
+    slot_images = find_shader_slot_images(material, list(supplies.keys())) if supplies else {}
+    slot_tier = _tier(bool(slot_images), False)
+
+    pbr_given = shader_pbr_contributions(material)
+    pbr_tier = _tier(
+        any(v == 'IMAGE' for v in pbr_given.values()),
+        any(v == 'VALUE' for v in pbr_given.values()),
+    )
+
+    return 'SLOT' if slot_tier > pbr_tier else 'PBR'
+
+
+def shader_source_update(self, context):
+    """Recompute the strategy-analysis display when the PBR/Slot toggle flips.
+
+    Refresh only snapshots strat_* once, so without this the grid stayed
+    stuck on whatever it showed at refresh time no matter what the user
+    picked afterward.
+    """
+    mat = bpy.data.materials.get(self.blender_material)
+    if not mat:
+        return
+    strategies = packed_shader_strategies(mat, self.shader_source)
+    parts = []
+    for pt in ('color', 'normal', 'roughness', 'metallic', 'alpha', 'emissive'):
+        sv = strategies.get(pt, ('?', None))
+        parts.append(f"{pt[0].upper()}:{strategy_label(sv[0])}")
+    self.strategy_display = '  '.join(parts)
+    for pt in ('color', 'metallic', 'roughness', 'normal', 'alpha', 'emissive'):
+        sv = strategies.get(pt, ('?', None))
+        setattr(self, f"strat_{pt}", strategy_label(sv[0]))
 
 
 def _emissive_strength_is_zero(material):
@@ -1519,7 +1597,6 @@ class MdfGenRefreshBase(bpy.types.Operator):
             if not mat:
                 continue
 
-            strategies   = analyze_material_strategies(mat)
             shader_type  = detect_shader_type(mat)
             item = settings.material_list.add()
             item.blender_material = mat_name
@@ -1528,6 +1605,15 @@ class MdfGenRefreshBase(bpy.types.Operator):
                 item.uses_packed_shader = (shader_type == SHADER_MTK_PACK)
             except AttributeError:
                 pass
+
+            if shader_type == SHADER_MTK_PACK:
+                try:
+                    item.shader_source = guess_shader_source_default(mat)
+                except Exception:
+                    pass
+                strategies = packed_shader_strategies(mat, item.shader_source)
+            else:
+                strategies = analyze_material_strategies(mat)
 
             best = guess_best_preset(mat_name, preset_items)
             try:
@@ -1719,7 +1805,7 @@ class MdfGenProcessBase(bpy.types.Operator):
                   f"{', '.join(o.name for o in mesh_objects)}")
 
         _t = time.time()
-        strategies = analyze_material_strategies(mat)
+        strategies = packed_shader_strategies(mat, getattr(mat_entry, 'shader_source', 'PBR'))
         # print(f"[{cls._log_tag}]   分析材质节点: {time.time() - _t:.2f}s", flush=True)
         bake_size  = max(_detect_max_tex_size(mat), cls._bake_size)
 
@@ -1779,13 +1865,13 @@ class MdfGenProcessBase(bpy.types.Operator):
         # print(f"[{cls._log_tag}]   加载Preset JSON: {time.time() - _t:.2f}s", flush=True)
         slot_types = [b["Texture Type"] for b in preset_data.get("Texture Bindings", [])]
 
-        # A slot socket and the PBR inputs it covers can both be filled. That is
-        # ambiguous, and guessing wrong silently discards the user's work, so the
-        # tie goes to the PBR panel -- it is the one they were most likely editing
-        # -- and the material's own shader_source flips it. Only a *contested*
-        # slot is demoted; an uncontested shader socket still wins outright.
-        # Per material, not global: one export can mix materials that want the
-        # PBR panel with materials that want the game slots.
+        # A slot socket and the PBR inputs it covers can both be filled, and the
+        # material's own shader_source is a hard switch between them -- not a
+        # tie-break that lets whichever side has data win regardless of the
+        # pick, which used to silently ignore the choice whenever only one
+        # side was actually filled in. Per material, not global: one export
+        # can mix materials that want the PBR panel with materials that want
+        # the game slots.
         prefer_slots = getattr(mat_entry, 'shader_source', 'PBR') == 'SLOT'
         _supplies = find_shader_slot_supplies(mat)
         _pbr_given = shader_pbr_contributions(mat)
@@ -1838,13 +1924,13 @@ class MdfGenProcessBase(bpy.types.Operator):
             # roughness via nodes would otherwise have that edit silently
             # discarded in favour of the original packed file.
             direct_src, direct_auth = slot_direct.get(slot_type, (None, None))
-            # A socket on the packed shader is explicit, so it always wins. A
-            # slot-named node only wins where there is no composition recipe to
-            # override (those slots used to write a null texture regardless).
+            # shader_source is a hard switch, not a tie-break: a slot-named node
+            # (not a shader socket) only wins where there is no composition
+            # recipe to override (those slots used to write a null texture
+            # regardless); an actual shader-socket connection is honoured only
+            # when the user picked "game slots" for this material.
             if direct_src is not None and (
-                    (direct_auth == AUTHORITY_SHADER
-                     and slot_type not in contested_slots)
-                    or slot_type not in cls._channel_maps
+                    slot_type not in cls._channel_maps
                     or prefer_direct):
                 if getattr(mat_entry, 'skip_textures', False):
                     slot_mdf_paths[slot_type] = make_mdf_path(

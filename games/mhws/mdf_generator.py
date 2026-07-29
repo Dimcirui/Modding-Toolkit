@@ -4,7 +4,7 @@ from ...core.mdf_tex_processor_base import (
     BASE_SLOT_CHANNEL_MAPS, BASE_NULL_TEX_BY_TYPE, BASE_TEXTURE_TYPE_ABBREV,
 )
 from ...core.mdf_generator_base import (
-    get_shader_source_items,
+    get_shader_source_items, shader_source_update,
     load_preset_enum_items,
     _find_meshes_by_material, mesh_collection_poll,
     MdfGenRefreshBase, MdfGenProcessBase,
@@ -52,6 +52,7 @@ class MhwsGenMaterialEntry(bpy.types.PropertyGroup):
     shader_source: bpy.props.EnumProperty(
         name="Shader Source",
         items=get_shader_source_items,
+        update=shader_source_update,
         default=0,   # dynamic items require an int index default
     )
     generate_mipmaps: bpy.props.BoolProperty(name="Generate MipMaps", default=True)
