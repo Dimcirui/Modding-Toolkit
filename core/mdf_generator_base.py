@@ -21,11 +21,15 @@ import time
 from .i18n import T
 from .mdf_tex_processor_base import (
     BASE_SLOT_CHANNEL_MAPS, BASE_NULL_TEX_BY_TYPE, BASE_TEXTURE_TYPE_ABBREV,
-    SRGB_SLOT_TYPES, PBR_DEFAULTS, PBR_CHANNEL_SELECTABLE, _CH,
-    _import_tex_utils, _compose_channels,
+    SRGB_SLOT_TYPES, PBR_DEFAULTS, PBR_TYPES, PBR_CHANNEL_SELECTABLE, _CH,
+    _import_tex_utils, _compose_channels, channel_maps_consume_ao,
     make_mdf_path, make_disk_path,
 )
-from .slot_sources import find_slot_images, stage_source_file
+from .slot_sources import (
+    find_slot_sources, stage_source_file, AUTHORITY_SHADER,
+    find_shader_socket_image, find_shader_socket_value,
+    find_shader_slot_supplies, shader_pbr_contributions,
+)
 from .slot_resolver import resolve_dds_format, write_slot_tex
 
 # ── Principled BSDF socket → PBR type mapping ─────────────────────────────────
@@ -81,6 +85,7 @@ def _find_mmd_shader_dev(material):
     return None
 
 
+SHADER_MTK_PACK   = 'mtk_packed'
 SHADER_PRINCIPLED = 'principled'
 SHADER_EMISSION   = 'emission'
 SHADER_MMD_DEV    = 'mmd_shader_dev'
@@ -117,6 +122,13 @@ def _find_connected_shader(material):
         if id(node) in visited:
             continue
         visited.add(id(node))
+        if node.type == 'GROUP' and node.node_tree is not None:
+            # Tag on the datablock, not the node/group name: a user may rename
+            # either.  Imported lazily to keep shader_pack out of this module's
+            # import chain.
+            from .shader_pack import TAG as _MTK_TAG
+            if node.node_tree.get(_MTK_TAG):
+                return node, SHADER_MTK_PACK
         if node.type == 'BSDF_PRINCIPLED':
             return node, SHADER_PRINCIPLED
         if node.type == 'EMISSION':
@@ -310,6 +322,11 @@ def analyze_material_strategies(material):
 
     # No Material Output present — fall back to any shader found in the tree
     if shader_type == SHADER_UNKNOWN:
+        from .slot_sources import find_packed_shader_node
+        shader_node = find_packed_shader_node(material)
+        if shader_node is not None:
+            shader_type = SHADER_MTK_PACK
+    if shader_type == SHADER_UNKNOWN:
         shader_node = _find_principled_bsdf(material)
         if shader_node is not None:
             shader_type = SHADER_PRINCIPLED
@@ -323,6 +340,27 @@ def analyze_material_strategies(material):
                     shader_type = SHADER_MMD_DEV
 
     result = {}
+
+    if shader_type == SHADER_MTK_PACK and shader_node is not None:
+        # The packed shader declares which socket carries which quantity, so the
+        # same per-socket analysis applies: a texture is DIRECT, a typed value is
+        # SOLID, anything else needs a bake.  Without this the group's PBR panel
+        # was invisible to the generator and every channel fell back to a neutral
+        # default -- an albedo typed into the panel exported as black.
+        from .slot_sources import find_shader_pbr_map
+        _node, pbr_map = find_shader_pbr_map(material)
+        for pbr_type, socket_name in pbr_map.items():
+            result[pbr_type] = _analyze_principled_input(
+                shader_node, socket_name, material.name, pbr_type)
+        # Any quantity the spec does not expose (MHWI has no AO slot socket for
+        # 'ao' to write back to, for instance) keeps its neutral value.
+        for pbr_type in PBR_TYPES:
+            if pbr_type not in result:
+                neutral = PBR_DEFAULTS.get(pbr_type, [1.0])
+                result[pbr_type] = ('SOLID', tuple(neutral)
+                                    if pbr_type in ('color', 'emissive', 'normal')
+                                    else neutral[0])
+        return result
 
     if shader_type == SHADER_PRINCIPLED and shader_node is not None:
         for pbr_type, input_name in PRINCIPLED_INPUT_MAP.items():
@@ -491,6 +529,26 @@ def _get_re_mesh_editor_addon_dir():
     _addon_dir_cache  = sig_match or sig_fallback or name_fallback
     _addon_dir_cached = True   # cache the miss too
     return _addon_dir_cache
+
+
+_shader_source_items_cache = []
+
+
+def get_shader_source_items(self, context):
+    """Which of the packed shader's two panels this material exports from.
+
+    Defined here rather than per game so the five generators share one set of
+    labels.  A callback, not a literal list, because the labels go through T()
+    and must follow a language switch.
+    """
+    global _shader_source_items_cache
+    _shader_source_items_cache = [
+        ('PBR',  T("core.mdf_generator_base.shader_source_pbr"),
+                 T("core.mdf_generator_base.shader_source_pbr_desc"), 0),
+        ('SLOT', T("core.mdf_generator_base.shader_source_slot"),
+                 T("core.mdf_generator_base.shader_source_slot_desc"), 1),
+    ]
+    return _shader_source_items_cache
 
 
 def mesh_collection_poll(self, col):
@@ -1439,6 +1497,11 @@ class MdfGenRefreshBase(bpy.types.Operator):
             shader_type  = detect_shader_type(mat)
             item = settings.material_list.add()
             item.blender_material = mat_name
+            # Recorded once here rather than probed on every UI redraw.
+            try:
+                item.uses_packed_shader = (shader_type == SHADER_MTK_PACK)
+            except AttributeError:
+                pass
 
             best = guess_best_preset(mat_name, preset_items)
             try:
@@ -1648,6 +1711,22 @@ class MdfGenProcessBase(bpy.types.Operator):
             mesh_objects=mesh_objects)
         # print(f"[{cls._log_tag}]   解析PBR路径 (含烘培): {time.time() - _t:.2f}s", flush=True)
 
+        # A shader with AO plugged in is the user already saying "use this AO",
+        # so honour it without making them tick the box again. Explicit settings
+        # win: only an unset ao_image is filled in.
+        shader_ao = find_shader_socket_image(mat, 'AO')
+        if shader_ao and not getattr(mat_entry, 'ao_image', ''):
+            try:
+                mat_entry.use_ao  = True
+                mat_entry.ao_image = shader_ao
+                strength = find_shader_socket_value(mat, 'AO Strength', 1.0)
+                if hasattr(mat_entry, 'ao_strength'):
+                    mat_entry.ao_strength = strength
+                print(f"[{cls._log_tag}]   AO from packed shader: "
+                      f"{os.path.basename(shader_ao)} (strength {strength:.2f})")
+            except Exception as e:
+                print(f"[{cls._log_tag}]   could not adopt the shader's AO: {e}")
+
         # User-provided AO override (Blender has no built-in AO node)
         if getattr(mat_entry, 'use_ao', False):
             ao_path_raw = getattr(mat_entry, 'ao_image', '')
@@ -1674,14 +1753,41 @@ class MdfGenProcessBase(bpy.types.Operator):
         # print(f"[{cls._log_tag}]   加载Preset JSON: {time.time() - _t:.2f}s", flush=True)
         slot_types = [b["Texture Type"] for b in preset_data.get("Texture Bindings", [])]
 
-        # Image Texture nodes named after a game slot — see slot_sources.
-        slot_direct = find_slot_images(mat, slot_types)
-        prefer_direct = getattr(settings, 'prefer_direct_slot_source', False)
+        # A slot socket and the PBR inputs it covers can both be filled. That is
+        # ambiguous, and guessing wrong silently discards the user's work, so the
+        # tie goes to the PBR panel -- it is the one they were most likely editing
+        # -- and the material's own shader_source flips it. Only a *contested*
+        # slot is demoted; an uncontested shader socket still wins outright.
+        # Per material, not global: one export can mix materials that want the
+        # PBR panel with materials that want the game slots.
+        prefer_slots = getattr(mat_entry, 'shader_source', 'PBR') == 'SLOT'
+        _supplies = find_shader_slot_supplies(mat)
+        _pbr_given = shader_pbr_contributions(mat)
+        contested_slots = {
+            slot for slot, quantities in _supplies.items()
+            if any(q in _pbr_given for q in quantities)
+        }
+        if contested_slots:
+            print(f"[{cls._log_tag}]   both panels filled for "
+                  f"{', '.join(sorted(contested_slots))} -> using the "
+                  f"{'game slots' if prefer_slots else 'PBR inputs'}")
+
+        # {slot: (path, authority)} — see slot_sources.  SHADER authority means
+        # the user plugged the texture into that slot's socket on the packed
+        # shader, which is an explicit instruction rather than a convention.
+        slot_direct = find_slot_sources(mat, slot_types)
+        prefer_direct = prefer_slots
 
         use_toon         = getattr(mat_entry, 'use_toon', False)
         emi_zero         = _emissive_strength_is_zero(mat)
         emissive_slots   = {st for st in slot_types if _is_emissive_slot(st)}
         albedo_slots     = {st for st in slot_types if _is_albedo_slot(st, cls._channel_maps)}
+
+        # With no AO slot in this game's channel maps, an AO map can only survive
+        # by being multiplied into the albedo. Where a slot does store it, that
+        # path is used instead -- doing both would darken twice.
+        bake_ao = (bool(pbr_paths.get('ao'))
+                   and not channel_maps_consume_ao(cls._channel_maps))
 
         slot_mdf_paths = {}
 
@@ -1705,9 +1811,15 @@ class MdfGenProcessBase(bpy.types.Operator):
             # that *do* have a recipe it is opt-in, because a user who edited
             # roughness via nodes would otherwise have that edit silently
             # discarded in favour of the original packed file.
-            direct_src = slot_direct.get(slot_type)
+            direct_src, direct_auth = slot_direct.get(slot_type, (None, None))
+            # A socket on the packed shader is explicit, so it always wins. A
+            # slot-named node only wins where there is no composition recipe to
+            # override (those slots used to write a null texture regardless).
             if direct_src is not None and (
-                    slot_type not in cls._channel_maps or prefer_direct):
+                    (direct_auth == AUTHORITY_SHADER
+                     and slot_type not in contested_slots)
+                    or slot_type not in cls._channel_maps
+                    or prefer_direct):
                 if getattr(mat_entry, 'skip_textures', False):
                     slot_mdf_paths[slot_type] = make_mdf_path(
                         base_path, tex_name, slot_type,
@@ -1744,7 +1856,7 @@ class MdfGenProcessBase(bpy.types.Operator):
                 slot_mdf_paths[slot_type] = mdf_path
                 comp_cache[direct_key] = (staged, disk_path, mdf_path)
                 print(f"[{cls._log_tag}]   {slot_type} -> "
-                      f"{os.path.basename(disk_path)} (槽位直连)")
+                      f"{os.path.basename(disk_path)} (槽位直连/{direct_auth})")
                 continue
 
             if slot_type not in cls._channel_maps:
@@ -1837,6 +1949,8 @@ class MdfGenProcessBase(bpy.types.Operator):
                 slot_type, pbr_paths, pbr_channels, temp_dir, tex_name,
                 channel_maps=cls._channel_maps,
                 normal_flip_g=normal_flip_g,
+                bake_ao_into_color=bake_ao,
+                ao_strength=getattr(mat_entry, 'ao_strength', 1.0),
             )
             # print(f"[{cls._log_tag}]   合成通道 {slot_type}: {time.time() - _t_comp:.2f}s", flush=True)
             if composed:

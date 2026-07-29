@@ -330,6 +330,8 @@ STRINGS = {
     "mhwi.mrl3_generator.generate_mipmaps_name": {"EN": "Generate MipMaps", "ZH": "生成 MipMaps"},
     "mhwi.mrl3_generator.skip_textures_name": {"EN": "Materials Only", "ZH": "仅生成材质"},
     "mhwi.mrl3_generator.use_ao_name": {"EN": "Add AO", "ZH": "添加 AO"},
+    "mhwi.mrl3_generator.ao_strength_name": {
+        "EN": "AO Strength", "ZH": "AO 强度"},
     "mhwi.mrl3_generator.hide_snow_overlay_name": {
         "EN": "Hide Snow Overlay (fixes black legs in snow)", "ZH": "隐藏覆雪效果（解决雪地腿部发黑）"},
     "mhwi.mrl3_generator.flip_normal_g_name": {"EN": "Normal Map OpenGL -> DirectX", "ZH": "法线 OpenGL → DirectX"},
@@ -386,4 +388,69 @@ STRINGS = {
         "EN": "Select an MRL3 collection and click Refresh", "ZH": "选择 MRL3 集合并点击 Refresh"},
     "mhwi.mrl3_tex_processor_ui.use_direct_instead": {"EN": "Use DIRECT instead", "ZH": "请改用 DIRECT"},
     "mhwi.mrl3_tex_processor_ui.no_default": {"EN": "(no default)", "ZH": "(无默认)"},
+
+    # ══════════════════════════════════════════════════════════════════════
+    # games/mhwi/shader_defs.py — packed shader sockets
+    #
+    # These become node group socket descriptions (tooltips), which are baked
+    # into the datablock when the group is first built. Switching language
+    # therefore does not retranslate an already-built group; it only affects
+    # groups created afterwards.
+    # ══════════════════════════════════════════════════════════════════════
+
+    "mhwi.shader_defs.panel_pbr": {"EN": "PBR Inputs", "ZH": "PBR 输入"},
+    "mhwi.shader_defs.panel_slots": {"EN": "Game Slots (packed)", "ZH": "游戏槽位 (打包)"},
+
+    "mhwi.shader_defs.albedo": {
+        "EN": "AlbedoMap — RGB base colour, A alpha",
+        "ZH": "AlbedoMap — RGB 基础色, A 透明度"},
+    "mhwi.shader_defs.normal": {
+        "EN": "NormalMap — RG tangent normal (B unused, BC5)",
+        "ZH": "NormalMap — RG 切线法线 (B 未使用, BC5)"},
+    "mhwi.shader_defs.rmt": {
+        "EN": "RMTMap — R roughness, G metallic, B translucency",
+        "ZH": "RMTMap — R 粗糙度, G 金属度, B 透光"},
+    "mhwi.shader_defs.emissive": {
+        "EN": "EmissiveMap — emissive colour",
+        "ZH": "EmissiveMap — 自发光颜色"},
+    "mhwi.shader_defs.colormask": {
+        "EN": "ColorMaskMap — colour-change mask. Carried for export; not previewed",
+        "ZH": "ColorMaskMap — 换色遮罩。仅用于导出, 不参与预览"},
+    "mhwi.shader_defs.fx": {
+        "EN": "FxMap — carried for export; not previewed",
+        "ZH": "FxMap — 仅用于导出, 不参与预览"},
+    "mhwi.shader_defs.furvelocity": {
+        "EN": "FurVelocityMap — carried for export; not previewed",
+        "ZH": "FurVelocityMap — 仅用于导出, 不参与预览"},
+
+    "mhwi.shader_defs.pbr_base_color": {
+        "EN": "Base colour. Multiplied with AlbedoMap",
+        "ZH": "基础色。与 AlbedoMap 相乘"},
+    "mhwi.shader_defs.pbr_alpha": {
+        "EN": "Alpha. Multiplied with AlbedoMap's alpha",
+        "ZH": "透明度。与 AlbedoMap 的 Alpha 相乘"},
+    "mhwi.shader_defs.pbr_roughness": {
+        "EN": "Roughness. Multiplied with RMTMap.R, as MRL3 does with fRoughness",
+        "ZH": "粗糙度。与 RMTMap.R 相乘 (与 MRL3 的 fRoughness 一致)"},
+    "mhwi.shader_defs.pbr_metallic": {
+        "EN": "Metallic. Added to RMTMap.G",
+        "ZH": "金属度。与 RMTMap.G 相加"},
+    "mhwi.shader_defs.pbr_ao": {
+        "EN": "Ambient occlusion, multiplied into base colour. Preview only — "
+              "MHWI has no AO slot to export it to",
+        "ZH": "环境光遮蔽，正片叠底到基础色上。仅用于预览 —— MHWI 没有可导出的 AO 槽位"},
+    "mhwi.shader_defs.pbr_ao_strength": {
+        "EN": "AO strength: 0 = off, 1 = the full map",
+        "ZH": "AO 强度：0 为关闭，1 为完整应用"},
+    "mhwi.shader_defs.pbr_emission": {
+        "EN": "Emission colour. Added to EmissiveMap",
+        "ZH": "自发光颜色。与 EmissiveMap 相加"},
+    "mhwi.shader_defs.pbr_emission_strength": {
+        "EN": "Emission strength",
+        "ZH": "自发光强度"},
+    "mhwi.shader_defs.pbr_normal": {
+        "EN": "Normal map texture — plug the image in directly, no Normal Map "
+              "node needed. Its deviation from flat is added to NormalMap's",
+        "ZH": "法线贴图 —— 直接连图片即可，不需要 Normal Map 节点。"
+              "其相对平面的偏移量与 NormalMap 相加"},
 }

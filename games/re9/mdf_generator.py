@@ -6,6 +6,7 @@ from .mdf_tex_processor import (
     RE9_TEX_VERSION,
 )
 from ...core.mdf_generator_base import (
+    get_shader_source_items,
     load_preset_enum_items,
     _find_meshes_by_material, mesh_collection_poll,
     MdfGenRefreshBase, MdfGenProcessBase,
@@ -43,6 +44,15 @@ class RE9GenMaterialEntry(bpy.types.PropertyGroup):
         name="Use Toon Shading",
         description="Skip emissive texture processing; set the emissive slot path the same as the base color slot",
         default=False,
+    )
+    #: Set by Refresh: this material is driven by a packed shader, so the
+    #: toon / AO options do not apply (AO comes from the shader) and a choice of
+    #: which panel to read appears instead.
+    uses_packed_shader: bpy.props.BoolProperty(default=False)
+    shader_source: bpy.props.EnumProperty(
+        name="Shader Source",
+        items=get_shader_source_items,
+        default=0,   # dynamic items require an int index default
     )
     generate_mipmaps: bpy.props.BoolProperty(name="Generate MipMaps", default=True)
     skip_textures:    bpy.props.BoolProperty(

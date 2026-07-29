@@ -505,4 +505,56 @@ STRINGS = {
     "core.tex_convert_base.detail_tiling_y_name": {"EN": "Tiling Y", "ZH": "Tiling Y"},
     "core.tex_convert_base.detail_blend_failed": {
         "EN": "Detail map blend failed, please check the detail image", "ZH": "细节图混合失败，请检查细节图片"},
+
+    # ── generator: which packed-shader panel to export from ────────────────
+    "core.mdf_generator_base.shader_source_pbr": {
+        "EN": "Use PBR Inputs", "ZH": "使用PBR槽位组"},
+    "core.mdf_generator_base.shader_source_pbr_desc": {
+        "EN": "Compose each texture from the packed shader's PBR inputs",
+        "ZH": "从打包着色器的 PBR 输入合成每张贴图"},
+    "core.mdf_generator_base.shader_source_slot": {
+        "EN": "Use Game Slots", "ZH": "使用游戏槽位组"},
+    "core.mdf_generator_base.shader_source_slot_desc": {
+        "EN": "Take each texture straight from the packed shader's game slot sockets",
+        "ZH": "直接取打包着色器游戏槽位上的贴图"},
+
+    # ══════════════════════════════════════════════════════════════════════
+    # core/shader_ops.py — packed shader operators and panel
+    # ══════════════════════════════════════════════════════════════════════
+
+    "core.shader_ops.add_desc": {
+        "EN": "Add a packed shader whose inputs are the game's own texture slots",
+        "ZH": "添加打包着色器，其输入端就是游戏自身的贴图槽位"},
+    "core.shader_ops.convert_desc": {
+        "EN": "Rebuild materials on the packed shader. The previous nodes are "
+              "disconnected, not deleted",
+        "ZH": "用打包着色器重建材质。原有节点只断开连接，不会删除"},
+    "core.shader_ops.convert_active": {
+        "EN": "Convert this material", "ZH": "转换当前材质"},
+    "core.shader_ops.no_materials": {
+        "EN": "No materials found on the selection",
+        "ZH": "所选对象上没有找到材质"},
+    "core.shader_ops.converted": {
+        "EN": "Converted {done} material(s)", "ZH": "已转换 {done} 个材质"},
+    "core.shader_ops.converted_with_warnings": {
+        "EN": "Converted {done} material(s); {warned} had warnings (see the node "
+              "sidebar or the system console)",
+        "ZH": "已转换 {done} 个材质；{warned} 个有警告（见节点侧边栏或系统控制台）"},
+    "core.shader_ops.converted_with_fail": {
+        "EN": "Converted {done}, failed {failed} (see the system console)",
+        "ZH": "已转换 {done} 个，失败 {failed} 个（见系统控制台）"},
+    "core.shader_ops.all_already_converted": {
+        "EN": "Nothing to do: {skipped} material(s) already use the packed shader",
+        "ZH": "无需转换：{skipped} 个材质已经在使用打包着色器"},
+    "core.shader_ops.converted_some_skipped": {
+        "EN": "Converted {done}; skipped {skipped} already using it",
+        "ZH": "已转换 {done} 个；跳过 {skipped} 个已在使用的"},
+    "core.shader_ops.warnings_title": {
+        "EN": "{n} thing(s) could not be carried over",
+        "ZH": "有 {n} 项无法完整转换"},
+    "core.shader_ops.add_shader_named": {
+        "EN": "Add {name} Shader", "ZH": "添加 {name} 着色器"},
+    "core.shader_ops.preview_only": {
+        "EN": "Preview only — not a match for the in-game look",
+        "ZH": "仅供预览，不保证还原游戏内画面"},
 }

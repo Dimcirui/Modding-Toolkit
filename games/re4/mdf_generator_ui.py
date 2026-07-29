@@ -131,13 +131,22 @@ class RE4_OT_MdfGeneratorDialog(bpy.types.Operator):
                     op.channel       = pt
                     op.native_size   = native_size
 
-            if preset_has_emissive_slots(mat_entry.material_preset):
-                box.prop(mat_entry, "use_toon", text=T("re4.mdf_generator.use_toon_label"))
-            box.prop(mat_entry, "generate_mipmaps", text=T("re4.mdf_generator.generate_mipmaps_label"))
-            box.prop(mat_entry, "skip_textures", text=T("re4.mdf_generator.skip_textures_label"))
-            box.prop(mat_entry, "use_ao")
-            if mat_entry.use_ao:
-                box.prop(mat_entry, "ao_image")
+            # A packed shader already carries the AO map and its strength, and toon
+            # mode belongs to the emissive shaders it replaces -- so those options are
+            # hidden and a choice of which of its two panels to read appears instead.
+            if getattr(mat_entry, "uses_packed_shader", False):
+                row = box.row(align=True)
+                row.prop(mat_entry, "shader_source", expand=True)
+                box.prop(mat_entry, "generate_mipmaps", text=T("re4.mdf_generator.generate_mipmaps_name"))
+                box.prop(mat_entry, "skip_textures", text=T("re4.mdf_generator.skip_textures_name"))
+            else:
+                if preset_has_emissive_slots(mat_entry.material_preset):
+                    box.prop(mat_entry, "use_toon", text=T("re4.mdf_generator.use_toon_label"))
+                box.prop(mat_entry, "generate_mipmaps", text=T("re4.mdf_generator.generate_mipmaps_label"))
+                box.prop(mat_entry, "skip_textures", text=T("re4.mdf_generator.skip_textures_label"))
+                box.prop(mat_entry, "use_ao")
+                if mat_entry.use_ao:
+                    box.prop(mat_entry, "ao_image")
 
 
 classes = [RE4_OT_MdfGeneratorDialog]

@@ -22,6 +22,7 @@ from .core import editor_props
 from .core import editor_ops
 from .core import mdf_tex_processor_base
 from .core import tex_convert_base
+from .core import shader_ops
 from . import ui, games
 
 class MT_Preferences(AddonPreferences):
@@ -62,6 +63,7 @@ modules = [
     pose_ops,
     mdf_tex_processor_base,
     tex_convert_base,
+    shader_ops,
     games,
     ui,
 ]

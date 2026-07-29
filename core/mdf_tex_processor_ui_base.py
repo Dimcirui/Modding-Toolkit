@@ -1,6 +1,7 @@
 import bpy
 import os
 
+from .i18n import T
 from .mdf_tex_processor_base import (
     PBR_TYPES, PBR_TYPE_LABELS, PBR_CHANNEL_SELECTABLE,
     BASE_COMMON_SLOT_TYPES, BASE_NULL_TEX_BY_TYPE,

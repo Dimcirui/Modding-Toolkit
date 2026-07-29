@@ -162,6 +162,8 @@ STRINGS = {
     "ui.main_panel.btn_batch_rename_physics":     {"EN": "One-Click Rename", "ZH": "一键重命名"},
     "ui.main_panel.btn_mrl3_tex_processor":       {"EN": "MRL3 Processor", "ZH": "MRL3 处理器"},
     "ui.main_panel.btn_mrl3_generator":           {"EN": "MRL3 Generator", "ZH": "MRL3 生成器"},
+    "ui.main_panel.btn_convert_packed_shader":    {"EN": "Convert Selected to Packed Shader",
+                                                   "ZH": "选中物体转为打包着色器"},
     "ui.main_panel.btn_create_chain":             {"EN": "One-Click Create Chain", "ZH": "一键创建 Chain"},
     "ui.main_panel.btn_mmd_face_weights":         {"EN": "MMD Shape Key to Face Weights", "ZH": "MMD 形态键转表情权重"},
     "ui.main_panel.btn_batch_export":             {"EN": "Batch Export", "ZH": "批量导出"},

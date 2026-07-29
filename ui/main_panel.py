@@ -2,6 +2,7 @@ import bpy
 import os
 import re
 from ..core.i18n import T, draw_language_toggle, get_lang
+from ..core.compat import MTK_SHADER_AVAILABLE
 from ..core import bone_utils, weight_utils, ui_config
 from ..core.re_mesh_compat import re_mesh_op_available
 from ..core.mdf_generator_base import MHW_OT_SetChannelSize
@@ -821,6 +822,15 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             sub.enabled = has_mhw_model
             sub.operator("mhwi.mrl3_tex_processor_dialog", text=T("ui.main_panel.btn_mrl3_tex_processor"), icon='TEXTURE')
             sub.operator("mhwi.mrl3_generator_dialog",     text=T("ui.main_panel.btn_mrl3_generator"), icon='SHADERFX')
+
+            # Batch conversion sits next to the generator on purpose: it feeds it.
+            # Hidden entirely on Blender < 4.0 rather than shown disabled.
+            if MTK_SHADER_AVAILABLE:
+                op = col.operator("mtk.convert_to_packed_shader",
+                                  text=T("ui.main_panel.btn_convert_packed_shader"),
+                                  icon='NODETREE')
+                op.game = 'MHWI'
+                op.scope = 'SELECTED'
 
             col.separator()
             has_mhw_ctc = hasattr(bpy.ops, 'mhw_ctc') and hasattr(bpy.ops.mhw_ctc, 'create_chain_from_bone')

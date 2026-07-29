@@ -322,12 +322,32 @@ def _import_tex_utils():
 
 # ── Channel composition ────────────────────────────────────────────────────────
 
+def channel_maps_consume_ao(channel_maps):
+    """True when this game has a slot that actually stores AO.
+
+    MHWI does not: MHWI_SLOT_CHANNEL_MAPS never references 'ao', and RMTMap's
+    blue channel is translucency.  The RE games do, via NRRO.B.  That difference
+    decides whether an AO map has to be baked into the albedo instead — doing
+    both would darken the result twice.
+    """
+    for ch_map in (channel_maps or {}).values():
+        for src in ch_map.values():
+            if isinstance(src, tuple) and src and src[0] == 'ao':
+                return True
+    return False
+
+
 def _compose_channels(slot_type, pbr_paths, pbr_channels, temp_dir, tex_name, pbr_inv=None,
-                       channel_maps=None, normal_flip_g=False):
+                       channel_maps=None, normal_flip_g=False,
+                       bake_ao_into_color=False, ao_strength=1.0):
     """Compose a packed texture from PBR inputs for the given slot type.
     channel_maps: optional override; defaults to BASE_SLOT_CHANNEL_MAPS.
     Channel map values: tuple (pbr_type, ch_idx[, True]) | None (=0.0) | float (constant).
     normal_flip_g: when True, inverts the G channel of the normal map (OpenGL to DirectX).
+    bake_ao_into_color: multiply the AO map into this slot's colour channels.  For
+        a game with no AO slot that is the only way to keep an AO map at all --
+        see channel_maps_consume_ao.  ao_strength lerps white -> map, matching
+        the packed shader's AO Strength so preview and export agree.
     """
     if pbr_inv is None:
         pbr_inv = {}
@@ -342,6 +362,10 @@ def _compose_channels(slot_type, pbr_paths, pbr_channels, temp_dir, tex_name, pb
 
     needed_types = {src[0] for src in ch_map.values()
                     if src is not None and isinstance(src, tuple)}
+    # No channel map references 'ao' when it is being baked into the colour, so
+    # it has to be requested explicitly or the loader would skip it.
+    if bake_ao_into_color:
+        needed_types.add('ao')
     loaded = {}
 
     # First pass: load all images and determine the largest size as reference.
@@ -412,6 +436,24 @@ def _compose_channels(slot_type, pbr_paths, pbr_channels, temp_dir, tex_name, pb
             if normal_flip_g and pbr_type == 'normal' and in_ch_i == 1:
                 data = 1.0 - data
             result[:, :, out_i] = data
+
+    if bake_ao_into_color:
+        ao_pix = loaded.get('ao')
+        if ao_pix is not None:
+            strength = min(max(float(ao_strength), 0.0), 1.0)
+            # lerp(white, ao, strength): strength 0 leaves the colour untouched,
+            # which is the same curve the shader's AO Strength slider follows.
+            occl = 1.0 - strength * (1.0 - ao_pix[:, :, 0])
+            # Colour channels only. Alpha carries opacity or metallic depending
+            # on the slot, and darkening either would be wrong.
+            colour_channels = [
+                _CH[ch] for ch, src in ch_map.items()
+                if isinstance(src, tuple) and src and src[0] == 'color'
+            ]
+            for out_i in colour_channels:
+                result[:, :, out_i] = result[:, :, out_i] * occl
+            print(f"[MDF Tex] {slot_type}: AO baked into "
+                  f"{len(colour_channels)} colour channel(s) at strength {strength:.2f}")
 
     abbrev   = BASE_TEXTURE_TYPE_ABBREV.get(slot_type, slot_type)
     out_name = f"{tex_name}_{abbrev}_composed.png"

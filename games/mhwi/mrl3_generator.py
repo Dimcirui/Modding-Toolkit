@@ -7,6 +7,7 @@ import time
 
 from ...core.i18n import T
 from ...core.mdf_generator_base import (
+    get_shader_source_items,
     MdfGenRefreshBase,
     analyze_material_strategies,
     _get_pbr_paths, _slugify, _strip_blender_suffix, _separate_mesh_by_material,
@@ -17,8 +18,14 @@ from ...core.mdf_generator_base import (
     _import_mhwi_tex_convert, _call_mhwi_read_preset, _import_mhwi_create_collection,
     BAKE_SIZE_DEFAULT,
 )
-from ...core.mdf_tex_processor_base import _import_tex_utils, _compose_channels
-from ...core.slot_sources import find_slot_images, stage_source_file
+from ...core.mdf_tex_processor_base import (
+    _import_tex_utils, _compose_channels, channel_maps_consume_ao,
+)
+from ...core.slot_sources import (
+    find_slot_sources, stage_source_file, AUTHORITY_SHADER,
+    find_shader_socket_image, find_shader_socket_value,
+    find_shader_slot_supplies, shader_pbr_contributions,
+)
 from ...core.slot_resolver import resolve_dds_format, write_slot_tex
 from .mrl3_tex_processor import (
     MHWI_SLOT_CHANNEL_MAPS, MHWI_NULL_TEX,
@@ -58,6 +65,15 @@ class MhwiGenMaterialEntry(bpy.types.PropertyGroup):
         description="Skip emissive texture processing; set the emissive slot path to match the albedo slot",
         default=False,
     )
+    #: Set by Refresh: this material is driven by a packed shader, so the
+    #: toon / AO options do not apply (AO comes from the shader) and a choice of
+    #: which panel to read appears instead.
+    uses_packed_shader: bpy.props.BoolProperty(default=False)
+    shader_source: bpy.props.EnumProperty(
+        name="Shader Source",
+        items=get_shader_source_items,
+        default=0,   # dynamic items require an int index default
+    )
     generate_mipmaps: bpy.props.BoolProperty(name="Generate MipMaps", default=True)
     skip_textures:    bpy.props.BoolProperty(
         name="Materials Only",
@@ -79,6 +95,13 @@ class MhwiGenMaterialEntry(bpy.types.PropertyGroup):
         name="AO",
         description="AO texture path",
         subtype='FILE_PATH',
+    )
+    ao_strength:      bpy.props.FloatProperty(
+        name="AO Strength",
+        description="How strongly the AO map is multiplied into the albedo. "
+                    "MHWI has no AO slot, so this is baked into the texture at "
+                    "generation time -- it matches the packed shader's AO Strength",
+        default=0.5, min=0.0, max=1.0, subtype='FACTOR',
     )
     native_size_color:     bpy.props.IntProperty(default=0)
     native_size_normal:    bpy.props.IntProperty(default=0)
@@ -304,6 +327,22 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
             mesh_objects=mesh_objects)
         # print(f"[{self._log_tag}]   解析PBR路径 (含烘培): {time.time() - _t:.2f}s", flush=True)
 
+        # A shader with AO plugged in is the user already saying "use this AO",
+        # so honour it without making them tick the box again. Explicit settings
+        # win: only an unset ao_image is filled in.
+        shader_ao = find_shader_socket_image(mat, 'AO')
+        if shader_ao and not getattr(mat_entry, 'ao_image', ''):
+            try:
+                mat_entry.use_ao  = True
+                mat_entry.ao_image = shader_ao
+                strength = find_shader_socket_value(mat, 'AO Strength', 1.0)
+                if hasattr(mat_entry, 'ao_strength'):
+                    mat_entry.ao_strength = strength
+                print(f"[{self._log_tag}]   AO from packed shader: "
+                      f"{os.path.basename(shader_ao)} (strength {strength:.2f})")
+            except Exception as e:
+                print(f"[{self._log_tag}]   could not adopt the shader's AO: {e}")
+
         # User-provided AO override (Blender has no built-in AO node)
         if getattr(mat_entry, 'use_ao', False):
             ao_path_raw = getattr(mat_entry, 'ao_image', '')
@@ -326,14 +365,37 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
         # print(f"[{self._log_tag}]   加载Preset JSON: {time.time() - _t:.2f}s", flush=True)
         slot_types = [entry["name"] for entry in preset_data.get("Map List", [])]
 
-        # Image Texture nodes named after a game slot — see core.slot_sources.
-        slot_direct   = find_slot_images(mat, slot_types)
-        prefer_direct = getattr(settings, 'prefer_direct_slot_source', False)
+        # A slot socket and the PBR inputs it covers can both be filled. That is
+        # ambiguous, and guessing wrong silently discards the user's work, so the
+        # tie goes to the PBR panel -- it is the one they were most likely editing
+        # -- and the material's own shader_source flips it. Only a *contested*
+        # slot is demoted; an uncontested shader socket still wins outright.
+        prefer_slots = getattr(mat_entry, 'shader_source', 'PBR') == 'SLOT'
+        _supplies = find_shader_slot_supplies(mat)
+        _pbr_given = shader_pbr_contributions(mat)
+        contested_slots = {
+            slot for slot, quantities in _supplies.items()
+            if any(q in _pbr_given for q in quantities)
+        }
+        if contested_slots:
+            print(f"[{self._log_tag}]   both panels filled for "
+                  f"{', '.join(sorted(contested_slots))} -> using the "
+                  f"{'game slots' if prefer_slots else 'PBR inputs'}")
+
+        # {slot: (path, authority)} — see core.slot_sources.
+        slot_direct   = find_slot_sources(mat, slot_types)
+        prefer_direct = prefer_slots
 
         use_toon       = getattr(mat_entry, 'use_toon', False)
         emi_zero       = _emissive_strength_is_zero(mat)
         emissive_slots = {st for st in slot_types if _is_emissive_slot(st)}
         albedo_slots   = {st for st in slot_types if _is_albedo_slot(st, MHWI_SLOT_CHANNEL_MAPS)}
+
+        # With no AO slot in this game's channel maps, an AO map can only survive
+        # by being multiplied into the albedo. Where a slot does store it, that
+        # path is used instead -- doing both would darken twice.
+        bake_ao = (bool(pbr_paths.get('ao'))
+                   and not channel_maps_consume_ao(MHWI_SLOT_CHANNEL_MAPS))
 
         slot_binding_values = {}
 
@@ -353,9 +415,13 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
             # than the RE games: only 4 of its 7 slots have a composition
             # recipe, so ColorMaskMap / FxMap / FurVelocityMap were previously
             # unreachable and always wrote a null texture.
-            direct_src = slot_direct.get(slot_type)
+            direct_src, direct_auth = slot_direct.get(slot_type, (None, None))
+            # See mdf_generator_base: an explicit shader socket always wins.
             if direct_src is not None and (
-                    slot_type not in MHWI_SLOT_CHANNEL_MAPS or prefer_direct):
+                    (direct_auth == AUTHORITY_SHADER
+                     and slot_type not in contested_slots)
+                    or slot_type not in MHWI_SLOT_CHANNEL_MAPS
+                    or prefer_direct):
                 if getattr(mat_entry, 'skip_textures', False):
                     slot_binding_values[slot_type] = _mhwi_tex_binding(
                         base_path, tex_name, slot_type)
@@ -385,7 +451,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                 slot_binding_values[slot_type] = binding
                 comp_cache[direct_key] = (staged, disk_path, binding)
                 print(f"[{self._log_tag}]   {slot_type} -> "
-                      f"{os.path.basename(disk_path)} (槽位直连)")
+                      f"{os.path.basename(disk_path)} (槽位直连/{direct_auth})")
                 continue
 
             if slot_type not in MHWI_SLOT_CHANNEL_MAPS:
@@ -456,6 +522,8 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                 slot_type, pbr_paths, pbr_channels, temp_dir, tex_name,
                 channel_maps=MHWI_SLOT_CHANNEL_MAPS,
                 normal_flip_g=normal_flip_g,
+                bake_ao_into_color=bake_ao,
+                ao_strength=getattr(mat_entry, 'ao_strength', 1.0),
             )
             # print(f"[{self._log_tag}]   合成通道 {slot_type}: {time.time() - _t_comp:.2f}s", flush=True)
 
