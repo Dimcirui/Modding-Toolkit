@@ -2,9 +2,8 @@ import bpy
 import os
 import re
 from ..core.i18n import T, draw_language_toggle, get_lang
-from ..core.compat import MTK_SHADER_AVAILABLE
 from ..core import bone_utils, weight_utils, ui_config
-from ..core.re_mesh_compat import re_mesh_op_available
+from . import game_sections
 from ..core.mdf_generator_base import MHW_OT_SetChannelSize
 from ..core.bone_utils import get_import_presets_callback, get_target_presets_callback
 from ..core.pose_ops import get_pose_presets_callback
@@ -804,177 +803,15 @@ class MHW_PT_MainPanel(bpy.types.Panel):
         # 5. Game-specific toolbars
         # =========================================
         
-        if settings.show_mhwi:
-            box = layout.box()
-            box.label(text="MHWI Tools", icon='ARMATURE_DATA')
-            box.operator("mt.tex_convert_dialog", text=T("ui.main_panel.btn_tex_process"), icon='TEXTURE').game = 'MHWI'
-            col = box.column(align=True)
-            col.operator("mhwi.align_non_physics", text=T("ui.main_panel.btn_align_non_physics"), icon='BONE_DATA')
-
-            col.separator()
-            col.label(text=T("ui.main_panel.label_normalize"), icon='BONE_DATA')
-            col.operator("mhwi.split_physics_bones", text=T("ui.main_panel.btn_split_physics_bones"), icon='BONE_DATA')
-            col.operator("mhwi.batch_rename_physics_bones", text=T("ui.main_panel.btn_batch_rename_physics"), icon='SORTALPHA')
-
-            col.separator()
-            has_mhw_model = hasattr(bpy.ops, 'mhw_mod3') and hasattr(bpy.ops.mhw_mod3, 'export_mhw_mod3')
-            sub = col.row(align=True)
-            sub.enabled = has_mhw_model
-            sub.operator("mhwi.mrl3_tex_processor_dialog", text=T("ui.main_panel.btn_mrl3_tex_processor"), icon='TEXTURE')
-            sub.operator("mhwi.mrl3_generator_dialog",     text=T("ui.main_panel.btn_mrl3_generator"), icon='SHADERFX')
-
-            # Batch conversion sits next to the generator on purpose: it feeds it.
-            # Hidden entirely on Blender < 4.0 rather than shown disabled.
-            if MTK_SHADER_AVAILABLE:
-                op = col.operator("mtk.convert_to_packed_shader",
-                                  text=T("ui.main_panel.btn_convert_packed_shader"),
-                                  icon='NODETREE')
-                op.game = 'MHWI'
-                op.scope = 'SELECTED'
-
-            col.separator()
-            has_mhw_ctc = hasattr(bpy.ops, 'mhw_ctc') and hasattr(bpy.ops.mhw_ctc, 'create_chain_from_bone')
-            row = col.row()
-            row.enabled = has_mhw_ctc
-            row.operator("mhwi.auto_create_chains", text=T("ui.main_panel.btn_create_chain"), icon='LINKED')
-            if not has_mhw_ctc:
-                col.label(text=T("ui.main_panel.label_need_mhw_model_editor"), icon='ERROR')
-
-            col.separator()
-            col.operator("mhw.mmd_face_weights", text=T("ui.main_panel.btn_mmd_face_weights"), icon='SHAPEKEY_DATA').target_game = 'MHWI'
-
-            col.separator()
-            row = col.row()
-            row.enabled = has_mhw_model
-            row.operator("mhwi.batch_export_dialog", text=T("ui.main_panel.btn_batch_export"), icon='EXPORT')
-            row = col.row()
-            row.enabled = has_mhw_model
-            row.operator("mhwi.batch_import_dialog", text=T("ui.main_panel.btn_batch_import"), icon='IMPORT')
-
-        if settings.show_mhws:
-            box = layout.box()
-            box.label(text="MHWS Tools", icon='WORLD')
-            box.operator("mt.tex_convert_dialog", text=T("ui.main_panel.btn_tex_process"), icon='TEXTURE').game = 'MHWS'
-            col = box.column(align=True)
-
-            # One-click model preprocessing
-            col.operator("mhws.preprocess_model", text=T("ui.main_panel.btn_mhws_preprocess"), icon='ARMATURE_DATA')
-
-            col.operator("mhws.optimize_skeleton", text=T("ui.main_panel.btn_mhws_optimize_skeleton"), icon='MOD_ARMATURE')
-            col.operator("mhws.optimize_aux_bones", text=T("ui.main_panel.btn_mhws_optimize_aux"), icon='GROUP_VERTEX')
-            col.operator("mhw.mmd_face_weights", text=T("ui.main_panel.btn_mmd_face_weights"), icon='SHAPEKEY_DATA').target_game = 'MHWS'
-            col.operator("mhws.add_facial_bones", text=T("ui.main_panel.btn_add_facial_bones"), icon='SHAPEKEY_DATA')
-
-            col.separator()
-            sub = col.row(align=True)
-            sub.operator("mhws.mdf_tex_processor_dialog", text=T("ui.main_panel.btn_mdf_tex_processor"), icon='TEXTURE')
-            sub.operator("mhws.mdf_generator_dialog",     text=T("ui.main_panel.btn_mdf_generator"), icon='SHADERFX')
-
-            col.separator()
-            has_re_chain = hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
-            row = col.row()
-            row.enabled = has_re_chain
-            row.operator("mhws.auto_create_chains", text=T("ui.main_panel.btn_create_re_chain"), icon='LINKED')
-            if not has_re_chain:
-                col.label(text=T("ui.main_panel.label_need_re_chain_editor"), icon='ERROR')
-
-            col.separator()
-            has_re_mesh = re_mesh_op_available('exportfile')
-            row = col.row()
-            row.enabled = has_re_mesh
-            row.operator("mhws.batch_export_dialog", text="MHWs Batch Exporter", icon='EXPORT')
-
-        if settings.show_re4:
-            box = layout.box()
-            box.label(text="RE4 Tools", icon='GHOST_ENABLED')
-            box.operator("mt.tex_convert_dialog", text=T("ui.main_panel.btn_tex_process"), icon='TEXTURE').game = 'RE4'
-
-            box_fake = box.box()
-            box_fake.label(text=T("ui.main_panel.label_fakebone_section"), icon='BONE_DATA')
-            has_re_fbxskel = hasattr(bpy.ops, 're_fbxskel') and hasattr(bpy.ops.re_fbxskel, 'exportfile')
-            row_fb = box_fake.row()
-            row_fb.enabled = has_re_fbxskel
-            row_fb.operator("re4.fakebone_one_click", text=T("ui.main_panel.btn_gen_fakebone"), icon='ARMATURE_DATA')
-            if not has_re_fbxskel:
-                box_fake.label(text=T("ui.main_panel.label_need_re_mesh_editor"), icon='ERROR')
-
-            col = box.column(align=True)
-            col.separator()
-            sub = col.row(align=True)
-            sub.operator("re4.mdf_tex_processor_dialog", text=T("ui.main_panel.btn_mdf_tex_processor"), icon='TEXTURE')
-            sub.operator("re4.mdf_generator_dialog",     text=T("ui.main_panel.btn_mdf_generator"), icon='SHADERFX')
-
-            col.separator()
-            has_re_chain = hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
-            row = col.row()
-            row.enabled = has_re_chain
-            row.operator("re4.auto_create_chains", text=T("ui.main_panel.btn_create_re_chain"), icon='LINKED')
-            if not has_re_chain:
-                col.label(text=T("ui.main_panel.label_need_re_chain_editor"), icon='ERROR')
-
-            col.separator()
-            col.operator("mhw.mmd_face_weights", text=T("ui.main_panel.btn_mmd_face_weights"), icon='SHAPEKEY_DATA').target_game = 'RE4'
-            col.operator("re4.add_facial_bones", text=T("ui.main_panel.btn_add_facial_bones"), icon='SHAPEKEY_DATA')
-
-            col.separator()
-            has_re_mesh = re_mesh_op_available('exportfile')
-            row = col.row()
-            row.enabled = has_re_mesh
-            row.operator("re4.batch_export_dialog", text="RE4 Batch Exporter", icon='EXPORT')
-
-        if settings.show_mhrs:
-            box = layout.box()
-            box.label(text="MHRS Tools", icon='GHOST_ENABLED')
-            box.operator("mt.tex_convert_dialog", text=T("ui.main_panel.btn_tex_process"), icon='TEXTURE').game = 'MHRS'
-            col = box.column(align=True)
-
-            sub = col.row(align=True)
-            sub.operator("mhrs.mdf_tex_processor_dialog", text=T("ui.main_panel.btn_mdf_tex_processor"), icon='TEXTURE')
-            sub.operator("mhrs.mdf_generator_dialog",     text=T("ui.main_panel.btn_mdf_generator"), icon='SHADERFX')
-
-            col.separator()
-            has_re_chain = hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
-            row = col.row()
-            row.enabled = has_re_chain
-            row.operator("mhrs.auto_create_chains", text=T("ui.main_panel.btn_create_re_chain"), icon='LINKED')
-            if not has_re_chain:
-                col.label(text=T("ui.main_panel.label_need_re_chain_editor"), icon='ERROR')
-
-            col.separator()
-            has_re_mesh = re_mesh_op_available('exportfile')
-            row = col.row()
-            row.enabled = has_re_mesh
-            row.operator("mhrs.batch_export_dialog", text="MHRS Batch Exporter", icon='EXPORT')
-
-        if settings.show_re9:
-            box = layout.box()
-            box.label(text="RE9 Tools", icon='GHOST_ENABLED')
-            box.operator("mt.tex_convert_dialog", text=T("ui.main_panel.btn_tex_process"), icon='TEXTURE').game = 'RE9'
-            col = box.column(align=True)
-            col.operator("re9.sync_child_orientation", text=T("ui.main_panel.btn_sync_child_orientation"), icon='CON_ROTLIKE')
-
-            col.separator()
-            sub = col.row(align=True)
-            sub.operator("re9.mdf_tex_processor_dialog", text=T("ui.main_panel.btn_mdf_tex_processor"), icon='TEXTURE')
-            sub.operator("re9.mdf_generator_dialog",     text=T("ui.main_panel.btn_mdf_generator"), icon='SHADERFX')
-
-            col.separator()
-            has_re_chain = hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
-            row = col.row()
-            row.enabled = has_re_chain
-            row.operator("re9.auto_create_chains", text=T("ui.main_panel.btn_create_re_chain"), icon='LINKED')
-            if not has_re_chain:
-                col.label(text=T("ui.main_panel.label_need_re_chain_editor"), icon='ERROR')
-
-            col.separator()
-            col.operator("mhw.mmd_face_weights", text=T("ui.main_panel.btn_mmd_face_weights"), icon='SHAPEKEY_DATA').target_game = 'RE9'
-            col.operator("re9.add_facial_bones", text=T("ui.main_panel.btn_add_facial_bones"), icon='SHAPEKEY_DATA')
-
-            col.separator()
-            has_re_mesh = re_mesh_op_available('exportfile')
-            row = col.row()
-            row.enabled = has_re_mesh
-            row.operator("re9.batch_export_dialog", text="RE9 Batch Exporter", icon='EXPORT')
+        # One data-driven pass per game -- see ui/game_sections.py. These five
+        # sections used to be five hand-written blocks that had drifted apart.
+        for _key, _shown in (("mhwi", settings.show_mhwi),
+                             ("mhws", settings.show_mhws),
+                             ("re4",  settings.show_re4),
+                             ("mhrs", settings.show_mhrs),
+                             ("re9",  settings.show_re9)):
+            if _shown:
+                game_sections.draw_section(layout, _key)
 # Known Blender dynamic-enum limitation: if the list returned by an items=
 # callback is a local variable, Python's GC can free the strings while the C
 # side still holds a pointer to them, corrupting non-ASCII (CJK, etc.) text.
