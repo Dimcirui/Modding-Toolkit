@@ -19,6 +19,7 @@ from ...core.mdf_generator_base import (
 )
 from ...core.mdf_tex_processor_base import _import_tex_utils, _compose_channels
 from ...core.slot_sources import find_slot_images, stage_source_file
+from ...core.slot_resolver import resolve_dds_format, write_slot_tex
 from .mrl3_tex_processor import (
     MHWI_SLOT_CHANNEL_MAPS, MHWI_NULL_TEX,
     MHWI_SRGB_SLOT_TYPES, MHWI_BC5_SLOT_TYPES,
@@ -366,20 +367,19 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                     slot_binding_values[slot_type] = cached[2]
                     continue
 
-                dds_fmt = (
-                    'BC7_UNORM_SRGB' if slot_type in MHWI_SRGB_SLOT_TYPES else
-                    'BC5_UNORM'      if slot_type in MHWI_BC5_SLOT_TYPES  else
-                    'BC7_UNORM'
-                )
                 disk_path = _mhwi_disk_path(natives_root, base_path, tex_name, slot_type)
-                os.makedirs(os.path.dirname(disk_path), exist_ok=True)
-
-                staged, dds_path = stage_source_file(
+                # Staged under a slot-unique stem: the source lives outside
+                # temp_dir, and texconv names its output after the input.
+                staged = stage_source_file(
                     direct_src, temp_dir, tex_name, slot_type)
-                ImageListToDDS([(staged, dds_fmt)], temp_dir, mat_entry.generate_mipmaps)
-                if not os.path.isfile(dds_path):
-                    raise FileNotFoundError(f"texconv output not found: {dds_path}")
-                ConvertDDSToTex([dds_path], disk_path)
+                write_slot_tex(
+                    staged, disk_path, temp_dir,
+                    dds_fmt=resolve_dds_format(
+                        slot_type, MHWI_SRGB_SLOT_TYPES, MHWI_BC5_SLOT_TYPES),
+                    generate_mipmaps=mat_entry.generate_mipmaps,
+                    image_to_dds=ImageListToDDS,
+                    dds_to_tex=ConvertDDSToTex,
+                )
 
                 binding = _mhwi_tex_binding(base_path, tex_name, slot_type)
                 slot_binding_values[slot_type] = binding
@@ -434,24 +434,15 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                     hint = f"{tex_name}_{slot_type.lower()}_dg"
                     composed = _generate_solid_texture_path(rgba, temp_dir, hint, size=256)
                     if composed:
-                        dds_fmt = (
-                            'BC7_UNORM_SRGB' if slot_type in MHWI_SRGB_SLOT_TYPES else
-                            'BC5_UNORM'      if slot_type in MHWI_BC5_SLOT_TYPES  else
-                            'BC7_UNORM'
-                        )
                         disk_path = _mhwi_disk_path(natives_root, base_path, tex_name, slot_type)
-                        os.makedirs(os.path.dirname(disk_path), exist_ok=True)
-
-                        dds_stem = os.path.splitext(os.path.basename(composed))[0]
-                        dds_path = os.path.join(temp_dir, dds_stem + '.dds')
-                        _t_dds = time.time()
-                        ImageListToDDS([(composed, dds_fmt)], temp_dir, mat_entry.generate_mipmaps)
-                        # print(f"[{self._log_tag}]   PNG→DDS {slot_type} (优化): {time.time() - _t_dds:.2f}s", flush=True)
-                        if not os.path.isfile(dds_path):
-                            raise FileNotFoundError(f"texconv output not found: {dds_path}")
-                        _t_tex = time.time()
-                        ConvertDDSToTex([dds_path], disk_path)
-                        # print(f"[{self._log_tag}]   DDS→TEX {slot_type} (优化): {time.time() - _t_tex:.2f}s", flush=True)
+                        write_slot_tex(
+                            composed, disk_path, temp_dir,
+                            dds_fmt=resolve_dds_format(
+                                slot_type, MHWI_SRGB_SLOT_TYPES, MHWI_BC5_SLOT_TYPES),
+                            generate_mipmaps=mat_entry.generate_mipmaps,
+                            image_to_dds=ImageListToDDS,
+                            dds_to_tex=ConvertDDSToTex,
+                        )
 
                         binding = _mhwi_tex_binding(base_path, tex_name, slot_type)
                         slot_binding_values[slot_type] = binding
@@ -469,24 +460,15 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
             # print(f"[{self._log_tag}]   合成通道 {slot_type}: {time.time() - _t_comp:.2f}s", flush=True)
 
             if composed:
-                dds_fmt = (
-                    'BC7_UNORM_SRGB' if slot_type in MHWI_SRGB_SLOT_TYPES else
-                    'BC5_UNORM'      if slot_type in MHWI_BC5_SLOT_TYPES  else
-                    'BC7_UNORM'
-                )
                 disk_path = _mhwi_disk_path(natives_root, base_path, tex_name, slot_type)
-                os.makedirs(os.path.dirname(disk_path), exist_ok=True)
-
-                dds_stem = os.path.splitext(os.path.basename(composed))[0]
-                dds_path = os.path.join(temp_dir, dds_stem + '.dds')
-                _t_dds = time.time()
-                ImageListToDDS([(composed, dds_fmt)], temp_dir, mat_entry.generate_mipmaps)
-                # print(f"[{self._log_tag}]   PNG→DDS {slot_type}: {time.time() - _t_dds:.2f}s", flush=True)
-                if not os.path.isfile(dds_path):
-                    raise FileNotFoundError(f"texconv output not found: {dds_path}")
-                _t_tex = time.time()
-                ConvertDDSToTex([dds_path], disk_path)
-                # print(f"[{self._log_tag}]   DDS→TEX {slot_type}: {time.time() - _t_tex:.2f}s", flush=True)
+                write_slot_tex(
+                    composed, disk_path, temp_dir,
+                    dds_fmt=resolve_dds_format(
+                        slot_type, MHWI_SRGB_SLOT_TYPES, MHWI_BC5_SLOT_TYPES),
+                    generate_mipmaps=mat_entry.generate_mipmaps,
+                    image_to_dds=ImageListToDDS,
+                    dds_to_tex=ConvertDDSToTex,
+                )
 
                 binding = _mhwi_tex_binding(base_path, tex_name, slot_type)
                 slot_binding_values[slot_type] = binding

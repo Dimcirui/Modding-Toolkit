@@ -485,8 +485,11 @@ STRINGS = {
     "core.tex_convert_base.adjust_header": {"EN": "Adjust", "ZH": "调整"},
     "core.tex_convert_base.invert_rgb_name": {"EN": "Invert RGB", "ZH": "RGB 翻转"},
     "core.tex_convert_base.invert_alpha_name": {"EN": "Invert Alpha", "ZH": "Alpha 翻转"},
+    "core.tex_convert_base.invert_a_label": {"EN": "Invert Image A", "ZH": "图 A 翻转"},
+    "core.tex_convert_base.invert_b_label": {"EN": "Invert Image B", "ZH": "图 B 翻转"},
     "core.tex_convert_base.output_empty_hint": {
-        "EN": "Leave empty to output next to the source image", "ZH": "留空时输出到源图片所在目录"},
+        "EN": "Leave empty, or point at a folder, to name the file after the source image",
+        "ZH": "留空或只填文件夹路径时，会自动用来源图片的文件名"},
     "core.tex_convert_base.channel_compose_failed": {
         "EN": "Channel composition failed, please check the source image(s)", "ZH": "通道合成失败，请检查源图片"},
     "core.tex_convert_base.mhwtex_convert_unavailable": {
@@ -494,4 +497,12 @@ STRINGS = {
         "ZH": "无法加载 MHW Model Editor 贴图转换函数，请确认已安装并启用"},
     "core.tex_convert_base.generated": {"EN": "Generated: {name}", "ZH": "已生成: {name}"},
     "core.tex_convert_base.convert_failed": {"EN": "Conversion failed: {err}", "ZH": "转换失败: {err}"},
+
+    # ── Detail normal map overlay (SINGLE mode only) ───────────────────────
+    "core.tex_convert_base.detail_enabled_name": {"EN": "Overlay Detail Normal Map", "ZH": "叠加细节法线图"},
+    "core.tex_convert_base.detail_map_name": {"EN": "Detail Map", "ZH": "细节图"},
+    "core.tex_convert_base.detail_tiling_x_name": {"EN": "Tiling X", "ZH": "Tiling X"},
+    "core.tex_convert_base.detail_tiling_y_name": {"EN": "Tiling Y", "ZH": "Tiling Y"},
+    "core.tex_convert_base.detail_blend_failed": {
+        "EN": "Detail map blend failed, please check the detail image", "ZH": "细节图混合失败，请检查细节图片"},
 }

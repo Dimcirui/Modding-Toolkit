@@ -174,6 +174,83 @@ def _compose_channels(channel_map, path_a, path_b, out_dir, name_hint):
     return out_path
 
 
+# ── Detail normal map overlay (SINGLE mode only) ────────────────────────────
+# UDN / partial-derivative blend: only the X/Y (tangent/bitangent) components
+# are summed, Z is re-derived from the unit-length constraint rather than
+# blended — this is the standard cheap technique for laying a high-frequency
+# detail normal map over a base normal map without renormalizing a full
+# vector sum, and it only needs the two channels the caller asked for.
+
+def _tile_sample_bilinear(arr, out_w, out_h, tiling_x, tiling_y):
+    """Wrap-sample `arr` (h, w, c) into an (out_h, out_w, c) array, repeating
+    it `tiling_x`/`tiling_y` times across the output — i.e. UV tiling."""
+    import numpy as np
+
+    dh, dw = arr.shape[0], arr.shape[1]
+    xs = np.mod((np.arange(out_w) + 0.5) / out_w * tiling_x, 1.0) * dw - 0.5
+    ys = np.mod((np.arange(out_h) + 0.5) / out_h * tiling_y, 1.0) * dh - 0.5
+
+    x0 = np.floor(xs).astype(np.int64)
+    y0 = np.floor(ys).astype(np.int64)
+    fx = (xs - x0)[None, :, None]
+    fy = (ys - y0)[:, None, None]
+    x0m, x1m = np.mod(x0, dw), np.mod(x0 + 1, dw)
+    y0m, y1m = np.mod(y0, dh), np.mod(y0 + 1, dh)
+
+    top = arr[y0m][:, x0m] * (1.0 - fx) + arr[y0m][:, x1m] * fx
+    bot = arr[y1m][:, x0m] * (1.0 - fx) + arr[y1m][:, x1m] * fx
+    return top * (1.0 - fy) + bot * fy
+
+
+def _blend_detail_normal(base_path, detail_path, tiling_x, tiling_y, out_dir, name_hint):
+    """Overlay a tiled detail normal map onto a base normal map, blending
+    only X/Y and re-deriving Z. Returns the output PNG path, or None on
+    failure (e.g. unreadable detail image)."""
+    import numpy as np
+
+    def _load_arr(path, tag):
+        tmp_name = f"__tex_convert_detail_{tag}"
+        if tmp_name in bpy.data.images:
+            bpy.data.images.remove(bpy.data.images[tmp_name])
+        img = bpy.data.images.load(path, check_existing=False)
+        img.name = tmp_name
+        img.colorspace_settings.name = 'Non-Color'
+        w, h = img.size
+        arr = np.array(img.pixels[:], dtype=np.float32).reshape(h, w, 4)
+        bpy.data.images.remove(img)
+        return arr
+
+    base_arr = _load_arr(base_path, "base")
+    detail_arr = _load_arr(detail_path, "detail")
+    h, w = base_arr.shape[0], base_arr.shape[1]
+
+    detail_tiled = _tile_sample_bilinear(detail_arr, w, h, tiling_x, tiling_y)
+
+    base_xy = base_arr[:, :, :2] * 2.0 - 1.0
+    detail_xy = detail_tiled[:, :, :2] * 2.0 - 1.0
+
+    xy = np.clip(base_xy + detail_xy, -1.0, 1.0)
+    z = np.sqrt(np.clip(1.0 - np.sum(xy * xy, axis=-1), 0.0, 1.0))
+
+    result = np.empty((h, w, 4), dtype=np.float32)
+    result[:, :, 0:2] = xy * 0.5 + 0.5
+    result[:, :, 2] = z * 0.5 + 0.5
+    result[:, :, 3] = base_arr[:, :, 3]
+
+    out_path = os.path.join(out_dir, f"{name_hint}.png")
+    tmp_out = "__tex_convert_detail_out"
+    if tmp_out in bpy.data.images:
+        bpy.data.images.remove(bpy.data.images[tmp_out])
+    out_img = bpy.data.images.new(tmp_out, width=w, height=h, alpha=True)
+    out_img.colorspace_settings.name = 'Non-Color'
+    out_img.pixels[:] = result.flatten().tolist()
+    out_img.filepath_raw = out_path
+    out_img.file_format = 'PNG'
+    out_img.save()
+    bpy.data.images.remove(out_img)
+    return out_path
+
+
 def _import_mhwtex_convert():
     """Locate MHW Model Editor's convertDDSFileToTex — MHWI's .tex container is
     written by that external addon, not by core/tex_file.py (RE Engine only)."""
@@ -362,8 +439,7 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
         layout.separator()
         layout.prop(s, "generate_mipmaps", text=T("core.tex_convert_base.generate_mipmaps_name"))
         layout.prop(s, "output_path", text=T("core.tex_convert_base.output_path_name"))
-        if not s.output_path:
-            layout.label(text=T("core.tex_convert_base.output_empty_hint"), icon='INFO')
+        layout.label(text=T("core.tex_convert_base.output_empty_hint"), icon='INFO')
 
     def execute(self, context):
         s = context.scene.tex_convert_tool
@@ -375,12 +451,19 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
 
         src_b = bpy.path.abspath(s.src_b) if s.src_b else ""
 
+        src_stem = os.path.splitext(os.path.basename(src_a))[0]
+        ext = '.tex' if self.game == 'MHWI' else f'.tex.{_GAME_TEX_VERSION[self.game]}'
+        default_filename = src_stem + ext
+
         if s.output_path:
             out_path = bpy.path.abspath(s.output_path)
+            # No ".tex" in the given name -> treat the whole thing as a
+            # target folder and name the file after the source image,
+            # rather than requiring the filename to be typed out in full.
+            if '.tex' not in os.path.basename(out_path).lower():
+                out_path = os.path.join(out_path, default_filename)
         else:
-            stem = os.path.splitext(src_a)[0]
-            ext = '.tex' if self.game == 'MHWI' else f'.tex.{_GAME_TEX_VERSION[self.game]}'
-            out_path = stem + ext
+            out_path = os.path.join(os.path.dirname(src_a), default_filename)
 
         temp_dir = tempfile.mkdtemp(prefix="tex_convert_")
 

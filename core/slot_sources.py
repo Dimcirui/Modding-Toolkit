@@ -109,12 +109,12 @@ def stage_source_file(src_path, temp_dir, tex_name, slot_type):
     different sRGB flags the second conversion would silently win.  Staging
     under ``<tex_name>_<slot>_direct`` removes the hazard.
 
-    Returns (staged_path, dds_path).
+    Returns the staged path, ready to hand to slot_resolver.write_slot_tex.
     """
     import shutil
 
-    stem  = f"{tex_name}_{slot_type.lower()}_direct"
-    ext   = os.path.splitext(src_path)[1]
+    stem   = f"{tex_name}_{slot_type.lower()}_direct"
+    ext    = os.path.splitext(src_path)[1]
     staged = os.path.join(temp_dir, stem + ext)
     shutil.copyfile(src_path, staged)
-    return staged, os.path.join(temp_dir, stem + '.dds')
+    return staged

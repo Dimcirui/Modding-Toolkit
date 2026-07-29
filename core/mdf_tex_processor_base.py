@@ -6,6 +6,7 @@ import shutil
 import time
 
 from .i18n import T
+from .slot_resolver import resolve_dds_format, write_slot_tex
 
 # ── PBR Constants ──────────────────────────────────────────────────────────────
 
@@ -900,36 +901,18 @@ class MdfTexProcessBase(bpy.types.Operator):
                                 skip_count += 1
                                 continue
 
-                        dds_fmt   = ('BC7_UNORM_SRGB'
-                                     if slot.texture_type in SRGB_SLOT_TYPES
-                                     else 'BC7_UNORM')
                         disk_path = make_disk_path(
                             natives_root, base_path, tex_name, slot.texture_type,
                             cls._abbrev_map, cls._tex_version, cls._use_art_prefix)
-                        os.makedirs(os.path.dirname(disk_path), exist_ok=True)
 
-                        src_lower = src_img.lower()
-                        src_name  = os.path.basename(src_img)
-
-                        if '.tex' in src_name.lower():
-                            shutil.copy2(src_img, disk_path)
-                        elif src_lower.endswith('.dds'):
-                            _t_tex = time.time()
-                            DDSToTex([src_img], cls._tex_version, disk_path)
-                            # print(f"[{cls._log_tag}]   DDS→TEX {slot.texture_type}: {time.time() - _t_tex:.2f}s", flush=True)
-                        else:
-                            dds_stem = os.path.splitext(src_name)[0]
-                            dds_path = os.path.join(temp_dir, dds_stem + '.dds')
-                            _t_dds = time.time()
-                            ImageListToDDS([(src_img, dds_fmt)], temp_dir,
-                                           mat_item.generate_mipmaps)
-                            # print(f"[{cls._log_tag}]   PNG→DDS {slot.texture_type}: {time.time() - _t_dds:.2f}s", flush=True)
-                            if not os.path.isfile(dds_path):
-                                raise FileNotFoundError(
-                                    f"texconv output not found: {dds_path}")
-                            _t_tex = time.time()
-                            DDSToTex([dds_path], cls._tex_version, disk_path)
-                            # print(f"[{cls._log_tag}]   DDS→TEX {slot.texture_type}: {time.time() - _t_tex:.2f}s", flush=True)
+                        write_slot_tex(
+                            src_img, disk_path, temp_dir,
+                            dds_fmt=resolve_dds_format(
+                                slot.texture_type, SRGB_SLOT_TYPES),
+                            generate_mipmaps=mat_item.generate_mipmaps,
+                            image_to_dds=ImageListToDDS,
+                            dds_to_tex=lambda p, o: DDSToTex(p, cls._tex_version, o),
+                        )
 
                         binding.path = mdf_path
                         if slot.texture_type == 'BaseDielectricMap':
