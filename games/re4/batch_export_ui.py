@@ -356,7 +356,7 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
                 op_p.character_id = character_id
             # 假头法
             row2 = box.row(align=True)
-            row2.prop(settings, "re4_use_fakebone", icon='BONE_DATA')
+            row2.prop(settings, "re4_use_fakebone", text=T("ui.prop.use_fakebone"), icon='BONE_DATA')
             if settings.re4_use_fakebone:
                 native_skel = scheme.get("native_skeleton", "")
                 if native_skel:
@@ -365,7 +365,7 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
                     row2.label(text=T("re4.batch_export_ui.preset_missing_native_skeleton"), icon='ERROR')
             # 使用身体骨架
             row3 = box.row(align=True)
-            row3.prop(settings, "re4_use_body_arm", icon='ARMATURE_DATA')
+            row3.prop(settings, "re4_use_body_arm", text=T("ui.prop.use_body_armature"), icon='ARMATURE_DATA')
             if settings.re4_use_body_arm:
                 body_groups = scheme.get("body_groups_for_fbxskel", [])
                 if body_groups:
@@ -374,7 +374,7 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
                     row3.label(text=T("re4.batch_export_ui.preset_missing_body_groups"), icon='ERROR')
 
         layout.separator()
-        layout.prop(settings, "re4_use_blank_export", icon='FILE_BLANK')
+        layout.prop(settings, "re4_use_blank_export", text=T("ui.prop.use_blank_export"), icon='FILE_BLANK')
 
         if use_simplified:
             self._draw_simplified(layout, scene, scheme, character_id)

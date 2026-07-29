@@ -161,6 +161,23 @@ STRINGS = {
     "ui.main_panel.btn_batch_rename_physics":     {"EN": "One-Click Rename", "ZH": "一键重命名"},
     "ui.main_panel.btn_mrl3_tex_processor":       {"EN": "MRL3 Processor", "ZH": "MRL3 处理器"},
     "ui.main_panel.btn_mrl3_generator":           {"EN": "MRL3 Generator", "ZH": "MRL3 生成器"},
+    # ── shared property labels drawn via prop(text=...) ────────────────────
+    # Blender shows a property's static name= when prop() has no text=, which
+    # bypasses T() entirely. These are the labels that needed routing through it.
+    "ui.prop.export_mode": {"EN": "Export Mode", "ZH": "导出模式"},
+    "ui.prop.gender": {"EN": "Gender", "ZH": "性别"},
+    "ui.prop.rank": {"EN": "Rank", "ZH": "位阶"},
+    "ui.prop.cleanup_before_export": {"EN": "Clean Mesh Before Export", "ZH": "导出前清理网格"},
+    "ui.prop.anti_plagiarism": {"EN": "Anti-Plagiarism", "ZH": "防石化"},
+    "ui.prop.use_blank_export": {"EN": "Use Blank Model for Unselected", "ZH": "未选部位使用空模"},
+    "ui.prop.ao_image": {"EN": "AO Map", "ZH": "AO 贴图"},
+    "ui.prop.use_ao": {"EN": "Add AO", "ZH": "添加 AO"},
+    "ui.prop.use_fakebone": {"EN": "Use Fake Head Method", "ZH": "使用假头法"},
+    "ui.prop.use_body_armature": {"EN": "Use Body Armature", "ZH": "使用身体骨架"},
+    "ui.prop.filter_axis": {"EN": "Axis", "ZH": "轴向"},
+    "ui.prop.filter_direction": {"EN": "Direction", "ZH": "方向"},
+    "ui.prop.edit_mode": {"EN": "Edit Mode", "ZH": "编辑模式"},
+
     # ── ui/game_sections.py — per-game tool groups ─────────────────────────
     "ui.game_sections.group_io":       {"EN": "Import & Export",          "ZH": "导入 & 导出"},
     "ui.game_sections.group_rig":      {"EN": "Skeleton & Mesh",          "ZH": "骨架 & 网格处理"},

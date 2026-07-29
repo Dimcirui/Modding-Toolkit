@@ -520,7 +520,7 @@ class RE9_OT_BatchExportDialog(bpy.types.Operator):
         op_c = row.operator("re9.clear_all_bindings", text="Clear All Selected", icon='TRASH')
         op_c.scheme_file = scheme_file
 
-        layout.prop(settings, "re9_use_blank_export", icon='FILE_BLANK')
+        layout.prop(settings, "re9_use_blank_export", text=T("ui.prop.use_blank_export"), icon='FILE_BLANK')
 
         if use_simplified:
             self._draw_simplified(layout, scene, scheme, character_id)

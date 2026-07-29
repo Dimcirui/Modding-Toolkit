@@ -292,7 +292,7 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
         settings = scene.mhw_suite_settings
 
         # ── 模式切换（装备 / 武器） ──
-        layout.row().prop(settings, "mhwi_export_mode", expand=True)
+        layout.row().prop(settings, "mhwi_export_mode", text=T("ui.prop.export_mode"), expand=True)
 
         # ── Mod Root ──
         natives_root = scene.get("mhwi_natives_root", "")
@@ -318,9 +318,9 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
         rank = settings.mhwi_rank_tab
         if rank != 'SP':
             row = layout.row(align=True)
-            row.prop(settings, "mhwi_gender", expand=True)
+            row.prop(settings, "mhwi_gender", text=T("ui.prop.gender"), expand=True)
 
-        layout.row().prop(settings, "mhwi_rank_tab", expand=True)
+        layout.row().prop(settings, "mhwi_rank_tab", text=T("ui.prop.rank"), expand=True)
 
         # ── 装备选择 ──
         if rank == 'HR':
@@ -364,9 +364,9 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
 
         layout.separator()
         row = layout.row(align=False)
-        row.prop(settings, "mhwi_cleanup_before_export", icon='BRUSH_DATA')
+        row.prop(settings, "mhwi_cleanup_before_export", text=T("ui.prop.cleanup_before_export"), icon='BRUSH_DATA')
         row = layout.row(align=False)
-        row.prop(settings, "mhwi_confuse_before_export", icon='LOCKED')
+        row.prop(settings, "mhwi_confuse_before_export", text=T("ui.prop.anti_plagiarism"), icon='LOCKED')
 
     def _draw_weapon_mode(self, layout, context, scene, settings):
         # ── 预设组 ──

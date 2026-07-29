@@ -922,9 +922,9 @@ class MHW_OT_ShapeKeyToWeights(bpy.types.Operator):
         col.prop(self, "use_direction_filter", text=T("ui.main_panel.sk_field_direction_filter"))
         if self.use_direction_filter:
             row = col.row(align=True)
-            row.prop(self, "filter_axis", expand=True)
+            row.prop(self, "filter_axis", text=T("ui.prop.filter_axis"), expand=True)
             row = col.row(align=True)
-            row.prop(self, "filter_sign", expand=True)
+            row.prop(self, "filter_sign", text=T("ui.prop.filter_direction"), expand=True)
 
     def execute(self, context):
         obj = context.active_object

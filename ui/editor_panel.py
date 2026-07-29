@@ -40,7 +40,7 @@ class MHW_PT_PresetEditor(bpy.types.Panel):
 
         # Edit mode toggle
         row = box.row(align=True)
-        row.prop(editor_settings, "edit_mode", expand=True)
+        row.prop(editor_settings, "edit_mode", text=T("ui.prop.edit_mode"), expand=True)
 
         # Preset selection + action buttons
         row = box.row(align=True)

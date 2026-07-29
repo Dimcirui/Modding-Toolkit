@@ -137,8 +137,10 @@ class MHWI_OT_Mrl3TexProcessorDialog(bpy.types.Operator):
 
             # Per-material texture options
             opt_row = box.row(align=True)
-            opt_row.prop(mat, "generate_mipmaps")
-            opt_row.prop(mat, "skip_textures")
+            opt_row.prop(mat, "generate_mipmaps",
+                         text=T("core.mdf_tex_processor_base.generate_mipmaps_label"))
+            opt_row.prop(mat, "skip_textures",
+                         text=T("core.mdf_tex_processor_base.skip_textures_label"))
 
             # ── Texture slots ──
             box.label(text="Texture Slots", icon='RENDERLAYERS')

@@ -239,8 +239,8 @@ class MHRS_OT_BatchExportDialog(bpy.types.Operator):
 
         layout.separator()
         row = layout.row(align=True)
-        row.prop(settings, "mhrs_use_blank_export", icon='FILE_BLANK')
-        row.prop(settings, "mhrs_cleanup_before_export", icon='BRUSH_DATA')
+        row.prop(settings, "mhrs_use_blank_export", text=T("ui.prop.use_blank_export"), icon='FILE_BLANK')
+        row.prop(settings, "mhrs_cleanup_before_export", text=T("ui.prop.cleanup_before_export"), icon='BRUSH_DATA')
 
         self._draw_shadow(layout, settings, scene, armor_id, gender, parts_mask)
 
