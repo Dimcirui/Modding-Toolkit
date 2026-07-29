@@ -144,9 +144,20 @@ class MHWS_OT_MdfGeneratorDialog(bpy.types.Operator):
             # hidden and a choice of which of its two panels to read appears instead.
             if getattr(mat_entry, "uses_packed_shader", False):
                 row = box.row(align=True)
-                # text="": the two buttons name themselves, a "Shader Source"
-                #            label in front would just be noise
-                row.prop(mat_entry, "shader_source", text="", expand=True)
+                # A plain prop(expand=True) on this *dynamic* items= enum renders
+                # blank button text in Blender, so draw it as two toggle buttons.
+                op = row.operator("mhw.set_shader_source",
+                                   text=T("core.mdf_generator_base.shader_source_pbr"),
+                                   depress=(mat_entry.shader_source == 'PBR'))
+                op.settings_attr = _SETTINGS_ATTR
+                op.mat_name      = mat_entry.blender_material
+                op.value         = 'PBR'
+                op = row.operator("mhw.set_shader_source",
+                                   text=T("core.mdf_generator_base.shader_source_slot"),
+                                   depress=(mat_entry.shader_source == 'SLOT'))
+                op.settings_attr = _SETTINGS_ATTR
+                op.mat_name      = mat_entry.blender_material
+                op.value         = 'SLOT'
                 box.prop(mat_entry, "generate_mipmaps", text=T("mhws.mdf_generator.generate_mipmaps_name"))
                 box.prop(mat_entry, "skip_textures", text=T("mhws.mdf_generator.skip_textures_name"))
             else:

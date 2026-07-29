@@ -1128,6 +1128,32 @@ class MHW_OT_SetChannelSize(bpy.types.Operator):
         return {'CANCELLED'}
 
 
+# ── Shader source toggle operator ───────────────────────────────────────────
+# Plain prop(expand=True) on a *dynamic* items= enum renders blank button text
+# in Blender (works fine as a dropdown, only breaks in expand mode) -- so the
+# PBR/Slot choice is drawn as two of these buttons instead, matching the
+# toggle_blank/toggle_ccl/watermark_toggle pattern used elsewhere.
+
+class MHW_OT_SetShaderSource(bpy.types.Operator):
+    bl_idname  = "mhw.set_shader_source"
+    bl_label   = "Set Shader Source"
+    bl_options = {'INTERNAL', 'UNDO'}
+
+    settings_attr: bpy.props.StringProperty()
+    mat_name:      bpy.props.StringProperty()
+    value:         bpy.props.StringProperty()
+
+    def execute(self, context):
+        settings = getattr(context.scene, self.settings_attr, None)
+        if not settings:
+            return {'CANCELLED'}
+        for entry in settings.material_list:
+            if entry.blender_material == self.mat_name:
+                entry.shader_source = self.value
+                return {'FINISHED'}
+        return {'CANCELLED'}
+
+
 def _get_pbr_paths(material, strategies, tmp_dir, bake_size, context, mesh_obj,
                    channel_sizes=None, mesh_objects=None):
     """

@@ -4,7 +4,7 @@ import re
 from ..core.i18n import T, draw_language_toggle, get_lang
 from ..core import bone_utils, weight_utils, ui_config
 from . import game_sections
-from ..core.mdf_generator_base import MHW_OT_SetChannelSize
+from ..core.mdf_generator_base import MHW_OT_SetChannelSize, MHW_OT_SetShaderSource
 from ..core.bone_utils import get_import_presets_callback, get_target_presets_callback
 from ..core.pose_ops import get_pose_presets_callback
 from ..games.re9.batch_export import get_schemes_callback
@@ -1150,6 +1150,7 @@ classes = [
     MHW_OT_ShapeKeyToWeights,
     MHW_OT_MMDFaceWeights,
     MHW_OT_SetChannelSize,
+    MHW_OT_SetShaderSource,
     MHW_OT_MergeRenamedVGroups,
     MHW_PT_MainPanel,
 ]
