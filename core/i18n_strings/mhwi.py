@@ -269,6 +269,20 @@ STRINGS = {
         "ZH": "搜索并选择武器（避免武器过多时下拉表溢出屏幕）"},
     "mhwi.batch_export_ui.dialog_desc": {
         "EN": "MHWI equipment batch export dialog", "ZH": "MHWI 装备批量导出对话框"},
+    "mhwi.batch_export_ui.watermark_toggle_desc": {
+        "EN": "Anti-reselling: adds a watermark effect that is almost only visible when changing equipment",
+        "ZH": "防倒狗用，添加一个几乎只在换装时可见的水印"},
+    "mhwi.batch_export_ui.watermark_dialog_body": {
+        "EN": "This feature is intended only for freely distributed mods.\n"
+              "When enabled, wearing this outfit will display:\n"
+              "\"This is a free mod — refuse resellers, beware scams!\"\n"
+              "If your mod has no free distribution channel,\n"
+              "it's best not to use this feature!",
+        "ZH": "此功能仅为免费公开MOD使用，\n"
+              "选中后会在穿着此套服装时显示：\n"
+              "「此为免费MOD，拒绝倒狗 谨防受骗！」\n"
+              "如果你的mod不设任何免费获取渠道，\n"
+              "最好不要使用此功能！"},
     "mhwi.batch_export_ui.preset_group": {"EN": "Preset Group", "ZH": "预设组"},
     "mhwi.batch_export_ui.weapon_type": {"EN": "Weapon Type", "ZH": "武器类型"},
     "mhwi.batch_export_ui.pick_armor_placeholder": {"EN": "Select armor...", "ZH": "选择装备..."},

@@ -63,6 +63,9 @@ def _get_blank_path(filename):
 def _get_confuse_path(filename):
     return os.path.join(_addon_dir(), "assets", "mhwi", "confuse", filename)
 
+def _get_watermark_path(filename):
+    return os.path.join(_addon_dir(), "assets", "mhwi", "watermark", filename)
+
 
 # ── 防石化辅助 ────────────────────────────────────────────────────
 
@@ -338,6 +341,9 @@ def _export_gender(context, settings, armor_entry, gender, natives_root):
         if not mask[mask_idx]:
             continue
 
+        if part_code == "body" and settings.mhwi_watermark_before_export:
+            _write_watermark(natives_root, model_id, gender)
+
         # 使用空模标志
         if get_blank(scene, model_id, part_code):
             _write_blank_part(natives_root, model_id, gender, part_code)
@@ -398,6 +404,32 @@ def _write_blank_part(natives_root, model_id, gender, part_code):
             print(f"[MHWI] WARNING: blank.evhl not found at {blank_evhl}")
 
 
+def _write_watermark(natives_root, dir_id, gender):
+    """写入免费MOD水印特效：共享的 hikari.efx/hikari1.uvs/hikari2.tex（固定放在 f_equip 下，
+    因特效内部以该相对路径引用贴图/UV），以及按装备ID重命名的 body epv3 绑定文件。
+    例: pl042_0500 -> f_equip/pl042_0500/body/epv/{gender}_body042.epv3
+    """
+    shared_dir = os.path.join(natives_root, "nativePC", "pl", "f_equip")
+    os.makedirs(shared_dir, exist_ok=True)
+    for fname in ("hikari.efx", "hikari1.uvs", "hikari2.tex"):
+        src = _get_watermark_path(fname)
+        if os.path.isfile(src):
+            shutil.copy2(src, os.path.join(shared_dir, fname))
+        else:
+            print(f"[MHWI] WARNING: watermark asset not found: {src}")
+
+    set_num = dir_id[2:].split('_')[0]   # "pl042_0500" -> "042"
+    epv3_dir = os.path.join(natives_root, "nativePC", "pl", f"{gender}_equip", dir_id, "body", "epv")
+    src_epv3 = _get_watermark_path("hikari.epv3")
+    if os.path.isfile(src_epv3):
+        os.makedirs(epv3_dir, exist_ok=True)
+        dst_epv3 = os.path.join(epv3_dir, f"{gender}_body{set_num}.epv3")
+        shutil.copy2(src_epv3, dst_epv3)
+        print(f"[MHWI] WATERMARK epv3 -> {os.path.basename(dst_epv3)}")
+    else:
+        print(f"[MHWI] WARNING: hikari.epv3 not found at {src_epv3}")
+
+
 def _write_blank_sp_part(natives_root, model_id, part_code):
     """SP 空模：仅写 blank.mod3，头盔不写 evhl"""
     filepath_mod3 = _make_sp_armor_filepath(natives_root, model_id, part_code, "mod3")
@@ -413,6 +445,7 @@ def _write_blank_sp_part(natives_root, model_id, part_code):
 def _export_sp(context, armor_entry, natives_root):
     """SP 整套幻化导出（固定性别，含独立头部和头发），返回 (export_count, fail_count, skip_count)"""
     scene     = context.scene
+    settings  = scene.mhw_suite_settings
     model_id  = armor_entry["id"]
     face_id   = armor_entry["face_id"]
     hair_id   = armor_entry["hair_id"]
@@ -425,6 +458,9 @@ def _export_sp(context, armor_entry, natives_root):
     for part_code, part_name, mask_idx in MHWI_PARTS:
         if not mask[mask_idx]:
             continue
+
+        if part_code == "body" and settings.mhwi_watermark_before_export:
+            _write_watermark(natives_root, model_id[2:], _get_sp_gender(model_id))
 
         if get_blank(scene, model_id, part_code):
             _write_blank_sp_part(natives_root, model_id, part_code)

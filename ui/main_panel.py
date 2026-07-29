@@ -193,6 +193,11 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
                      "who repackage others' mods as their own",
         default=False,
     )
+    mhwi_watermark_before_export: bpy.props.BoolProperty(
+        name="Add Watermark Effect",
+        description="Anti-reselling: adds a watermark effect that is almost only visible when changing equipment",
+        default=False,
+    )
 
     # MHWs batch export
     mhws_armor_scheme: bpy.props.EnumProperty(

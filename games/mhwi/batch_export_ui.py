@@ -137,6 +137,32 @@ class MHWI_OT_ToggleCCL(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MHWI_OT_WatermarkToggle(bpy.types.Operator):
+    bl_idname  = "mhwi.watermark_toggle"
+    bl_label   = "Add Watermark Effect"
+    bl_options = {'INTERNAL'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.batch_export_ui.watermark_toggle_desc")
+
+    def invoke(self, context, event):
+        settings = context.scene.mhw_suite_settings
+        if settings.mhwi_watermark_before_export:
+            settings.mhwi_watermark_before_export = False
+            return {'FINISHED'}
+        return context.window_manager.invoke_props_dialog(self, width=400)
+
+    def draw(self, context):
+        col = self.layout.column(align=True)
+        for line in T("mhwi.batch_export_ui.watermark_dialog_body").split("\n"):
+            col.label(text=line)
+
+    def execute(self, context):
+        context.scene.mhw_suite_settings.mhwi_watermark_before_export = True
+        return {'FINISHED'}
+
+
 # ── Pick / Clear（武器）───────────────────────────────────────────
 
 class MHWI_OT_PickWeaponCollection(bpy.types.Operator):
@@ -367,6 +393,10 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
         row.prop(settings, "mhwi_cleanup_before_export", text=T("ui.prop.cleanup_before_export"), icon='BRUSH_DATA')
         row = layout.row(align=False)
         row.prop(settings, "mhwi_confuse_before_export", text=T("ui.prop.anti_plagiarism"), icon='LOCKED')
+        row = layout.row(align=False)
+        watermark_on = settings.mhwi_watermark_before_export
+        row.operator("mhwi.watermark_toggle", text=T("ui.prop.watermark"),
+                     icon='CHECKBOX_HLT' if watermark_on else 'CHECKBOX_DEHLT', depress=watermark_on)
 
     def _draw_weapon_mode(self, layout, context, scene, settings):
         # ── 预设组 ──
@@ -562,6 +592,7 @@ classes = [
     MHWI_OT_ClearBinding,
     MHWI_OT_ToggleBlank,
     MHWI_OT_ToggleCCL,
+    MHWI_OT_WatermarkToggle,
     MHWI_OT_PickWeaponCollection,
     MHWI_OT_ClearWeaponBinding,
     MHWI_OT_PickWeapon,
