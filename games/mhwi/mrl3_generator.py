@@ -29,7 +29,7 @@ from ...core.slot_sources import (
 from ...core.slot_resolver import resolve_dds_format, write_slot_tex
 from .mrl3_tex_processor import (
     MHWI_SLOT_CHANNEL_MAPS, MHWI_NULL_TEX,
-    MHWI_SRGB_SLOT_TYPES, MHWI_BC5_SLOT_TYPES,
+    MHWI_SRGB_SLOT_TYPES,
     _mhwi_tex_binding, _mhwi_disk_path,
 )
 
@@ -441,7 +441,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                 write_slot_tex(
                     staged, disk_path, temp_dir,
                     dds_fmt=resolve_dds_format(
-                        slot_type, MHWI_SRGB_SLOT_TYPES, MHWI_BC5_SLOT_TYPES),
+                        slot_type, MHWI_SRGB_SLOT_TYPES),
                     generate_mipmaps=mat_entry.generate_mipmaps,
                     image_to_dds=ImageListToDDS,
                     dds_to_tex=ConvertDDSToTex,
@@ -504,7 +504,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                         write_slot_tex(
                             composed, disk_path, temp_dir,
                             dds_fmt=resolve_dds_format(
-                                slot_type, MHWI_SRGB_SLOT_TYPES, MHWI_BC5_SLOT_TYPES),
+                                slot_type, MHWI_SRGB_SLOT_TYPES),
                             generate_mipmaps=mat_entry.generate_mipmaps,
                             image_to_dds=ImageListToDDS,
                             dds_to_tex=ConvertDDSToTex,
@@ -532,7 +532,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                 write_slot_tex(
                     composed, disk_path, temp_dir,
                     dds_fmt=resolve_dds_format(
-                        slot_type, MHWI_SRGB_SLOT_TYPES, MHWI_BC5_SLOT_TYPES),
+                        slot_type, MHWI_SRGB_SLOT_TYPES),
                     generate_mipmaps=mat_entry.generate_mipmaps,
                     image_to_dds=ImageListToDDS,
                     dds_to_tex=ConvertDDSToTex,

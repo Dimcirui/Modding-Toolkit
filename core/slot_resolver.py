@@ -13,7 +13,6 @@ copies:
   - the processor handled .tex passthrough and .dds direct conversion; the
     generators did not, so a .dds source was needlessly decoded and
     re-compressed through texconv
-  - MHWI selects three DXGI formats (BC5 for normals), the RE games two
   - MHWI's tex writer takes (dds_paths, out), the RE games' takes
     (dds_paths, version, out)
 
@@ -25,17 +24,16 @@ import os
 import shutil
 
 
-def resolve_dds_format(slot_type, srgb_slots, bc5_slots=None):
+def resolve_dds_format(slot_type, srgb_slots):
     """DXGI format name for a slot's texture data.
 
-    sRGB wins over BC5: no slot is both colour data and a two-channel normal
-    map, and checking sRGB first matches every existing call site.
+    One decision bit — colour or not — exactly as kagenocookie/REE-Content-Editor
+    does it (its Color Texture / Non-Color Texture presets are BC7_UNORM_SRGB and
+    BC7_UNORM, and none of its per-slot packing presets ever picks BC5). BC7 also
+    suits MHWI's MRL3 normals: the shader ignores B there, so the safer four-
+    channel format costs nothing over a two-channel BC5.
     """
-    if slot_type in srgb_slots:
-        return 'BC7_UNORM_SRGB'
-    if bc5_slots and slot_type in bc5_slots:
-        return 'BC5_UNORM'
-    return 'BC7_UNORM'
+    return 'BC7_UNORM_SRGB' if slot_type in srgb_slots else 'BC7_UNORM'
 
 
 def write_slot_tex(src_img, disk_path, temp_dir, *,

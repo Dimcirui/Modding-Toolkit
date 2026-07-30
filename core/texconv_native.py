@@ -2,7 +2,7 @@
 
 Uses matyalatte's Texconv-Custom-DLL (MIT, wraps Microsoft's MIT-licensed
 DirectXTex) bundled directly in assets/bin/texconv/ — no external Blender
-addon dependency. Flag logic (-sepalpha, -srgb, -x2bias) ported from
+addon dependency. Flag logic (-sepalpha, -x2bias) ported from
 NSA-Cloud/AsteriskAmpersand's RE-Mesh-Editor texconv.py wrapper (MIT).
 """
 
@@ -66,14 +66,26 @@ def _run_texconv(dll, file, args, out_dir, verbose=False, allow_slow_codec=False
 
 
 def convert_to_dds(filepath, dxgi_format_name, out_dir, generate_mips=True,
-                    image_filter="LINEAR", verbose=False, allow_slow_codec=False):
+                    image_filter="CUBIC", verbose=False, allow_slow_codec=False):
     """Convert an image (PNG/TGA/DDS/etc, whatever texconv itself supports) to a
     DX10-header DDS using the given DXGI format name (e.g. "BC7_UNORM_SRGB").
 
-    sRGB-ness of the *output* is entirely controlled by whether dxgi_format_name
-    itself contains "SRGB" — callers must pass the format that actually matches
-    the source data's color space (see core/mdf_tex_processor_base.py's
-    SRGB_SLOT_TYPES for how that's decided per texture role).
+    sRGB-ness is a *tag only*: the "SRGB" in dxgi_format_name goes into the DDS
+    header (and on to the .tex header) to tell the GPU how to decode, but the
+    pixel bytes are never gamma-converted — a source PNG is already sRGB-encoded,
+    so an extra decode/encode pass would only lose precision or, if it doesn't
+    round-trip exactly, darken the result. This deliberately does NOT pass
+    texconv's -srgb (TEX_FILTER_SRGB_IN|OUT), matching how kagenocookie's
+    REE-Content-Editor converts textures (DirectXTex called with plain
+    TexCompressFlags.Default and the sRGB-ness carried only by the format enum).
+
+    Callers must still pass the format matching the texture's *role*, since that
+    tag is what the shader honours (see core/mdf_tex_processor_base.py's
+    SRGB_SLOT_TYPES for how that's decided per slot).
+
+    ``image_filter`` defaults to CUBIC rather than texconv's own LINEAR default,
+    again to match REE-Content-Editor (TexFilterFlags.Cubic|SeparateAlpha) — its
+    mips hold detail noticeably better at the lower levels.
 
     Returns the path to the resulting .dds file.
     """
@@ -86,12 +98,10 @@ def convert_to_dds(filepath, dxgi_format_name, out_dir, generate_mips=True,
     args = ['-f', dxgi_format_name, '-sepalpha']  # -sepalpha: without it, alpha gets mangled by mip generation
     if not generate_mips:
         args += ['-m', '1']
-    if image_filter != "LINEAR":
+    if image_filter:
         args += ['-if', image_filter]
     if _is_signed(dxgi_format_name):
         args += ['-x2bias']
-    if dxgi.is_srgb(dxgi_format_name):
-        args += ['-srgb']
 
     _run_texconv(dll, filepath, args, out_dir, verbose=verbose, allow_slow_codec=allow_slow_codec)
 

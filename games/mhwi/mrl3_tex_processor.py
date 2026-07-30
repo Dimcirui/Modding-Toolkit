@@ -34,8 +34,12 @@ MHWI_MRL3_SLOT_DEFS = [
 MHWI_PBR_SLOT_TYPES = {s for s, _, pbr in MHWI_MRL3_SLOT_DEFS if pbr}
 MHWI_ALL_SLOT_TYPES = {s for s, _, _  in MHWI_MRL3_SLOT_DEFS}
 
+# BML and EMI are the only colour data in MRL3; everything else (Alpha, RMT,
+# CMM, XM, FM, ...) is non-colour. Normals used to go out as BC5_UNORM, but the
+# MRL3 shader never reads B from an NM, so BC7_UNORM is the safer four-channel
+# choice at the same cost — and it matches REE-Content-Editor, which never picks
+# BC5 for any slot.
 MHWI_SRGB_SLOT_TYPES = {'AlbedoMap', 'EmissiveMap'}
-MHWI_BC5_SLOT_TYPES  = {'NormalMap'}
 
 MHWI_ABBREV_MAP = {
     'AlbedoMap':      'BML',
@@ -454,9 +458,8 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                             # print(f"[MHWI Tex]   DDS→TEX {slot.texture_type}: {time.time() - _t_tex:.2f}s", flush=True)
                         else:
                             dds_fmt = (
-                                'BC7_UNORM_SRGB' if slot.texture_type in MHWI_SRGB_SLOT_TYPES else
-                                'BC5_UNORM'      if slot.texture_type in MHWI_BC5_SLOT_TYPES  else
-                                'BC7_UNORM'
+                                'BC7_UNORM_SRGB' if slot.texture_type in MHWI_SRGB_SLOT_TYPES
+                                else 'BC7_UNORM'
                             )
                             dds_stem = os.path.splitext(src_name)[0]
                             dds_path = os.path.join(temp_dir, dds_stem + '.dds')
