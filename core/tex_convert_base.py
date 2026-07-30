@@ -30,22 +30,24 @@ def get_src_items(self=None, context=None):
     ]
 
 
-# Common two entries pinned to top with a use-case hint; the rest have no
-# hint. All shown together, no more tiered collapsing.
+# Common entries listed in kagenocookie/REE-Content-Editor's priority order
+# (TextureViewer.DxgiFormats), then the formats it doesn't offer at all. The two
+# pinned entries carry a use-case hint; the rest are bare format codes.
 _FORMAT_COMMON = [
-    ('R8G8B8A8_UNORM_SRGB', 'R8G8B8A8_sRGB', ''),
     ('R8G8B8A8_UNORM',      'R8G8B8A8_Linear', ''),
-    ('BC3_UNORM_SRGB',      'BC3_sRGB', ''),
+    ('R8G8B8A8_UNORM_SRGB', 'R8G8B8A8_sRGB', ''),
+    ('BC1_UNORM',           'BC1_Linear', ''),
     ('BC1_UNORM_SRGB',      'BC1_sRGB', ''),
+    ('BC2_UNORM',           'BC2_Linear', ''),
+    ('BC2_UNORM_SRGB',      'BC2_sRGB', ''),
+    ('BC3_UNORM',           'BC3_Linear', ''),
+    ('BC3_UNORM_SRGB',      'BC3_sRGB', ''),
     ('BC4_UNORM',           'BC4_Linear', ''),
+    ('BC5_SNORM',           'BC5_Signed', ''),
+    ('BC5_UNORM',           'BC5_Linear', ''),
 ]
 _FORMAT_EXTRA = [
-    ('BC1_UNORM',           'BC1_Linear', ''),
-    ('BC2_UNORM_SRGB',      'BC2_sRGB', ''),
-    ('BC2_UNORM',           'BC2_Linear', ''),
-    ('BC3_UNORM',           'BC3_Linear', ''),
     ('BC4_SNORM',           'BC4_Signed', ''),
-    ('BC5_SNORM',           'BC5_Signed', ''),
     ('BC6H_UF16',           'BC6H_UF16 (HDR)', ''),
     ('BC6H_SF16',           'BC6H_SF16 (HDR)', ''),
     ('R8_UNORM',            'R8_Linear', ''),
@@ -55,16 +57,31 @@ _FORMAT_EXTRA = [
     ('B8G8R8A8_UNORM',      'B8G8R8A8_Linear', ''),
 ]
 def get_format_items(self=None, context=None):
-    """Dynamic items= callback: the two pinned entries have translatable
-    use-case hints, the rest are bare format codes with no hint text."""
+    """Dynamic items= callback: the pinned entries have translatable use-case
+    hints, the rest are bare format codes with no hint text.
+
+    Pinned set mirrors REE-Content-Editor's two main presets — colour data is
+    BC7_UNORM_SRGB, everything else is BC7_UNORM. Nothing pins BC5: RE Engine
+    normal maps are *packed* (NRRO = normal.RG + roughness + AO) so two channels
+    can't hold them, and MHWI's MRL3 shader ignores B in an NM, so BC7 there is
+    strictly safer at the same size. REE likewise never defaults to BC5.
+    """
     pinned = [
         ('BC7_UNORM_SRGB', T("core.tex_convert_base.format_bc7_srgb"), ''),
-        ('BC5_UNORM', T("core.tex_convert_base.format_bc5_linear"), ''),
+        ('BC7_UNORM', T("core.tex_convert_base.format_bc7_linear"), ''),
     ]
     return pinned + _FORMAT_COMMON + _FORMAT_EXTRA
 
-_NORMAL_NAME_HINTS = ('_nm', '_nrm', '_normal', 'normal_')
-_COLOR_NAME_HINTS  = ('_alb', '_albd', '_bml', '_diffuse', '_basecolor', '_col', 'albedo')
+# Non-colour name hints. RE Engine slot abbreviations (_nrr/_nro packed normals,
+# _aco/_ato masks, trailing _n) come from REE-Content-Editor's
+# Texture.GuessIsSrgbFromFilename; the MRL3 ones (_rmt/_cmm/_xm/_fm/_msk/_fvel)
+# are MHWI's non-colour slots.
+_NORMAL_NAME_HINTS = ('_nm', '_nrm', '_nrr', '_nro', '_normal', 'normal_',
+                      '_aco', '_ato', '_alpha',
+                      '_rmt', '_cmm', '_xm', '_fm', '_msk', '_fvel')
+# MRL3 colour data is BML and EMI only; RE Engine's is ALBD/ALBM/_COL/emissive.
+_COLOR_NAME_HINTS  = ('_alb', '_albd', '_bml', '_emi', '_diffuse', '_basecolor',
+                      '_col', 'albedo')
 
 # .tex container version per game (RE Engine games only; MHWI uses its own
 # MRL3-era format written by the external MHW Model Editor addon instead).
@@ -81,24 +98,86 @@ _GAME_ITEMS = [
 
 
 def guess_dxgi_format(filepath):
-    """Best-effort DXGI format guess from filename; None if not recognized."""
+    """Best-effort DXGI format guess from filename; None if not recognized.
+
+    Follows REE-Content-Editor: the filename only decides *colour vs non-colour*,
+    and that single bit picks between BC7_UNORM_SRGB and BC7_UNORM — same rule for
+    every game, MHWI included. Colour is checked first so an `_albd`-style name
+    can't be swallowed by a mask hint.
+    """
     stem = os.path.splitext(os.path.basename(filepath))[0].lower()
-    if any(h in stem for h in _NORMAL_NAME_HINTS):
-        return 'BC5_UNORM'
     if any(h in stem for h in _COLOR_NAME_HINTS):
         return 'BC7_UNORM_SRGB'
+    if any(h in stem for h in _NORMAL_NAME_HINTS) or stem.endswith('_n'):
+        return 'BC7_UNORM'
     return None
+
+
+# ── Format presets ───────────────────────────────────────────────────────────
+# REE-Content-Editor's TextureViewer.Presets model: one combo that sets both the
+# DXGI format and what to do with mipmaps, and drops to "custom" as soon as the
+# user edits either value by hand.
+_PRESET_SETTINGS = {
+    'COLOR':    ('BC7_UNORM_SRGB', True),
+    'NONCOLOR': ('BC7_UNORM',      True),
+    # UI art and decals are sampled at a fixed on-screen size, so mips would only
+    # blur them — REE's "UI (compressed)" preset strips them for the same reason.
+    'UI':       ('BC7_UNORM_SRGB', False),
+}
+
+
+def get_preset_items(self=None, context=None):
+    return [
+        ('COLOR',    T("core.tex_convert_base.preset_color"),    T("core.tex_convert_base.preset_color_desc")),
+        ('NONCOLOR', T("core.tex_convert_base.preset_noncolor"), T("core.tex_convert_base.preset_noncolor_desc")),
+        ('UI',       T("core.tex_convert_base.preset_ui"),       T("core.tex_convert_base.preset_ui_desc")),
+        ('CUSTOM',   T("core.tex_convert_base.preset_custom"),   T("core.tex_convert_base.preset_custom_desc")),
+    ]
+
+
+# Guard so applying a preset doesn't bounce back through format/generate_mipmaps'
+# own update callbacks and immediately reset the preset to CUSTOM.
+_applying_preset = False
+
+
+def _on_preset_update(self, context):
+    global _applying_preset
+    combo = _PRESET_SETTINGS.get(self.preset)
+    if combo is None or _applying_preset:
+        return
+    _applying_preset = True
+    try:
+        self.format, self.generate_mipmaps = combo
+    finally:
+        _applying_preset = False
+
+
+def _on_format_or_mips_update(self, context):
+    """Hand-editing either value means the selection is no longer a preset."""
+    if _applying_preset:
+        return
+    if _PRESET_SETTINGS.get(self.preset) != (self.format, self.generate_mipmaps):
+        self.preset = 'CUSTOM'
+
+
+def _apply_guess(settings, filepath):
+    """Point the preset at whatever the filename suggests. Returns the guessed
+    DXGI format, or None when no hint matched (the caller reports that)."""
+    guessed = guess_dxgi_format(filepath)
+    settings.format_guess_ok = guessed is not None
+    if guessed == 'BC7_UNORM_SRGB':
+        # UI is also sRGB, so a colour hint shouldn't knock the user off it.
+        if settings.preset != 'UI':
+            settings.preset = 'COLOR'
+    elif guessed:
+        settings.preset = 'NONCOLOR'
+    return guessed
 
 
 def _on_src_a_update(self, context):
     if not self.src_a:
         return
-    guessed = guess_dxgi_format(self.src_a)
-    if guessed:
-        self.format = guessed
-        self.format_guess_ok = True
-    else:
-        self.format_guess_ok = False
+    _apply_guess(self, self.src_a)
 
 
 # ── Channel composition (generic 2-source version of mdf_tex_processor_base's
@@ -319,10 +398,14 @@ class TexConvertSettings(bpy.types.PropertyGroup):
     ch_b_channel: bpy.props.EnumProperty(name="", items=_CH_ITEMS, default='B')
     ch_a_channel: bpy.props.EnumProperty(name="", items=_CH_ITEMS, default='A')
 
-    format: bpy.props.EnumProperty(name="Target Format", items=get_format_items)
+    preset: bpy.props.EnumProperty(name="Preset", items=get_preset_items,
+                                   update=_on_preset_update)
+    format: bpy.props.EnumProperty(name="Target Format", items=get_format_items,
+                                   update=_on_format_or_mips_update)
     format_guess_ok: bpy.props.BoolProperty(default=True)
 
-    generate_mipmaps: bpy.props.BoolProperty(name="Generate Mipmaps", default=True)
+    generate_mipmaps: bpy.props.BoolProperty(name="Generate Mipmaps", default=True,
+                                             update=_on_format_or_mips_update)
     output_path: bpy.props.StringProperty(name="Output Path", subtype='FILE_PATH')
 
 
@@ -342,13 +425,10 @@ class MT_OT_TexConvertGuessFormat(bpy.types.Operator):
         if not settings.src_a:
             self.report({'WARNING'}, T("core.tex_convert_base.select_src_image_first"))
             return {'CANCELLED'}
-        guessed = guess_dxgi_format(settings.src_a)
+        guessed = _apply_guess(settings, settings.src_a)
         if guessed:
-            settings.format = guessed
-            settings.format_guess_ok = True
             self.report({'INFO'}, T("core.tex_convert_base.guessed_format").format(fmt=guessed))
         else:
-            settings.format_guess_ok = False
             self.report({'WARNING'}, T("core.tex_convert_base.guess_failed"))
         return {'FINISHED'}
 
@@ -366,6 +446,12 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
     game: bpy.props.EnumProperty(items=_GAME_ITEMS, default='MHWS', options={'HIDDEN'})
 
     def invoke(self, context, event):
+        # A scene saved before `preset` existed carries only format/mipmaps, so
+        # derive the preset from them rather than opening on a label that
+        # contradicts the values underneath it.
+        s = context.scene.tex_convert_tool
+        combo = (s.format, s.generate_mipmaps)
+        s.preset = next((k for k, v in _PRESET_SETTINGS.items() if v == combo), 'CUSTOM')
         return context.window_manager.invoke_props_dialog(self, width=420)
 
     def draw(self, context):
@@ -378,6 +464,7 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
         layout.prop(s, "channel_mode", expand=True)
         layout.separator()
 
+        layout.prop(s, "preset", text=T("core.tex_convert_base.preset_name"))
         fmt_row = layout.row(align=True)
         fmt_row.prop(s, "format", text=T("core.tex_convert_base.format_name"))
         fmt_row.operator("mt.tex_convert_guess_format", text="", icon='FILE_REFRESH')

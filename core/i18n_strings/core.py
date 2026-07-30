@@ -443,7 +443,30 @@ STRINGS = {
     # ── format EnumProperty items (get_format_items callback; only the two
     #    pinned entries have translatable labels, the rest are format codes) ─
     "core.tex_convert_base.format_bc7_srgb": {"EN": "BC7_sRGB (Color Map)", "ZH": "BC7_sRGB (色彩贴图)"},
-    "core.tex_convert_base.format_bc5_linear": {"EN": "BC5_Linear (Non-Color / Normal Map)", "ZH": "BC5_Linear (非色彩/法线贴图)"},
+    "core.tex_convert_base.format_bc7_linear": {"EN": "BC7_Linear (Non-Color / Normal Map)", "ZH": "BC7_Linear (非色彩/法线贴图)"},
+
+    # ── preset EnumProperty items (get_preset_items callback) ──────────────
+    "core.tex_convert_base.preset_name": {"EN": "Preset", "ZH": "预设"},
+    "core.tex_convert_base.preset_color": {"EN": "Color Map", "ZH": "色彩贴图"},
+    "core.tex_convert_base.preset_color_desc": {
+        "EN": "BC7_sRGB with mipmaps. Albedo, BML, EMI, and other color data",
+        "ZH": "BC7_sRGB + 生成 mipmap。Albedo、BML、EMI 等色彩数据",
+    },
+    "core.tex_convert_base.preset_noncolor": {"EN": "Non-Color / Normal Map", "ZH": "非色彩/法线贴图"},
+    "core.tex_convert_base.preset_noncolor_desc": {
+        "EN": "BC7_Linear with mipmaps. Normal maps, Alpha, RMT, CMM, XM, FM, and every other mask",
+        "ZH": "BC7_Linear + 生成 mipmap。法线图、Alpha、RMT、CMM、XM、FM 等所有遮罩",
+    },
+    "core.tex_convert_base.preset_ui": {"EN": "UI / Decals", "ZH": "UI、贴纸等"},
+    "core.tex_convert_base.preset_ui_desc": {
+        "EN": "BC7_sRGB, no mipmaps. UI art and decals are drawn at a fixed size, so mips would only blur them",
+        "ZH": "BC7_sRGB + 不生成 mipmap。UI 与贴纸按固定尺寸绘制，mipmap 只会让它变模糊",
+    },
+    "core.tex_convert_base.preset_custom": {"EN": "Custom", "ZH": "自定义"},
+    "core.tex_convert_base.preset_custom_desc": {
+        "EN": "Format and mipmap setting picked by hand",
+        "ZH": "手动指定格式与 mipmap 设置",
+    },
 
     # ── channel_mode EnumProperty items (get_channel_mode_items callback) ──
     "core.tex_convert_base.mode_single":      {"EN": "Single Image", "ZH": "单图"},
