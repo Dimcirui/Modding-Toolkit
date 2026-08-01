@@ -916,6 +916,109 @@ class MHWI_OT_BatchRenamePhysicsBones(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# ── 网格显示条件 ────────────────────────────────────────────────────────────
+# mod3 把"这个网格什么时候显示"编码在物体名的 Group_<N> 里，没有自定义属性；
+# 导入器回读时用的是同一个正则。所以设置显示条件本质就是改名。
+_MOD3_NAME_RE = re.compile(r"^Group_\d+_Sub_\d+__.+$")
+_MOD3_GROUP_RE = re.compile(r"(Group_)(\d+)(.*)")
+
+
+def _mhwi_display_condition_items(self, context):
+    return [(str(v), T(k), "") for v, k in (
+        (0,  "mhwi.operators.disp_cond_0"),
+        (1,  "mhwi.operators.disp_cond_1"),
+        (2,  "mhwi.operators.disp_cond_2"),
+        (30, "mhwi.operators.disp_cond_30"),
+        (31, "mhwi.operators.disp_cond_31"),
+        (32, "mhwi.operators.disp_cond_32"),
+        (33, "mhwi.operators.disp_cond_33"),
+        (34, "mhwi.operators.disp_cond_34"),
+        (35, "mhwi.operators.disp_cond_35"),
+        (-1, "mhwi.operators.disp_cond_custom"),
+    )]
+
+
+def _rename_to_mod3_format(mesh_objs):
+    """照搬 MHW Model Editor 的 Rename Meshes：Group_<g>_Sub_<n>__<材质名>。
+    保留已能解析出的 group id，解析不到按 0 处理。"""
+    group_index = {}
+    for obj in mesh_objs:
+        m = re.search(r"Group_(\d+)", obj.name)
+        group_id = int(m.group(1)) if m else 0
+        group_index.setdefault(group_id, 0)
+        if obj.data.materials and obj.data.materials[0]:
+            mat = obj.data.materials[0].name.split(".", 1)[0].strip()
+        else:
+            mat = "NO_MATERIAL"
+        obj.name = f"Group_{group_id}_Sub_{group_index[group_id]}__{mat}"
+        group_index[group_id] += 1
+
+
+class MHWI_OT_SetMeshDisplayCondition(bpy.types.Operator):
+    """设置选中网格的显示条件（写入物体名的 Group ID）"""
+    bl_idname = "mhwi.set_mesh_display_condition"
+    bl_label = "Set Mesh Display Condition"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    preset: bpy.props.EnumProperty(
+        name="Preset",
+        items=_mhwi_display_condition_items,
+        default=0,
+    )
+    group_id: bpy.props.IntProperty(
+        name="Group ID", default=0, min=0, max=65535,
+        description="Written into the Group_<N> part of the object name",
+    )
+
+    @classmethod
+    def poll(cls, context):
+        return any(o.type == 'MESH' for o in context.selected_objects)
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.operators.set_display_condition_desc")
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=320)
+
+    def draw(self, context):
+        col = self.layout.column()
+        col.prop(self, "preset", text=T("mhwi.operators.disp_field_preset"))
+        # Only surfaced under "Other" — showing a free number next to the preset
+        # list reads as "any value works", but the game only honours these IDs
+        if self.preset == "-1":
+            col.prop(self, "group_id", text=T("mhwi.operators.disp_field_group_id"))
+
+    def execute(self, context):
+        # Selecting a preset syncs the number; CUSTOM (-1) leaves it alone
+        if self.preset != "-1":
+            self.group_id = int(self.preset)
+
+        mesh_objs = [o for o in context.selected_objects if o.type == 'MESH']
+        if not mesh_objs:
+            self.report({'ERROR'}, T("mhwi.operators.disp_no_mesh"))
+            return {'CANCELLED'}
+
+        # ".001" duplicate suffixes need no special case: the trailing .+ of the
+        # format regex covers them, and the group regex keeps everything after
+        # the number untouched
+        needs_rename = [o for o in mesh_objs if not _MOD3_NAME_RE.match(o.name)]
+        renamed = 0
+        if needs_rename:
+            _rename_to_mod3_format(needs_rename)
+            renamed = len(needs_rename)
+
+        for obj in mesh_objs:
+            obj.name = _MOD3_GROUP_RE.sub(
+                lambda m: f"{m.group(1)}{self.group_id}{m.group(3)}", obj.name, count=1)
+
+        msg = T("mhwi.operators.disp_done").format(n=len(mesh_objs), gid=self.group_id)
+        if renamed:
+            msg += T("mhwi.operators.disp_renamed_suffix").format(n=renamed)
+        self.report({'INFO'}, msg)
+        return {'FINISHED'}
+
+
 # 注册所有类
 classes = [
     MHWI_OT_AlignNonPhysics,
@@ -923,6 +1026,7 @@ classes = [
     MHWI_RegionAssignment,
     MHWI_OT_SplitPhysicsBones,
     MHWI_OT_BatchRenamePhysicsBones,
+    MHWI_OT_SetMeshDisplayCondition,
 ]
 
 def register():

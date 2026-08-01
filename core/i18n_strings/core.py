@@ -482,7 +482,7 @@ STRINGS = {
     "core.tex_convert_base.src_a_name":         {"EN": "Source Image", "ZH": "源图片"},
     "core.tex_convert_base.invert_name":        {"EN": "Invert", "ZH": "翻转"},
     "core.tex_convert_base.src_b_name":         {"EN": "Alpha Source", "ZH": "Alpha 来源"},
-    "core.tex_convert_base.format_name":        {"EN": "Target Format", "ZH": "目标格式"},
+    "core.tex_convert_base.format_name":        {"EN": "DXGI Format", "ZH": "DXGI 格式"},
     "core.tex_convert_base.generate_mipmaps_name": {"EN": "Generate Mipmaps", "ZH": "生成 Mipmaps"},
     "core.tex_convert_base.output_path_name":   {"EN": "Output Path", "ZH": "输出贴图位置"},
 
@@ -580,4 +580,49 @@ STRINGS = {
     "core.shader_ops.preview_only": {
         "EN": "Preview only — not a match for the in-game look",
         "ZH": "仅供预览，不保证还原游戏内画面"},
+
+    # ── core/shapekey_utils.py ───────────────────────────────────────────
+    "core.shapekey_utils.err_no_shape_keys": {
+        "EN": "This mesh has no shape keys beyond the basis",
+        "ZH": "这个网格除了基型没有其它形态键"},
+    "core.shapekey_utils.err_no_modifiers": {
+        "EN": "No viewport-enabled modifiers to apply",
+        "ZH": "没有在视图中启用的修改器可应用"},
+    "core.shapekey_utils.err_unstable_modifier": {
+        "EN": "These modifiers change topology per shape key, so the keys cannot survive: {names}",
+        "ZH": "这些修改器在不同形态键下会改变拓扑，形态键无法保留：{names}"},
+    "core.shapekey_utils.err_bone_envelopes": {
+        "EN": "The armature modifier uses bone envelopes, whose weights depend on the rest position and therefore differ per shape key",
+        "ZH": "骨架修改器启用了骨骼包络，其权重依赖静置位置，在不同形态键下并不相同"},
+    "core.shapekey_utils.err_vertex_count": {
+        "EN": "Vertex count differs between shape keys ({a} vs {b}); a modifier is welding geometry",
+        "ZH": "不同形态键下的点数不一致（{a} vs {b}），有修改器在焊接几何"},
+
+    "core.tex_convert_base.target_name": {"EN": "Output Format", "ZH": "目标输出格式"},
+    "core.tex_convert_base.target_dds":  {"EN": "DDS (native)", "ZH": "DDS (原生)"},
+    "core.tex_convert_base.target_dds_desc": {
+        "EN": "Stop at the DDS the pipeline already produces, without wrapping it in any game's .tex container",
+        "ZH": "停在流程本来就会产出的 DDS，不再套任何游戏的 .tex 封装"},
+
+    "core.tex_convert_base.drop_desc": {
+        "EN": "Convert the dropped images to DDS. Names that don't match a known slot fall back to BC7 sRGB",
+        "ZH": "把拖入的图片转换为 DDS。名字识别不出用途的默认按 BC7 sRGB 处理"},
+    "core.tex_convert_base.drop_count":   {"EN": "{n} file(s)", "ZH": "共 {n} 个文件"},
+    "core.tex_convert_base.drop_no_files":{"EN": "No files to convert", "ZH": "没有可转换的文件"},
+    "core.tex_convert_base.drop_done":    {"EN": "Converted {n} file(s) to DDS", "ZH": "已转换 {n} 个文件为 DDS"},
+    "core.tex_convert_base.drop_partial": {"EN": "Converted {n} file(s); failed: {failed}",
+                                            "ZH": "已转换 {n} 个；失败：{failed}"},
+
+    "core.tex_convert_base.output_size_label":   {"EN": "Output size: {w} x {h}", "ZH": "输出尺寸：{w} x {h}"},
+    "core.tex_convert_base.output_size_unknown": {"EN": "Output size: pick a source image to see it",
+                                                   "ZH": "输出尺寸：选择来源图片后显示"},
+    "core.tex_convert_base.npot_warning": {
+        "EN": "Not a power of two — this can crash the game!",
+        "ZH": "尺寸不为 2 的 n 次幂，可能会导致游戏崩溃！"},
+    "core.tex_convert_base.resize_name": {"EN": "Resize Output", "ZH": "调整输出尺寸"},
+    "core.tex_convert_base.width_name":  {"EN": "Width",  "ZH": "宽"},
+    "core.tex_convert_base.height_name": {"EN": "Height", "ZH": "高"},
+    "core.tex_convert_base.snap_size_desc": {
+        "EN": "Fill in the recommended size: snap to the nearest power of two when it is within 15%, otherwise round up to the next one",
+        "ZH": "填入推荐尺寸：与最近的 2 的 n 次幂相差 15% 以内时贴到该值，超过 15% 则向上取下一个 2 的 n 次幂"},
 }

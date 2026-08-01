@@ -13,6 +13,8 @@ armor_list_summary.md
 process_*.py
 mhw-modding-toolkit_updater/MHW-Modding-Toolkit_updater_status.json
 modding_toolkit_updater/
+# 以联接方式装成 Modding-Toolkit-dev 测试时，更新器会按模块名另建一份
+modding-toolkit-dev_updater/
 mdf_unique_material_collecter/
 plan.md
 manual.md

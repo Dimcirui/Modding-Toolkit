@@ -144,6 +144,18 @@ class RE9_OT_BatchExport(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
+        # Triangulation rides on the modifier stack: RE Mesh Editor exports
+        # evaluated geometry, so the mesh data is never touched and the
+        # modifiers come off again even if the export raises.
+        settings = context.scene.mhw_suite_settings
+        if not settings.re9_triangulate_face:
+            return self._run_export(context)
+        with export_prep.triangulated_for_export(context.scene.objects, 're9') as touched:
+            if touched:
+                print("[RE9] triangulating {n} face mesh(es) for export".format(n=len(touched)))
+            return self._run_export(context)
+
+    def _run_export(self, context):
         scene = context.scene
         settings = scene.mhw_suite_settings
 

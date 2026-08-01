@@ -77,12 +77,6 @@ GROUP_LABELS = {
 }
 
 
-def _tex_convert(game):
-    """The shared image -> .tex tool; every game has it."""
-    return op("mt.tex_convert_dialog", "ui.main_panel.btn_tex_process",
-              'TEXTURE', props={'game': game})
-
-
 def _mdf_pair(prefix):
     """Processor and generator side by side — they are two halves of one job."""
     return [op(f"{prefix}.mdf_tex_processor_dialog",
@@ -118,9 +112,10 @@ SECTIONS = {
             op("mhwi.align_non_physics", "ui.main_panel.btn_align_non_physics",
                'BONE_DATA'),
             _face_weights('MHWI'),
+            op("mhwi.set_mesh_display_condition",
+               "mhwi.operators.btn_set_display_condition", 'HIDE_OFF'),
         ],
         'material': [
-            _tex_convert('MHWI'),
             # Above the processor/generator pair because that is the order it is
             # used in: convert the materials first, then generate from them.
             op("mtk.convert_to_packed_shader",
@@ -158,7 +153,7 @@ SECTIONS = {
             op("mhws.add_facial_bones", "ui.main_panel.btn_add_facial_bones",
                'SHAPEKEY_DATA'),
         ],
-        'material': [_tex_convert('MHWS')] + [_mdf_pair('mhws')],
+        'material': [_mdf_pair('mhws')],
         'physics': [_re_chain('mhws')],
     },
     're4': {
@@ -171,14 +166,14 @@ SECTIONS = {
             op("re4.add_facial_bones", "ui.main_panel.btn_add_facial_bones",
                'SHAPEKEY_DATA'),
         ],
-        'material': [_tex_convert('RE4')] + [_mdf_pair('re4')],
+        'material': [_mdf_pair('re4')],
         'physics': [_re_chain('re4')],
     },
     'mhrs': {
         'label': "MHRS Tools", 'icon': 'GHOST_ENABLED',
         'io': [_batch_export('mhrs', "ui.game_sections.btn_batch_export_mhrs")],
         'rig': [],
-        'material': [_tex_convert('MHRS')] + [_mdf_pair('mhrs')],
+        'material': [_mdf_pair('mhrs')],
         'physics': [_re_chain('mhrs')],
     },
     're9': {
@@ -191,7 +186,7 @@ SECTIONS = {
             op("re9.add_facial_bones", "ui.main_panel.btn_add_facial_bones",
                'SHAPEKEY_DATA'),
         ],
-        'material': [_tex_convert('RE9')] + [_mdf_pair('re9')],
+        'material': [_mdf_pair('re9')],
         'physics': [_re_chain('re9')],
     },
 }

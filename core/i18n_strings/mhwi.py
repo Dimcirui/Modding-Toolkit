@@ -467,4 +467,31 @@ STRINGS = {
               "node needed. Its deviation from flat is added to NormalMap's",
         "ZH": "法线贴图 —— 直接连图片即可，不需要 Normal Map 节点。"
               "其相对平面的偏移量与 NormalMap 相加"},
+
+    # ── MHWI_OT_SetMeshDisplayCondition ──────────────────────────────────
+    "mhwi.operators.btn_set_display_condition": {"EN": "Set Mesh Display Condition", "ZH": "设置网格显示条件"},
+    "mhwi.operators.set_display_condition_desc": {
+        "EN": "Set when the selected meshes are visible in game. mod3 encodes this in the Group_<N> part of the object name, so this is a rename. Meshes not already in mod3 naming format are renamed first",
+        "ZH": "设置选中网格在游戏里的显示时机。mod3 把它编码在物体名的 Group_<N> 里，所以本质是改名。名字不符合 mod3 格式的网格会先被重命名"},
+    "mhwi.operators.disp_field_preset":   {"EN": "Preset",   "ZH": "预设"},
+    "mhwi.operators.disp_field_group_id": {"EN": "Group ID", "ZH": "Group ID"},
+    "mhwi.operators.disp_cond_0":  {"EN": "0 - Always visible",                      "ZH": "0 - 始终显示"},
+    "mhwi.operators.disp_cond_1":  {"EN": "1 - Weapon drawn (weapons only)",         "ZH": "1 - 持刀显示（仅武器）"},
+    "mhwi.operators.disp_cond_2":  {"EN": "2 - Weapon sheathed (weapons only)",      "ZH": "2 - 收刀显示（仅武器）"},
+    "mhwi.operators.disp_cond_30": {"EN": "30 - Sheathed (needs transform plugin)",  "ZH": "30 - 收刀显示（需要变身插件）"},
+    "mhwi.operators.disp_cond_31": {"EN": "31 - Drawn (needs transform plugin)",     "ZH": "31 - 拔刀显示（需要变身插件）"},
+    "mhwi.operators.disp_cond_32": {"EN": "32 - Glaive no light / Long Sword no aura (needs transform plugin)",
+                                     "ZH": "32 - 虫棍无灯 / 太刀无刃显示（需要变身插件）"},
+    "mhwi.operators.disp_cond_33": {"EN": "33 - Glaive 1 light / Long Sword white (needs transform plugin)",
+                                     "ZH": "33 - 虫棍一灯 / 太刀白刃显示（需要变身插件）"},
+    "mhwi.operators.disp_cond_34": {"EN": "34 - Glaive 2 lights / Long Sword yellow (needs transform plugin)",
+                                     "ZH": "34 - 虫棍二灯 / 太刀黄刃显示（需要变身插件）"},
+    "mhwi.operators.disp_cond_35": {"EN": "35 - Glaive 3 lights / Long Sword red (needs transform plugin)",
+                                     "ZH": "35 - 虫棍三灯 / 太刀红刃显示（需要变身插件）"},
+    "mhwi.operators.disp_cond_custom": {"EN": "Other - enter an ID manually", "ZH": "其他 - 手动填写 ID"},
+    "mhwi.operators.disp_no_mesh": {"EN": "No mesh objects selected", "ZH": "没有选中任何网格物体"},
+    "mhwi.operators.disp_done": {"EN": "Set display condition {gid} on {n} mesh(es)",
+                                  "ZH": "已将 {n} 个网格的显示条件设为 {gid}"},
+    "mhwi.operators.disp_renamed_suffix": {"EN": "; {n} renamed to mod3 format first",
+                                            "ZH": "；其中 {n} 个先重命名为 mod3 格式"},
 }

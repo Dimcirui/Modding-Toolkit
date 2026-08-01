@@ -66,7 +66,8 @@ def _run_texconv(dll, file, args, out_dir, verbose=False, allow_slow_codec=False
 
 
 def convert_to_dds(filepath, dxgi_format_name, out_dir, generate_mips=True,
-                    image_filter="CUBIC", verbose=False, allow_slow_codec=False):
+                    image_filter="CUBIC", verbose=False, allow_slow_codec=False,
+                    size=None):
     """Convert an image (PNG/TGA/DDS/etc, whatever texconv itself supports) to a
     DX10-header DDS using the given DXGI format name (e.g. "BC7_UNORM_SRGB").
 
@@ -87,6 +88,9 @@ def convert_to_dds(filepath, dxgi_format_name, out_dir, generate_mips=True,
     again to match REE-Content-Editor (TexFilterFlags.Cubic|SeparateAlpha) — its
     mips hold detail noticeably better at the lower levels.
 
+    ``size`` is an optional (width, height) to resize to; the game engines
+    want powers of two and non-conforming sizes can crash them.
+
     Returns the path to the resulting .dds file.
     """
     if not dxgi.is_valid_format_name(dxgi_format_name):
@@ -100,6 +104,10 @@ def convert_to_dds(filepath, dxgi_format_name, out_dir, generate_mips=True,
         args += ['-m', '1']
     if image_filter:
         args += ['-if', image_filter]
+    if size:
+        # texconv resizes before compressing, so the block encoder sees the
+        # final resolution rather than a downscale of an already-lossy image
+        args += ['-w', str(int(size[0])), '-h', str(int(size[1]))]
     if _is_signed(dxgi_format_name):
         args += ['-x2bias']
 

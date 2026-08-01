@@ -521,6 +521,7 @@ class RE9_OT_BatchExportDialog(bpy.types.Operator):
         op_c.scheme_file = scheme_file
 
         layout.prop(settings, "re9_use_blank_export", text=T("ui.prop.use_blank_export"), icon='FILE_BLANK')
+        layout.prop(settings, "re9_triangulate_face", text=T("ui.prop.triangulate_face"), icon='MOD_TRIANGULATE')
 
         if use_simplified:
             self._draw_simplified(layout, scene, scheme, character_id)

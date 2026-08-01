@@ -17,11 +17,18 @@ _GROUP_PROP_MAP = {
 
 class MHW_PT_PresetEditor(bpy.types.Panel):
     bl_label = ""
-    bl_idname = "MHW_PT_preset_editor"
+    # NOTE: idname deliberately differs from the original "MHW_PT_preset_editor".
+    # Blender caches per-region panel order by idname, so bl_order below is
+    # ignored for a panel the file has already seen. A fresh idname has no
+    # cached order, which is what actually moves it to the top.
+    bl_idname = "MHW_PT_preset_editor_top"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'MOD Toolkit'
     bl_options = {'DEFAULT_CLOSED'}
+    # Sits above the main panel: it was invisible at the bottom of a very
+    # long sidebar. Stays collapsed so it costs one line when unused.
+    bl_order = 0
 
     def draw_header(self, context):
         self.layout.label(text=T("ui.editor_panel.panel_title"))

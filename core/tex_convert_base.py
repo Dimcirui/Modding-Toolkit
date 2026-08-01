@@ -91,10 +91,15 @@ _GAME_TEX_VERSION = {
     'RE4':  143221013,
     'RE9':  250813143,
 }
-_GAME_ITEMS = [
-    ('MHWI', 'MHWI', ''), ('MHWS', 'MHWS', ''), ('MHRS', 'MHRS', ''),
-    ('RE4', 'RE4', ''), ('RE9', 'RE9', ''),
-]
+#: Conversion target. Everything runs through the same DXGI/mipmap pipeline and
+#: produces a DDS; the game entries then wrap that DDS in the game's .tex
+#: container, and 'DDS' simply stops one step earlier.
+def get_target_items(self=None, context=None):
+    return [
+        ('DDS',  T("core.tex_convert_base.target_dds"), T("core.tex_convert_base.target_dds_desc")),
+        ('MHWI', 'MHWI', ''), ('MHWS', 'MHWS', ''), ('MHRS', 'MHRS', ''),
+        ('RE4', 'RE4', ''), ('RE9', 'RE9', ''),
+    ]
 
 
 def guess_dxgi_format(filepath):
@@ -178,6 +183,87 @@ def _on_src_a_update(self, context):
     if not self.src_a:
         return
     _apply_guess(self, self.src_a)
+
+
+
+# ── Output size ──────────────────────────────────────────────────────────────
+# Reading an image's dimensions means loading it, which is far too expensive to
+# repeat on every redraw, so results are memoised per path for the session.
+_size_cache = {}
+
+
+def image_size(path):
+    """(width, height) of the image at *path*, or None if it can't be read."""
+    if not path:
+        return None
+    abspath = bpy.path.abspath(path)
+    if not os.path.isfile(abspath):
+        return None
+    if abspath in _size_cache:
+        return _size_cache[abspath]
+    img = None
+    try:
+        img = bpy.data.images.load(abspath, check_existing=False)
+        size = tuple(img.size)
+    except Exception:
+        size = None
+    finally:
+        if img is not None:
+            bpy.data.images.remove(img)
+    # Failures are cached too: draw() runs constantly, and a file Blender
+    # cannot decode would otherwise be re-loaded on every redraw
+    _size_cache[abspath] = size if (size and size[0] and size[1]) else None
+    return _size_cache[abspath]
+
+
+def is_power_of_two(v):
+    return v > 0 and (v & (v - 1)) == 0
+
+
+def snap_to_power_of_two(v, tolerance=0.15):
+    """Nearest power of two when it is within *tolerance*, otherwise the next
+    one up.
+
+    Snapping down is only worth a little lost detail when the source was
+    already almost the right size; anything further away is rounded up so the
+    conversion never throws pixels away to hit an arbitrary target.
+    """
+    if v <= 1:
+        return 1
+    lo = 1 << (int(v).bit_length() - 1)
+    hi = lo if lo == v else lo << 1
+    for candidate in (lo, hi):
+        if abs(v - candidate) / float(v) <= tolerance:
+            return candidate
+    return hi
+
+
+def _source_size(s):
+    """Size the conversion will start from. Channel composition scales every
+    source up to the widest one, so that is what decides it."""
+    sizes = [image_size(p) for p in (s.src_a, s.src_b) if p]
+    sizes = [x for x in sizes if x]
+    if not sizes:
+        return None
+    return max(sizes, key=lambda wh: wh[0])
+
+
+def output_size(s):
+    """Size the resulting DDS will have."""
+    if s.resize_enabled:
+        return (s.out_width, s.out_height)
+    return _source_size(s)
+
+
+def _on_resize_toggle(self, context):
+    """Pre-fill the fields the first time the box is ticked, so the numbers
+    offered are the recommended ones rather than a stale 1024."""
+    if not self.resize_enabled:
+        return
+    src = _source_size(self)
+    if src:
+        self.out_width = snap_to_power_of_two(src[0])
+        self.out_height = snap_to_power_of_two(src[1])
 
 
 # ── Channel composition (generic 2-source version of mdf_tex_processor_base's
@@ -407,6 +493,12 @@ class TexConvertSettings(bpy.types.PropertyGroup):
     generate_mipmaps: bpy.props.BoolProperty(name="Generate Mipmaps", default=True,
                                              update=_on_format_or_mips_update)
     output_path: bpy.props.StringProperty(name="Output Path", subtype='FILE_PATH')
+    target: bpy.props.EnumProperty(name="Target Format", items=get_target_items, default=0)
+    resize_enabled: bpy.props.BoolProperty(
+        name="Resize Output", default=False, update=_on_resize_toggle,
+        description="Override the output resolution instead of keeping the source's")
+    out_width: bpy.props.IntProperty(name="Width", default=1024, min=1, max=16384)
+    out_height: bpy.props.IntProperty(name="Height", default=1024, min=1, max=16384)
 
 
 # ── Operators ────────────────────────────────────────────────────────────────
@@ -433,6 +525,27 @@ class MT_OT_TexConvertGuessFormat(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MT_OT_TexConvertSnapSize(bpy.types.Operator):
+    """Fill the width/height fields with the recommended power-of-two size"""
+    bl_idname = "mt.tex_convert_snap_size"
+    bl_label = "Recommended Size"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.tex_convert_base.snap_size_desc")
+
+    def execute(self, context):
+        s = context.scene.tex_convert_tool
+        src = _source_size(s)
+        if not src:
+            self.report({'ERROR'}, T("core.tex_convert_base.select_src_image_first"))
+            return {'CANCELLED'}
+        s.out_width = snap_to_power_of_two(src[0])
+        s.out_height = snap_to_power_of_two(src[1])
+        return {'FINISHED'}
+
+
 class MT_OT_TexConvertDialog(bpy.types.Operator):
     """Convert a single image directly to the target game's .tex texture."""
     bl_idname  = "mt.tex_convert_dialog"
@@ -442,8 +555,6 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
     @classmethod
     def description(cls, context, properties):
         return T("core.tex_convert_base.dialog_desc")
-
-    game: bpy.props.EnumProperty(items=_GAME_ITEMS, default='MHWS', options={'HIDDEN'})
 
     def invoke(self, context, event):
         # A scene saved before `preset` existed carries only format/mipmaps, so
@@ -458,19 +569,22 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
         layout = self.layout
         s = context.scene.tex_convert_tool
 
-        layout.label(text=f"{T('core.tex_convert_base.dialog_title')} ({self.game})")
-        layout.separator()
+        layout.label(text=T('core.tex_convert_base.dialog_title'))
 
-        layout.prop(s, "channel_mode", expand=True)
-        layout.separator()
-
+        # Everything that describes the *output file* stays together at the
+        # top; the channel plumbing that produces its pixels comes after.
+        layout.prop(s, "target", text=T("core.tex_convert_base.target_name"))
         layout.prop(s, "preset", text=T("core.tex_convert_base.preset_name"))
         fmt_row = layout.row(align=True)
         fmt_row.prop(s, "format", text=T("core.tex_convert_base.format_name"))
         fmt_row.operator("mt.tex_convert_guess_format", text="", icon='FILE_REFRESH')
         if s.src_a and not s.format_guess_ok:
             layout.label(text=T("core.tex_convert_base.guess_fallback_warning"), icon='ERROR')
+        layout.prop(s, "generate_mipmaps", text=T("core.tex_convert_base.generate_mipmaps_name"))
 
+        layout.separator()
+
+        layout.prop(s, "channel_mode", expand=True)
         layout.separator()
 
         # Image selection
@@ -524,9 +638,33 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
                 row.prop(s, f"ch_{ch}_channel", text="")
 
         layout.separator()
-        layout.prop(s, "generate_mipmaps", text=T("core.tex_convert_base.generate_mipmaps_name"))
         layout.prop(s, "output_path", text=T("core.tex_convert_base.output_path_name"))
         layout.label(text=T("core.tex_convert_base.output_empty_hint"), icon='INFO')
+
+        # Output size last: it is a consequence of everything above, and the
+        # non-power-of-two warning is the thing to leave on screen.
+        layout.separator()
+        size = output_size(s)
+        if size:
+            w, h = size
+            ok = is_power_of_two(w) and is_power_of_two(h)
+            row = layout.row()
+            row.alert = not ok
+            row.label(text=T("core.tex_convert_base.output_size_label").format(w=w, h=h),
+                      icon='TEXTURE' if ok else 'ERROR')
+            if not ok:
+                warn = layout.row()
+                warn.alert = True
+                warn.label(text=T("core.tex_convert_base.npot_warning"))
+        else:
+            layout.label(text=T("core.tex_convert_base.output_size_unknown"), icon='INFO')
+
+        layout.prop(s, "resize_enabled", text=T("core.tex_convert_base.resize_name"))
+        if s.resize_enabled:
+            size_row = layout.row(align=True)
+            size_row.prop(s, "out_width", text=T("core.tex_convert_base.width_name"))
+            size_row.prop(s, "out_height", text=T("core.tex_convert_base.height_name"))
+            size_row.operator("mt.tex_convert_snap_size", text="", icon='FILE_REFRESH')
 
     def execute(self, context):
         s = context.scene.tex_convert_tool
@@ -539,7 +677,12 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
         src_b = bpy.path.abspath(s.src_b) if s.src_b else ""
 
         src_stem = os.path.splitext(os.path.basename(src_a))[0]
-        ext = '.tex' if self.game == 'MHWI' else f'.tex.{_GAME_TEX_VERSION[self.game]}'
+        if s.target == 'DDS':
+            ext = '.dds'
+        elif s.target == 'MHWI':
+            ext = '.tex'
+        else:
+            ext = f'.tex.{_GAME_TEX_VERSION[s.target]}'
         default_filename = src_stem + ext
 
         if s.output_path:
@@ -547,7 +690,7 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
             # No ".tex" in the given name -> treat the whole thing as a
             # target folder and name the file after the source image,
             # rather than requiring the filename to be typed out in full.
-            if '.tex' not in os.path.basename(out_path).lower():
+            if ext.split('.')[1] not in os.path.basename(out_path).lower():
                 out_path = os.path.join(out_path, default_filename)
         else:
             out_path = os.path.join(os.path.dirname(src_a), default_filename)
@@ -593,12 +736,18 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
                 return {'CANCELLED'}
 
             from . import texconv_native
+            resize = (s.out_width, s.out_height) if s.resize_enabled else None
             dds_path = texconv_native.convert_to_dds(
-                png_path, s.format, temp_dir, generate_mips=s.generate_mipmaps)
+                png_path, s.format, temp_dir, generate_mips=s.generate_mipmaps,
+                size=resize)
 
             os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
-            if self.game == 'MHWI':
+            if s.target == 'DDS':
+                # The pipeline already produced exactly this; the game targets
+                # only differ by the container written around it
+                shutil.copy2(dds_path, out_path)
+            elif s.target == 'MHWI':
                 fn = _import_mhwtex_convert()
                 if fn is None:
                     self.report({'ERROR'}, T("core.tex_convert_base.mhwtex_convert_unavailable"))
@@ -606,7 +755,7 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
                 fn([dds_path], out_path)
             else:
                 from . import tex_file
-                tex_file.write_tex_from_dds(dds_path, _GAME_TEX_VERSION[self.game], out_path)
+                tex_file.write_tex_from_dds(dds_path, _GAME_TEX_VERSION[s.target], out_path)
 
             self.report({'INFO'}, T("core.tex_convert_base.generated").format(name=os.path.basename(out_path)))
             return {'FINISHED'}
@@ -618,18 +767,125 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
             shutil.rmtree(temp_dir, ignore_errors=True)
 
 
+# ── Drag & drop: batch convert dropped images to DDS ─────────────────────────
+# Blender shows a chooser when several FileHandlers claim the same extension,
+# so this appears alongside the other addons' entries rather than replacing
+# them.  Unlike RE Mesh Editor's dialog this targets plain DDS only, and an
+# unrecognised filename falls back to BC7_UNORM_SRGB rather than linear:
+# a colour map wrongly tagged linear washes out visibly, while a mask wrongly
+# tagged sRGB is the quieter mistake to make.
+_DROP_FALLBACK_FORMAT = 'BC7_UNORM_SRGB'
+
+_DROP_EXTENSIONS = ".png;.tga;.jpg;.jpeg;.bmp;.tif;.tiff;.dds"
+
+
+class TexDropItem(bpy.types.PropertyGroup):
+    filepath: bpy.props.StringProperty()
+    format: bpy.props.EnumProperty(name="", items=get_format_items)
+
+
+class MT_OT_TexDropToDDS(bpy.types.Operator):
+    """Convert the dropped images to DDS"""
+    bl_idname = "mt.tex_drop_to_dds"
+    bl_label = "Convert to DDS"
+    bl_options = {'REGISTER'}
+
+    directory: bpy.props.StringProperty(subtype='DIR_PATH', options={'SKIP_SAVE', 'HIDDEN'})
+    files: bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement,
+                                        options={'SKIP_SAVE', 'HIDDEN'})
+    filepath: bpy.props.StringProperty(subtype='FILE_PATH', options={'SKIP_SAVE', 'HIDDEN'})
+
+    generate_mipmaps: bpy.props.BoolProperty(
+        name="Generate Mipmaps", default=True,
+        description="Generate a full mipmap chain")
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.tex_convert_base.drop_desc")
+
+    def _paths(self):
+        if self.files and self.directory:
+            return [os.path.join(self.directory, f.name) for f in self.files if f.name]
+        return [self.filepath] if self.filepath else []
+
+    def invoke(self, context, event):
+        items = context.scene.tex_drop_items
+        items.clear()
+        for path in self._paths():
+            entry = items.add()
+            entry.filepath = path
+            entry.format = guess_dxgi_format(path) or _DROP_FALLBACK_FORMAT
+        if not items:
+            self.report({'ERROR'}, T("core.tex_convert_base.drop_no_files"))
+            return {'CANCELLED'}
+        return context.window_manager.invoke_props_dialog(self, width=520)
+
+    def draw(self, context):
+        layout = self.layout
+        items = context.scene.tex_drop_items
+        layout.label(text=T("core.tex_convert_base.drop_count").format(n=len(items)))
+        box = layout.box()
+        for entry in items:
+            row = box.row(align=True)
+            row.label(text=os.path.basename(entry.filepath))
+            row.prop(entry, "format", text="")
+        layout.prop(self, "generate_mipmaps", text=T("core.tex_convert_base.generate_mipmaps_name"))
+
+    def execute(self, context):
+        from . import texconv_native
+
+        items = list(context.scene.tex_drop_items)
+        done, failed = 0, []
+        for entry in items:
+            src = entry.filepath
+            out_path = os.path.splitext(src)[0] + ".dds"
+            temp_dir = tempfile.mkdtemp(prefix="tex_drop_")
+            try:
+                dds_path = texconv_native.convert_to_dds(
+                    src, entry.format, temp_dir, generate_mips=self.generate_mipmaps)
+                shutil.copy2(dds_path, out_path)
+                done += 1
+            except Exception as err:
+                failed.append("%s (%s)" % (os.path.basename(src), err))
+            finally:
+                shutil.rmtree(temp_dir, ignore_errors=True)
+
+        context.scene.tex_drop_items.clear()
+        if failed:
+            self.report({'WARNING'}, T("core.tex_convert_base.drop_partial").format(
+                n=done, failed="; ".join(failed)))
+        else:
+            self.report({'INFO'}, T("core.tex_convert_base.drop_done").format(n=done))
+        return {'FINISHED'}
+
+
+class MT_FH_TexDropToDDS(bpy.types.FileHandler):
+    bl_idname = "MT_FH_tex_drop_to_dds"
+    bl_label = "Convert to DDS"
+    bl_import_operator = "mt.tex_drop_to_dds"
+    bl_file_extensions = _DROP_EXTENSIONS
+
+    @classmethod
+    def poll_drop(cls, context):
+        return context.area and context.area.type in {'VIEW_3D', 'IMAGE_EDITOR', 'OUTLINER'}
+
+
 # ── Registration ───────────────────────────────────────────────────────────────
 
-classes = [TexConvertSettings, MT_OT_TexConvertGuessFormat, MT_OT_TexConvertDialog]
+classes = [TexConvertSettings, TexDropItem, MT_OT_TexConvertGuessFormat,
+           MT_OT_TexConvertSnapSize,
+           MT_OT_TexConvertDialog, MT_OT_TexDropToDDS, MT_FH_TexDropToDDS]
 
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
     bpy.types.Scene.tex_convert_tool = bpy.props.PointerProperty(type=TexConvertSettings)
+    bpy.types.Scene.tex_drop_items = bpy.props.CollectionProperty(type=TexDropItem)
 
 
 def unregister():
+    del bpy.types.Scene.tex_drop_items
     del bpy.types.Scene.tex_convert_tool
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

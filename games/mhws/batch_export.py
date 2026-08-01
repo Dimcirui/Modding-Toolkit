@@ -315,12 +315,8 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
     def description(cls, context, properties):
         return T("mhws.batch_export.batch_export_desc")
 
-    def _cleanup_mesh_collections(self, context, scene, settings):
-        """Run RE Mesh cleanup operators on all bound mesh collections before export."""
-        if not re_mesh_op_available('delete_loose'):
-            self.report({'WARNING'}, T("mhws.batch_export.re_mesh_not_installed_cleanup_skip"))
-            return
-
+    def _bound_mesh_collections(self, scene, settings):
+        """Every distinct mesh collection bound to the selected armor set."""
         armor_id = settings.mhws_selected_armor
         variant = settings.mhws_armor_variant
         seen = set()
@@ -332,7 +328,15 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
                 if col:
                     mesh_collections.append(col)
                     seen.add(col_name)
+        return mesh_collections
 
+    def _cleanup_mesh_collections(self, context, scene, settings):
+        """Run RE Mesh cleanup operators on all bound mesh collections before export."""
+        if not re_mesh_op_available('delete_loose'):
+            self.report({'WARNING'}, T("mhws.batch_export.re_mesh_not_installed_cleanup_skip"))
+            return
+
+        mesh_collections = self._bound_mesh_collections(scene, settings)
         if not mesh_collections:
             return
 
@@ -362,6 +366,18 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
                 obj.select_set(False)
 
     def execute(self, context):
+        # Triangulation rides on the modifier stack: RE Mesh Editor exports
+        # evaluated geometry, so the mesh data is never touched and the
+        # modifiers come off again even if the export raises.
+        settings = context.scene.mhw_suite_settings
+        if not settings.mhws_triangulate_face:
+            return self._run_export(context)
+        with export_prep.triangulated_for_export(context.scene.objects, 'mhws') as touched:
+            if touched:
+                print("[MHWS] triangulating {n} face mesh(es) for export".format(n=len(touched)))
+            return self._run_export(context)
+
+    def _run_export(self, context):
         scene = context.scene
         settings = scene.mhw_suite_settings
 

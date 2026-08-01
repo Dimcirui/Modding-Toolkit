@@ -249,6 +249,7 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
         row = layout.row(align=True)
         row.prop(settings, "mhws_use_blank_export", text=T("ui.prop.use_blank_export"), icon='FILE_BLANK')
         row.prop(settings, "mhws_cleanup_before_export", text=T("ui.prop.cleanup_before_export"), icon='BRUSH_DATA')
+        row.prop(settings, "mhws_triangulate_face", text=T("ui.prop.triangulate_face"), icon='MOD_TRIANGULATE')
 
         self._draw_bonesystem(layout, settings)
 

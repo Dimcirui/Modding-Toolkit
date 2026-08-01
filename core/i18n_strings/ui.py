@@ -4,9 +4,8 @@ Filled in incrementally as each panel is migrated."""
 STRINGS = {
     # ── MHW_PT_SuiteSettings collapsible section headers ───────────────────────
     "ui.main_panel.basic_tools_header":     {"EN": "Basic Tools",               "ZH": "基础工具"},
-    "ui.main_panel.std_converter_header":   {"EN": "Universal Standard Conversion", "ZH": "通用标准转换"},
-    "ui.main_panel.experimental_header":    {"EN": "Experimental Features",     "ZH": "实验性功能"},
-    "ui.main_panel.pose_convert_header":    {"EN": "Pose Convert",              "ZH": "姿态转换 (Pose Convert)"},
+    "ui.main_panel.std_converter_header":   {"EN": "Skeleton & Mesh Convert", "ZH": "骨架&网格转换"},
+    "ui.main_panel.pose_convert_header":    {"EN": "Pose Convert",              "ZH": "姿态转换"},
 
     # ── MHW_PT_SuiteSettings property draw-site label overrides ────────────────
     # (property name= stays a short English fallback; these T() keys are the
@@ -68,10 +67,10 @@ STRINGS = {
     "ui.main_panel.gt_action_mirror_x":          {"EN": "Mirror Align X",         "ZH": "镜像对齐 X"},
     "ui.main_panel.gt_desc_mirror_x":            {"EN": "Select exactly two bones: mirror the X- side bone's position and roll onto the X+ side bone",
                                                    "ZH": "正好选中两根骨骼：以 X+ 侧那根为基准，镜像覆盖 X- 侧那根的位置与扭转"},
-    "ui.main_panel.gt_action_simplify_chain":    {"EN": "Simplify Chain",         "ZH": "骨链简化"},
+    "ui.main_panel.gt_action_simplify_chain":    {"EN": "Simplify Selected Chains", "ZH": "简化选中骨骼链"},
     "ui.main_panel.gt_desc_simplify_chain":      {"EN": "Pair up bones along each chain, merge their weights, and delete the redundant bones; unweighted tail bones are skipped automatically",
                                                    "ZH": "按链结构将骨骼两两配对合并权重并删除多余骨骼；链末无权重骨（尾骨）自动跳过不参与配对"},
-    "ui.main_panel.gt_action_merge_to_active":   {"EN": "Merge into Active Bone", "ZH": "合并到激活骨"},
+    "ui.main_panel.gt_action_merge_to_active":   {"EN": "Merge Bones into Active Bone", "ZH": "合并骨骼到激活骨"},
     "ui.main_panel.gt_desc_merge_to_active":     {"EN": "Merge the weights of the other selected bones into the active bone (last clicked), then delete the other bones",
                                                    "ZH": "将其余选中骨骼的权重全部并入激活骨（最后点击的那根），然后删除其余骨骼"},
     "ui.main_panel.gt_action_align_pos":         {"EN": "Align (Position)",       "ZH": "对齐 (位置)"},
@@ -86,12 +85,6 @@ STRINGS = {
     "ui.main_panel.gt_action_merge_chains":      {"EN": "Merge Chains into Active Chain", "ZH": "合并链到激活链"},
     "ui.main_panel.gt_desc_merge_chains":        {"EN": "Select the heads of multiple chains: merge the other chains bone-by-bone by position into the active bone's chain; overflow is merged into the chain's last bone",
                                                    "ZH": "选中多条链的链首，将其余链按位置逐骨合并到激活骨所在链；源链超出长度的部分并入链末骨"},
-
-    # ── MHW_OT_GeneralTools toolbar-button-only short labels ───────────────────
-    # (distinct wording from the action items above — shown in a context where
-    # the section header already says "Armature Align")
-    "ui.main_panel.gt_btn_align_pos":   {"EN": "Position", "ZH": "位置"},
-    "ui.main_panel.gt_btn_align_full":  {"EN": "Full",     "ZH": "完全"},
 
     # ── MHW_OT_GeneralTools.execute() report messages ──────────────────────────
     "ui.main_panel.gt_err_select_armature":      {"EN": "Please select an armature first", "ZH": "请先选中一个骨架"},
@@ -121,18 +114,18 @@ STRINGS = {
     "已将 %s 对齐到 %s":     {"EN": "Aligned %s to %s",        "ZH": "已将 %s 对齐到 %s"},
 
     # ── MHW_PT_MainPanel.draw() section headers / static labels ────────────────
-    "ui.main_panel.label_bone_merge":            {"EN": "Bone Merge",       "ZH": "骨骼合并"},
+    "ui.main_panel.label_bone_merge":            {"EN": "Bone & Weight Merge", "ZH": "骨骼&权重合并"},
     "ui.main_panel.label_bone_processing":       {"EN": "Bone Processing",  "ZH": "骨骼处理"},
-    "ui.main_panel.label_armature_align":        {"EN": "Armature Align",   "ZH": "骨架对齐"},
-    "ui.main_panel.label_weight_processing":     {"EN": "Weight Processing","ZH": "权重处理"},
-    "ui.main_panel.label_skeleton_cleanup":      {"EN": "Skeleton Cleanup:","ZH": "骨架清理:"},
-    "ui.main_panel.label_physics_chain_tools":   {"EN": "Physics Chain Tools:", "ZH": "物理链工具:"},
+    "ui.main_panel.label_mesh_processing":       {"EN": "Mesh Processing",  "ZH": "网格处理"},
+    "ui.main_panel.label_texture_processing":    {"EN": "Texture Processing", "ZH": "贴图处理"},
+    "ui.main_panel.label_skeleton_cleanup":      {"EN": "Non-Physics Workflow", "ZH": "非物理流程工具"},
+    "ui.main_panel.label_physics_chain_tools":   {"EN": "Physics Workflow", "ZH": "物理流程工具"},
     "ui.main_panel.label_bone_visibility":       {"EN": "Bone Visibility [X]:", "ZH": "骨骼显示 [X]:"},
     "ui.main_panel.label_mapping_preview_need_preset": {"EN": "Mapping detail preview requires a specific preset (not Auto-Detect)", "ZH": "映射详情预览需要选定具体预设（非自动识别）"},
     "ui.main_panel.label_missing":                {"EN": "Missing", "ZH": "缺失"},
     "ui.main_panel.label_select_armature_preview":{"EN": "Select an armature to preview", "ZH": "请选中骨架以预览"},
-    "ui.main_panel.label_simple_tools":           {"EN": "Simple Tools:", "ZH": "简易工具:"},
-    "ui.main_panel.label_pose_recorder":          {"EN": "Pose Transform Recorder:", "ZH": "姿态变换记录器:"},
+    "ui.main_panel.label_simple_tools":           {"EN": "Convert Tools:", "ZH": "转换工具:"},
+    "ui.main_panel.label_pose_recorder":          {"EN": "Custom Convert:", "ZH": "自定义转换:"},
     "ui.main_panel.label_fakebone_section":       {"EN": "Fake Head Method (FakeBone)", "ZH": "假头法 (FakeBone)"},
     "ui.main_panel.label_need_mhw_model_editor":  {"EN": "Requires MHW Model Editor!", "ZH": "需要 MHW Model Editor!"},
     "ui.main_panel.label_need_re_chain_editor":   {"EN": "Requires RE Chain Editor!",  "ZH": "需要 RE Chain Editor!"},
@@ -142,6 +135,10 @@ STRINGS = {
     "ui.main_panel.btn_sk_to_weights":            {"EN": "Shape Key to Weights",  "ZH": "形态键转权重"},
     "ui.main_panel.btn_merge_renamed_vgroups":    {"EN": "Merge Renamed Vertex Groups", "ZH": "合并重名顶点组"},
     "ui.main_panel.btn_universal_snap":           {"EN": "Align Bones [X+Y, dual armature]", "ZH": "对齐骨骼 [X+Y, 双骨架]"},
+    "ui.main_panel.btn_same_kind_snap":           {"EN": "Align Bones [by name, dual armature]", "ZH": "对齐骨骼 [同名骨骼, 双骨架]"},
+    "ui.main_panel.same_kind_align_label":        {"EN": "Same-Kind Bone Align", "ZH": "同种类骨骼对齐"},
+    "ui.main_panel.same_kind_align_desc":         {"EN": "Both armatures are already the same kind, so bones are matched by name and no preset is needed. Only the align action is shown",
+                                                    "ZH": "两个骨架本就是同一种类，按骨骼名直接匹配，不需要预设。勾选后仅显示对齐骨骼功能"},
     "ui.main_panel.btn_direct_convert":           {"EN": "Rename Vertex Groups [X+Y]", "ZH": "重命名顶点组 [X+Y]"},
     "ui.main_panel.btn_merge_physics_weights":    {"EN": "Downgrade Physics Weights [X]", "ZH": "物理权重降级 [X]"},
     "ui.main_panel.btn_remove_non_base_bones":    {"EN": "Remove Non-Base Bones [X]", "ZH": "剔除非基础骨骼 [X]"},
@@ -151,6 +148,7 @@ STRINGS = {
     "ui.main_panel.btn_mark_main_continue":       {"EN": "Mark as Main Chain Continuation", "ZH": "标记为主链延伸"},
     "ui.main_panel.btn_clear_chain_role":         {"EN": "Clear Mark", "ZH": "清除标记"},
     "ui.main_panel.btn_refresh_bone_colors":      {"EN": "Refresh Bone Colors", "ZH": "刷新骨骼颜色"},
+    "ui.main_panel.btn_tpose_direction":          {"EN": "Direction Calc (Simple T to A)", "ZH": "方向计算 (简易 T 转 A)"},
     "ui.main_panel.btn_tpose_matrix_zero":        {"EN": "Zero RE Engine Matrix (excl. RE9)", "ZH": "RE Engine 矩阵归零 (生化9除外)"},
     "ui.main_panel.btn_record_transform":         {"EN": "Record Transform (select two armatures)", "ZH": "录制变换 (选两个骨架)"},
     "ui.main_panel.btn_apply_forward":            {"EN": "▶ Forward (A→B)", "ZH": "▶ 正向 (A→B)"},
@@ -168,6 +166,7 @@ STRINGS = {
     "ui.prop.gender": {"EN": "Gender", "ZH": "性别"},
     "ui.prop.rank": {"EN": "Rank", "ZH": "位阶"},
     "ui.prop.cleanup_before_export": {"EN": "Clean Mesh Before Export", "ZH": "导出前清理网格"},
+    "ui.prop.triangulate_face": {"EN": "Triangulate Face Mesh", "ZH": "面部网格三角化"},
     "ui.prop.anti_plagiarism": {"EN": "Anti-Plagiarism", "ZH": "防石化"},
     "ui.prop.watermark": {"EN": "Add Watermark Effect", "ZH": "添加水印特效"},
     "ui.prop.use_blank_export": {"EN": "Use Blank Model for Unselected", "ZH": "未选部位使用空模"},
@@ -237,6 +236,73 @@ STRINGS = {
     "ui.main_panel.mmd_warn_no_valid_shapekeys":  {"EN": "No valid shape keys found; check the MMD shape key names", "ZH": "未找到任何有效形态键，请检查 MMD 形态键名称"},
     "ui.main_panel.mmd_info_generated":           {"EN": "Generated {n} facial vertex group(s): {parts}", "ZH": "已生成 {n} 个表情顶点组：{parts}"},
     "ui.main_panel.mmd_info_skipped_suffix":      {"EN": "; skipped: {parts}", "ZH": "；跳过：{parts}"},
+
+    # ── MHW_OT_CylindricalFaceNormals / MHW_OT_ResetFaceNormals ──────────────────
+    "ui.main_panel.btn_cylindrical_face_normals": {"EN": "Cylindrical Face Normals (Toon)", "ZH": "面法向柱面化 (三渲二)"},
+    "ui.main_panel.btn_reset_face_normals":       {"EN": "Reset Face Normals", "ZH": "重置面法向"},
+    "ui.main_panel.fn_cyl_tip":                   {"EN": "Replace the selected faces' custom split normals with a cylindrical field, the way stylised toon-shaded face meshes do it. Unselected faces keep theirs",
+                                                    "ZH": "把选中面的自定义法线换成柱面场，与风格化三渲二脸部网格的做法类似。未选中的面保持原样"},
+    "ui.main_panel.fn_reset_tip":                 {"EN": "Drop the custom split normals and go back to smooth shading, optionally welding the vertices that UV/material borders split apart",
+                                                    "ZH": "删除自定义法线回到平滑着色，可顺带焊接 UV / 材质边界处被拆开的重合顶点"},
+    "ui.main_panel.fn_field_origin":              {"EN": "Axis Center","ZH": "轴心"},
+    "ui.main_panel.fn_origin_object":             {"EN": "Object Origin", "ZH": "物体原点"},
+    "ui.main_panel.fn_origin_object_desc":        {"EN": "The axis runs through the object's local origin. This is what the shipped Monster Hunter meshes use",
+                                                    "ZH": "轴穿过物体局部原点。怪猎原版资产用的就是这个"},
+    "ui.main_panel.fn_origin_cursor":             {"EN": "3D Cursor",  "ZH": "3D 游标"},
+    "ui.main_panel.fn_origin_bbox":               {"EN": "Bounding Box Center", "ZH": "包围盒中心"},
+    "ui.main_panel.fn_field_only_selected":       {"EN": "Selected Faces Only", "ZH": "仅选中面"},
+    "ui.main_panel.fn_desc_only_selected":        {"EN": "Only replace the selected faces' normals. Unselected faces keep theirs and the boundary transitions on its own",
+                                                    "ZH": "只替换选中面的法线。未选中的面保持原样，边界会自动过渡"},
+    "ui.main_panel.fn_field_smooth_boundary":     {"EN": "Boundary Transition", "ZH": "边界过渡"},
+    "ui.main_panel.fn_desc_smooth_boundary":      {"EN": "Boundary vertices take the angle-weighted average of both fields, making the transition exactly one vertex wide. Off gives a hard edge",
+                                                    "ZH": "边界顶点取相邻两种面的角度加权平均，过渡宽度恰好一个顶点。关掉则是硬边界"},
+    "ui.main_panel.fn_field_strength":            {"EN": "Strength", "ZH": "强度"},
+    "ui.main_panel.fn_desc_strength":             {"EN": "1 replaces fully; below 1 falls back toward the original normals",
+                                                    "ZH": "1 为完全替换，小于 1 会向原法线方向回退"},
+    "ui.main_panel.fn_field_weld":                {"EN": "Weld Coincident Vertices", "ZH": "焊接重合顶点"},
+    "ui.main_panel.fn_desc_weld":                 {"EN": "Game meshes are split at UV and material borders; this averages the normals back together so the cuts stop showing as shading seams",
+                                                    "ZH": "游戏网格在 UV / 材质边界处会拆开顶点，焊接可消掉切割留下的法线割裂"},
+    "ui.main_panel.fn_field_weld_distance":       {"EN": "Distance", "ZH": "距离"},
+    "ui.main_panel.fn_desc_weld_distance":        {"EN": "Vertices closer than this count as coincident",
+                                                    "ZH": "小于这个距离的顶点视为重合"},
+    "ui.main_panel.fn_field_weld_angle":          {"EN": "Angle Limit", "ZH": "角度上限"},
+    "ui.main_panel.fn_desc_weld_angle":           {"EN": "Only weld normals closer together than this (degrees). Back-to-back cards such as eyelashes sit near 180 and are left alone",
+                                                    "ZH": "只焊接夹角小于这个值的法线（度）。睫毛这类背靠背卡片接近 180°，会被排除"},
+    "ui.main_panel.fn_err_no_faces":              {"EN": "The mesh has no faces", "ZH": "网格没有面"},
+    "ui.main_panel.fn_err_no_selection":          {"EN": "No faces selected. Untick 'Selected Faces Only' to affect everything",
+                                                    "ZH": "没有选中的面。取消勾选“仅选中面”可作用于全部"},
+    "ui.main_panel.fn_warn_all_selected":         {"EN": "The whole mesh is selected, so nothing was preserved — ears and the back of the head will be flattened too",
+                                                    "ZH": "整个网格都被选中了，没有任何区域被保留 —— 耳朵和后脑也会被一起拍平"},
+    "ui.main_panel.fn_info_applied":              {"EN": "{faces} face(s), {verts} boundary vertex/vertices",
+                                                    "ZH": "{faces} 个面，{verts} 个顶点过渡"},
+    "ui.main_panel.fn_info_reset":                {"EN": "Reset to smooth shading, welded {n} coincident position(s)",
+                                                    "ZH": "已重置为平滑着色，焊接了 {n} 处重合顶点"},
+
+    # ── MHW_OT_ApplyModifiersKeepShapeKeys ───────────────────────────────────────
+    "ui.main_panel.btn_apply_mods_keep_sk":  {"EN": "Apply Modifiers (Keep Shape Keys)", "ZH": "对有形态键网格应用修改器"},
+    "ui.main_panel.amk_tip": {
+        "EN": "Apply the viewport-enabled modifiers to a mesh that has shape keys, rebuilding every key on top of the result. The object keeps its identity, and key values/mute/ranges are preserved",
+        "ZH": "对带形态键的网格应用视图中启用的修改器，并在结果上重建每一个形态键。物体身份不变，形态键的值/静音/范围都会保留"},
+    "ui.main_panel.amk_done": {
+        "EN": "Applied {mods} modifier(s), rebuilt {keys} shape key(s) on {verts} vertices",
+        "ZH": "已应用 {mods} 个修改器，在 {verts} 个顶点上重建了 {keys} 个形态键"},
+    "ui.main_panel.amk_note_slider": {
+        "EN": "Shape keys store a linear offset, so slider values other than 0/1 are an interpolation of two modifier results",
+        "ZH": "形态键存的是线性偏移，滑块取 0/1 以外的值时是两个修改器结果之间的插值"},
+
+    # ── MHW_OT_SeparateByMaterials ───────────────────────────────────────────────
+    "ui.main_panel.btn_separate_by_materials": {"EN": "Separate by Materials", "ZH": "按材质分离网格"},
+    "ui.main_panel.sbm_tip": {
+        "EN": "Split the selected meshes into one object per material. Blender carries shape keys and vertex groups to every fragment, so the ones that no longer do anything are pruned afterwards",
+        "ZH": "把选中网格按材质拆成多个物体。Blender 会把形态键和顶点组原样带给每个碎片，所以之后会剪掉在该碎片上已经失效的那些"},
+    "ui.main_panel.sbm_field_rename":       {"EN": "Rename to Material",        "ZH": "按材质名重命名"},
+    "ui.main_panel.sbm_field_clean_suffix": {"EN": "Strip Material .001 Suffix","ZH": "去掉材质名的 .001 后缀"},
+    "ui.main_panel.sbm_field_prune_keys":   {"EN": "Prune Dead Shape Keys",     "ZH": "剪掉失效的形态键"},
+    "ui.main_panel.sbm_field_prune_groups": {"EN": "Prune Empty Vertex Groups", "ZH": "剪掉空的顶点组"},
+    "ui.main_panel.sbm_no_mesh": {"EN": "No mesh objects selected", "ZH": "没有选中任何网格物体"},
+    "ui.main_panel.sbm_done": {
+        "EN": "{n} object(s) after the split; pruned {keys} shape key(s) and {groups} vertex group(s)",
+        "ZH": "拆分后共 {n} 个物体；剪掉 {keys} 个形态键、{groups} 个顶点组"},
 
     # ── MHW_OT_MergeRenamedVGroups ───────────────────────────────────────────────
     "ui.main_panel.merge_vg_done": {"EN": "Merge complete: {merged} vertex group(s) merged, {skipped} skipped (matches a real bone)",

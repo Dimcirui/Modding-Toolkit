@@ -375,6 +375,7 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
 
         layout.separator()
         layout.prop(settings, "re4_use_blank_export", text=T("ui.prop.use_blank_export"), icon='FILE_BLANK')
+        layout.prop(settings, "re4_triangulate_face", text=T("ui.prop.triangulate_face"), icon='MOD_TRIANGULATE')
 
         if use_simplified:
             self._draw_simplified(layout, scene, scheme, character_id)

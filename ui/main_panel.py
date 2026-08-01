@@ -62,6 +62,23 @@ def _mhws_bs_bind_part_items(self, context):
     ]
 
 
+# align_mode_override reused as the mode picker for same-kind (name-matched)
+# alignment, which routes to MHW_OT_GeneralTools instead of the preset pipeline
+_SAME_KIND_ALIGN_ACTION = {
+    'POS_ONLY': 'ALIGN_POS',
+    'POS_ROLL': 'ALIGN_POS_ROLL',
+    'FULL':     'ALIGN_FULL',
+}
+
+
+def _face_normal_origin_items(self, context):
+    return [
+        ('OBJECT', T("ui.main_panel.fn_origin_object"), T("ui.main_panel.fn_origin_object_desc")),
+        ('CURSOR', T("ui.main_panel.fn_origin_cursor"), ""),
+        ('BBOX',   T("ui.main_panel.fn_origin_bbox"),   ""),
+    ]
+
+
 class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     # Top toggle row
     show_mhwi: bpy.props.BoolProperty(name="MHWI", default=False)
@@ -75,7 +92,15 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
 
     # Universal converter toggle
     show_std_converter: bpy.props.BoolProperty(name="Universal Skeleton Conversion", default=True)
-    show_experimental: bpy.props.BoolProperty(name="Experimental Features", default=False)
+    show_skeleton_cleanup: bpy.props.BoolProperty(name="Skeleton Cleanup", default=False)
+    show_physics_chain_tools: bpy.props.BoolProperty(name="Physics Chain Tools", default=False)
+
+    # Collapses the converter down to a plain name-matched armature align
+    same_kind_align: bpy.props.BoolProperty(
+        name="Same-Kind Bone Align",
+        description="Both armatures are already the same kind, so bones are matched by name and no preset is needed",
+        default=False,
+    )
 
     # Preset selection (X/Y) - used by the standard converter
     import_preset_enum: bpy.props.EnumProperty(
@@ -250,11 +275,23 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         description="For slots with no collection selected, copy in the built-in blank file instead of skipping",
         default=False,
     )
+    mhws_triangulate_face: bpy.props.BoolProperty(
+        name="Triangulate Face Mesh",
+        description="Before export, temporarily add a Triangulate modifier to meshes weighted to the head bone. "
+                     "RE Mesh Editor's exporter otherwise breaks face shading. The mesh data itself is not modified",
+        default=False,
+    )
     mhws_cleanup_before_export: bpy.props.BoolProperty(
         name="Clean Mesh Before Export",
         description="Before export, run on all bound mesh collections: remove loose geometry, fix duplicate UVs, "
                      "clear zero-weight vertex groups, limit and normalize weights (requires RE Mesh Editor)",
         default=True,
+    )
+    re9_triangulate_face: bpy.props.BoolProperty(
+        name="Triangulate Face Mesh",
+        description="Before export, temporarily add a Triangulate modifier to meshes weighted to the head bone. "
+                     "RE Mesh Editor's exporter otherwise breaks face shading. The mesh data itself is not modified",
+        default=False,
     )
     re9_use_blank_export: bpy.props.BoolProperty(
         name="Use Blank Model for Unselected",
@@ -283,6 +320,12 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         description="For slots with no collection selected, copy in the built-in blank file instead of skipping",
         default=False,
     )
+    mhrs_triangulate_face: bpy.props.BoolProperty(
+        name="Triangulate Face Mesh",
+        description="Before export, temporarily add a Triangulate modifier to meshes weighted to the head bone. "
+                     "RE Mesh Editor's exporter otherwise breaks face shading. The mesh data itself is not modified",
+        default=False,
+    )
     mhrs_cleanup_before_export: bpy.props.BoolProperty(
         name="Clean Mesh Before Export",
         description="Before export, run on all bound mesh collections: remove loose geometry, fix duplicate UVs, "
@@ -308,6 +351,12 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         name="Export Scheme",
         description="Select character export scheme for RE4",
         items=get_re4_schemes_callback
+    )
+    re4_triangulate_face: bpy.props.BoolProperty(
+        name="Triangulate Face Mesh",
+        description="Before export, temporarily add a Triangulate modifier to meshes weighted to the head bone. "
+                     "RE Mesh Editor's exporter otherwise breaks face shading. The mesh data itself is not modified",
+        default=False,
     )
     re4_use_blank_export: bpy.props.BoolProperty(
         name="Use Blank Model for Unselected",
@@ -580,6 +629,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'MOD Toolkit'
+    bl_order = 1
 
     def draw(self, context):
         layout = self.layout
@@ -614,10 +664,11 @@ class MHW_PT_MainPanel(bpy.types.Panel):
         if settings.show_basic_tools:
             col = basic_box.column(align=True)
 
+            # Bone-level merge on its own row; the two chain-level actions pair up below
             col.label(text=T("ui.main_panel.label_bone_merge"), icon='AUTOMERGE_ON')
-            col.operator("mhw.general_tools", text=T("ui.main_panel.gt_action_simplify_chain")).action = 'SIMPLIFY_CHAIN'
+            col.operator("mhw.general_tools", text=T("ui.main_panel.gt_action_merge_to_active")).action = 'MERGE_TO_ACTIVE'
             row = col.row(align=True)
-            row.operator("mhw.general_tools", text=T("ui.main_panel.gt_action_merge_to_active")).action = 'MERGE_TO_ACTIVE'
+            row.operator("mhw.general_tools", text=T("ui.main_panel.gt_action_simplify_chain")).action = 'SIMPLIFY_CHAIN'
             row.operator("mhw.general_tools", text=T("ui.main_panel.gt_action_merge_chains")).action = 'MERGE_CHAINS'
 
             col.separator(factor=0.8)
@@ -626,18 +677,27 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row.operator("mhw.general_tools", text=T("ui.main_panel.gt_action_roll_zero")).action = 'ROLL_ZERO'
             row.operator("mhw.general_tools", text=T("ui.main_panel.gt_action_mirror_x")).action = 'MIRROR_X'
 
-            col.separator(factor=0.8)
-            col.label(text=T("ui.main_panel.label_armature_align"), icon='ORIENTATION_GIMBAL')
-            row = col.row(align=True)
-            row.operator("mhw.general_tools", text=T("ui.main_panel.gt_btn_align_pos")).action = 'ALIGN_POS'
-            row.operator("mhw.general_tools", text=T("ui.main_panel.align_mode_pos_roll")).action = 'ALIGN_POS_ROLL'
-            row.operator("mhw.general_tools", text=T("ui.main_panel.gt_btn_align_full")).action = 'ALIGN_FULL'
+            # NOTE: the armature-align group used to live here. It overlapped with
+            # the standard converter's align action, so it now sits behind that
+            # section's "Same-Kind Bone Align" toggle.
 
             col.separator(factor=0.8)
-            col.label(text=T("ui.main_panel.label_weight_processing"), icon='GROUP_VERTEX')
+            col.label(text=T("ui.main_panel.label_mesh_processing"), icon='GROUP_VERTEX')
             row = col.row(align=True)
             row.operator("mhw.sk_to_weights", text=T("ui.main_panel.btn_sk_to_weights"), icon='SHAPEKEY_DATA')
             row.operator("mhw.merge_renamed_vgroups", text=T("ui.main_panel.btn_merge_renamed_vgroups"), icon='AUTOMERGE_ON')
+            row = col.row(align=True)
+            row.operator("mhw.cylindrical_face_normals", text=T("ui.main_panel.btn_cylindrical_face_normals"), icon='NORMALS_FACE')
+            row.operator("mhw.reset_face_normals", text=T("ui.main_panel.btn_reset_face_normals"), icon='FILE_REFRESH')
+            col.operator("mhw.apply_modifiers_keep_shape_keys",
+                         text=T("ui.main_panel.btn_apply_mods_keep_sk"), icon='MODIFIER')
+            col.operator("mhw.separate_by_materials",
+                         text=T("ui.main_panel.btn_separate_by_materials"), icon='MOD_EXPLODE')
+
+            col.separator(factor=0.8)
+            col.label(text=T("ui.main_panel.label_texture_processing"), icon='TEXTURE')
+            col.operator("mt.tex_convert_dialog",
+                         text=T("ui.main_panel.btn_tex_process"), icon='TEXTURE')
 
         layout.separator()
 
@@ -653,114 +713,136 @@ class MHW_PT_MainPanel(bpy.types.Panel):
 
         if settings.show_std_converter:
             col = main_box.column(align=True)
-            row = col.row(align=True)
-            row.prop(settings, "import_preset_enum", text=T("ui.main_panel.import_preset_label"), icon='IMPORT')
-            op = row.operator("modder.auto_detect_preset", text="", icon='VIEWZOOM')
-            op.attr_name = 'import_preset_enum'
-            op.is_import_x = True
-            row = col.row(align=True)
-            row.prop(settings, "target_preset_enum", text=T("ui.main_panel.target_preset_label"), icon='EXPORT')
-            op = row.operator("modder.auto_detect_preset", text="", icon='VIEWZOOM')
-            op.attr_name = 'target_preset_enum'
-            op.is_import_x = False
-
+            col.prop(settings, "same_kind_align", text=T("ui.main_panel.same_kind_align_label"))
             col.separator()
 
-            # Core actions (with preset-dependency hints)
-            row = col.row(align=True)
-            row.scale_y = 1.2
-            row.prop(settings, "align_mode_override", text="")
-            row.operator("modder.universal_snap", text=T("ui.main_panel.btn_universal_snap"), icon='SNAP_ON')
+            # Same-kind armatures match by bone name, so the preset pipeline and
+            # everything hanging off it is irrelevant here — show only the align row.
+            if settings.same_kind_align:
+                row = col.row(align=True)
+                row.scale_y = 1.2
+                row.prop(settings, "align_mode_override", text="")
+                row.operator("mhw.general_tools",
+                             text=T("ui.main_panel.btn_same_kind_snap"),
+                             icon='SNAP_ON').action = _SAME_KIND_ALIGN_ACTION[settings.align_mode_override]
 
-            row = col.row(align=True)
-            row.scale_y = 1.2
-            row.operator("modder.direct_convert", text=T("ui.main_panel.btn_direct_convert"), icon='MOD_VERTEX_WEIGHT')
+            else:
+                row = col.row(align=True)
+                row.prop(settings, "import_preset_enum", text=T("ui.main_panel.import_preset_label"), icon='IMPORT')
+                op = row.operator("modder.auto_detect_preset", text="", icon='VIEWZOOM')
+                op.attr_name = 'import_preset_enum'
+                op.is_import_x = True
+                row = col.row(align=True)
+                row.prop(settings, "target_preset_enum", text=T("ui.main_panel.target_preset_label"), icon='EXPORT')
+                op = row.operator("modder.auto_detect_preset", text="", icon='VIEWZOOM')
+                op.attr_name = 'target_preset_enum'
+                op.is_import_x = False
 
-            # Experimental features (collapsible)
-            col.separator()
-            row = col.row()
-            row.prop(settings, "show_experimental",
-                     icon="TRIA_DOWN" if settings.show_experimental else "TRIA_RIGHT",
-                     icon_only=True, emboss=False)
-            row.label(text=T("ui.main_panel.experimental_header"), icon='ERROR')
+                col.separator()
 
-            if settings.show_experimental:
-                exp_col = col.column(align=True)
+                # Core actions (with preset-dependency hints)
+                row = col.row(align=True)
+                row.scale_y = 1.2
+                row.prop(settings, "align_mode_override", text="")
+                row.operator("modder.universal_snap", text=T("ui.main_panel.btn_universal_snap"), icon='SNAP_ON')
 
-                exp_col.label(text=T("ui.main_panel.label_skeleton_cleanup"), icon='TOOL_SETTINGS')
-                exp_col.operator("modder.merge_physics_weights", text=T("ui.main_panel.btn_merge_physics_weights"), icon='TRASH')
-                exp_col.operator("modder.remove_non_base_bones", text=T("ui.main_panel.btn_remove_non_base_bones"), icon='X')
-                exp_col.operator("modder.rename_bones_to_target", text=T("ui.main_panel.btn_rename_bones_to_target"), icon='SORTALPHA')
+                row = col.row(align=True)
+                row.scale_y = 1.2
+                row.operator("modder.direct_convert", text=T("ui.main_panel.btn_direct_convert"), icon='MOD_VERTEX_WEIGHT')
 
-                exp_col.separator()
-                exp_col.label(text=T("ui.main_panel.label_physics_chain_tools"), icon='BONE_DATA')
-                exp_col.operator("modder.smart_graft", text=T("ui.main_panel.btn_smart_graft"), icon='BONE_DATA')
-                row = exp_col.row(align=True)
-                row.operator("modder.merge_into_parent", text=T("ui.main_panel.btn_merge_into_parent"), icon='SNAP_MIDPOINT')
-                row.operator("mhw.general_tools", text=T("ui.main_panel.gt_action_add_tail"), icon='RIGID_BODY').action = 'ADD_TAIL'
-                row = exp_col.row(align=True)
-                row.operator("modder.mark_as_main_continue", text=T("ui.main_panel.btn_mark_main_continue"), icon='HANDLE_ALIGNED')
-                row.operator("modder.clear_chain_role", text=T("ui.main_panel.btn_clear_chain_role"), icon='X')
-                exp_col.operator("modder.refresh_physics_bone_colors", text=T("ui.main_panel.btn_refresh_bone_colors"), icon='COLOR')
-                exp_col.separator()
-                row = exp_col.row(align=True)
-                row.label(text=T("ui.main_panel.label_bone_visibility"), icon='HIDE_OFF')
-                row = exp_col.row(align=True)
-                row.operator("modder.set_bone_visibility", text=T("ui.main_panel.bone_view_all"),
-                             depress=(settings.bone_view_mode == 'ALL')).mode = 'ALL'
-                row.operator("modder.set_bone_visibility", text=T("ui.main_panel.bone_view_base"),
-                             depress=(settings.bone_view_mode == 'BASE')).mode = 'BASE'
-                row.operator("modder.set_bone_visibility", text=T("ui.main_panel.bone_view_physics"),
-                             depress=(settings.bone_view_mode == 'PHYSICS')).mode = 'PHYSICS'
+                # Skeleton cleanup (collapsible, closed by default)
+                col.separator()
+                row = col.row()
+                row.prop(settings, "show_skeleton_cleanup",
+                         icon="TRIA_DOWN" if settings.show_skeleton_cleanup else "TRIA_RIGHT",
+                         icon_only=True, emboss=False)
+                row.label(text=T("ui.main_panel.label_skeleton_cleanup"), icon='TOOL_SETTINGS')
 
-            # Mapping detail preview
-            col.separator()
-            row = col.row()
-            row.prop(settings, "show_mapping_details", text=T("ui.main_panel.show_mapping_details_label"),
-                     icon='TRIA_DOWN' if settings.show_mapping_details else 'TRIA_RIGHT',
-                     emboss=False)
+                if settings.show_skeleton_cleanup:
+                    sc_col = col.column(align=True)
+                    sc_col.operator("modder.merge_physics_weights", text=T("ui.main_panel.btn_merge_physics_weights"), icon='TRASH')
+                    sc_col.operator("modder.remove_non_base_bones", text=T("ui.main_panel.btn_remove_non_base_bones"), icon='X')
+                    sc_col.operator("modder.rename_bones_to_target", text=T("ui.main_panel.btn_rename_bones_to_target"), icon='SORTALPHA')
 
-            if settings.show_mapping_details:
-                if arm_obj and arm_obj.type == 'ARMATURE':
-                    if 'AUTO' in (settings.import_preset_enum, settings.target_preset_enum):
-                        col.label(text=T("ui.main_panel.label_mapping_preview_need_preset"), icon='INFO')
+                # Physics chain tools (collapsible, closed by default) — bone
+                # visibility lives here because the three modes filter by
+                # physics vs base bones
+                col.separator()
+                row = col.row()
+                row.prop(settings, "show_physics_chain_tools",
+                         icon="TRIA_DOWN" if settings.show_physics_chain_tools else "TRIA_RIGHT",
+                         icon_only=True, emboss=False)
+                row.label(text=T("ui.main_panel.label_physics_chain_tools"), icon='BONE_DATA')
+
+                if settings.show_physics_chain_tools:
+                    pc_col = col.column(align=True)
+                    pc_col.operator("modder.smart_graft", text=T("ui.main_panel.btn_smart_graft"), icon='BONE_DATA')
+                    row = pc_col.row(align=True)
+                    row.operator("modder.merge_into_parent", text=T("ui.main_panel.btn_merge_into_parent"), icon='SNAP_MIDPOINT')
+                    row.operator("mhw.general_tools", text=T("ui.main_panel.gt_action_add_tail"), icon='RIGID_BODY').action = 'ADD_TAIL'
+                    row = pc_col.row(align=True)
+                    row.operator("modder.mark_as_main_continue", text=T("ui.main_panel.btn_mark_main_continue"), icon='HANDLE_ALIGNED')
+                    row.operator("modder.clear_chain_role", text=T("ui.main_panel.btn_clear_chain_role"), icon='X')
+                    pc_col.operator("modder.refresh_physics_bone_colors", text=T("ui.main_panel.btn_refresh_bone_colors"), icon='COLOR')
+                    pc_col.separator()
+                    row = pc_col.row(align=True)
+                    row.label(text=T("ui.main_panel.label_bone_visibility"), icon='HIDE_OFF')
+                    row = pc_col.row(align=True)
+                    row.operator("modder.set_bone_visibility", text=T("ui.main_panel.bone_view_all"),
+                                 depress=(settings.bone_view_mode == 'ALL')).mode = 'ALL'
+                    row.operator("modder.set_bone_visibility", text=T("ui.main_panel.bone_view_base"),
+                                 depress=(settings.bone_view_mode == 'BASE')).mode = 'BASE'
+                    row.operator("modder.set_bone_visibility", text=T("ui.main_panel.bone_view_physics"),
+                                 depress=(settings.bone_view_mode == 'PHYSICS')).mode = 'PHYSICS'
+
+                # Mapping detail preview
+                col.separator()
+                row = col.row()
+                row.prop(settings, "show_mapping_details", text=T("ui.main_panel.show_mapping_details_label"),
+                         icon='TRIA_DOWN' if settings.show_mapping_details else 'TRIA_RIGHT',
+                         emboss=False)
+
+                if settings.show_mapping_details:
+                    if arm_obj and arm_obj.type == 'ARMATURE':
+                        if 'AUTO' in (settings.import_preset_enum, settings.target_preset_enum):
+                            col.label(text=T("ui.main_panel.label_mapping_preview_need_preset"), icon='INFO')
+                        else:
+                            cache_key = (settings.import_preset_enum, settings.target_preset_enum)
+                            if cache_key not in _mapping_detail_cache:
+                                m_x = BoneMapManager()
+                                m_y = BoneMapManager()
+                                m_x.load_preset(settings.import_preset_enum, is_import_x=True)
+                                m_y.load_preset(settings.target_preset_enum, is_import_x=False)
+                                _mapping_detail_cache.clear()
+                                _mapping_detail_cache[cache_key] = (m_x, m_y)
+                            mapper, mapper_y = _mapping_detail_cache[cache_key]
+
+                            preview_box = col.box()
+                            for group_name, group_data in ui_config.UI_HIERARCHY.items():
+                                g_box = preview_box.box()
+                                g_box.label(text=group_name, icon=group_data['icon'])
+
+                                for sub_name, bones in group_data['subsections'].items():
+                                    sub_col = g_box.column(align=True)
+                                    sub_col.label(text=sub_name)
+
+                                    for std_key in bones:
+                                        if std_key in ui_config.OPTIONAL_BONES:
+                                            if std_key not in mapper_y.mapping_data:
+                                                continue
+
+                                        main_bone, aux_list = mapper.get_matches_for_standard(arm_obj, std_key)
+                                        m_row = sub_col.row(align=True)
+                                        m_row.label(text=f"  {ui_config.get_display_name(std_key)}")
+
+                                        if main_bone:
+                                            status = f"{main_bone}"
+                                            if aux_list: status += f" (+{len(aux_list)})"
+                                            m_row.label(text=status, icon='CHECKMARK')
+                                        else:
+                                            m_row.label(text=T("ui.main_panel.label_missing"), icon='CANCEL')
                     else:
-                        cache_key = (settings.import_preset_enum, settings.target_preset_enum)
-                        if cache_key not in _mapping_detail_cache:
-                            m_x = BoneMapManager()
-                            m_y = BoneMapManager()
-                            m_x.load_preset(settings.import_preset_enum, is_import_x=True)
-                            m_y.load_preset(settings.target_preset_enum, is_import_x=False)
-                            _mapping_detail_cache.clear()
-                            _mapping_detail_cache[cache_key] = (m_x, m_y)
-                        mapper, mapper_y = _mapping_detail_cache[cache_key]
-
-                        preview_box = col.box()
-                        for group_name, group_data in ui_config.UI_HIERARCHY.items():
-                            g_box = preview_box.box()
-                            g_box.label(text=group_name, icon=group_data['icon'])
-
-                            for sub_name, bones in group_data['subsections'].items():
-                                sub_col = g_box.column(align=True)
-                                sub_col.label(text=sub_name)
-
-                                for std_key in bones:
-                                    if std_key in ui_config.OPTIONAL_BONES:
-                                        if std_key not in mapper_y.mapping_data:
-                                            continue
-
-                                    main_bone, aux_list = mapper.get_matches_for_standard(arm_obj, std_key)
-                                    m_row = sub_col.row(align=True)
-                                    m_row.label(text=f"  {ui_config.get_display_name(std_key)}")
-
-                                    if main_bone:
-                                        status = f"{main_bone}"
-                                        if aux_list: status += f" (+{len(aux_list)})"
-                                        m_row.label(text=status, icon='CHECKMARK')
-                                    else:
-                                        m_row.label(text=T("ui.main_panel.label_missing"), icon='CANCEL')
-                else:
-                    col.label(text=T("ui.main_panel.label_select_armature_preview"), icon='INFO')
+                        col.label(text=T("ui.main_panel.label_select_armature_preview"), icon='INFO')
 
         layout.separator()
 
@@ -777,15 +859,16 @@ class MHW_PT_MainPanel(bpy.types.Panel):
         if settings.show_pose_convert:
             col = pose_box.column(align=True)
 
+            # The preset is a hard requirement for these two (they resolve
+            # upperarm/clavicle by standard key); Custom Convert below only uses
+            # it as an optional name bridge and falls back to same-name matching
+            col.label(text=T("ui.main_panel.label_simple_tools"))
             row = col.row(align=True)
             row.prop(settings, "pose_import_preset_enum", text=T("ui.main_panel.pose_preset_field_label"), icon='IMPORT')
             op = row.operator("modder.auto_detect_preset", text="", icon='VIEWZOOM')
             op.attr_name = 'pose_import_preset_enum'
             op.is_import_x = True
-
-            col.separator()
-            col.label(text=T("ui.main_panel.label_simple_tools"))
-            col.operator("modder.tpose_direction", icon='EMPTY_SINGLE_ARROW')
+            col.operator("modder.tpose_direction", text=T("ui.main_panel.btn_tpose_direction"), icon='EMPTY_SINGLE_ARROW')
             col.operator("modder.tpose_matrix_zero", text=T("ui.main_panel.btn_tpose_matrix_zero"), icon='MESH_GRID')
 
             col.separator()
@@ -1092,6 +1175,270 @@ class MHW_OT_MMDFaceWeights(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MHW_OT_CylindricalFaceNormals(bpy.types.Operator):
+    """Replace the selected faces' custom split normals with a cylindrical field,
+the way the shipped face meshes do it (see core/normal_utils.py).
+Unselected faces keep their own normals; the boundary transitions on its own."""
+    bl_idname = "mhw.cylindrical_face_normals"
+    bl_label = "Cylindrical Face Normals"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    origin: bpy.props.EnumProperty(
+        name="Axis Center",
+        items=_face_normal_origin_items,
+        default=0,
+    )
+    only_selected: bpy.props.BoolProperty(
+        name="Selected Faces Only",
+        default=True,
+        description="Only replace the selected faces' normals; unselected faces keep theirs",
+    )
+    smooth_boundary: bpy.props.BoolProperty(
+        name="Boundary Transition",
+        default=True,
+        description="Boundary vertices take the angle-weighted average of both fields",
+    )
+    strength: bpy.props.FloatProperty(
+        name="Strength",
+        default=1.0, min=0.0, max=1.0, subtype='FACTOR',
+        description="1 replaces fully; below 1 falls back toward the original normals",
+    )
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return obj is not None and obj.type == 'MESH'
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("ui.main_panel.fn_cyl_tip")
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=300)
+
+    def draw(self, context):
+        col = self.layout.column()
+        col.prop(self, "origin", text=T("ui.main_panel.fn_field_origin"))
+        col.prop(self, "only_selected", text=T("ui.main_panel.fn_field_only_selected"))
+        col.prop(self, "smooth_boundary", text=T("ui.main_panel.fn_field_smooth_boundary"))
+        # Strength scales the whole result, so it sits last rather than being
+        # read as the strength of whichever option happens to precede it
+        col.separator()
+        col.prop(self, "strength", text=T("ui.main_panel.fn_field_strength"), slider=True)
+
+    def execute(self, context):
+        import numpy as np
+        from ..core import normal_utils
+
+        obj = context.active_object
+        back_to_edit = context.mode == 'EDIT_MESH'
+        if back_to_edit:
+            bpy.ops.object.mode_set(mode='OBJECT')
+        try:
+            me = obj.data
+            if not me.polygons:
+                self.report({'ERROR'}, T("ui.main_panel.fn_err_no_faces"))
+                return {'CANCELLED'}
+
+            if self.only_selected:
+                mask = np.empty(len(me.polygons), bool)
+                me.polygons.foreach_get("select", mask)
+                if not mask.any():
+                    self.report({'ERROR'}, T("ui.main_panel.fn_err_no_selection"))
+                    return {'CANCELLED'}
+            else:
+                mask = None
+
+            if self.origin == 'CURSOR':
+                center = np.array((obj.matrix_world.inverted() @ context.scene.cursor.location)[:])
+            elif self.origin == 'BBOX':
+                co, *_ = normal_utils.mesh_arrays(me)
+                center = (co.min(0) + co.max(0)) * 0.5
+            else:
+                center = None
+
+            n_faces, n_boundary = normal_utils.apply_cylindrical(
+                me, axis=2, center=center, face_mask=mask,
+                smooth_boundary=self.smooth_boundary,
+                strength=self.strength,
+            )
+            self.report({'INFO'}, T("ui.main_panel.fn_info_applied").format(
+                faces=n_faces, verts=n_boundary))
+            # No boundary means nothing was preserved — the ears and the back of
+            # the head get flattened, which is the failure mode of a naive
+            # whole-mesh transfer
+            if n_boundary == 0 and self.only_selected:
+                self.report({'WARNING'}, T("ui.main_panel.fn_warn_all_selected"))
+            return {'FINISHED'}
+        finally:
+            if back_to_edit:
+                bpy.ops.object.mode_set(mode='EDIT')
+
+
+class MHW_OT_ResetFaceNormals(bpy.types.Operator):
+    """Drop the custom split normals and go back to smooth shading, optionally
+welding the vertices that UV/material borders split apart"""
+    bl_idname = "mhw.reset_face_normals"
+    bl_label = "Reset Face Normals"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    weld: bpy.props.BoolProperty(
+        name="Weld Coincident Vertices",
+        default=True,
+        description="Average normals of vertices split apart at UV/material borders",
+    )
+    weld_distance: bpy.props.FloatProperty(
+        name="Distance",
+        default=1e-5, min=0.0, soft_max=1e-3, precision=6, step=0.01,
+        description="Vertices closer than this count as coincident (mesh-local units)",
+    )
+    weld_angle: bpy.props.FloatProperty(
+        name="Angle Limit",
+        default=60.0, min=0.0, max=180.0,
+        description="Only weld normals closer together than this (degrees)",
+    )
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return obj is not None and obj.type == 'MESH'
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("ui.main_panel.fn_reset_tip")
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=300)
+
+    def draw(self, context):
+        col = self.layout.column()
+        col.prop(self, "weld", text=T("ui.main_panel.fn_field_weld"))
+        sub = col.column(align=True)
+        sub.enabled = self.weld
+        sub.prop(self, "weld_distance", text=T("ui.main_panel.fn_field_weld_distance"))
+        sub.prop(self, "weld_angle", text=T("ui.main_panel.fn_field_weld_angle"))
+
+    def execute(self, context):
+        from ..core import normal_utils
+
+        obj = context.active_object
+        back_to_edit = context.mode == 'EDIT_MESH'
+        if back_to_edit:
+            bpy.ops.object.mode_set(mode='OBJECT')
+        try:
+            me = obj.data
+            if not me.polygons:
+                self.report({'ERROR'}, T("ui.main_panel.fn_err_no_faces"))
+                return {'CANCELLED'}
+            n = normal_utils.reset_normals(
+                me, weld=self.weld,
+                weld_distance=self.weld_distance, weld_angle=self.weld_angle)
+            self.report({'INFO'}, T("ui.main_panel.fn_info_reset").format(n=n))
+            return {'FINISHED'}
+        finally:
+            if back_to_edit:
+                bpy.ops.object.mode_set(mode='EDIT')
+
+
+
+class MHW_OT_ApplyModifiersKeepShapeKeys(bpy.types.Operator):
+    """Apply the viewport-enabled modifiers to a mesh that has shape keys,
+rebuilding every key on top of the result (see core/shapekey_utils.py)"""
+    bl_idname = "mhw.apply_modifiers_keep_shape_keys"
+    bl_label = "Apply Modifiers (Keep Shape Keys)"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return (obj is not None and obj.type == 'MESH'
+                and obj.data.shape_keys
+                and len(obj.data.shape_keys.key_blocks) > 1
+                and any(m.show_viewport for m in obj.modifiers))
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("ui.main_panel.amk_tip")
+
+    def execute(self, context):
+        from ..core import shapekey_utils
+
+        obj = context.active_object
+        if context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+        ok, msg_key, fmt = shapekey_utils.check(obj)
+        if not ok:
+            self.report({'ERROR'}, T(msg_key).format(**fmt))
+            return {'CANCELLED'}
+
+        try:
+            mods, keys, verts = shapekey_utils.apply_modifiers_keep_shape_keys(obj)
+        except RuntimeError as exc:
+            self.report({'ERROR'}, str(exc))
+            return {'CANCELLED'}
+
+        self.report({'INFO'}, T("ui.main_panel.amk_done").format(
+            mods=mods, keys=keys, verts=verts))
+        return {'FINISHED'}
+
+
+class MHW_OT_SeparateByMaterials(bpy.types.Operator):
+    """Split the selected meshes into one object per material, then tidy up the
+shape keys and vertex groups each fragment inherited (see core/mesh_utils.py)"""
+    bl_idname = "mhw.separate_by_materials"
+    bl_label = "Separate by Materials"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    rename: bpy.props.BoolProperty(
+        name="Rename to Material", default=True,
+        description="Name each fragment after the material that defined it")
+    prune_keys: bpy.props.BoolProperty(
+        name="Prune Dead Shape Keys", default=True,
+        description="Remove shape keys that no longer move anything on the fragment")
+    prune_groups: bpy.props.BoolProperty(
+        name="Prune Empty Vertex Groups", default=True,
+        description="Remove vertex groups nothing in the fragment is weighted to")
+    clean_suffix: bpy.props.BoolProperty(
+        name="Strip Material .001 Suffix", default=True,
+        description="Rename mat.001 back to mat before naming the fragments after it")
+
+    @classmethod
+    def poll(cls, context):
+        return any(o.type == 'MESH' for o in context.selected_objects)
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("ui.main_panel.sbm_tip")
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=320)
+
+    def draw(self, context):
+        col = self.layout.column()
+        col.prop(self, "rename", text=T("ui.main_panel.sbm_field_rename"))
+        if self.rename:
+            col.prop(self, "clean_suffix", text=T("ui.main_panel.sbm_field_clean_suffix"))
+        col.prop(self, "prune_keys", text=T("ui.main_panel.sbm_field_prune_keys"))
+        col.prop(self, "prune_groups", text=T("ui.main_panel.sbm_field_prune_groups"))
+
+    def execute(self, context):
+        from ..core import mesh_utils
+
+        objects = [o for o in context.selected_objects if o.type == 'MESH']
+        n, keys, groups = mesh_utils.separate_by_materials(
+            context, objects,
+            rename=self.rename, prune_keys=self.prune_keys,
+            prune_groups=self.prune_groups,
+            clean_suffix=self.clean_suffix and self.rename)
+        if not n:
+            self.report({'ERROR'}, T("ui.main_panel.sbm_no_mesh"))
+            return {'CANCELLED'}
+        self.report({'INFO'}, T("ui.main_panel.sbm_done").format(
+            n=n, keys=keys, groups=groups))
+        return {'FINISHED'}
+
+
 _RENAMED_VG_PATTERN = re.compile(r'^(.+)\.\d{3}$')
 
 
@@ -1149,6 +1496,10 @@ classes = [
     MHW_OT_GeneralTools,
     MHW_OT_ShapeKeyToWeights,
     MHW_OT_MMDFaceWeights,
+    MHW_OT_CylindricalFaceNormals,
+    MHW_OT_ResetFaceNormals,
+    MHW_OT_ApplyModifiersKeepShapeKeys,
+    MHW_OT_SeparateByMaterials,
     MHW_OT_SetChannelSize,
     MHW_OT_SetShaderSource,
     MHW_OT_MergeRenamedVGroups,
