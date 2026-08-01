@@ -2,91 +2,138 @@
 
 [中文说明见下方](#中文说明)
 
-A comprehensive Blender toolkit for game modding. Supports Capcom's games and more.
+A comprehensive Blender toolkit for game modding. Primarily targets several Capcom titles, with partial support for others.
 
 **Supported Blender Versions**: 4.x (recommended 4.3+)
 
 ---
 
-## Supported Games
-* Monster Hunter World: Iceborne
-* Monster Hunter Rise: Sunbreak
-* Monster Hunter Wilds
-* Resident Evil 4: Remake
-* Resident Evil: Requiem
-* Street Fighter 6
-* Devil May Cry 5
-* Helldivers 2
+## Fully Supported Games
+
+These games have a dedicated module.
+
+* Monster Hunter World: Iceborne (MHWI)
+* Monster Hunter Rise: Sunbreak (MHRS)
+* Monster Hunter Wilds (MHWs)
+* Resident Evil 4 Remake (RE4R)
+* Resident Evil: Requiem (RE9)
+
+## Basic Support
+
+These games can only use the most general-purpose tools.
+
+* Street Fighter 6 (SF6)
+* Devil May Cry 5 (DMC5)
+* Helldivers 2 (HD2)
 
 ## Core Features
 
-### 1. Universal Skeleton Converter
-Convert any source model to any target game format using customizable JSON presets.
+### 1. Skeleton & Mesh Convert
+Convert any source model into any target game's format by aligning the skeleton and renaming vertex groups, driven by customizable JSON presets.
 
 * **X → Y Architecture**: Define your source (X) and target (Y) freely.
-    * **Source (X)**: VRChat, MMD, Endfield, or any custom ripped model.
-    * **Target (Y)**: MHWI, MHW: Wilds, RE4 Remake, Street Fighter 6, etc.
-* **Bone Snap** [X+Y, dual armature]: Align your model's skeleton to the target game's skeleton.
-* **Direct Convert** [X+Y]: Rename vertex groups directly on the mesh.
-* **Fuzzy Bone Matching**: Normalizes separator characters (`_`, `.`, space) when matching bone names, so preset-driven operations work regardless of naming style variations in the source.
-* **Experimental - Physics Bone Graft** [X+Y, dual armature]: Transplants physical bones from the source skeleton to the target skeleton, handles directional twists, automatically generates end bones, and colors chain-head bones for easy identification.
-* **Experimental Feature - Physics Weight Downgrade** [X]: Merges physics weights onto the nearest body bone for scenarios where physics are unnecessary or unavailable.
+    * **Source (X)**: any of the games above, VRChat, MMD, Endfield, Granblue Fantasy, or any preset you create yourself.
+    * **Target (Y)**: any of the games above, or any preset you create yourself.
+* Fuzzy bone-name matching: separators (`_`, `.`, space) are normalized when matching bone names, so preset-driven operations are unaffected by naming style differences in the source.
+* **Bone Align** [X+Y, dual armature]: aligns the model's skeleton to the target game's skeleton. The dropdown to the left of the button picks the align mode (Position Only / Position + Roll / Full Align); switching the target (Y) preset syncs it to that preset's default mode, which you can still override by hand.
+* Align modes: **Position Only** moves the head and preserves the original direction; **Position + Roll** also copies the roll value; **Full Align** copies head, tail and roll.
+* **Same-Kind Bone Align**: tick this when both armatures are already the same kind — bones are matched by name and no preset is needed. Ticking it leaves only the align action in this section.
+* **Rename Vertex Groups** [X+Y]: renames vertex groups directly on the mesh.
+* **Non-Physics Workflow tools**: mainly for getting rid of physics bones and weights — physics weight downgrade, remove physics bones, rename base bones.
+* **Physics Workflow tools**: mainly for transplanting physics bones from source to target (specialised for MT Framework and RE Engine) plus the bone-marking utilities around it, so the one-click physics creation in the fully supported games is easier to use.
 
 ### 2. Pose Convert
 A standalone pose transformation system, independent of the skeleton converter.
 
-* **Direction Calc**: Simple tool to rotate upper arms to horizontal (A-pose → T-pose for basic cases).
-* **RE Engine Matrix Zero**: Reset limb bone rotation matrices for all RE Engine games (MH Wilds, SF6, RE4, etc.).
-* **Pose Transform Recorder**: Record the relative rotation transform between two poses of the same skeleton type, then apply forward (A→B) or inverse (B→A) to any skeleton of that type.
-    * Record once, use forever — no need to keep reference armatures in the scene.
-    * JSON-based storage in `assets/presets/pose/`, preserved across addon updates.
+* **Direction Calc**: a simple tool that only rotates the upper arms to horizontal, intended for MMD-style models.
+* **RE Engine Matrix Zero**: resets limb bone rotation matrices on RE Engine skeletons (Wilds / SF6 / RE4, etc.).
+* **Pose Transform Recorder**: records the relative rotation between two poses of the same skeleton type, then applies it forward (A→B) or inverse (B→A) to any skeleton of that type.
+    * Record once, use forever — no need to keep a reference armature in the scene every time.
+    * Stored as JSON under `assets/presets/pose/`; addon updates do not remove existing records.
 
 ### 3. Visual Preset Editor
-A built-in GUI editor to create custom bone mappings without writing code.
-* Pick & click bone assignment from the 3D viewport.
-* Batch auxiliary bone adding.
-* Smart mirror: auto-generate Right-side mappings from the Left side.
-* Grouped category dropdown for large preset libraries.
+A built-in GUI editor for creating custom bone mappings without writing code.
+* Pick bones by clicking them in the 3D viewport.
+* Batch-add auxiliary bones.
+* Smart mirror: generates the right-side mapping from the left automatically. If mirroring fails, pick the bone manually.
+* Category-grouped preset dropdown, for managing large preset libraries.
 
-### 4. General Utilities
-* Roll Zero, Add Tail Bone, Mirror X.
-* **Bone Chain Simplification**: Reduce chain density with configurable keep-ratio; includes a Merge To Active action that merges selected bones into the active bone.
-* **General Align Tools**: Align any armature's bones to a reference armature by name.
-    * **Full mode** copies head, tail, and roll; **Position-only mode** moves the head while preserving the original bone direction.
-* **Three-state Bone Visibility Toggle**: Cycle bones between visible / hidden / hidden+unselectable.
+### 4. General Basic Tools
+* Zero Roll, Add Tail Bone, Mirror Align X.
+* **Bone & Weight Merge**: merging bones merges their weights too. This covers every mesh bound to the armature through an Armature modifier, plus meshes that are not bound but are children of the armature and carry a vertex group named after a bone being deleted.
+    * **Merge Bones into Active Bone**: bone level — the other selected bones are merged into the last one clicked.
+    * **Simplify Selected Chains** / **Merge Chains into Active Chain**: chain level. The former pairs bones up to reduce chain density (an unweighted tail bone at the end of a chain is skipped automatically); the latter merges several chains bone-by-bone by position.
+* **Cylindrical Face Normals (Toon)**: replaces the selected faces' custom normals with a cylindrical field, reproducing how anime-stylised face meshes are shaded — normals point horizontally away from the vertical axis, flattening out the shading relief of the nose and lips and leaving only a left-to-right light falloff. Unselected faces (ears, back of the head, under the jaw) keep their own normals, and the boundary transitions on its own through angle-weighted vertex averaging.
+* **Reset Face Normals**: resets face normals back to smooth shading, and can weld the coincident vertices that UV / material borders split apart, removing the normal seams those cuts leave behind.
+* **Apply Modifiers to Meshes with Shape Keys**: applies modifiers directly without disturbing the mesh's shape keys. Only for modifiers that do not change topology.
+* **Separate by Materials**: splits the selected meshes into one object per material, cleans up the shape keys and vertex groups, and renames each fragment after its material.
+* **Texture Processing**: outputs either **DDS** or the `.tex` files some games need directly.
+    * Output size readout: the final output size is shown at the bottom of the panel, turning red with a warning when it is not a power of two (non-power-of-two textures can crash the game).
+    * Resize output: the size can be entered by hand. The recommended default snaps to the nearest power of two when it is within 15%, and rounds up to the next one otherwise.
+* **Drag an Image in to Convert to DDS**: drop an image into the viewport and pick "Convert to DDS" from the menu. Every file is listed with its own DXGI format dropdown and converted in one batch. A filename whose purpose cannot be identified falls back to **BC7 sRGB**.
 
 ### 5. Game-Specific Modules
 
-#### MHWI (Iceborne)
-* Non-physics bone alignment tool.
+**Some features in these modules depend on the following addons; installing them is recommended**:
+* [MHW Model Editor](https://github.com/NSACloud/RE-Mesh-Editor)
+* [RE Mesh Editor](https://github.com/NSACloud/RE-Mesh-Editor)
+* [RE Chain Editor](https://github.com/NSACloud/RE-Mesh-Editor)
 
-#### MHWilds (Monster Hunter Wilds)
-* Endfield face vertex group rename (Endfield → MHWilds format).
-* Face weight simplification (merge detailed facial bones to main control bones).
-* **Armor Batch Exporter**: Export mesh / MDF2 / Chain2 / CLSP files for all 5 armor parts (arm, body, helmet, leg, waist) in one click.
-    * Armor sets defined in JSON packs under `assets/mhws/armor_sets/`.
-    * 4 armor variants (male-male, male-female, female-male, female-female) with independent armor IDs and base paths.
-    * `parts_mask` support in JSON to skip non-existent parts without manual binding.
-    * Collection bindings shared across variants — configure once, export all.
-* **MDF2 + Tex Semi-Auto Processor**: Batch-update texture binding paths in an MDF2 collection and convert source images to game-ready `.tex` files in a single operation.
+#### Monster Hunter World: Iceborne (MHWI)
+* Batch import & export
+* Align non-physics bones
+* MMD shape keys to facial weights
+* Set mesh display condition
+* Convert selected objects to packed shader: a custom packed shader
+* Material processor / generator
+* Split physics bones
+* One-click rename
+* One-click Chain creation
+
+#### Monster Hunter Wilds (MHWS)
+* **Armor Batch Exporter**: export the files for all 5 parts (arm / body / helmet / leg / waist) in one click.
+    * Supports the 4 armor variants (male hunter male set / male hunter female set / female hunter male set / female hunter female set)
+    * Complete armor sets
+    * Tells you which file types each piece of armor supports
+    * Optionally substitutes a blank file for slots with no collection bound
+    * Supports BoneSystem standalone bones
+    * Triangulate face meshes before export: avoids the shading break RE Mesh produces when exporting face meshes (the "blotchy face" problem).
+* **MDF2 + Tex Semi-Auto Processor**: batch-updates the texture binding paths in an MDF2 collection and converts the source images into game-ready `.tex` files in one step.
     * Per-material PBR inputs (Albedo / Alpha / Normal / Roughness / Metallic / AO / Emissive).
-    * Per-slot modes: **COMPOSE** (channel-pack from PBR inputs), **DIRECT** (pick any image / DDS / TEX), **DEFAULT** (write game null-tex path), **SKIP** (leave unchanged).
-    * Channel selector (R/G/B/A) + invert toggle for single-channel inputs (e.g. smoothness→roughness, dielectric→metallic).
-    * **GL→DX normal flip**: toggle per-material; G-channel inversion is applied at process time together with other channel compositing, not as a separate step.
-    * Auto-detects existing null-texture paths on refresh and sets DEFAULT.
-    * Copy / paste material configuration between materials.
-    * Per-collection state persistence — switching between MDF2 collections preserves each collection's configuration independently.
-    * Output: BC7_UNORM_SRGB for color/emissive slots, BC7_UNORM for linear slots.
-* **Blank File Export**: when exporting, any slot with no collection bound can automatically copy a built-in blank file (mesh / MDF2 / Chain2 / CLSP) to the target path instead of being skipped.
-* **One-Click RE Chain Creation**: Detects chain-head bones by color, shows a collection picker, then auto-creates Chain Settings + Chain Group for each chain via RE Chain Editor. Supports per-chain independent Settings or a single shared Settings for all chains.
-* **BoneSystem Export**: Generates the `.fbxskel.7` file and `reframework/data/BoneSystem/{id}.json` configuration used by the BoneSystem REFramework script. Integrated into the batch exporter panel.
+    * Per-slot modes: **PBR Compose** (channel-pack from the PBR inputs), **Direct** (pick any image / DDS / TEX), **Default Null Texture** (write the game's null-texture path), **Skip** (leave the existing path alone).
+    * Single-channel inputs support a channel selector (R/G/B/A) and invert (e.g. smoothness→roughness, dielectric→metallic).
+    * **GL→DX normal flip**: a per-material toggle; the G-channel flip is applied during processing together with the other channel compositing, so it needs no separate step.
+    * Existing null-texture paths are detected on refresh and set to "Default Null Texture" mode.
+    * Material configuration can be copied and pasted.
+    * State is persisted per collection — switching between MDF2 collections keeps each one's configuration independently.
+* **One-Click RE Chain Creation**: detects chain-head bones by colour, shows a collection picker, then calls RE Chain Editor to create Chain Settings and a Chain Group for every chain. Three modes: independent Settings per chain, one shared Settings for all chains, or automatic grouping by chain name with parameters applied per group.
+* One-click import and align a Wilds model
+* Optimize Wilds skeleton
+* Optimize auxiliary bones and weights
+* MMD shape keys to facial weights
+* One-click add facial bones
 
-#### RE4 Remake / RE: Requiem (RE9)
-* Synchronize child bone orientations.
-* **Batch Exporter** (requires RE Mesh Editor plugin): Export mesh / MDF2 / SFUR / Chain2 / CLSP in bulk from JSON-defined schemes. Supports both RE9 and RE4 scheme formats.
-    * Simplified mode available: bind one collection per group instead of per entry, with "empty" entries handled automatically.
-    * Blank file export option: unset slots copy built-in blank files instead of being skipped. In simplified mode, "empty" entries use blank files directly without requiring a manual collection binding.
-* **MDF2 + Tex Processor**: same feature set as the MHWilds version, adapted for RE9 texture paths and version numbers.
+#### Monster Hunter Rise: Sunbreak (MHRS)
+* Batch export
+* Material & texture processor / generator
+* One-click RE Chain creation
+
+#### Resident Evil 4 Remake / Resident Evil: Requiem (RE4R / RE9)
+* Batch exporter
+    * Simplified mode supported: bind collections per group instead of configuring every entry.
+* Material & texture processor / generator
+* Generate fake bones
+* MMD shape keys to facial weights
+* One-click add facial bones
+* One-click RE Chain creation
+
+#### Resident Evil 4 Remake / Resident Evil: Requiem (RE4R / RE9)
+* Batch exporter
+* Sync child orientation and roll
+* MMD shape keys to facial weights
+* One-click add facial bones
+* Material & texture processor / generator
+* One-click RE Chain creation
 
 ---
 
@@ -97,7 +144,6 @@ A built-in GUI editor to create custom bone mappings without writing code.
 3. Click **Install**, select the ZIP, and enable **Modding Toolkit**.
 
 ---
-
 <a id="中文说明"></a>
 # 中文说明
 
