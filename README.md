@@ -181,7 +181,7 @@ A built-in GUI editor for creating custom bone mappings without writing code.
     * **目标 (Y)**: 上述支持的游戏，或任何自行创建的预设。
 * 模糊骨骼名匹配: 在匹配骨骼名时自动归一化分隔符（`_`、`.`、空格），使预设驱动的操作不受来源骨骼命名风格差异影响。
 * **骨骼对齐** [X+Y, 双骨架]: 将模型骨架对齐到目标游戏骨架。可在按钮左侧的下拉栏中选择对齐模式（仅位置 / 位置+扭转 / 完全对齐），切换目标 (Y) 预设时会自动同步为该预设定义的默认模式，之后仍可手动改选。
-* 对齐模式：；**仅位置**只移动头部，保留原有方向；**位置+扭转**同时复制扭转值；**完全对齐**同时复制头部、尾部和 Roll。
+* 对齐模式：**仅位置**只移动头部，保留原有方向；**位置+扭转**同时复制扭转值；**完全对齐**同时复制头部、尾部和 Roll。
 * **同种类骨骼对齐**: 两个骨架本就是同一种类时勾选，按骨骼名直接匹配，不需要预设。勾选后本区域只保留对齐功能。
 * **重命名顶点组** [X+Y]: 直接在网格上重命名顶点组。
 * **非物理流程工具组**: 主要是消除物理骨骼/权重相关的功能，有物理权重降级、剔除物理骨骼、基础骨骼改名。
@@ -220,9 +220,9 @@ A built-in GUI editor for creating custom bone mappings without writing code.
 ### 5. 游戏专用模块
 
 **这些模块部分功能依赖以下插件，建议安装**：
-* [MHW Model Editor](https://github.com/NSACloud/RE-Mesh-Editor)
+* [MHW Model Editor](https://github.com/chikichikibangbang/MHW_Model_Editor)
 * [RE Mesh Editor](https://github.com/NSACloud/RE-Mesh-Editor)
-* [RE Chain Editor](https://github.com/NSACloud/RE-Mesh-Editor)
+* [RE Chain Editor](https://github.com/NSACloud/RE-Chain-Editor)
 
 #### 怪猎世界冰原 (MHWI)
 * 批量导入&导出
@@ -263,7 +263,7 @@ A built-in GUI editor for creating custom bone mappings without writing code.
 * 材质&贴图处理器/生成器
 * 一键创建 RE Chain
 
-#### 生化危机4重制版 / 生化危机：镇魂曲 (RE4R / RE9)
+#### 生化危机4重制版 (RE4R)
 * 批量导出工具
     * 支持简化模式：按组绑定集合，无需逐条目配置。
 * 材质&贴图处理器/生成器
@@ -272,7 +272,7 @@ A built-in GUI editor for creating custom bone mappings without writing code.
 * 一键添加表情骨
 * 一键创建 RE Chain
 
-#### 生化危机4重制版 / 生化危机：镇魂曲 (RE4R / RE9)
+#### 生化危机：镇魂曲 (RE9)
 * 批量导出工具
 * 同步子级朝向及扭转
 * MMD形态键转表情权重
