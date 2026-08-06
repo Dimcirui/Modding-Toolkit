@@ -5,6 +5,8 @@ import shutil
 
 from ...core.i18n import T
 from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
+from ...core import console_export
+from ...core import export_prep
 
 
 def _get_export_schemes_dir():
@@ -163,6 +165,11 @@ class RE4_OT_BatchExport(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
+        show_console = console_export.get_preferences(context).show_console_on_batch_export
+        with console_export.kept_open_for_export(show_console):
+            return self._execute_with_triangulation(context)
+
+    def _execute_with_triangulation(self, context):
         # Triangulation rides on the modifier stack: RE Mesh Editor exports
         # evaluated geometry, so the mesh data is never touched and the
         # modifiers come off again even if the export raises.

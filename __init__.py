@@ -49,9 +49,25 @@ class MT_Preferences(AddonPreferences):
         name='Minutes', description="Number of minutes between checking for updates",
         default=0, min=0, max=59
     )
-    
+
+    show_console_on_batch_export: BoolProperty(
+        name="Show Console During Batch Export",
+        description=(
+            "Opens the system console before a batch export and leaves it open "
+            "afterward, so progress and per-file errors can be watched live.\n"
+            "Windows only. If RE Mesh Editor's or MHW Model Editor's own 'Show "
+            "Console' option is also enabled, it is temporarily disabled during "
+            "the batch so it doesn't re-toggle (and hide) the console mid-export.\n"
+            "Like those addons, this uses Blender's console_toggle(), which can't "
+            "detect whether the console is already open -- if it's already open "
+            "when the batch starts, this will close it instead"
+        ),
+        default=False,
+    )
+
     def draw(self, context):
         layout = self.layout
+        layout.prop(self, "show_console_on_batch_export")
         addon_updater_ops.update_settings_ui(self, context)
 
 

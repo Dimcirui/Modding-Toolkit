@@ -6,6 +6,8 @@ import shutil
 
 from ..re9.batch_export import _do_export_mesh, _do_export_mdf2, _do_export_chain2, _do_export_clsp
 from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
+from ...core import console_export
+from ...core import export_prep
 from ...core.i18n import T
 
 # MHWs 游戏级文件后缀常量
@@ -366,6 +368,11 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
                 obj.select_set(False)
 
     def execute(self, context):
+        show_console = console_export.get_preferences(context).show_console_on_batch_export
+        with console_export.kept_open_for_export(show_console):
+            return self._execute_with_triangulation(context)
+
+    def _execute_with_triangulation(self, context):
         # Triangulation rides on the modifier stack: RE Mesh Editor exports
         # evaluated geometry, so the mesh data is never touched and the
         # modifiers come off again even if the export raises.

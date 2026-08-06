@@ -5,6 +5,7 @@ import shutil
 
 from ...core.i18n import T
 from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
+from ...core import console_export
 from .weapon_data import (
     WEAPON_FILE_TYPES,
     get_weapon_parts,
@@ -790,6 +791,11 @@ class MHWI_OT_BatchExport(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
+        show_console = console_export.get_preferences(context).show_console_on_batch_export
+        with console_export.kept_open_for_export(show_console):
+            return self._execute(context)
+
+    def _execute(self, context):
         scene    = context.scene
         settings = scene.mhw_suite_settings
 
