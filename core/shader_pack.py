@@ -77,6 +77,18 @@ SLOT_SUPPLIES_KEY = "mtk_slot_supplies"
 # the pair lines up one-to-one with an Image Texture node's Color/Alpha outputs.
 ALPHA_SUFFIX = " Alpha"
 
+# Set by MTK_OT_ConvertToPackedShader (core/shader_ops.py) on the group
+# *instance* it creates -- not the shared group datablock, since every
+# material gets its own instance even when several share one node group.
+# Records which MDF preset this conversion resolved to (an absolute path,
+# either a bundled prefab or an external RE Mesh Editor preset the user
+# picked) and whether that resolution is locked to the bundled prefab
+# (True) or just a pre-filled, still user-editable external pick (False).
+# core.mdf_generator_base reads these before falling back to its own
+# name-based guess_best_preset().
+PRESET_PATH_KEY   = "mtk_preset_path"
+PRESET_LOCKED_KEY = "mtk_preset_locked"
+
 _COL_STEP = 240
 _ROW_STEP = 190
 
@@ -148,6 +160,12 @@ class ShaderPackSpec:
     pbr: tuple
     slots: tuple
     wire: object            # callable(ShaderPackBuilder) -> None
+    #: Filename (relative to this spec's game's bundled preset directory,
+    #: e.g. assets/mdf_presets/mhws/) of the MDF material preset this spec
+    #: implies -- choosing this spec at conversion time is choosing this
+    #: preset too, so the generator can read it back instead of guessing from
+    #: the Blender material's name. None for specs with no such mapping yet.
+    preset_filename: str = None
 
 
 # ── Build helpers handed to a spec's wire() ───────────────────────────────────

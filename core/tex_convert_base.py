@@ -125,18 +125,59 @@ def guess_dxgi_format(filepath):
 _PRESET_SETTINGS = {
     'COLOR':    ('BC7_UNORM_SRGB', True),
     'NONCOLOR': ('BC7_UNORM',      True),
+    # Same format/mipmap combo as NONCOLOR -- differs from it only in the extra
+    # hemi-octahedral encode step _compose_channels applies to G/A, see
+    # _preset_needs_octahedral_encode. One entry for both NRRO and NRRC: the
+    # encode is identical either way, and this tool has no PBR semantics to
+    # tell them apart by anyway -- R/B are just whatever the user wires up
+    # (single-image passthrough, or their own RGB_A/RGBA channel picks), same
+    # as every other preset here.
+    'NRRO':     ('BC7_UNORM',      True),
     # UI art and decals are sampled at a fixed on-screen size, so mips would only
     # blur them — REE's "UI (compressed)" preset strips them for the same reason.
     'UI':       ('BC7_UNORM_SRGB', False),
 }
 
+#: Every game whose normal-roughness slots use the hemi-octahedral G/A packing
+#: (see core.mdf_tex_processor_base.NORMAL_OCTAHEDRAL_SLOT_TYPES) -- shared by
+#: MHWS/MHRS/RE4/RE9's BASE_SLOT_CHANNEL_MAPS. MHWI's MRL3 slots never pack a
+#: normal this way, so it keeps the plain "Non-Color / Normal Map" preset and
+#: never offers NRRO. 'DDS' (no specific game) offers it too: the encoding is
+#: a property of which shader will read the texture, not of whether this tool
+#: also wraps the result in a .tex container.
+_OCTAHEDRAL_TARGET_GAMES = {'DDS', 'MHWS', 'MHRS', 'RE4', 'RE9'}
+
+
+def _preset_needs_octahedral_encode(preset):
+    return preset == 'NRRO'
+
 
 def get_preset_items(self=None, context=None):
+    """Fixed shape/order regardless of target -- only the NONCOLOR entry's
+    label text varies. A dynamic EnumProperty's current value is stored as an
+    index into whatever this returns, not as the string key, so changing the
+    *count* of items when target changes would have Blender silently
+    reinterpret a stale index as a different entry the moment target updates
+    (observed: picking NRRO under MHWS, then switching target to MHWI, landed
+    on UI -- the item that happened to share NRRO's index in the shorter
+    MHWI-shaped list -- with no update callback firing to catch it, since
+    nothing was actually re-*assigned*). NRRO stays selectable even for MHWI
+    as the lesser problem: its own label already names the RE Engine slots
+    it's for, which is enough signal, and a user's mistake there is silently
+    wrong pixels, not a silently wrong format/mipmap combo.
+    """
+    if getattr(self, 'target', 'DDS') in _OCTAHEDRAL_TARGET_GAMES:
+        noncolor = ('NONCOLOR', T("core.tex_convert_base.preset_noncolor_nrmr"),
+                               T("core.tex_convert_base.preset_noncolor_nrmr_desc"))
+    else:
+        noncolor = ('NONCOLOR', T("core.tex_convert_base.preset_noncolor"),
+                               T("core.tex_convert_base.preset_noncolor_desc"))
     return [
-        ('COLOR',    T("core.tex_convert_base.preset_color"),    T("core.tex_convert_base.preset_color_desc")),
-        ('NONCOLOR', T("core.tex_convert_base.preset_noncolor"), T("core.tex_convert_base.preset_noncolor_desc")),
-        ('UI',       T("core.tex_convert_base.preset_ui"),       T("core.tex_convert_base.preset_ui_desc")),
-        ('CUSTOM',   T("core.tex_convert_base.preset_custom"),   T("core.tex_convert_base.preset_custom_desc")),
+        ('COLOR', T("core.tex_convert_base.preset_color"), T("core.tex_convert_base.preset_color_desc")),
+        noncolor,
+        ('NRRO', T("core.tex_convert_base.preset_nrro"), T("core.tex_convert_base.preset_nrro_desc")),
+        ('UI',     T("core.tex_convert_base.preset_ui"),     T("core.tex_convert_base.preset_ui_desc")),
+        ('CUSTOM', T("core.tex_convert_base.preset_custom"), T("core.tex_convert_base.preset_custom_desc")),
     ]
 
 
@@ -163,6 +204,8 @@ def _on_format_or_mips_update(self, context):
         return
     if _PRESET_SETTINGS.get(self.preset) != (self.format, self.generate_mipmaps):
         self.preset = 'CUSTOM'
+
+
 
 
 def _apply_guess(settings, filepath):
@@ -269,9 +312,19 @@ def _on_resize_toggle(self, context):
 # ── Channel composition (generic 2-source version of mdf_tex_processor_base's
 # _compose_channels — that one is keyed by PBR type name, this one by 'A'/'B') ─
 
-def _compose_channels(channel_map, path_a, path_b, out_dir, name_hint):
+def _compose_channels(channel_map, path_a, path_b, out_dir, name_hint, encode_octahedral=False):
     """channel_map: {'R': (src_key, ch_idx, invert), ...}
-    src_key: 'A' | 'B' | 'CONST0' | 'CONST1'."""
+    src_key: 'A' | 'B' | 'CONST0' | 'CONST1'.
+
+    encode_octahedral: after composing, run the G/A channels through
+    core.re_normal_pack.encode_normal_ga -- R and B pass through untouched
+    (roughness and AO/cavity respectively for NRRO/NRRC). Always applied when
+    True, with no attempt to detect an already-encoded source: the transform
+    is a smooth reparameterization of the same 2D disk with no structural
+    signature to detect, and a source that's already packed is rare enough
+    (it could only come from unpacking an existing NRRO/NRRC texture) that
+    guessing wrong is a worse default than always encoding.
+    """
     import numpy as np
 
     sources = {}
@@ -324,6 +377,12 @@ def _compose_channels(channel_map, path_a, path_b, out_dir, name_hint):
         if invert:
             data = 1.0 - data
         result[:, :, oi] = data
+
+    if encode_octahedral:
+        from .re_normal_pack import encode_normal_ga
+        g = result[:, :, _CH['G']]
+        a = result[:, :, _CH['A']]
+        result[:, :, _CH['G']], result[:, :, _CH['A']] = encode_normal_ga(g, a)
 
     out_path = os.path.join(out_dir, f"{name_hint}_composed.png")
     tmp_out = "__tex_convert_out"
@@ -696,6 +755,7 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
             out_path = os.path.join(os.path.dirname(src_a), default_filename)
 
         temp_dir = tempfile.mkdtemp(prefix="tex_convert_")
+        encode_octahedral = _preset_needs_octahedral_encode(s.preset)
 
         try:
             if s.channel_mode == 'SINGLE':
@@ -709,9 +769,13 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
                         if not working:
                             self.report({'ERROR'}, T("core.tex_convert_base.detail_blend_failed"))
                             return {'CANCELLED'}
-                if s.src_a_invert:
-                    channel_map = {c: ('A', i, True) for c, i in _CH.items()}
-                    png_path = _compose_channels(channel_map, working, "", temp_dir, "tex_convert")
+                # The encode step needs to run through _compose_channels even
+                # when nothing else does -- an un-inverted passthrough would
+                # otherwise just reuse `working` as-is (see the else branch).
+                if s.src_a_invert or encode_octahedral:
+                    channel_map = {c: ('A', i, s.src_a_invert) for c, i in _CH.items()}
+                    png_path = _compose_channels(channel_map, working, "", temp_dir, "tex_convert",
+                                                 encode_octahedral=encode_octahedral)
                 else:
                     png_path = working
             elif s.channel_mode == 'RGB_A':
@@ -719,7 +783,8 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
                     'R': ('A', 0, s.src_a_invert), 'G': ('A', 1, s.src_a_invert),
                     'B': ('A', 2, s.src_a_invert), 'A': ('B', 0, s.src_b_invert),
                 }
-                png_path = _compose_channels(channel_map, src_a, src_b, temp_dir, "tex_convert")
+                png_path = _compose_channels(channel_map, src_a, src_b, temp_dir, "tex_convert",
+                                             encode_octahedral=encode_octahedral)
             else:  # RGBA
                 channel_map = {}
                 for ch in ('R', 'G', 'B', 'A'):
@@ -729,7 +794,8 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
                               else s.src_b_invert if src_key == 'B'
                               else False)
                     channel_map[ch] = (src_key, _CH[getattr(s, f"ch_{key}_channel")], invert)
-                png_path = _compose_channels(channel_map, src_a, src_b, temp_dir, "tex_convert")
+                png_path = _compose_channels(channel_map, src_a, src_b, temp_dir, "tex_convert",
+                                             encode_octahedral=encode_octahedral)
 
             if not png_path:
                 self.report({'ERROR'}, T("core.tex_convert_base.channel_compose_failed"))
@@ -870,11 +936,87 @@ class MT_FH_TexDropToDDS(bpy.types.FileHandler):
         return context.area and context.area.type in {'VIEW_3D', 'IMAGE_EDITOR', 'OUTLINER'}
 
 
+# ── Drag & drop: batch decode dropped DDS to PNG ────────────────────────────
+# A second FileHandler claiming .dds alongside MT_FH_TexDropToDDS above — Blender
+# shows both as options in the drop chooser instead of picking one. No per-file
+# format choice is needed here (decoding always targets plain R8G8B8A8), so this
+# skips tex_drop_items and just lists the file names for confirmation.
+
+class MT_OT_TexDropToPNG(bpy.types.Operator):
+    """Decode the dropped DDS to PNG (stored bytes only, no gamma conversion)"""
+    bl_idname = "mt.tex_drop_to_png"
+    bl_label = "Convert to PNG"
+    bl_options = {'REGISTER'}
+
+    directory: bpy.props.StringProperty(subtype='DIR_PATH', options={'SKIP_SAVE', 'HIDDEN'})
+    files: bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement,
+                                        options={'SKIP_SAVE', 'HIDDEN'})
+    filepath: bpy.props.StringProperty(subtype='FILE_PATH', options={'SKIP_SAVE', 'HIDDEN'})
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.tex_convert_base.drop_png_desc")
+
+    def _paths(self):
+        if self.files and self.directory:
+            return [os.path.join(self.directory, f.name) for f in self.files if f.name]
+        return [self.filepath] if self.filepath else []
+
+    def invoke(self, context, event):
+        if not self._paths():
+            self.report({'ERROR'}, T("core.tex_convert_base.drop_no_files"))
+            return {'CANCELLED'}
+        return context.window_manager.invoke_props_dialog(self, width=420)
+
+    def draw(self, context):
+        layout = self.layout
+        paths = self._paths()
+        layout.label(text=T("core.tex_convert_base.drop_count").format(n=len(paths)))
+        box = layout.box()
+        for path in paths:
+            box.label(text=os.path.basename(path))
+
+    def execute(self, context):
+        from . import texconv_native
+
+        done, failed = 0, []
+        for src in self._paths():
+            out_path = os.path.splitext(src)[0] + ".png"
+            temp_dir = tempfile.mkdtemp(prefix="tex_drop_png_")
+            try:
+                png_path = texconv_native.convert_to_png(src, temp_dir)
+                shutil.copy2(png_path, out_path)
+                done += 1
+            except Exception as err:
+                failed.append("%s (%s)" % (os.path.basename(src), err))
+            finally:
+                shutil.rmtree(temp_dir, ignore_errors=True)
+
+        if failed:
+            self.report({'WARNING'}, T("core.tex_convert_base.drop_png_partial").format(
+                n=done, failed="; ".join(failed)))
+        else:
+            self.report({'INFO'}, T("core.tex_convert_base.drop_png_done").format(n=done))
+        return {'FINISHED'}
+
+
+class MT_FH_TexDropToPNG(bpy.types.FileHandler):
+    bl_idname = "MT_FH_tex_drop_to_png"
+    bl_label = "Convert to PNG"
+    bl_import_operator = "mt.tex_drop_to_png"
+    bl_file_extensions = ".dds"
+
+    @classmethod
+    def poll_drop(cls, context):
+        return context.area and context.area.type in {'VIEW_3D', 'IMAGE_EDITOR', 'OUTLINER'}
+
+
 # ── Registration ───────────────────────────────────────────────────────────────
 
 classes = [TexConvertSettings, TexDropItem, MT_OT_TexConvertGuessFormat,
            MT_OT_TexConvertSnapSize,
-           MT_OT_TexConvertDialog, MT_OT_TexDropToDDS, MT_FH_TexDropToDDS]
+           MT_OT_TexConvertDialog, MT_OT_TexDropToDDS, MT_FH_TexDropToDDS,
+           MT_OT_TexDropToPNG, MT_FH_TexDropToPNG]
 
 
 def register():

@@ -2,6 +2,7 @@ import bpy
 
 from ...core.mdf_tex_processor_base import (
     BASE_SLOT_CHANNEL_MAPS, BASE_NULL_TEX_BY_TYPE, BASE_TEXTURE_TYPE_ABBREV,
+    _CH_ENUM_ITEMS,
 )
 from ...core.mdf_generator_base import (
     get_shader_source_items, shader_source_update,
@@ -49,6 +50,14 @@ class MhwsGenMaterialEntry(bpy.types.PropertyGroup):
     #: toon / AO options do not apply (AO comes from the shader) and a choice of
     #: which panel to read appears instead.
     uses_packed_shader: bpy.props.BoolProperty(default=False)
+    #: Set by Refresh from the packed shader's own stamped choice (see
+    #: core.mdf_generator_base._locked_preset_for_material) when the material
+    #: was converted using a bundled prefab -- a path outside material_preset's
+    #: own RE Mesh Editor Presets/ scan, so it cannot be an enum item at all.
+    #: The UI shows this read-only instead of the dropdown; processing reads
+    #: it ahead of material_preset.
+    preset_locked: bpy.props.BoolProperty(default=False)
+    preset_path_override: bpy.props.StringProperty(default="")
     shader_source: bpy.props.EnumProperty(
         name="Shader Source",
         items=get_shader_source_items,
@@ -72,6 +81,8 @@ class MhwsGenMaterialEntry(bpy.types.PropertyGroup):
         description="AO texture path",
         subtype='FILE_PATH',
     )
+    ao_ch:            bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
+    ao_inv:           bpy.props.BoolProperty(name="Invert", default=False)
     # Native pixel sizes detected at refresh (read-only, set by MdfGenRefreshBase)
     native_size_color:     bpy.props.IntProperty(default=0)
     native_size_normal:    bpy.props.IntProperty(default=0)
@@ -117,6 +128,16 @@ class MhwsGenSettings(bpy.types.PropertyGroup):
         name="Normal OpenGL -> DirectX",
         description="When enabled, connected OpenGL normal maps are converted directly to DX format, without "
                     "needing to manually flip the G channel in the shader",
+        default=False,
+    )
+    global_disable_mipmaps: bpy.props.BoolProperty(
+        name="Disable MipMaps (Global)",
+        description="Override every material's own Generate MipMaps checkbox and skip mipmap generation entirely",
+        default=False,
+    )
+    global_use_toon:   bpy.props.BoolProperty(
+        name="Use Toon Shading (Global)",
+        description="Override every material's own Use Toon Shading checkbox and force it on for all of them",
         default=False,
     )
 

@@ -38,7 +38,9 @@ class RE4_OT_MdfGeneratorDialog(bpy.types.Operator):
 
     def invoke(self, context, event):
         settings = context.scene.re4_mdf_generator
-        if settings.mesh_collection and not settings.material_list:
+        # Always refresh on open -- see games/mhws/mdf_generator_ui.py's
+        # invoke() for why this must not be conditional on the list being empty.
+        if settings.mesh_collection:
             bpy.ops.re4.mdf_gen_refresh()
         return context.window_manager.invoke_props_dialog(
             self, width=GENERATOR_WINDOW_WIDTH)
@@ -85,6 +87,11 @@ class RE4_OT_MdfGeneratorDialog(bpy.types.Operator):
             layout.row().label(text="    e.g. Author/CharacterName/", icon='INFO')
 
         layout.prop(settings, "flip_normal_g", text=T("re4.mdf_generator.flip_normal_g_label"))
+        row = layout.row(align=True)
+        row.prop(settings, "global_disable_mipmaps",
+                 text=T("core.mdf_generator_base.global_disable_mipmaps"))
+        row.prop(settings, "global_use_toon",
+                 text=T("core.mdf_generator_base.global_use_toon"))
 
         preset_dir = get_preset_dir_for_game(RE4_GEN_GAME)
         if not preset_dir:
@@ -160,6 +167,14 @@ class RE4_OT_MdfGeneratorDialog(bpy.types.Operator):
                 box.prop(mat_entry, "use_ao", text=T("ui.prop.use_ao"))
                 if mat_entry.use_ao:
                     box.prop(mat_entry, "ao_image", text=T("ui.prop.ao_image"))
+                    ao_row = box.row(align=True)
+                    ao_row.label(text=T("core.mdf_tex_processor_base.pbr_ao"))
+                    ch_sub = ao_row.row(align=True)
+                    ch_sub.scale_x = 0.35
+                    for ch_val in ('R', 'G', 'B', 'A'):
+                        ch_sub.prop_enum(mat_entry, "ao_ch", ch_val)
+                    ao_row.prop(mat_entry, "ao_inv",
+                               text=T("core.mdf_tex_processor_base.prop_invert"), toggle=True)
 
 
 classes = [RE4_OT_MdfGeneratorDialog]

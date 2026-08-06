@@ -1,6 +1,7 @@
 import bpy
 
 from ...core.i18n import T
+from ...core.mdf_tex_processor_base import _CH_ENUM_ITEMS
 from .mdf_tex_processor import (
     MHRS_SLOT_CHANNEL_MAPS, MHRS_NULL_TEX_BY_TYPE, MHRS_TEXTURE_TYPE_ABBREV,
     MHRS_TEX_VERSION,
@@ -71,6 +72,8 @@ class MHRSGenMaterialEntry(bpy.types.PropertyGroup):
         description="AO texture path",
         subtype='FILE_PATH',
     )
+    ao_ch:            bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
+    ao_inv:           bpy.props.BoolProperty(name="Invert", default=False)
     native_size_color:     bpy.props.IntProperty(default=0)
     native_size_normal:    bpy.props.IntProperty(default=0)
     native_size_roughness: bpy.props.IntProperty(default=0)
@@ -114,6 +117,16 @@ class MHRSGenSettings(bpy.types.PropertyGroup):
         name="Normal OpenGL -> DirectX",
         description="When enabled, connected OpenGL normal maps are converted directly to DX format, "
                     "no longer requiring a manual G-channel invert in the shader",
+        default=False,
+    )
+    global_disable_mipmaps: bpy.props.BoolProperty(
+        name="Disable MipMaps (Global)",
+        description="Override every material's own Generate MipMaps checkbox and skip mipmap generation entirely",
+        default=False,
+    )
+    global_use_toon:   bpy.props.BoolProperty(
+        name="Use Toon Shading (Global)",
+        description="Override every material's own Use Toon Shading checkbox and force it on for all of them",
         default=False,
     )
 

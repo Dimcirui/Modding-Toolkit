@@ -1,3 +1,5 @@
+import os
+
 import bpy
 
 from .mdf_generator import MHWS_GEN_GAME
@@ -35,8 +37,12 @@ class MHWS_OT_MdfGeneratorDialog(bpy.types.Operator):
 
     def invoke(self, context, event):
         settings = context.scene.mhws_mdf_generator
-        # Auto-refresh if collection is set but list is empty
-        if settings.mesh_collection and not settings.material_list:
+        # Always refresh on open, not just when the list is empty -- a list
+        # left over from before some out-of-band change (converting a
+        # material to a different packed-shader spec/preset, editing the
+        # collection elsewhere) would otherwise keep showing stale data until
+        # the user remembers to click the refresh button themselves.
+        if settings.mesh_collection:
             bpy.ops.mhws.mdf_gen_refresh()
         return context.window_manager.invoke_props_dialog(
             self, width=GENERATOR_WINDOW_WIDTH)
@@ -89,6 +95,11 @@ class MHWS_OT_MdfGeneratorDialog(bpy.types.Operator):
             layout.row().label(text="    e.g. Author/CharacterName/", icon='INFO')
 
         layout.prop(settings, "flip_normal_g", text=T("mhws.mdf_generator.flip_normal_g_name"))
+        row = layout.row(align=True)
+        row.prop(settings, "global_disable_mipmaps",
+                 text=T("core.mdf_generator_base.global_disable_mipmaps"))
+        row.prop(settings, "global_use_toon",
+                 text=T("core.mdf_generator_base.global_use_toon"))
 
         # ── Preset dir status ──────────────────────────────────────────────────
         preset_dir = get_preset_dir_for_game(MHWS_GEN_GAME)
@@ -112,7 +123,15 @@ class MHWS_OT_MdfGeneratorDialog(bpy.types.Operator):
             icon = 'TRIA_DOWN' if mat_entry.expanded else 'TRIA_RIGHT'
             row.prop(mat_entry, "expanded", text="", icon=icon, emboss=False)
             row.label(text=mat_entry.blender_material, icon='MATERIAL')
-            row.prop(mat_entry, "material_preset", text="")
+            if mat_entry.preset_locked:
+                # A bundled prefab: not one of material_preset's own items,
+                # and not meant to be re-picked here -- see the "使用插件预制
+                # 材质" checkbox in Convert to Packed Shader.
+                name = os.path.splitext(os.path.basename(
+                    mat_entry.preset_path_override))[0] or mat_entry.preset_path_override
+                row.label(text=name, icon='LOCKED')
+            else:
+                row.prop(mat_entry, "material_preset", text="")
 
             if not mat_entry.expanded:
                 continue
@@ -168,6 +187,14 @@ class MHWS_OT_MdfGeneratorDialog(bpy.types.Operator):
                 box.prop(mat_entry, "use_ao", text=T("mhws.mdf_generator.use_ao_name"))
                 if mat_entry.use_ao:
                     box.prop(mat_entry, "ao_image", text=T("ui.prop.ao_image"))
+                    ao_row = box.row(align=True)
+                    ao_row.label(text=T("core.mdf_tex_processor_base.pbr_ao"))
+                    ch_sub = ao_row.row(align=True)
+                    ch_sub.scale_x = 0.35
+                    for ch_val in ('R', 'G', 'B', 'A'):
+                        ch_sub.prop_enum(mat_entry, "ao_ch", ch_val)
+                    ao_row.prop(mat_entry, "ao_inv",
+                               text=T("core.mdf_tex_processor_base.prop_invert"), toggle=True)
 
 
 classes = [MHWS_OT_MdfGeneratorDialog]

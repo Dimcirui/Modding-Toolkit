@@ -450,9 +450,9 @@ STRINGS = {
         "EN": "Metallic. Added to RMTMap.G",
         "ZH": "金属度。与 RMTMap.G 相加"},
     "mhwi.shader_defs.pbr_ao": {
-        "EN": "Ambient occlusion, multiplied into base colour. Preview only — "
-              "MHWI has no AO slot to export it to",
-        "ZH": "环境光遮蔽，正片叠底到基础色上。仅用于预览 —— MHWI 没有可导出的 AO 槽位"},
+        "EN": "Ambient occlusion, multiplied into base colour. MHWI has no AO slot, "
+              "so this gets baked into AlbedoMap on export instead of its own texture",
+        "ZH": "环境光遮蔽，正片叠底到基础色上。MHWI 没有独立的 AO 槽位，导出时会直接烤进 AlbedoMap，而不是单独出图"},
     "mhwi.shader_defs.pbr_ao_strength": {
         "EN": "AO strength: 0 = off, 1 = the full map",
         "ZH": "AO 强度：0 为关闭，1 为完整应用"},

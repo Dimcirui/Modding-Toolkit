@@ -29,9 +29,10 @@ from .slot_sources import (
     find_slot_sources, stage_source_file,
     find_shader_socket_image, find_shader_socket_value,
     find_shader_slot_supplies, shader_pbr_contributions, shader_slot_contributions,
-    find_shader_slot_images,
+    find_shader_slot_images, find_packed_shader_node,
 )
 from .slot_resolver import resolve_dds_format, write_slot_tex
+from .shader_pack import PRESET_PATH_KEY, PRESET_LOCKED_KEY
 
 # ── Principled BSDF socket → PBR type mapping ─────────────────────────────────
 
@@ -688,6 +689,87 @@ def invalidate_preset_cache():
     _PRESET_SNOW_MAP_CACHE.clear()
 
 
+#: Slot types with no PBR composition recipe *and* no vanilla null texture at
+#: all (see core.mdf_tex_processor_base.BASE_SLOT_CHANNEL_MAPS /
+#: BASE_NULL_TEX_BY_TYPE -- SkinMap/BlendNormalMap only, so far). Left
+#: unoverridden by the user, _resolve_placeholder_slot below writes the
+#: bundled placeholder DDS through the same per-material make_disk_path/
+#: make_mdf_path convention every other slot uses -- *not* the preset's own
+#: embedded literal Texture Path (MK_MODS/Eku/Public/...), which belongs to
+#: whichever mod that preset was originally authored for, not this export.
+PLACEHOLDER_SLOT_TYPES = {'SkinMap', 'BlendNormalMap'}
+
+
+def _prefab_placeholder_dds(slot_type):
+    """Bundled placeholder DDS for a slot type in PLACEHOLDER_SLOT_TYPES, or
+    None if there is none (any other slot type, or the asset is missing)."""
+    if slot_type not in PLACEHOLDER_SLOT_TYPES:
+        return None
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    path = os.path.join(root, "assets", "mdf_presets", "mhws", f"{slot_type}.dds")
+    return path if os.path.isfile(path) else None
+
+
+def _resolve_placeholder_slot(slot_type, tex_name, natives_root, base_path, temp_dir,
+                              abbrev_map, tex_version, use_art_prefix,
+                              image_to_dds, dds_to_tex, comp_cache):
+    """Write the bundled placeholder DDS for a PLACEHOLDER_SLOT_TYPES slot
+    nothing overrode, and return the resulting mdf path -- same
+    make_disk_path/make_mdf_path convention every other slot in this export
+    uses, so the binding ends up pointing at this mod's own natives/STM/
+    tree instead of the preset's borrowed literal path.
+
+    Cached by (slot_type, source) exactly like the direct-slot-source branch
+    above: every material in this batch that leaves this slot at its default
+    points at the one shared physical file instead of each carrying its own
+    copy of the same placeholder image.
+    """
+    src = _prefab_placeholder_dds(slot_type)
+    if src is None:
+        return None
+
+    cache_key = (slot_type, 'MHWS_PLACEHOLDER', src)
+    cached = comp_cache.get(cache_key)
+    if cached is not None:
+        return cached[2]
+
+    disk_path = make_disk_path(
+        natives_root, base_path, tex_name, slot_type,
+        abbrev_map, tex_version, use_art_prefix,
+    )
+    write_slot_tex(
+        src, disk_path, temp_dir,
+        dds_fmt=None, generate_mipmaps=True,
+        image_to_dds=image_to_dds,
+        dds_to_tex=lambda p, o: dds_to_tex(p, tex_version, o),
+    )
+    mdf_path = make_mdf_path(base_path, tex_name, slot_type, abbrev_map, use_art_prefix)
+    comp_cache[cache_key] = (src, disk_path, mdf_path)
+    return mdf_path
+
+
+def _locked_preset_for_material(material):
+    """(preset_path, locked) stamped on ``material``'s packed-shader node by
+    MTK_OT_ConvertToPackedShader (core/shader_ops.py), or (None, False) when
+    the material was never converted through that dialog -- hand-authored,
+    converted via MHWI's plain (dialog-less) path, or added via
+    Add > MOD Toolkit rather than Convert.
+
+    ``locked`` True means the path is a bundled prefab outside RE Mesh
+    Editor's own Presets/ directory, so it cannot be represented by
+    material_preset's own EnumProperty items at all -- the generator has to
+    carry it separately (see MhwsGenMaterialEntry.preset_path_override) and
+    show it read-only rather than as a re-pickable dropdown. False means an
+    external preset the user picked in that same dialog: it *is* one of
+    material_preset's own valid items, so it can just be assigned there
+    directly and stay a normal, editable dropdown.
+    """
+    node = find_packed_shader_node(material)
+    if node is None:
+        return None, False
+    return node.get(PRESET_PATH_KEY), bool(node.get(PRESET_LOCKED_KEY, False))
+
+
 def guess_best_preset(material_name, preset_items):
     """Keyword-scoring heuristic — returns the best matching preset path."""
     if not preset_items or preset_items[0][0] == 'NONE':
@@ -1294,6 +1376,51 @@ def _strip_blender_suffix(name):
     return re.sub(r'\.\d+$', '', name)
 
 
+# ── RE Engine Group_G_Sub_S__Name mesh naming ───────────────────────────────
+
+_GROUP_SUB_RE = re.compile(r'^Group_(\d+)_Sub_(\d+)__(.+)$')
+
+
+def _parse_group_sub_name(obj_name):
+    """The embedded material name from an already-separated RE Engine mesh
+    name (Group_G_Sub_S__Name), or None when obj_name doesn't match that
+    shape at all, or when Name itself carries a Blender collision suffix
+    (Name.001) -- that marks this particular object as a duplicate/copy
+    whose embedded name is not trustworthy as *the* name for its material
+    (see _material_name_for)."""
+    m = _GROUP_SUB_RE.match(obj_name)
+    if not m:
+        return None
+    name = m.group(3)
+    if re.search(r'\.\d+$', name):
+        return None
+    return name
+
+
+def _material_name_for(mat_name, mesh_objects):
+    """The name to give this material's MDF2 materialName -- and, when it
+    came from a mesh, the reason _separate_mesh_by_material below leaves
+    that mesh's own name alone instead of churning it every generator run.
+
+    Prefers the embedded name from an already-separated, standard-format
+    mesh (Group_G_Sub_S__Name) over a slug of the Blender material's own
+    name: an import that already split per material can carry the real
+    intended name there even when the material datablock itself only has a
+    generic one (e.g. "Material.003" after a merge that did not preserve
+    names). Falls back to the original scheme -- a slug of the material's
+    own name -- when no mesh has a trustworthy embedded name.
+
+    _UseSC is deliberately *not* stripped here: that only ever affects the
+    generated texture filenames/paths (see tex_name in
+    _process_one_material), never the material's own name.
+    """
+    for obj in mesh_objects:
+        name = _parse_group_sub_name(obj.name)
+        if name is not None:
+            return name
+    return _slugify(_strip_blender_suffix(mat_name))
+
+
 def _import_read_preset_json():
     """Locate and return readPresetJSON from RE Mesh Editor."""
     import sys, importlib, inspect
@@ -1526,7 +1653,12 @@ def _find_meshes_by_material(collection, material_name):
 def _separate_mesh_by_material(context, mesh_col):
     """
     Separate every multi-material mesh in the collection by material, then
-    rename all resulting objects to RE Engine format: Group_0_Sub_N__MatName.
+    rename the resulting objects to RE Engine format: Group_0_Sub_N__MatName
+    -- except ones that already are (_parse_group_sub_name), which are left
+    untouched rather than churned (renumbered and possibly reslugified) on
+    every single generator run. That is also what makes _material_name_for
+    above trustworthy: a mesh this function leaves alone keeps the same name
+    the material was just given.
     """
     # Snapshot — the list grows during separation
     initial = [o for o in mesh_col.all_objects if o.type == 'MESH']
@@ -1548,15 +1680,28 @@ def _separate_mesh_by_material(context, mesh_col):
     for obj in context.scene.objects:
         obj.select_set(False)
 
+    all_mesh_objs = [o for o in mesh_col.all_objects if o.type == 'MESH']
+
+    # Sub-indices already spoken for by objects being left alone, so the
+    # freshly (re)named ones below don't collide with them.
+    used_subs = set()
+    to_rename = []
+    for obj in all_mesh_objs:
+        if _parse_group_sub_name(obj.name) is not None:
+            used_subs.add(int(_GROUP_SUB_RE.match(obj.name).group(2)))
+        else:
+            to_rename.append(obj)
+
     sub_index = 0
-    for obj in sorted(list(mesh_col.all_objects), key=lambda o: o.name):
-        if obj.type != 'MESH':
-            continue
+    for obj in sorted(to_rename, key=lambda o: o.name):
+        while sub_index in used_subs:
+            sub_index += 1
         mat  = obj.data.materials[0] if obj.data.materials else None
         slug = _slugify(_strip_blender_suffix(mat.name)) if mat else f"unnamed_{sub_index}"
         new_name      = f"Group_0_Sub_{sub_index}__{slug}"
         obj.name      = new_name
         obj.data.name = new_name
+        used_subs.add(sub_index)
         sub_index    += 1
 
 
@@ -1619,7 +1764,36 @@ class MdfGenRefreshBase(bpy.types.Operator):
             else:
                 strategies = analyze_material_strategies(mat)
 
-            best = guess_best_preset(mat_name, preset_items)
+            locked_path, locked = _locked_preset_for_material(mat)
+            if locked and locked_path:
+                # A bundled prefab -- not one of preset_items, so it cannot go
+                # through material_preset at all. Carried separately; the
+                # dropdown itself is left at whatever guess_best_preset would
+                # give it (inert -- _process_one_material reads the override
+                # first) and the UI shows a read-only label instead.
+                try:
+                    item.preset_locked = True
+                    item.preset_path_override = locked_path
+                except AttributeError:
+                    pass
+                best = guess_best_preset(mat_name, preset_items)
+            elif locked_path:
+                # An external preset picked in the same dialog -- a real
+                # entry in preset_items, so it can be assigned normally and
+                # stays a live, re-editable dropdown.
+                try:
+                    item.preset_locked = False
+                    item.preset_path_override = ""
+                except AttributeError:
+                    pass
+                best = locked_path
+            else:
+                try:
+                    item.preset_locked = False
+                    item.preset_path_override = ""
+                except AttributeError:
+                    pass
+                best = guess_best_preset(mat_name, preset_items)
             try:
                 item.material_preset = best
             except Exception:
@@ -1795,7 +1969,13 @@ class MdfGenProcessBase(bpy.types.Operator):
         if not mat:
             raise ValueError(f"Material '{mat_name}' not found")
 
-        preset_path = mat_entry.material_preset
+        # A locked prefab lives outside preset_items entirely (see
+        # _locked_preset_for_material) and cannot be represented by
+        # material_preset's own EnumProperty -- read the override first.
+        if getattr(mat_entry, 'preset_locked', False) and mat_entry.preset_path_override:
+            preset_path = mat_entry.preset_path_override
+        else:
+            preset_path = mat_entry.material_preset
         if not preset_path or preset_path == 'NONE':
             raise ValueError(f"No preset selected for '{mat_name}'")
         if not os.path.isfile(preset_path):
@@ -1843,14 +2023,20 @@ class MdfGenProcessBase(bpy.types.Operator):
             except Exception as e:
                 print(f"[{cls._log_tag}]   could not adopt the shader's AO: {e}")
 
-        # User-provided AO override (Blender has no built-in AO node)
+        # User-provided AO override (Blender has no built-in AO node). Channel
+        # and invert are explicit UI choices here rather than node-analysed,
+        # since there is no node chain to analyse for a plain file path --
+        # mirrors the channel/invert pair core.mdf_tex_processor_base's own
+        # PBR panel already offers for its (also manually-provided) AO input.
+        pbr_inv = {}
         if getattr(mat_entry, 'use_ao', False):
             ao_path_raw = getattr(mat_entry, 'ao_image', '')
             if ao_path_raw:
                 ao_path = bpy.path.abspath(ao_path_raw)
                 if ao_path and os.path.isfile(ao_path):
-                    strategies['ao'] = ('DIRECT', ao_path, 'R')
+                    strategies['ao'] = ('DIRECT', ao_path, getattr(mat_entry, 'ao_ch', 'R'))
                     pbr_paths['ao'] = ao_path
+                    pbr_inv['ao'] = getattr(mat_entry, 'ao_inv', False)
 
         # Build source-channel overrides from DIRECT strategies where the
         # Image Texture's Alpha output (not Color) was connected — this
@@ -1860,7 +2046,12 @@ class MdfGenProcessBase(bpy.types.Operator):
             if strat_val[0] == 'DIRECT' and len(strat_val) > 2 and strat_val[2] != 'R':
                 pbr_channels[pbr_type] = strat_val[2]
 
-        tex_name = _slugify(_strip_blender_suffix(mat_name))
+        # materialName keeps _UseSC (it is a marker on the material itself);
+        # tex_name feeds every texture filename/binding path below and must
+        # not carry it -- mirrors core.mdf_tex_processor_base's own
+        # mat_item.material_name.removesuffix('_UseSC').
+        material_name = _material_name_for(mat_name, mesh_objects)
+        tex_name = material_name.removesuffix('_UseSC')
 
         # Determine which slot types the preset expects
         _t = time.time()
@@ -1894,7 +2085,13 @@ class MdfGenProcessBase(bpy.types.Operator):
         slot_direct = find_slot_sources(mat, slot_types)
         prefer_direct = prefer_slots
 
-        use_toon         = getattr(mat_entry, 'use_toon', False)
+        # Global toggles on the settings object override every material's own
+        # checkbox -- "disable" forces mipmaps off regardless of what a
+        # material asks for, "use toon" forces it on the same way.
+        use_toon         = (getattr(mat_entry, 'use_toon', False)
+                            or getattr(settings, 'global_use_toon', False))
+        effective_mipmaps = (mat_entry.generate_mipmaps
+                            and not getattr(settings, 'global_disable_mipmaps', False))
         emi_zero         = _emissive_strength_is_zero(mat)
         emissive_slots   = {st for st in slot_types if _is_emissive_slot(st)}
         albedo_slots     = {st for st in slot_types if _is_albedo_slot(st, cls._channel_maps)}
@@ -1960,7 +2157,7 @@ class MdfGenProcessBase(bpy.types.Operator):
                 write_slot_tex(
                     staged, disk_path, temp_dir,
                     dds_fmt=resolve_dds_format(slot_type, SRGB_SLOT_TYPES),
-                    generate_mipmaps=mat_entry.generate_mipmaps,
+                    generate_mipmaps=effective_mipmaps,
                     image_to_dds=ImageListToDDS,
                     dds_to_tex=lambda p, o: DDSToTex(p, cls._tex_version, o),
                 )
@@ -1979,6 +2176,15 @@ class MdfGenProcessBase(bpy.types.Operator):
                 null = cls._null_tex_by_type.get(slot_type)
                 if null:
                     slot_mdf_paths[slot_type] = null
+                elif slot_type in PLACEHOLDER_SLOT_TYPES:
+                    placeholder_path = _resolve_placeholder_slot(
+                        slot_type, tex_name, natives_root, base_path, temp_dir,
+                        cls._abbrev_map, cls._tex_version, cls._use_art_prefix,
+                        ImageListToDDS, DDSToTex, comp_cache)
+                    if placeholder_path:
+                        slot_mdf_paths[slot_type] = placeholder_path
+                        print(f"[{cls._log_tag}]   {slot_type} -> "
+                              f"{os.path.basename(placeholder_path)} (占位贴图)")
                 continue
 
             # --- skip_textures: just compute the binding path ---
@@ -2045,7 +2251,7 @@ class MdfGenProcessBase(bpy.types.Operator):
                         write_slot_tex(
                             composed, disk_path, temp_dir,
                             dds_fmt=resolve_dds_format(slot_type, SRGB_SLOT_TYPES),
-                            generate_mipmaps=mat_entry.generate_mipmaps,
+                            generate_mipmaps=effective_mipmaps,
                             image_to_dds=ImageListToDDS,
                             dds_to_tex=lambda p, o: DDSToTex(p, cls._tex_version, o),
                         )
@@ -2063,6 +2269,7 @@ class MdfGenProcessBase(bpy.types.Operator):
             normal_flip_g = getattr(settings, 'flip_normal_g', False)
             composed = _compose_channels(
                 slot_type, pbr_paths, pbr_channels, temp_dir, tex_name,
+                pbr_inv=pbr_inv,
                 channel_maps=cls._channel_maps,
                 normal_flip_g=normal_flip_g,
                 bake_ao_into_color=bake_ao,
@@ -2077,7 +2284,7 @@ class MdfGenProcessBase(bpy.types.Operator):
                 write_slot_tex(
                     composed, disk_path, temp_dir,
                     dds_fmt=resolve_dds_format(slot_type, SRGB_SLOT_TYPES),
-                    generate_mipmaps=mat_entry.generate_mipmaps,
+                    generate_mipmaps=effective_mipmaps,
                     image_to_dds=ImageListToDDS,
                     dds_to_tex=lambda p, o: DDSToTex(p, cls._tex_version, o),
                 )
@@ -2117,7 +2324,7 @@ class MdfGenProcessBase(bpy.types.Operator):
         if mat_obj is None:
             raise RuntimeError(f"readPresetJSON returned None for '{mat_name}'")
 
-        mat_obj.re_mdf_material.materialName = tex_name
+        mat_obj.re_mdf_material.materialName = material_name
         for binding in mat_obj.re_mdf_material.textureBindingList_items:
             if binding.textureType in slot_mdf_paths:
                 binding.path = slot_mdf_paths[binding.textureType]

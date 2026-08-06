@@ -7,6 +7,7 @@ import time
 
 from .i18n import T
 from .slot_resolver import resolve_dds_format, write_slot_tex
+from .re_normal_pack import encode_normal_ga
 
 # ── PBR Constants ──────────────────────────────────────────────────────────────
 
@@ -53,6 +54,14 @@ PBR_CHANNEL_SELECTABLE = {'alpha', 'roughness', 'metallic', 'ao'}
 
 # Slot types that should be converted as BC7_UNORM_SRGB (colour / emissive data)
 SRGB_SLOT_TYPES = {'BaseDielectricMap', 'BaseAlphaMap', 'EmissiveMap', 'Emissive_ColorMap', 'BaseShiftMap'}
+
+# Slot types whose G/A pair needs the hemi-octahedral encode (core/re_normal_pack.py)
+# rather than a plain channel copy -- the ones that pack a third quantity (AO,
+# cavity) into B, leaving no room for a conventional two-channel normal.
+# NormalRoughness/NormalRoughnessMap/NRMR_NRRTMap keep their normal in R/G and
+# are correctly a plain copy already; not game-specific, RE Mesh Editor's own
+# texture packer branches on this same slot distinction, not on which game.
+NORMAL_OCTAHEDRAL_SLOT_TYPES = {'NormalRoughnessOcclusionMap', 'NormalRoughnessCavityMap'}
 
 _CH           = {'R': 0, 'G': 1, 'B': 2, 'A': 3}
 _CH_ENUM_ITEMS = [('R', 'R', ''), ('G', 'G', ''), ('B', 'B', ''), ('A', 'A', '')]
@@ -437,13 +446,30 @@ def _compose_channels(slot_type, pbr_paths, pbr_channels, temp_dir, tex_name, pb
                 data = 1.0 - data
             result[:, :, out_i] = data
 
+    if slot_type in NORMAL_OCTAHEDRAL_SLOT_TYPES:
+        # These pack a third quantity (AO/cavity) into B, which a plain
+        # two-channel normal has no room for -- see core/re_normal_pack.py.
+        # Runs after normal_flip_g above, so that toggle still corrects a
+        # source authored in the other Y convention before this encodes it.
+        g = result[:, :, _CH['G']]
+        a = result[:, :, _CH['A']]
+        result[:, :, _CH['G']], result[:, :, _CH['A']] = encode_normal_ga(g, a)
+
     if bake_ao_into_color:
         ao_pix = loaded.get('ao')
         if ao_pix is not None:
             strength = min(max(float(ao_strength), 0.0), 1.0)
+            # Same channel/invert override as the channel-map path above --
+            # this branch has no ch_map entry for 'ao' to read them from
+            # (that's the whole reason it exists: games with no AO-consuming
+            # slot at all), so it has to consult pbr_channels/pbr_inv itself.
+            ao_ch_i = _CH.get(pbr_channels.get('ao'), 0)
+            ao_data = ao_pix[:, :, ao_ch_i]
+            if pbr_inv.get('ao'):
+                ao_data = 1.0 - ao_data
             # lerp(white, ao, strength): strength 0 leaves the colour untouched,
             # which is the same curve the shader's AO Strength slider follows.
-            occl = 1.0 - strength * (1.0 - ao_pix[:, :, 0])
+            occl = 1.0 - strength * (1.0 - ao_data)
             # Colour channels only. Alpha carries opacity or metallic depending
             # on the slot, and darkening either would be wrong.
             colour_channels = [
@@ -862,6 +888,10 @@ class MdfTexProcessBase(bpy.types.Operator):
                     continue
 
                 tex_name     = mat_item.material_name.removesuffix('_UseSC')
+                # The global toggle overrides this material's own checkbox,
+                # same as core.mdf_generator_base's effective_mipmaps.
+                effective_mipmaps = (mat_item.generate_mipmaps
+                                    and not getattr(settings, 'global_disable_mipmaps', False))
                 pbr_paths      = {pt: getattr(mat_item.pbr, pt) for pt in PBR_TYPES}
                 pbr_channels   = {pt: getattr(mat_item.pbr, f"{pt}_ch")
                                   for pt in PBR_CHANNEL_SELECTABLE}
@@ -951,7 +981,7 @@ class MdfTexProcessBase(bpy.types.Operator):
                             src_img, disk_path, temp_dir,
                             dds_fmt=resolve_dds_format(
                                 slot.texture_type, SRGB_SLOT_TYPES),
-                            generate_mipmaps=mat_item.generate_mipmaps,
+                            generate_mipmaps=effective_mipmaps,
                             image_to_dds=ImageListToDDS,
                             dds_to_tex=lambda p, o: DDSToTex(p, cls._tex_version, o),
                         )

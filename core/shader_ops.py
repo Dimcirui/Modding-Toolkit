@@ -35,18 +35,124 @@ from . import shader_readers
 
 GAME_ITEMS = [
     ('MHWI', "MHWI (MRL3)", "Monster Hunter World: Iceborne"),
+    # MHWS gets one entry per material archetype rather than a single "MHWS"
+    # ident: its real .mmtr templates diverge too much by material type (skin
+    # vs everything else) to share one slot set without either bloating the
+    # panel or silently dropping slots a given material actually needs -- see
+    # games/mhws/shader_defs.py's module docstring. This list is also what
+    # "Add > MOD Toolkit" and the sidebar's raw add-a-group buttons iterate;
+    # the prefab-material convert dialog (MTK_OT_ConvertToPackedShader) has
+    # its own dropdown and does not read this list.
+    ('MHWS_STANDARD', "MHWS - Standard", "Monster Hunter Wilds: cloth, most armour and character parts"),
+    ('MHWS_WEAPON',   "MHWS - Weapon",   "Monster Hunter Wilds: weapon material"),
+    ('MHWS_SKIN',     "MHWS - Skin",     "Monster Hunter Wilds: skin material"),
+    ('MHWS_HAIR',     "MHWS - Hair",     "Monster Hunter Wilds: hair material"),
 ]
+
+#: Every MHWS variant ident -- kept in one place so spec_for()/_resolve_spec()
+#: can't drift out of sync with VARIANTS as new archetypes are added.
+_MHWS_GAMES = ('MHWS_STANDARD', 'MHWS_WEAPON', 'MHWS_SKIN', 'MHWS_HAIR')
 
 
 def spec_for(game):
     if game == 'MHWI':
         from ..games.mhwi.shader_defs import SPEC
         return SPEC
+    if game in _MHWS_GAMES:
+        from ..games.mhws.shader_defs import VARIANTS
+        return VARIANTS[game]
     raise ValueError(f"no packed shader spec for game {game!r}")
 
 
 def slot_types_for(spec):
     return [s.name for s in spec.slots]
+
+
+# ── Prefab / external preset resolution (MHWS) ─────────────────────────────────
+# The "使用插件预制材质" checkbox in MTK_OT_ConvertToPackedShader's dialog picks
+# between two different sources for the same decision -- which spec, and which
+# MDF preset that spec implies -- rather than two independent axes. See the
+# module docstring in games/mhws/shader_defs.py for why Standard/Skin/Hair
+# need to diverge at all, and core/mdf_generator_base.py's load_preset_enum_items
+# for the external side of this (same RE Mesh Editor preset scan the generator
+# already uses, reused as-is rather than duplicated).
+
+#: RE Mesh Editor's own Presets/ subfolder name for MHWS -- imported lazily
+#: from games/* for the same load-order reason as spec_for() below.
+def _mhws_gen_game():
+    from ..games.mhws.mdf_generator import MHWS_GEN_GAME
+    return MHWS_GEN_GAME
+
+
+_prefab_items_cache = []
+_external_items_cache = []
+
+
+def _prefab_enum_items(self, context):
+    """The 4 bundled MHWS prefabs -- values are the same idents GAME_ITEMS/
+    VARIANTS already use, not a separate namespace."""
+    global _prefab_items_cache
+    _prefab_items_cache = [
+        ('MHWS_STANDARD', T("core.shader_ops.prefab_standard"),
+         T("core.shader_ops.prefab_standard_desc")),
+        ('MHWS_WEAPON', T("core.shader_ops.prefab_weapon"),
+         T("core.shader_ops.prefab_weapon_desc")),
+        ('MHWS_SKIN', T("core.shader_ops.prefab_skin"),
+         T("core.shader_ops.prefab_skin_desc")),
+        ('MHWS_HAIR', T("core.shader_ops.prefab_hair"),
+         T("core.shader_ops.prefab_hair_desc")),
+    ]
+    return _prefab_items_cache
+
+
+def _external_preset_enum_items(self, context):
+    global _external_items_cache
+    from .mdf_generator_base import load_preset_enum_items
+    _external_items_cache = load_preset_enum_items(_mhws_gen_game())
+    return _external_items_cache
+
+
+def _preset_choice_items(self, context):
+    """items= callback for MTK_OT_ConvertToPackedShader.preset_choice -- which
+    list it shows switches on the use_prefab checkbox, but it is one property,
+    not two: choosing a prefab picks the spec *and* the preset in one step,
+    exactly like picking an external preset does via _classify_preset_spec."""
+    return (_prefab_enum_items(self, context) if self.use_prefab
+            else _external_preset_enum_items(self, context))
+
+
+def _prefab_preset_path(spec):
+    """Absolute path to the bundled MDF preset a prefab spec implies."""
+    import os
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(root, "assets", "mdf_presets", "mhws", spec.preset_filename)
+
+
+def _classify_preset_spec(preset_path):
+    """Which MHWS spec an externally-picked RE Mesh Editor preset corresponds
+    to, read from that preset's *own* declared Texture Bindings -- the same
+    facts games/mhws/shader_defs.py's four specs were built from, not a
+    structural guess: SkinMap/BlendNormalMap only ever appear on skin.json,
+    BaseAlphaMap (in place of BaseDielectricMap) only on hair.json, and
+    Wind_Effect_VolumeMap/GpuWind_MaskMap only on weapon.json (cloth.json has
+    neither), so their presence is as good as reading the preset's own name.
+    Standard (cloth-shaped) is the default for anything else opaque, since
+    it's the more common case (most armour and character parts) than Weapon.
+    """
+    import json
+    try:
+        with open(preset_path, encoding='utf-8-sig') as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return 'MHWS_STANDARD'
+    names = {b.get('Texture Type') for b in data.get('Texture Bindings', [])}
+    if 'BaseAlphaMap' in names:
+        return 'MHWS_HAIR'
+    if 'SkinMap' in names or 'BlendNormalMap' in names:
+        return 'MHWS_SKIN'
+    if 'Wind_Effect_VolumeMap' in names or 'GpuWind_MaskMap' in names:
+        return 'MHWS_WEAPON'
+    return 'MHWS_STANDARD'
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -176,6 +282,104 @@ def convert_material(material, spec):
     return node, ir
 
 
+def _read_preset_state(node):
+    """(shader_id, preset_path, locked) already stamped on a packed-shader
+    node instance, for comparing against a freshly resolved choice."""
+    tree = node.node_tree
+    shader_id = tree.get(shader_pack.TAG) if tree else None
+    return (shader_id, node.get(shader_pack.PRESET_PATH_KEY),
+            bool(node.get(shader_pack.PRESET_LOCKED_KEY, False)))
+
+
+def _stamp_preset(node, preset_path, locked):
+    if preset_path is not None:
+        node[shader_pack.PRESET_PATH_KEY] = preset_path
+    node[shader_pack.PRESET_LOCKED_KEY] = bool(locked)
+
+
+def _reconvert_in_place(material, spec, old_node):
+    """Replace an already-packed material's group instance with a different
+    spec, carrying over every socket the two share by name.
+
+    Not a fresh shader_readers.read_material() pass: the *first* conversion
+    already moved the original tree off Material Output (see convert_material's
+    docstring), so there is nothing left to re-read from except the old group
+    instance itself. Copying socket-to-socket instead is not a lossy shortcut
+    here -- MHWS's three specs share the entire PBR panel (same tuple object)
+    and most slot names (BaseDielectricMap, NormalRoughnessOcclusionMap,
+    AlphaTranslucentOcclusionSSSMap, ...), so a name match carries over both
+    linked images and typed-in constants exactly, for anything the new spec
+    still has a socket for.
+    """
+    tree = material.node_tree
+    new_node = shader_pack.add_group_node(tree, spec, location=old_node.location)
+
+    dropped = []
+    for old_sock in old_node.inputs:
+        new_sock = new_node.inputs.get(old_sock.name)
+        if new_sock is None:
+            if old_sock.is_linked:
+                dropped.append(old_sock.name)
+            continue
+        if old_sock.is_linked:
+            tree.links.new(old_sock.links[0].from_socket, new_sock)
+        else:
+            try:
+                new_sock.default_value = old_sock.default_value
+            except (TypeError, ValueError):
+                pass
+
+    out = _material_output(tree)
+    if out is not None:
+        surface = out.inputs.get('Surface')
+        if surface is not None:
+            for link in list(surface.links):
+                tree.links.remove(link)
+            tree.links.new(new_node.outputs['BSDF'], surface)
+
+    tree.nodes.remove(old_node)
+    for n in tree.nodes:
+        n.select = False
+    new_node.select = True
+    tree.nodes.active = new_node
+
+    warnings = []
+    if dropped:
+        warnings.append(
+            f"re-converted to a spec without: {', '.join(dropped)} -- the "
+            f"images that fed them are still in the node tree, just no "
+            f"longer connected to anything")
+    new_node.label = f"{spec.group_name} ← {material.name}"
+    return new_node, warnings
+
+
+def convert_or_update_material(material, spec, *, preset_path=None, locked=False):
+    """Convert ``material``, or -- if it already carries a packed shader --
+    replace it only when the newly resolved (spec, preset) differs from what
+    is already stamped on the node.
+
+    Returns (node, warnings, reconverted). Raises AlreadyConverted when the
+    resolution is identical to what is already there (matches
+    convert_material's plain behaviour for callers, like MHWI's, that never
+    pass a preset_path at all: shader_id alone decides then).
+    """
+    from .slot_sources import find_packed_shader_node
+    existing = find_packed_shader_node(material)
+
+    if existing is None:
+        node, ir = convert_material(material, spec)
+        _stamp_preset(node, preset_path, locked)
+        return node, list(ir.warnings), False
+
+    new_state = (spec.shader_id, preset_path, locked)
+    if _read_preset_state(existing) == new_state:
+        raise AlreadyConverted(material, existing)
+
+    node, warnings = _reconvert_in_place(material, spec, existing)
+    _stamp_preset(node, preset_path, locked)
+    return node, warnings, True
+
+
 def _iter_target_materials(context, scope):
     """Materials to act on, de-duplicated, in a stable order."""
     seen, out = set(), []
@@ -274,6 +478,16 @@ class MTK_OT_ConvertToPackedShader(bpy.types.Operator):
         ],
         default='SELECTED',
     )
+    #: False for callers that already pin an exact spec via `game` (MHWI's
+    #: button, the sidebar's "convert active") -- nothing to choose, so no
+    #: dialog. True is the MHWS main-panel button's way of saying "let the
+    #: user pick a spec/preset here" without needing `is_property_set`, which
+    #: this Blender build's bpy_struct does not support for operator
+    #: properties (raises TypeError; confirmed with a throwaway test operator,
+    #: not specific to this one).
+    show_dialog: BoolProperty(default=True, options={'SKIP_SAVE'})
+    use_prefab: BoolProperty(name="Use Prefab", default=True)
+    preset_choice: EnumProperty(name="Preset", items=_preset_choice_items)
 
     @classmethod
     def poll(cls, context):
@@ -283,9 +497,38 @@ class MTK_OT_ConvertToPackedShader(bpy.types.Operator):
     def description(cls, context, properties):
         return T("core.shader_ops.convert_desc")
 
+    def invoke(self, context, event):
+        if not self.show_dialog:
+            return self.execute(context)
+        return context.window_manager.invoke_props_dialog(self, width=420)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, 'use_prefab', text=T("core.shader_ops.use_prefab"))
+        layout.prop(self, 'preset_choice', text="")
+
+    def _resolve_spec(self):
+        """(spec, preset_path, locked), or raises ValueError with a
+        user-facing message."""
+        if not self.show_dialog:
+            return spec_for(self.game), None, False
+
+        if self.use_prefab:
+            game = self.preset_choice
+            if game not in _MHWS_GAMES:
+                raise ValueError(T("core.shader_ops.no_preset_selected"))
+            spec = spec_for(game)
+            return spec, _prefab_preset_path(spec), True
+
+        preset_path = self.preset_choice
+        if not preset_path or preset_path == 'NONE':
+            raise ValueError(T("core.shader_ops.no_preset_selected"))
+        spec = spec_for(_classify_preset_spec(preset_path))
+        return spec, preset_path, False
+
     def execute(self, context):
         try:
-            spec = spec_for(self.game)
+            spec, preset_path, locked = self._resolve_spec()
         except ValueError as e:
             self.report({'ERROR'}, str(e))
             return {'CANCELLED'}
@@ -295,18 +538,21 @@ class MTK_OT_ConvertToPackedShader(bpy.types.Operator):
             self.report({'WARNING'}, T("core.shader_ops.no_materials"))
             return {'CANCELLED'}
 
-        done = failed = 0
+        done = failed = reconverted = 0
         warned, skipped = [], []
         for mat in materials:
             try:
-                _node, ir = convert_material(mat, spec)
+                _node, warnings, was_reconverted = convert_or_update_material(
+                    mat, spec, preset_path=preset_path, locked=locked)
                 done += 1
-                if ir.warnings:
+                if was_reconverted:
+                    reconverted += 1
+                if warnings:
                     warned.append(mat.name)
                     # Console, not a dialog: forty materials would mean forty
                     # dialogs. The node keeps them for the sidebar to show.
-                    print(f"[MTK] {mat.name}: {ir.summary()}")
-                    for w in ir.warnings:
+                    print(f"[MTK] {mat.name}: {len(warnings)} warning(s)")
+                    for w in warnings:
                         print(f"[MTK]     - {w}")
             except AlreadyConverted:
                 skipped.append(mat.name)
@@ -316,6 +562,10 @@ class MTK_OT_ConvertToPackedShader(bpy.types.Operator):
                 print(f"[MTK] convert failed for '{mat.name}': {e}")
                 import traceback
                 traceback.print_exc()
+
+        if reconverted:
+            print(f"[MTK] {reconverted} material(s) re-converted to a "
+                  f"different spec/preset")
 
         if failed:
             self.report({'WARNING'}, T("core.shader_ops.converted_with_fail").format(
@@ -386,9 +636,17 @@ class NODE_PT_mtk_packed_shader(bpy.types.Panel):
         layout.label(text=T("core.shader_ops.preview_only"), icon='INFO')
 
         row = layout.row(align=True)
-        row.operator(MTK_OT_ConvertToPackedShader.bl_idname,
-                     text=T("core.shader_ops.convert_active"),
-                     icon='NODETREE').scope = 'ACTIVE_MATERIAL'
+        # Pins game explicitly: this predates the MHWS prefab dialog and keeps
+        # its old behaviour (always MHWI, no dialog) rather than suddenly
+        # popping an MHWS-only dialog for whatever material happens to be
+        # active. Giving this button its own game-then-dialog flow is future
+        # work, not something this change should do as a side effect.
+        op = row.operator(MTK_OT_ConvertToPackedShader.bl_idname,
+                          text=T("core.shader_ops.convert_active"),
+                          icon='NODETREE')
+        op.scope = 'ACTIVE_MATERIAL'
+        op.game = 'MHWI'
+        op.show_dialog = False
 
         # One add button per registered spec, driven by GAME_ITEMS rather than
         # hardcoded: adding the RE-series spec makes its button appear with no

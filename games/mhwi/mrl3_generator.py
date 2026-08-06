@@ -19,7 +19,7 @@ from ...core.mdf_generator_base import (
     BAKE_SIZE_DEFAULT,
 )
 from ...core.mdf_tex_processor_base import (
-    _import_tex_utils, _compose_channels, channel_maps_consume_ao,
+    _import_tex_utils, _compose_channels, channel_maps_consume_ao, _CH_ENUM_ITEMS,
 )
 from ...core.slot_sources import (
     find_slot_sources, stage_source_file,
@@ -104,6 +104,8 @@ class MhwiGenMaterialEntry(bpy.types.PropertyGroup):
                     "generation time -- it matches the packed shader's AO Strength",
         default=0.5, min=0.0, max=1.0, subtype='FACTOR',
     )
+    ao_ch:            bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
+    ao_inv:           bpy.props.BoolProperty(name="Invert", default=False)
     native_size_color:     bpy.props.IntProperty(default=0)
     native_size_normal:    bpy.props.IntProperty(default=0)
     native_size_roughness: bpy.props.IntProperty(default=0)
@@ -151,6 +153,16 @@ class MhwiGenSettings(bpy.types.PropertyGroup):
         name="Normal Map OpenGL -> DirectX",
         description="When enabled, connected OpenGL normal maps are directly converted to DX format, "
                     "removing the need to manually invert the G channel in the shader",
+        default=False,
+    )
+    global_disable_mipmaps: bpy.props.BoolProperty(
+        name="Disable MipMaps (Global)",
+        description="Override every material's own Generate MipMaps checkbox and skip mipmap generation entirely",
+        default=False,
+    )
+    global_use_toon: bpy.props.BoolProperty(
+        name="Use Toon Shading (Global)",
+        description="Override every material's own Use Toon Shading checkbox and force it on for all of them",
         default=False,
     )
 
@@ -344,14 +356,18 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
             except Exception as e:
                 print(f"[{self._log_tag}]   could not adopt the shader's AO: {e}")
 
-        # User-provided AO override (Blender has no built-in AO node)
+        # User-provided AO override (Blender has no built-in AO node). Channel
+        # and invert are explicit UI choices -- see core.mdf_generator_base's
+        # own _process_one_material for the same fix on the other 4 games.
+        pbr_inv = {}
         if getattr(mat_entry, 'use_ao', False):
             ao_path_raw = getattr(mat_entry, 'ao_image', '')
             if ao_path_raw:
                 ao_path = bpy.path.abspath(ao_path_raw)
                 if ao_path and os.path.isfile(ao_path):
-                    strategies['ao'] = ('DIRECT', ao_path, 'R')
+                    strategies['ao'] = ('DIRECT', ao_path, getattr(mat_entry, 'ao_ch', 'R'))
                     pbr_paths['ao'] = ao_path
+                    pbr_inv['ao'] = getattr(mat_entry, 'ao_inv', False)
 
         pbr_channels = {}
         for pbr_type, strat_val in strategies.items():
@@ -386,7 +402,13 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
         slot_direct   = find_slot_sources(mat, slot_types)
         prefer_direct = prefer_slots
 
-        use_toon       = getattr(mat_entry, 'use_toon', False)
+        # Global toggles on the settings object override every material's own
+        # checkbox -- see core.mdf_generator_base's _process_one_material for
+        # the same fix on the other 4 games.
+        use_toon       = (getattr(mat_entry, 'use_toon', False)
+                         or getattr(settings, 'global_use_toon', False))
+        effective_mipmaps = (mat_entry.generate_mipmaps
+                            and not getattr(settings, 'global_disable_mipmaps', False))
         emi_zero       = _emissive_strength_is_zero(mat)
         emissive_slots = {st for st in slot_types if _is_emissive_slot(st)}
         albedo_slots   = {st for st in slot_types if _is_albedo_slot(st, MHWI_SLOT_CHANNEL_MAPS)}
@@ -442,7 +464,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                     staged, disk_path, temp_dir,
                     dds_fmt=resolve_dds_format(
                         slot_type, MHWI_SRGB_SLOT_TYPES),
-                    generate_mipmaps=mat_entry.generate_mipmaps,
+                    generate_mipmaps=effective_mipmaps,
                     image_to_dds=ImageListToDDS,
                     dds_to_tex=ConvertDDSToTex,
                 )
@@ -505,7 +527,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                             composed, disk_path, temp_dir,
                             dds_fmt=resolve_dds_format(
                                 slot_type, MHWI_SRGB_SLOT_TYPES),
-                            generate_mipmaps=mat_entry.generate_mipmaps,
+                            generate_mipmaps=effective_mipmaps,
                             image_to_dds=ImageListToDDS,
                             dds_to_tex=ConvertDDSToTex,
                         )
@@ -520,6 +542,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
             normal_flip_g = getattr(settings, 'flip_normal_g', False)
             composed = _compose_channels(
                 slot_type, pbr_paths, pbr_channels, temp_dir, tex_name,
+                pbr_inv=pbr_inv,
                 channel_maps=MHWI_SLOT_CHANNEL_MAPS,
                 normal_flip_g=normal_flip_g,
                 bake_ao_into_color=bake_ao,
@@ -533,7 +556,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                     composed, disk_path, temp_dir,
                     dds_fmt=resolve_dds_format(
                         slot_type, MHWI_SRGB_SLOT_TYPES),
-                    generate_mipmaps=mat_entry.generate_mipmaps,
+                    generate_mipmaps=effective_mipmaps,
                     image_to_dds=ImageListToDDS,
                     dds_to_tex=ConvertDDSToTex,
                 )
@@ -590,7 +613,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                 bpy.data.images.remove(_snow_img)
                 snow_dds = os.path.join(temp_dir, '_solid_snow_Col_CMM.dds')
                 ImageListToDDS([(snow_png, 'BC7_UNORM_SRGB')], temp_dir,
-                               mat_entry.generate_mipmaps)
+                               effective_mipmaps)
                 if os.path.isfile(snow_dds):
                     ConvertDDSToTex([snow_dds], snow_disk)
                     print(f"[{self._log_tag}]   AlbedoBlendMap (snow) -> {os.path.basename(snow_disk)}")

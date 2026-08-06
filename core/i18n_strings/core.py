@@ -457,6 +457,26 @@ STRINGS = {
         "EN": "BC7_Linear with mipmaps. Normal maps, Alpha, RMT, CMM, XM, FM, and every other mask",
         "ZH": "BC7_Linear + 生成 mipmap。法线图、Alpha、RMT、CMM、XM、FM 等所有遮罩",
     },
+    # Shown instead of preset_noncolor for any target whose normal-roughness
+    # slots use the hemi-octahedral G/A packing (MHWS/MHRS/RE4/RE9, and DDS
+    # since the encoding depends on the shader, not the .tex container) --
+    # "Normal Map" alone would be ambiguous once NRRO/NRRC exists as a
+    # separate choice right next to it.
+    "core.tex_convert_base.preset_noncolor_nrmr": {"EN": "Non-Color / NRMR", "ZH": "非色彩/NRMR"},
+    "core.tex_convert_base.preset_noncolor_nrmr_desc": {
+        "EN": "BC7_Linear with mipmaps. Plain (unpacked) normal maps, Alpha, and every other mask -- "
+              "not NRRO/NRRC, which packs a normal into G/A instead (see that preset)",
+        "ZH": "BC7_Linear + 生成 mipmap。普通（未打包）法线图、Alpha 及其他遮罩 —— 不适用于把法线打包"
+              "进 G/A 的 NRRO/NRRC（见下面的预设）",
+    },
+    "core.tex_convert_base.preset_nrro": {"EN": "NRRO / NRRC", "ZH": "NRRO/NRRC"},
+    "core.tex_convert_base.preset_nrro_desc": {
+        "EN": "BC7_Linear with mipmaps. G/A are run through the hemi-octahedral encode RE Engine expects "
+              "there instead of a plain normal -- always applied, since there is no reliable way to tell "
+              "an already-packed source from a plain one. Everything else composes as usual",
+        "ZH": "BC7_Linear + 生成 mipmap。G/A 会被转换成 RE Engine 需要的半八面体编码，而不是普通法线——"
+              "始终会转换，因为没有可靠的办法从像素本身判断源图是否已经打包过。其余槛位照常合成",
+    },
     "core.tex_convert_base.preset_ui": {"EN": "UI / Decals", "ZH": "UI、贴纸等"},
     "core.tex_convert_base.preset_ui_desc": {
         "EN": "BC7_sRGB, no mipmaps. UI art and decals are drawn at a fixed size, so mips would only blur them",
@@ -540,6 +560,20 @@ STRINGS = {
     "core.mdf_generator_base.shader_source_slot_desc": {
         "EN": "Take each texture straight from the packed shader's game slot sockets",
         "ZH": "直接取打包着色器游戏槽位上的贴图"},
+    "core.mdf_generator_base.global_disable_mipmaps": {
+        "EN": "Disable MipMaps (Global)",
+        "ZH": "全局禁用 MipMaps"},
+    "core.mdf_generator_base.global_disable_mipmaps_desc": {
+        "EN": "Overrides every material's own Generate MipMaps checkbox below and skips "
+              "mipmap generation for all of them",
+        "ZH": "覆盖下面每个材质自己的生成 MipMaps 选项，对全部材质都不生成 MipMaps"},
+    "core.mdf_generator_base.global_use_toon": {
+        "EN": "Use Toon Shading (Global, Emissive = Base Color Texture)",
+        "ZH": "全局启用三渲二（自发光使用基础色贴图）"},
+    "core.mdf_generator_base.global_use_toon_desc": {
+        "EN": "Overrides every material's own Use Toon Shading checkbox below and forces "
+              "it on for all of them",
+        "ZH": "覆盖下面每个材质自己的三渲二选项，对全部材质都强制启用"},
 
     # ══════════════════════════════════════════════════════════════════════
     # core/shader_ops.py — packed shader operators and panel
@@ -580,6 +614,52 @@ STRINGS = {
     "core.shader_ops.preview_only": {
         "EN": "Preview only — not a match for the in-game look",
         "ZH": "仅供预览，不保证还原游戏内画面"},
+    "core.shader_ops.use_prefab": {
+        "EN": "Use Plugin Prefab Material",
+        "ZH": "使用插件预制材质"},
+    "core.shader_ops.prefab_standard": {
+        "EN": "Standard (cloth, most armour and parts)",
+        "ZH": "标准（布料、大部分护甲和部件）"},
+    "core.shader_ops.prefab_standard_desc": {
+        "EN": "BaseDielectricMap / NormalRoughnessOcclusionMap / EmissiveMap / "
+              "AlphaTranslucentOcclusionSSSMap, plus detail maps and colour-layer "
+              "mask. Bundled from RE Mesh Editor's own cloth.json preset, unmodified",
+        "ZH": "BaseDielectricMap / NormalRoughnessOcclusionMap / EmissiveMap / "
+              "AlphaTranslucentOcclusionSSSMap，以及细节贴图和颜色层遮罩。"
+              "内置自 RE Mesh Editor 自身的 cloth.json 预设，未作修改"},
+    "core.shader_ops.prefab_weapon": {
+        "EN": "Weapon",
+        "ZH": "武器"},
+    "core.shader_ops.prefab_weapon_desc": {
+        "EN": "Same core slots as Standard but its own Master Material Path, plus "
+              "wind and VFX slots instead of Standard's detail-multiblend/ripple. "
+              "Bundled from RE Mesh Editor's own weapon.json preset, unmodified",
+        "ZH": "核心槽位与标准相同，但主材质不同，且带有风力和 VFX 槽位（标准则是细节"
+              "多重混合/波纹）。内置自 RE Mesh Editor 自身的 weapon.json 预设，未作修改"},
+    "core.shader_ops.prefab_skin": {
+        "EN": "Skin",
+        "ZH": "皮肤"},
+    "core.shader_ops.prefab_skin_desc": {
+        "EN": "Adds SkinMap / BlendNormalMap, which have no PBR recipe and no "
+              "vanilla null texture -- left at their bundled placeholder unless "
+              "overridden. Bundled from RE Mesh Editor's own skin.json preset, "
+              "unmodified",
+        "ZH": "增加 SkinMap / BlendNormalMap，这两个槽位没有 PBR 合成方案也没有"
+              "官方空白贴图，除非手动覆盖，否则使用插件内置的占位贴图。"
+              "内置自 RE Mesh Editor 自身的 skin.json 预设，未作修改"},
+    "core.shader_ops.prefab_hair": {
+        "EN": "Hair",
+        "ZH": "毛发"},
+    "core.shader_ops.prefab_hair_desc": {
+        "EN": "BaseAlphaMap instead of BaseDielectricMap (not metallic, real "
+              "opacity), plus hair flow/shift/overlay slots. Bundled from RE "
+              "Mesh Editor's own hair.json preset, unmodified",
+        "ZH": "使用 BaseAlphaMap 而非 BaseDielectricMap（非金属，含真实透明度），"
+              "以及毛发流向/偏移/叠加槽位。内置自 RE Mesh Editor 自身的 "
+              "hair.json 预设，未作修改"},
+    "core.shader_ops.no_preset_selected": {
+        "EN": "Pick a prefab or an external preset before converting",
+        "ZH": "转换前请先选择一个预制材质或外部预设"},
 
     # ── core/shapekey_utils.py ───────────────────────────────────────────
     "core.shapekey_utils.err_no_shape_keys": {
@@ -612,6 +692,15 @@ STRINGS = {
     "core.tex_convert_base.drop_done":    {"EN": "Converted {n} file(s) to DDS", "ZH": "已转换 {n} 个文件为 DDS"},
     "core.tex_convert_base.drop_partial": {"EN": "Converted {n} file(s); failed: {failed}",
                                             "ZH": "已转换 {n} 个；失败：{failed}"},
+
+    "core.tex_convert_base.drop_png_desc": {
+        "EN": "Decode the dropped DDS to PNG. Stored bytes only, no gamma conversion — "
+              "safe to feed back into PBR compose without shifting the colour curve",
+        "ZH": "把拖入的 DDS 解码为 PNG。只还原存储字节，不做任何 gamma 变换——"
+              "可以放心喂回 PBR 合成，不会偏移色彩曲线"},
+    "core.tex_convert_base.drop_png_done": {"EN": "Decoded {n} file(s) to PNG", "ZH": "已解码 {n} 个文件为 PNG"},
+    "core.tex_convert_base.drop_png_partial": {"EN": "Decoded {n} file(s); failed: {failed}",
+                                                "ZH": "已解码 {n} 个；失败：{failed}"},
 
     "core.tex_convert_base.output_size_label":   {"EN": "Output size: {w} x {h}", "ZH": "输出尺寸：{w} x {h}"},
     "core.tex_convert_base.output_size_unknown": {"EN": "Output size: pick a source image to see it",

@@ -252,6 +252,11 @@ class Mrl3TexProcessorSettings(bpy.types.PropertyGroup):
     materials_index:        bpy.props.IntProperty()
     clipboard_json:         bpy.props.StringProperty(default="")
     mrl3_loaded_collection: bpy.props.StringProperty(default="")
+    global_disable_mipmaps: bpy.props.BoolProperty(
+        name="Disable MipMaps (Global)",
+        description="Override every material's own Generate MipMaps checkbox and skip mipmap generation entirely",
+        default=False,
+    )
 
 
 # ── Operators ─────────────────────────────────────────────────────────────────
@@ -357,6 +362,10 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                     continue
 
                 tex_name      = mat_item.material_name
+                # The global toggle overrides this material's own checkbox,
+                # same as core.mdf_tex_processor_base's execute().
+                effective_mipmaps = (mat_item.generate_mipmaps
+                                    and not getattr(settings, 'global_disable_mipmaps', False))
                 pbr_paths     = {pt: getattr(mat_item.pbr, pt) for pt in PBR_TYPES}
                 pbr_channels  = {pt: getattr(mat_item.pbr, f"{pt}_ch")
                                  for pt in PBR_CHANNEL_SELECTABLE}
@@ -466,7 +475,7 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                             _t_dds = time.time()
                             ImageListToDDS(
                                 [(src_img, dds_fmt)], temp_dir,
-                                mat_item.generate_mipmaps)
+                                effective_mipmaps)
                             # print(f"[MHWI Tex]   PNG→DDS {slot.texture_type}: {time.time() - _t_dds:.2f}s", flush=True)
                             if not os.path.isfile(dds_path):
                                 raise FileNotFoundError(

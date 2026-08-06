@@ -31,7 +31,14 @@ class MdfTexDialogBase(bpy.types.Operator):
         cls      = type(self)
         settings = getattr(context.scene, cls._settings_attr)
         col = settings.mdf_collection
-        if col and col.name == settings.mdf_loaded_collection:
+        # Always refresh on open, not just when col matches what was loaded
+        # last time -- _do_refresh already handles both "same collection
+        # again" (preserves the in-memory config) and "switched collections"
+        # (saves the old one's state, restores the new one's) safely, so
+        # there is no correctness reason to skip it; skipping it just left a
+        # stale materials list on screen until the user clicked refresh
+        # themselves.
+        if col:
             getattr(bpy.ops, cls._game_prefix).mdf_tex_refresh()
         return context.window_manager.invoke_props_dialog(
             self, width=PROCESSOR_WINDOW_WIDTH)
@@ -71,6 +78,9 @@ class MdfTexDialogBase(bpy.types.Operator):
         if not settings.texture_base_path.strip():
             hint = layout.row()
             hint.label(text=f"    {cls._path_hint}", icon='INFO')
+
+        layout.prop(settings, "global_disable_mipmaps",
+                    text=T("core.mdf_generator_base.global_disable_mipmaps"))
 
         if not settings.materials:
             layout.separator()
@@ -147,8 +157,10 @@ class MdfTexDialogBase(bpy.types.Operator):
 
             # Per-material texture options
             opt_row = box.row(align=True)
-            opt_row.prop(mat, "generate_mipmaps")
-            opt_row.prop(mat, "skip_textures")
+            opt_row.prop(mat, "generate_mipmaps",
+                        text=T("core.mdf_tex_processor_base.generate_mipmaps_label"))
+            opt_row.prop(mat, "skip_textures",
+                        text=T("core.mdf_tex_processor_base.skip_textures_label"))
 
             common_slots = [(si, s) for si, s in enumerate(mat.slots)
                             if s.texture_type in cls._common_slot_types]

@@ -72,6 +72,11 @@ class RE4MdfTexProcessorSettings(bpy.types.PropertyGroup):
     materials_index:       bpy.props.IntProperty()
     clipboard_json:        bpy.props.StringProperty(default="")
     mdf_loaded_collection: bpy.props.StringProperty(default="")
+    global_disable_mipmaps: bpy.props.BoolProperty(
+        name="Disable MipMaps (Global)",
+        description="Override every material's own Generate MipMaps checkbox and skip mipmap generation entirely",
+        default=False,
+    )
 
 
 # ── Operators ──────────────────────────────────────────────────────────────────

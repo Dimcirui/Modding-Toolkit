@@ -1,6 +1,7 @@
 import bpy
 
 from ...core.i18n import T
+from ...core.mdf_tex_processor_base import _CH_ENUM_ITEMS
 from .mdf_tex_processor import (
     RE9_SLOT_CHANNEL_MAPS, RE9_NULL_TEX_BY_TYPE, RE9_TEXTURE_TYPE_ABBREV,
     RE9_TEX_VERSION,
@@ -71,6 +72,8 @@ class RE9GenMaterialEntry(bpy.types.PropertyGroup):
         description="AO texture path",
         subtype='FILE_PATH',
     )
+    ao_ch:            bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
+    ao_inv:           bpy.props.BoolProperty(name="Invert", default=False)
     native_size_color:     bpy.props.IntProperty(default=0)
     native_size_normal:    bpy.props.IntProperty(default=0)
     native_size_roughness: bpy.props.IntProperty(default=0)
@@ -114,6 +117,16 @@ class RE9GenSettings(bpy.types.PropertyGroup):
         name="Normal OpenGL → DirectX",
         description="When enabled, directly convert the connected OpenGL normal map to DX format, "
                     "so you no longer need to manually invert the G channel in the shader",
+        default=False,
+    )
+    global_disable_mipmaps: bpy.props.BoolProperty(
+        name="Disable MipMaps (Global)",
+        description="Override every material's own Generate MipMaps checkbox and skip mipmap generation entirely",
+        default=False,
+    )
+    global_use_toon:   bpy.props.BoolProperty(
+        name="Use Toon Shading (Global)",
+        description="Override every material's own Use Toon Shading checkbox and force it on for all of them",
         default=False,
     )
 

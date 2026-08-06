@@ -25,7 +25,10 @@ class MHWI_OT_Mrl3TexProcessorDialog(bpy.types.Operator):
     def invoke(self, context, event):  # noqa: ARG002
         settings = context.scene.mhwi_mrl3_tex_processor
         col = settings.mrl3_collection
-        if col and col.name == settings.mrl3_loaded_collection:
+        # Always refresh on open -- see core/mdf_tex_processor_ui_base.py's
+        # invoke() for why this must not be conditional on matching the last
+        # loaded collection.
+        if col:
             bpy.ops.mhwi.mrl3_tex_refresh()
         return context.window_manager.invoke_props_dialog(
             self, width=PROCESSOR_WINDOW_WIDTH)
@@ -61,6 +64,9 @@ class MHWI_OT_Mrl3TexProcessorDialog(bpy.types.Operator):
         row.prop(settings, "texture_base_path", text="")
         if not settings.texture_base_path.strip():
             layout.label(text=f"    {T('mhwi.mrl3_tex_processor_ui.base_path_example')}", icon='INFO')
+
+        layout.prop(settings, "global_disable_mipmaps",
+                    text=T("core.mdf_generator_base.global_disable_mipmaps"))
 
         if not settings.materials:
             layout.separator()

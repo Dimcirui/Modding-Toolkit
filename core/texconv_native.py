@@ -115,3 +115,28 @@ def convert_to_dds(filepath, dxgi_format_name, out_dir, generate_mips=True,
 
     base_name = os.path.splitext(os.path.basename(filepath))[0] + '.dds'
     return os.path.join(out_dir or '.', base_name)
+
+
+def convert_to_png(filepath, out_dir, verbose=False, allow_slow_codec=False):
+    """Decompress a DDS (any DXGI format, including BC7_UNORM_SRGB) to a plain
+    8-bit PNG, always mip 0.
+
+    Mirrors convert_to_dds's own rule in reverse: never gamma-convert, just hand
+    back the stored bytes. No -srgb/-srgbi/-srgbo regardless of whether the
+    source is tagged _SRGB — an editor (Photoshop, GIMP, ...) that instead
+    re-decodes on its own DDS import and re-encodes on PNG export is exactly
+    what silently doubles the gamma curve on a round trip through an external
+    tool. Keeping this byte-for-byte means feeding the PNG back into
+    core/mdf_tex_processor_base.py's PBR compose and re-converting reproduces
+    the original DDS exactly.
+
+    Returns the path to the resulting .png file.
+    """
+    _ensure_com_initialized()
+    dll = _load_dll()
+
+    args = ['-f', 'R8G8B8A8_UNORM', '-ft', 'PNG']
+    _run_texconv(dll, filepath, args, out_dir, verbose=verbose, allow_slow_codec=allow_slow_codec)
+
+    base_name = os.path.splitext(os.path.basename(filepath))[0] + '.png'
+    return os.path.join(out_dir or '.', base_name)

@@ -11,10 +11,14 @@ sockets anyway, because carrying their images to the exporter is the point.
 
 MHWI has no AO *slot*: MHWI_SLOT_CHANNEL_MAPS never references 'ao', and
 RMTMap's blue channel is translucency, not occlusion.  The PBR panel still
-offers AO, multiplied into base colour with a 0..1 strength, because previewing
-occlusion is useful — but its tooltip says plainly that MHWI cannot export it,
-since an input that looks exportable and is not would be a trap.  The RE-series
-specs will be able to write theirs back, via NRRO.B.
+offers AO, multiplied into base colour with a 0..1 strength — and that
+multiply is not preview-only: mdf_generator_base.py auto-adopts whatever is
+plugged into this socket (image + strength) and, since
+channel_maps_consume_ao() sees MHWI's channel maps never reference 'ao',
+bake_ao_into_color folds the same multiply into AlbedoMap's colour channels at
+export time. So the data survives, just not as its own texture — there is
+nowhere to write a standalone AO map for MHWI.  The RE-series specs will be
+able to write theirs back losslessly instead, via NRRO.B.
 """
 
 from ...core.shader_pack import (

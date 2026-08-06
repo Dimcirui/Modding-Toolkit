@@ -34,7 +34,9 @@ class MHWI_OT_Mrl3GeneratorDialog(bpy.types.Operator):
 
     def invoke(self, context, event):
         settings = context.scene.mhwi_mrl3_generator
-        if settings.mesh_collection and not settings.material_list:
+        # Always refresh on open -- see games/mhws/mdf_generator_ui.py's
+        # invoke() for why this must not be conditional on the list being empty.
+        if settings.mesh_collection:
             bpy.ops.mhwi.mrl3_gen_refresh()
         return context.window_manager.invoke_props_dialog(
             self, width=GENERATOR_WINDOW_WIDTH)
@@ -87,6 +89,11 @@ class MHWI_OT_Mrl3GeneratorDialog(bpy.types.Operator):
                 text="    e.g. pl/f_equip/pl042_0500/helm/tex", icon='INFO')
 
         layout.prop(settings, "flip_normal_g", text=T("mhwi.mrl3_generator.flip_normal_g_name"))
+        row = layout.row(align=True)
+        row.prop(settings, "global_disable_mipmaps",
+                 text=T("core.mdf_generator_base.global_disable_mipmaps"))
+        row.prop(settings, "global_use_toon",
+                 text=T("core.mdf_generator_base.global_use_toon"))
 
         # ── Preset dir status ──────────────────────────────────────────────────
         preset_dir = get_mhwi_preset_dir()
@@ -166,6 +173,14 @@ class MHWI_OT_Mrl3GeneratorDialog(bpy.types.Operator):
                     box.prop(mat_entry, "ao_image", text=T("ui.prop.ao_image"))
                     box.prop(mat_entry, "ao_strength",
                              text=T("mhwi.mrl3_generator.ao_strength_name"))
+                    ao_row = box.row(align=True)
+                    ao_row.label(text=T("core.mdf_tex_processor_base.pbr_ao"))
+                    ch_sub = ao_row.row(align=True)
+                    ch_sub.scale_x = 0.35
+                    for ch_val in ('R', 'G', 'B', 'A'):
+                        ch_sub.prop_enum(mat_entry, "ao_ch", ch_val)
+                    ao_row.prop(mat_entry, "ao_inv",
+                               text=T("core.mdf_tex_processor_base.prop_invert"), toggle=True)
             if preset_has_albedo_blend_map(mat_entry.material_preset):
                 box.prop(mat_entry, "hide_snow_overlay", text=T("mhwi.mrl3_generator.hide_snow_overlay_name"))
 

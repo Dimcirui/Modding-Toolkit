@@ -120,7 +120,7 @@ SECTIONS = {
             # used in: convert the materials first, then generate from them.
             op("mtk.convert_to_packed_shader",
                "ui.main_panel.btn_convert_packed_shader", 'NODETREE',
-               props={'game': 'MHWI', 'scope': 'SELECTED'},
+               props={'game': 'MHWI', 'scope': 'SELECTED', 'show_dialog': False},
                only_if=lambda: MTK_SHADER_AVAILABLE),
             [op("mhwi.mrl3_tex_processor_dialog",
                 "ui.main_panel.btn_mrl3_tex_processor", 'TEXTURE', needs='mhw_model'),
@@ -153,7 +153,18 @@ SECTIONS = {
             op("mhws.add_facial_bones", "ui.main_panel.btn_add_facial_bones",
                'SHAPEKEY_DATA'),
         ],
-        'material': [_mdf_pair('mhws')],
+        'material': [
+            # Above the processor/generator pair for the same reason as MHWI:
+            # convert the materials first, then generate from them. One
+            # button, not one per archetype -- MTK_OT_ConvertToPackedShader's
+            # own dialog (use_prefab checkbox + preset dropdown) resolves which
+            # spec/preset to use, so no game/scope needs presetting here.
+            op("mtk.convert_to_packed_shader",
+               "ui.main_panel.btn_convert_packed_shader", 'NODETREE',
+               props={'scope': 'SELECTED'},
+               only_if=lambda: MTK_SHADER_AVAILABLE),
+            _mdf_pair('mhws'),
+        ],
         'physics': [_re_chain('mhws')],
     },
     're4': {

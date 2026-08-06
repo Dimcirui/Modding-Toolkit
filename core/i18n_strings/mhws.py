@@ -304,4 +304,179 @@ STRINGS = {
         "EN": "MDF2 Processor — process textures on top of existing MDF2 materials. Requires an existing, "
               "properly named MDF2 collection",
         "ZH": "MDF2 处理器 — 在已有 MDF2 材质的基础上处理贴图。需要有现成的已起好名字的 MDF2 集合"},
+
+    # ══════════════════════════════════════════════════════════════════════
+    # games/mhws/shader_defs.py — packed shader sockets
+    #
+    # These become node group socket descriptions (tooltips), which are baked
+    # into the datablock when the group is first built. Switching language
+    # therefore does not retranslate an already-built group; it only affects
+    # groups created afterwards.
+    # ══════════════════════════════════════════════════════════════════════
+
+    "mhws.shader_defs.panel_pbr": {"EN": "PBR Inputs", "ZH": "PBR 输入"},
+    "mhws.shader_defs.panel_slots_standard": {
+        "EN": "Game Slots (packed) — Standard", "ZH": "游戏槽位 (打包) — 标准"},
+    "mhws.shader_defs.panel_slots_weapon": {
+        "EN": "Game Slots (packed) — Weapon", "ZH": "游戏槽位 (打包) — 武器"},
+    "mhws.shader_defs.panel_slots_skin": {
+        "EN": "Game Slots (packed) — Skin", "ZH": "游戏槽位 (打包) — 皮肤"},
+    "mhws.shader_defs.panel_slots_hair": {
+        "EN": "Game Slots (packed) — Hair", "ZH": "游戏槽位 (打包) — 毛发"},
+
+    "mhws.shader_defs.albd": {
+        "EN": "BaseDielectricMap — RGB base colour, A inverted metallic (not opacity)",
+        "ZH": "BaseDielectricMap — RGB 基础色, A 反转金属度 (不是透明度)"},
+    "mhws.shader_defs.nrro": {
+        "EN": "NormalRoughnessOcclusionMap — R roughness, G/A hemi-octahedral normal, B AO",
+        "ZH": "NormalRoughnessOcclusionMap — R 粗糙度, G/A 半八面体编码法线, B 环境光遮蔽"},
+    "mhws.shader_defs.emissive": {
+        "EN": "EmissiveMap — emissive colour",
+        "ZH": "EmissiveMap — 自发光颜色"},
+    "mhws.shader_defs.atos": {
+        "EN": "AlphaTranslucentOcclusionSSSMap — R alpha (real opacity), B AO",
+        "ZH": "AlphaTranslucentOcclusionSSSMap — R 透明度 (真正的不透明度), B 环境光遮蔽"},
+    "mhws.shader_defs.basealpha": {
+        "EN": "BaseAlphaMap — RGB base colour, A real opacity. Hair's equivalent of "
+              "BaseDielectricMap (hair is not metallic, so no inverted-alpha slot is needed)",
+        "ZH": "BaseAlphaMap — RGB 基础色, A 为真实透明度。是毛发用来代替 BaseDielectricMap 的槽位"
+              "（毛发不是金属，不需要反转 Alpha 表示金属度）"},
+
+    # ── Secondary slots: no composition recipe, carried through untouched so
+    # an existing image on the slot survives the round trip to the exporter.
+    "mhws.shader_defs.mp_noise": {
+        "EN": "MP_noise — a shared noise mask used by several VFX blends; carried for "
+              "export, not used by the preview",
+        "ZH": "MP_noise — 多个 VFX 混合共用的噪声遮罩；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.wind_effect_volumemap": {
+        "EN": "Wind_Effect_VolumeMap — wind/cloth simulation volume texture; carried for "
+              "export, not used by the preview",
+        "ZH": "Wind_Effect_VolumeMap — 风力/布料模拟体积贴图；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.fxmap": {
+        "EN": "FxMap — secondary effect mask; carried for export, not used by the preview",
+        "ZH": "FxMap — 附加特效遮罩；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.noisemap": {
+        "EN": "noisemap — generic noise texture used by several effects; carried for "
+              "export, not used by the preview",
+        "ZH": "noisemap — 多个效果共用的通用噪声贴图；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.detailmaskmap": {
+        "EN": "DetailMaskMap — masks in the four Detail_ALBD/NRRH layers; carried for "
+              "export, not used by the preview",
+        "ZH": "DetailMaskMap — 用来遮罩混合四组 Detail_ALBD/NRRH 细节层；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.detail_albd_r": {
+        "EN": "Detail_ALBD_R — a detail-layer colour texture, masked in by "
+              "DetailMaskMap.R; carried for export, not used by the preview",
+        "ZH": "Detail_ALBD_R — 细节层颜色贴图，由 DetailMaskMap.R 控制遮罩；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.detail_albd_g": {
+        "EN": "Detail_ALBD_G — a detail-layer colour texture, masked in by "
+              "DetailMaskMap.G; carried for export, not used by the preview",
+        "ZH": "Detail_ALBD_G — 细节层颜色贴图，由 DetailMaskMap.G 控制遮罩；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.detail_albd_b": {
+        "EN": "Detail_ALBD_B — a detail-layer colour texture, masked in by "
+              "DetailMaskMap.B; carried for export, not used by the preview",
+        "ZH": "Detail_ALBD_B — 细节层颜色贴图，由 DetailMaskMap.B 控制遮罩；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.detail_albd_a": {
+        "EN": "Detail_ALBD_A — a detail-layer colour texture, masked in by "
+              "DetailMaskMap.A; carried for export, not used by the preview",
+        "ZH": "Detail_ALBD_A — 细节层颜色贴图，由 DetailMaskMap.A 控制遮罩；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.detail_nrrh_r": {
+        "EN": "Detail_NRRH_R — a detail-layer normal/roughness texture, masked in by "
+              "DetailMaskMap.R; carried for export, not used by the preview",
+        "ZH": "Detail_NRRH_R — 细节层法线/粗糙度贴图，由 DetailMaskMap.R 控制遮罩；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.detail_nrrh_g": {
+        "EN": "Detail_NRRH_G — a detail-layer normal/roughness texture, masked in by "
+              "DetailMaskMap.G; carried for export, not used by the preview",
+        "ZH": "Detail_NRRH_G — 细节层法线/粗糙度贴图，由 DetailMaskMap.G 控制遮罩；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.detail_nrrh_b": {
+        "EN": "Detail_NRRH_B — a detail-layer normal/roughness texture, masked in by "
+              "DetailMaskMap.B; carried for export, not used by the preview",
+        "ZH": "Detail_NRRH_B — 细节层法线/粗糙度贴图，由 DetailMaskMap.B 控制遮罩；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.detail_nrrh_a": {
+        "EN": "Detail_NRRH_A — a detail-layer normal/roughness texture, masked in by "
+              "DetailMaskMap.A; carried for export, not used by the preview",
+        "ZH": "Detail_NRRH_A — 细节层法线/粗糙度贴图，由 DetailMaskMap.A 控制遮罩；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.panoramamap": {
+        "EN": "PanoramaMap — reflection/environment panorama texture; carried for "
+              "export, not used by the preview",
+        "ZH": "PanoramaMap — 反射/环境全景贴图；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.vectoremitmap": {
+        "EN": "VectorEmitMap — particle emission vector field; carried for export, not "
+              "used by the preview",
+        "ZH": "VectorEmitMap — 粒子发射矢量场贴图；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.colorlayer_maskmap": {
+        "EN": "ColorLayer_MaskMap — colour-layer blend mask; carried for export, not "
+              "used by the preview",
+        "ZH": "ColorLayer_MaskMap — 颜色层混合遮罩；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.vfx_texture2d": {
+        "EN": "VFX_Texture2D — a VFX shader's 2D texture input; carried for export, "
+              "not used by the preview",
+        "ZH": "VFX_Texture2D — VFX 着色器的 2D 贴图输入；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.vfx_texture3d": {
+        "EN": "VFX_Texture3D — a VFX shader's 3D texture input; carried for export, "
+              "not used by the preview",
+        "ZH": "VFX_Texture3D — VFX 着色器的 3D 贴图输入；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.gpuwind_maskmap": {
+        "EN": "GpuWind_MaskMap — GPU wind simulation mask; carried for export, not "
+              "used by the preview",
+        "ZH": "GpuWind_MaskMap — GPU 风力模拟遮罩；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.skinmap": {
+        "EN": "SkinMap — a subsurface/skin-shading lookup texture. No PBR recipe and no "
+              "vanilla default exists for this slot, so it is left at the plugin's own "
+              "bundled placeholder unless overridden",
+        "ZH": "SkinMap — 次表面/皮肤着色查找贴图。这个槽位没有 PBR 合成方案，也没有官方默认贴图，"
+              "除非手动覆盖，否则使用插件内置的占位贴图"},
+    "mhws.shader_defs.blendnormalmap": {
+        "EN": "BlendNormalMap — a secondary blend normal map. No PBR recipe and no "
+              "vanilla default exists for this slot, so it is left at the plugin's own "
+              "bundled placeholder unless overridden",
+        "ZH": "BlendNormalMap — 附加混合法线贴图。这个槽位没有 PBR 合成方案，也没有官方默认贴图，"
+              "除非手动覆盖，否则使用插件内置的占位贴图"},
+    "mhws.shader_defs.hairflowmap": {
+        "EN": "HairFlowMap — hair strand flow-direction map; carried for export, not "
+              "used by the preview",
+        "ZH": "HairFlowMap — 毛发流向贴图；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.hair_height_specmask_shift_map": {
+        "EN": "Hair_Height_SpecMask_Shift_Map — hair height/specular-shift mask; "
+              "carried for export, not used by the preview",
+        "ZH": "Hair_Height_SpecMask_Shift_Map — 毛发高度/高光偏移遮罩；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.hairovermap": {
+        "EN": "HairOverMap — hair overlay/highlight map; carried for export, not used "
+              "by the preview",
+        "ZH": "HairOverMap — 毛发叠加/高光贴图；仅为导出保留，预览不使用"},
+
+    "mhws.shader_defs.pbr_base_color": {
+        "EN": "Base colour. Multiplied with BaseDielectricMap",
+        "ZH": "基础色。与 BaseDielectricMap 相乘"},
+    "mhws.shader_defs.pbr_alpha": {
+        "EN": "Alpha. Multiplied with AlphaTranslucentOcclusionSSSMap.R, the slot that "
+              "actually carries opacity (BaseDielectricMap's alpha is metallic, not opacity)",
+        "ZH": "透明度。与 AlphaTranslucentOcclusionSSSMap.R 相乘——真正带不透明度的是这个槽位，"
+              "不是 BaseDielectricMap 的 Alpha (那个是金属度)"},
+    "mhws.shader_defs.pbr_roughness": {
+        "EN": "Roughness. Multiplied with NormalRoughnessOcclusionMap.R",
+        "ZH": "粗糙度。与 NormalRoughnessOcclusionMap.R 相乘"},
+    "mhws.shader_defs.pbr_metallic": {
+        "EN": "Metallic. Added to BaseDielectricMap's inverted alpha (1 - alpha)",
+        "ZH": "金属度。与 BaseDielectricMap 反转后的 Alpha (1 - alpha) 相加"},
+    "mhws.shader_defs.pbr_ao": {
+        "EN": "Ambient occlusion, multiplied into base colour for preview. Unlike MHWI this "
+              "genuinely exports: both NormalRoughnessOcclusionMap.B and "
+              "AlphaTranslucentOcclusionSSSMap.B carry it",
+        "ZH": "环境光遮蔽，预览时正片叠底到基础色上。和 MHWI 不同，这个是真的能导出的——"
+              "NormalRoughnessOcclusionMap.B 和 AlphaTranslucentOcclusionSSSMap.B 都会带上它"},
+    "mhws.shader_defs.pbr_ao_strength": {
+        "EN": "AO strength: 0 = off, 1 = the full map",
+        "ZH": "AO 强度：0 为关闭，1 为完整应用"},
+    "mhws.shader_defs.pbr_emission": {
+        "EN": "Emission colour. Added to EmissiveMap",
+        "ZH": "自发光颜色。与 EmissiveMap 相加"},
+    "mhws.shader_defs.pbr_emission_strength": {
+        "EN": "Emission strength",
+        "ZH": "自发光强度"},
+    "mhws.shader_defs.pbr_normal": {
+        "EN": "Normal map texture — plug the image in directly, no Normal Map "
+              "node needed. Its deviation from flat is added to "
+              "NormalRoughnessOcclusionMap's decoded normal",
+        "ZH": "法线贴图 —— 直接连图片即可，不需要 Normal Map 节点。"
+              "其相对平面的偏移量会和 NormalRoughnessOcclusionMap 解码出的法线相加"},
 }
