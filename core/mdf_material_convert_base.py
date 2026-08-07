@@ -70,6 +70,7 @@ def is_custom_tex_path(path, vanilla_set):
 # try this fallback before giving up on the binding entirely.
 _TEX_TYPE_FALLBACK = {
     'BaseDielectricMap': 'BaseAlphaMap',
+    'BaseAlphaMap': 'BaseDielectricMap',
 }
 
 
