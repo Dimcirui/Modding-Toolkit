@@ -2,7 +2,8 @@ import bpy
 import os
 
 from ...core.i18n import T
-from .weapon_data import WEAPON_TYPES
+from .weapon_data import WEAPON_TYPES, _load_weapon_sets, set_selected_weapon
+from .batch_export import _load_armor_sets, get_armor_entry
 
 WEAPON_TYPE_CODES = [t[0] for t in WEAPON_TYPES]
 
@@ -179,6 +180,46 @@ def _resolve_target(col_name, parent_col):
     return parent_col
 
 
+# ── 辅助：导入后自动选中批量导出的目标 ──────────────────────────────
+
+def _auto_select_for_export(context, kind, group_key):
+    """
+    导入成功后，把 group_key 对应的装备/武器设为批量导出面板当前选中项，
+    省去导入完还要在导出面板里重新翻找同一件装备的步骤。
+    """
+    settings = context.scene.mhw_suite_settings
+
+    if kind == "armor":
+        data  = _load_armor_sets(settings.mhwi_armor_sets_file)
+        entry = get_armor_entry(data, group_key)
+        if entry is None:
+            # SP 幻化的 model_id 带性别前缀（f_/m_），扫描到的文件夹名不带
+            for prefix in ("f_", "m_"):
+                entry = get_armor_entry(data, prefix + group_key)
+                if entry:
+                    break
+        if entry is None:
+            return
+        rank = entry.get("rank", "HR")
+        settings.mhwi_export_mode = 'ARMOR'
+        settings.mhwi_rank_tab    = rank
+        if rank == "HR":
+            settings.mhwi_selected_hr_armor = entry["id"]
+        elif rank == "MR":
+            settings.mhwi_selected_mr_armor = entry["id"]
+        else:
+            settings.mhwi_selected_sp_armor = entry["id"]
+
+    else:  # weapon
+        data = _load_weapon_sets(settings.mhwi_weapon_sets_file)
+        entry = next((w for w in data.get("weapon_sets", []) if w["id"] == group_key), None) if data else None
+        if entry is None:
+            return
+        settings.mhwi_export_mode      = 'WEAPON'
+        settings.mhwi_weapon_type_tab  = entry["type"]
+        set_selected_weapon(context.scene, entry["type"], entry["id"])
+
+
 # ── Operators ─────────────────────────────────────────────────────
 
 class MHWI_OT_ScanImportFolder(bpy.types.Operator):
@@ -319,10 +360,12 @@ class MHWI_OT_BatchImport(bpy.types.Operator):
                     op_func('EXEC_DEFAULT', directory=directory, files=[{"name": filename}])
 
         ok = fail = 0
+        succeeded_groups = {}   # group_key -> kind，记录本次至少成功导入一个文件的装备/武器
         for item in enabled:
             # 已通过 mod3 联合导入的 mrl3，跳过
             if item.filepath in paired_mrl3_paths:
                 ok += 1
+                succeeded_groups[item.group_key] = item.kind
                 print(f"[MHWI] Paired (via MOD3): {os.path.basename(item.filepath)}")
                 continue
 
@@ -346,11 +389,17 @@ class MHWI_OT_BatchImport(bpy.types.Operator):
                         if col:
                             _link_under(col, target)
                 ok += 1
+                succeeded_groups[item.group_key] = item.kind
                 suffix = " (+MRL3)" if mrl3_path else ""
                 print(f"[MHWI] Imported{suffix}: {os.path.basename(item.filepath)}")
             except Exception as e:
                 print(f"[MHWI] Import FAILED {item.filepath}: {e}")
                 fail += 1
+
+        # 按面板中的显示顺序逐个选中，最后一个成为导出面板当前激活的项
+        for g in context.scene.mhwi_import_groups:
+            if g.group_key in succeeded_groups:
+                _auto_select_for_export(context, succeeded_groups[g.group_key], g.group_key)
 
         if fail:
             self.report({'WARNING'}, T("mhwi.batch_import.import_done_with_fail").format(ok=ok, fail=fail))

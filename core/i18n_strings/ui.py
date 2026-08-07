@@ -183,7 +183,6 @@ STRINGS = {
     "ui.game_sections.group_rig":      {"EN": "Skeleton & Mesh",          "ZH": "骨架 & 网格处理"},
     "ui.game_sections.group_material": {"EN": "Material & Texture",       "ZH": "材质 & 贴图处理"},
     "ui.game_sections.group_physics":  {"EN": "Physics",                  "ZH": "物理处理"},
-    "ui.game_sections.btn_batch_export_mhws": {"EN": "MHWs Batch Exporter", "ZH": "MHWs 批量导出"},
     "ui.game_sections.btn_batch_export_re4":  {"EN": "RE4 Batch Exporter",  "ZH": "RE4 批量导出"},
     "ui.game_sections.btn_batch_export_mhrs": {"EN": "MHRS Batch Exporter", "ZH": "MHRS 批量导出"},
     "ui.game_sections.btn_batch_export_re9":  {"EN": "RE9 Batch Exporter",  "ZH": "RE9 批量导出"},

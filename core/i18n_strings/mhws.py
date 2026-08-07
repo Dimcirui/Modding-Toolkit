@@ -2,7 +2,8 @@
 core/i18n_strings/mhws.py — bilingual STRINGS table for games/mhws/*.py.
 
 Covers: games/mhws/operators.py, games/mhws/batch_export.py,
-games/mhws/batch_export_ui.py, games/mhws/mdf_generator.py,
+games/mhws/batch_export_ui.py, games/mhws/batch_import.py,
+games/mhws/batch_import_ui.py, games/mhws/mdf_generator.py,
 games/mhws/mdf_generator_ui.py, games/mhws/mdf_tex_processor_ui.py,
 games/mhws/mdf_material_convert.py.
 (games/mhws/fbxskel.py, games/mhws/mdf_tex_processor.py and
@@ -240,6 +241,52 @@ STRINGS = {
     "mhws.batch_export_ui.use_bonesystem_label": {"EN": "Use Bonesystem", "ZH": "使用 Bonesystem"},
     "mhws.batch_export_ui.armature_label": {"EN": "Armature", "ZH": "骨架"},
     "mhws.batch_export_ui.fbxskel_name_label": {"EN": "FBXSkel Name", "ZH": "FBXSkel 名"},
+
+    # ══════════════════════════════════════════════════════════════════════
+    # games/mhws/batch_import.py
+    # ══════════════════════════════════════════════════════════════════════
+
+    "mhws.batch_import.scan_desc": {
+        "EN": "Scan the armor pack against the Mod Root and list files found on disk",
+        "ZH": "按装备包在 Mod Root 中扫描，列出磁盘上实际存在的文件"},
+    "mhws.batch_import.set_mod_root_first": {
+        "EN": "Please set the Mod Root directory first (the parent folder of natives)",
+        "ZH": "请先设置 Mod Root 目录（natives 的上级文件夹）"},
+    "mhws.batch_import.no_files_found": {"EN": "No files found", "ZH": "未找到任何文件"},
+    "mhws.batch_import.scan_done": {"EN": "Found {n} file(s)", "ZH": "已找到 {n} 个文件"},
+    "mhws.batch_import.toggle_group_desc": {"EN": "Expand/collapse this armor set", "ZH": "展开/折叠该装备"},
+    "mhws.batch_import.select_group_desc": {
+        "EN": "Select/deselect all files in this armor set", "ZH": "选中/取消选中该装备的所有文件"},
+    "mhws.batch_import.select_all_desc": {
+        "EN": "Select/deselect all files", "ZH": "选中/取消选中全部文件"},
+    "mhws.batch_import.mesh_editor_missing": {
+        "EN": "RE Mesh Editor not installed, cannot import", "ZH": "未安装 RE Mesh Editor，无法导入"},
+    "mhws.batch_import.no_items_selected": {"EN": "No files selected", "ZH": "未选中任何文件"},
+    "mhws.batch_import.batch_import_desc": {"EN": "MHWs armor batch import", "ZH": "MHWs 装备批量导入"},
+    "mhws.batch_import.done": {
+        "EN": "Done: imported {ok}, skipped {skip}", "ZH": "完成: 导入 {ok}, 跳过 {skip}"},
+    "mhws.batch_import.done_with_fail": {
+        "EN": "Done: imported {ok}, failed {fail}, skipped {skip}",
+        "ZH": "完成: 导入 {ok}, 失败 {fail}, 跳过 {skip}"},
+
+    # ══════════════════════════════════════════════════════════════════════
+    # games/mhws/batch_import_ui.py
+    # ══════════════════════════════════════════════════════════════════════
+
+    "mhws.batch_import_ui.dialog_desc": {
+        "EN": "MHWs armor batch import dialog", "ZH": "MHWs 装备批量导入对话框"},
+    "mhws.batch_import_ui.scan_btn": {"EN": "Scan", "ZH": "扫描"},
+    "mhws.batch_import_ui.click_scan_hint": {
+        "EN": "Click Scan to look for importable files", "ZH": "点击扫描以查找可导入的文件"},
+    "mhws.batch_import_ui.set_mod_root_hint": {
+        "EN": "Please set Mod Root first, then click Scan", "ZH": "请先设置 Mod Root，再点击扫描"},
+    "mhws.batch_import_ui.select_all": {"EN": "Select All", "ZH": "全选"},
+    "mhws.batch_import_ui.deselect_all": {"EN": "Deselect All", "ZH": "取消全选"},
+    "mhws.batch_import_ui.selected_count": {
+        "EN": "{enabled}/{total} selected", "ZH": "已选 {enabled}/{total}"},
+    "mhws.batch_import_ui.chain2_slow_hint": {
+        "EN": "Importing chain2 is slow; only check it manually if you actually need it",
+        "ZH": "导入 chain2 速度很慢，如有需要请手动选择导入"},
 
     # ══════════════════════════════════════════════════════════════════════
     # games/mhws/mdf_generator.py

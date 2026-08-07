@@ -49,12 +49,14 @@ def _has_re_fbxskel():
 
 
 GUARDS = {
-    'mhw_model':  (_has_mhw_model,  "ui.main_panel.label_need_mhw_model_editor"),
-    'mhw_ctc':    (_has_mhw_ctc,    "ui.main_panel.label_need_mhw_model_editor"),
-    're_chain':   (_has_re_chain,   "ui.main_panel.label_need_re_chain_editor"),
-    're_mesh':    (lambda: re_mesh_op_available('exportfile'),
-                   "ui.main_panel.label_need_re_mesh_editor"),
-    're_fbxskel': (_has_re_fbxskel, "ui.main_panel.label_need_re_mesh_editor"),
+    'mhw_model':      (_has_mhw_model,  "ui.main_panel.label_need_mhw_model_editor"),
+    'mhw_ctc':        (_has_mhw_ctc,    "ui.main_panel.label_need_mhw_model_editor"),
+    're_chain':       (_has_re_chain,   "ui.main_panel.label_need_re_chain_editor"),
+    're_mesh':        (lambda: re_mesh_op_available('exportfile'),
+                        "ui.main_panel.label_need_re_mesh_editor"),
+    're_mesh_import': (lambda: re_mesh_op_available('importfile'),
+                        "ui.main_panel.label_need_re_mesh_editor"),
+    're_fbxskel':     (_has_re_fbxskel, "ui.main_panel.label_need_re_mesh_editor"),
 }
 
 
@@ -141,7 +143,11 @@ SECTIONS = {
     },
     'mhws': {
         'label': "MHWS Tools", 'icon': 'WORLD',
-        'io': [_batch_export('mhws', "ui.game_sections.btn_batch_export_mhws")],
+        'io': [
+            _batch_export('mhws', "ui.main_panel.btn_batch_export"),
+            op("mhws.batch_import_dialog", "ui.main_panel.btn_batch_import",
+               'IMPORT', needs='re_mesh_import'),
+        ],
         'rig': [
             op("mhws.preprocess_model", "ui.main_panel.btn_mhws_preprocess",
                'ARMATURE_DATA'),
