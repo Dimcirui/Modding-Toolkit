@@ -62,6 +62,17 @@ def is_custom_tex_path(path, vanilla_set):
     return norm not in vanilla_set
 
 
+# ── Texture slot type fallback ──────────────────────────────────────────────
+# Some presets use BaseAlphaMap instead of BaseDielectricMap for the albedo
+# slot -- same RGB semantics (see BASE_SLOT_CHANNEL_MAPS in
+# mdf_tex_processor_base.py), they only differ in what the A channel carries
+# (metallic vs. alpha). When the target preset has no exact slot-type match,
+# try this fallback before giving up on the binding entirely.
+_TEX_TYPE_FALLBACK = {
+    'BaseDielectricMap': 'BaseAlphaMap',
+}
+
+
 # ── Param value migration ───────────────────────────────────────────────────
 
 _PROP_VALUE_FIELDS = {
@@ -205,6 +216,10 @@ class MdfConvertMaterialDialogBase(bpy.types.Operator):
                                 tex_skipped_vanilla += 1
                             continue
                     dst = new_bindings_by_type.get(tex_type)
+                    if dst is None:
+                        fallback_type = _TEX_TYPE_FALLBACK.get(tex_type)
+                        if fallback_type:
+                            dst = new_bindings_by_type.get(fallback_type)
                     if dst is None:
                         tex_skipped_no_slot += 1
                         continue
