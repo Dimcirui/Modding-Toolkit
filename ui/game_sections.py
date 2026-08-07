@@ -164,6 +164,10 @@ SECTIONS = {
                props={'scope': 'SELECTED'},
                only_if=lambda: MTK_SHADER_AVAILABLE),
             _mdf_pair('mhws'),
+            # Below the processor/generator pair: convert an existing MDF
+            # material to a different preset, migrating custom textures.
+            op("mhws.mdf_convert_material_dialog",
+               "ui.game_sections.btn_mdf_convert_material", 'FILE_REFRESH'),
         ],
         'physics': [_re_chain('mhws')],
     },

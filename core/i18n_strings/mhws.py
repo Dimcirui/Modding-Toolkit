@@ -3,7 +3,8 @@ core/i18n_strings/mhws.py — bilingual STRINGS table for games/mhws/*.py.
 
 Covers: games/mhws/operators.py, games/mhws/batch_export.py,
 games/mhws/batch_export_ui.py, games/mhws/mdf_generator.py,
-games/mhws/mdf_generator_ui.py, games/mhws/mdf_tex_processor_ui.py.
+games/mhws/mdf_generator_ui.py, games/mhws/mdf_tex_processor_ui.py,
+games/mhws/mdf_material_convert.py.
 (games/mhws/fbxskel.py, games/mhws/mdf_tex_processor.py and
 games/mhws/data_maps.py have no UI-facing Chinese text.)
 
@@ -304,6 +305,15 @@ STRINGS = {
         "EN": "MDF2 Processor — process textures on top of existing MDF2 materials. Requires an existing, "
               "properly named MDF2 collection",
         "ZH": "MDF2 处理器 — 在已有 MDF2 材质的基础上处理贴图。需要有现成的已起好名字的 MDF2 集合"},
+
+    # ══════════════════════════════════════════════════════════════════════
+    # games/mhws/mdf_material_convert.py
+    # ══════════════════════════════════════════════════════════════════════
+
+    "mhws.mdf_material_convert.dialog_desc": {
+        "EN": "Convert the selected MDF material object(s) to a different RE Mesh Editor preset material, "
+              "migrating custom texture paths (and optionally params)",
+        "ZH": "将选中的 MDF 材质物体转换为另一个 RE Mesh Editor 预设材质，迁移自定义贴图路径 (可选连带参数)"},
 
     # ══════════════════════════════════════════════════════════════════════
     # games/mhws/shader_defs.py — packed shader sockets

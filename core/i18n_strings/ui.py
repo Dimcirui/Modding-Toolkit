@@ -187,6 +187,7 @@ STRINGS = {
     "ui.game_sections.btn_batch_export_re4":  {"EN": "RE4 Batch Exporter",  "ZH": "RE4 批量导出"},
     "ui.game_sections.btn_batch_export_mhrs": {"EN": "MHRS Batch Exporter", "ZH": "MHRS 批量导出"},
     "ui.game_sections.btn_batch_export_re9":  {"EN": "RE9 Batch Exporter",  "ZH": "RE9 批量导出"},
+    "ui.game_sections.btn_mdf_convert_material": {"EN": "Convert to Another Material", "ZH": "转换为其他材质"},
 
     "ui.main_panel.btn_convert_packed_shader":    {"EN": "Convert Selected to Packed Shader",
                                                    "ZH": "选中物体转为打包着色器"},

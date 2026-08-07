@@ -1421,7 +1421,7 @@ def _material_name_for(mat_name, mesh_objects):
     return _slugify(_strip_blender_suffix(mat_name))
 
 
-def _import_read_preset_json():
+def import_read_preset_json():
     """Locate and return readPresetJSON from RE Mesh Editor."""
     import sys, importlib, inspect
 
@@ -1881,7 +1881,7 @@ class MdfGenProcessBase(bpy.types.Operator):
         ImageListToDDS, DDSToTex = _import_tex_utils()
 
         _t_import = time.time()
-        readPresetJSON = _import_read_preset_json()
+        readPresetJSON = import_read_preset_json()
         # print(f"[{cls._log_tag}] 加载 Preset 模块: {time.time() - _t_import:.2f}s", flush=True)
         if readPresetJSON is None:
             self.report({'ERROR'}, T("core.mdf_generator_base.cannot_load_preset_tool"))

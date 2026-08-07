@@ -3,7 +3,7 @@ core/i18n_strings/core.py — bilingual STRINGS table for core/*.py.
 
 Covers: core/standard_ops.py, core/pose_ops.py, core/editor_ops.py,
 core/editor_props.py, core/mdf_tex_processor_base.py, core/mdf_generator_base.py,
-core/update_ops.py.
+core/mdf_material_convert_base.py, core/update_ops.py.
 
 Key naming convention: "core.<module_name_without_.py>.<short_purpose>".
 Keys are namespaced per source module even where wording is repeated, so this
@@ -417,6 +417,46 @@ STRINGS = {
         "EN": "Done: {export} succeeded, {fail} failed", "ZH": "完成: 成功 {export}, 失败 {fail}"},
     "core.mdf_generator_base.process_done": {
         "EN": "Done: generated MDF2 + textures for {n} material(s)", "ZH": "完成: 成功生成 {n} 个材质的 MDF2 + 贴图"},
+
+    # ══════════════════════════════════════════════════════════════════════
+    # core/mdf_material_convert_base.py
+    # ══════════════════════════════════════════════════════════════════════
+
+    # ── migrate_mode EnumProperty items (_migrate_mode_items callback) ─────
+    "core.mdf_material_convert_base.mode_custom_tex": {
+        "EN": "Custom Textures Only", "ZH": "仅迁移自定义贴图路径"},
+    "core.mdf_material_convert_base.mode_custom_tex_desc": {
+        "EN": "Only migrate texture paths that are not part of the vanilla game assets",
+        "ZH": "仅迁移不属于原版游戏资产的自定义贴图路径"},
+    "core.mdf_material_convert_base.mode_all_tex": {
+        "EN": "All Textures", "ZH": "迁移全部贴图路径"},
+    "core.mdf_material_convert_base.mode_all_tex_desc": {
+        "EN": "Migrate every texture binding path, vanilla or custom",
+        "ZH": "迁移全部贴图绑定路径，无论是否为原版"},
+    "core.mdf_material_convert_base.mode_all_tex_params": {
+        "EN": "Textures + All Params", "ZH": "迁移贴图路径与全部参数"},
+    "core.mdf_material_convert_base.mode_all_tex_params_desc": {
+        "EN": "Migrate every texture binding path and every shader param that exists on the target preset",
+        "ZH": "迁移全部贴图绑定路径，以及目标预设中存在同名项的全部参数"},
+
+    "core.mdf_material_convert_base.preset_choice_label": {"EN": "Target Preset", "ZH": "目标预设材质"},
+    "core.mdf_material_convert_base.delete_original_label": {"EN": "Delete Original Material", "ZH": "删除原材质"},
+
+    "core.mdf_material_convert_base.no_preset_selected": {
+        "EN": "Please select a target preset material", "ZH": "请选择目标预设材质"},
+    "core.mdf_material_convert_base.no_targets": {
+        "EN": "Select one or more MDF material objects first", "ZH": "请先选中一个或多个 MDF 材质物体"},
+    "core.mdf_material_convert_base.cannot_load_preset_tool": {
+        "EN": "Cannot load the RE Mesh Editor preset tool", "ZH": "无法加载 RE Mesh Editor Preset 工具"},
+    "core.mdf_material_convert_base.done": {
+        "EN": "Converted {done} material(s): {tex} texture(s) migrated (vanilla skipped {vskip}, no matching slot {noslot})",
+        "ZH": "已转换 {done} 个材质: 迁移贴图 {tex} 处 (原版跳过 {vskip}, 无对应槛位跳过 {noslot})"},
+    "core.mdf_material_convert_base.done_with_params": {
+        "EN": "Converted {done} material(s): {tex} texture(s) migrated (vanilla skipped {vskip}, no matching slot {noslot}); "
+              "{pmig} param(s) migrated ({pskip} skipped)",
+        "ZH": "已转换 {done} 个材质: 迁移贴图 {tex} 处 (原版跳过 {vskip}, 无对应槛位跳过 {noslot}); 参数迁移 {pmig} 处 (跳过 {pskip})"},
+    "core.mdf_material_convert_base.done_with_fail": {
+        "EN": "Done: {done} succeeded, {failed} failed (see console)", "ZH": "完成: 成功 {done}, 失败 {failed} (详见控制台)"},
 
     # ══════════════════════════════════════════════════════════════════════
     # core/update_ops.py
