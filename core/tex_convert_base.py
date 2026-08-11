@@ -475,6 +475,74 @@ def _blend_detail_normal(base_path, detail_path, tiling_x, tiling_y, out_dir, na
     return out_path
 
 
+# ── Color adjust (COLOR preset only) ────────────────────────────────────────
+# Sliders and ranges follow Photoshop's own units so values carry over directly
+# from a Photoshop workflow: Exposure in stops (Image > Adjustments > Exposure,
+# -20..20), Saturation/Vibrance in Photoshop's -100..100 (Image > Adjustments
+# > Vibrance). These are pixel-value approximations of PS's algorithms, not a
+# colorimetric match -- good enough for texture editing, not photo grading.
+
+def _luminance(rgb):
+    import numpy as np
+    weights = np.array([0.299, 0.587, 0.114], dtype=np.float32)
+    return np.sum(rgb * weights, axis=-1, keepdims=True)
+
+
+def _apply_color_adjust(rgb, exposure, saturation, vibrance):
+    """rgb: (h, w, 3) float32 array of the image's raw stored channel values.
+    Order is exposure -> vibrance -> saturation, matching how the three stack
+    in Photoshop's own Vibrance dialog (Saturation is the coarser, later knob)."""
+    import numpy as np
+
+    if exposure:
+        rgb = rgb * (2.0 ** exposure)
+    if vibrance:
+        amt = vibrance / 100.0
+        max_c = rgb.max(axis=-1, keepdims=True)
+        avg_c = rgb.mean(axis=-1, keepdims=True)
+        current_sat = max_c - avg_c
+        scale = amt * (1.0 - current_sat)
+        gray = _luminance(rgb)
+        rgb = gray + (rgb - gray) * (1.0 + scale)
+    if saturation:
+        factor = 1.0 + saturation / 100.0
+        gray = _luminance(rgb)
+        rgb = gray + (rgb - gray) * factor
+    return np.clip(rgb, 0.0, 1.0)
+
+
+def _apply_color_adjustments(path, exposure, saturation, vibrance, out_dir, name_hint):
+    """Load *path*, run _apply_color_adjust over its RGB (alpha untouched),
+    and save the result as a new PNG in out_dir. Mirrors the load/save pattern
+    _blend_detail_normal uses above."""
+    import numpy as np
+
+    tmp_name = "__tex_convert_coloradj"
+    if tmp_name in bpy.data.images:
+        bpy.data.images.remove(bpy.data.images[tmp_name])
+    img = bpy.data.images.load(path, check_existing=False)
+    img.name = tmp_name
+    img.colorspace_settings.name = 'Non-Color'
+    w, h = img.size
+    arr = np.array(img.pixels[:], dtype=np.float32).reshape(h, w, 4)
+    bpy.data.images.remove(img)
+
+    arr[:, :, :3] = _apply_color_adjust(arr[:, :, :3], exposure, saturation, vibrance)
+
+    out_path = os.path.join(out_dir, f"{name_hint}.png")
+    tmp_out = "__tex_convert_coloradj_out"
+    if tmp_out in bpy.data.images:
+        bpy.data.images.remove(bpy.data.images[tmp_out])
+    out_img = bpy.data.images.new(tmp_out, width=w, height=h, alpha=True)
+    out_img.colorspace_settings.name = 'Non-Color'
+    out_img.pixels[:] = arr.flatten().tolist()
+    out_img.filepath_raw = out_path
+    out_img.file_format = 'PNG'
+    out_img.save()
+    bpy.data.images.remove(out_img)
+    return out_path
+
+
 def _import_mhwtex_convert():
     """Locate MHW Model Editor's convertDDSFileToTex — MHWI's .tex container is
     written by that external addon, not by core/tex_file.py (RE Engine only)."""
@@ -542,6 +610,14 @@ class TexConvertSettings(bpy.types.PropertyGroup):
     ch_g_channel: bpy.props.EnumProperty(name="", items=_CH_ITEMS, default='G')
     ch_b_channel: bpy.props.EnumProperty(name="", items=_CH_ITEMS, default='B')
     ch_a_channel: bpy.props.EnumProperty(name="", items=_CH_ITEMS, default='A')
+
+    # COLOR preset only. Ranges/defaults match Photoshop's own sliders (see
+    # _apply_color_adjust) so values carry over directly from a PS workflow.
+    color_adjust_enabled: bpy.props.BoolProperty(name="Color Adjust", default=False)
+    adjust_exposure: bpy.props.FloatProperty(name="Exposure", default=0.0, min=-20.0, max=20.0,
+                                             soft_min=-3.0, soft_max=3.0)
+    adjust_saturation: bpy.props.FloatProperty(name="Saturation", default=0.0, min=-100.0, max=100.0)
+    adjust_vibrance: bpy.props.FloatProperty(name="Vibrance", default=0.0, min=-100.0, max=100.0)
 
     preset: bpy.props.EnumProperty(name="Preset", items=get_preset_items,
                                    update=_on_preset_update)
@@ -679,13 +755,29 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
                     adj_box.prop(s, "src_b_invert", text=T("core.tex_convert_base.invert_b_label"))
             else:  # SINGLE
                 adj_box.prop(s, "src_a_invert", text=T("core.tex_convert_base.invert_name"))
+                # Detail overlay is a normal-map technique (UDN blend), so it
+                # only makes sense for NONCOLOR/NRRO -- CUSTOM stays fully open
+                # since the user picked it precisely to bypass preset gating.
+                if s.preset in ('NONCOLOR', 'NRRO', 'CUSTOM'):
+                    adj_box.separator()
+                    adj_box.prop(s, "detail_enabled", text=T("core.tex_convert_base.detail_enabled_name"))
+                    if s.detail_enabled:
+                        adj_box.prop(s, "detail_path", text=T("core.tex_convert_base.detail_map_name"))
+                        tile_row = adj_box.row(align=True)
+                        tile_row.prop(s, "detail_tiling_x", text=T("core.tex_convert_base.detail_tiling_x_name"))
+                        tile_row.prop(s, "detail_tiling_y", text=T("core.tex_convert_base.detail_tiling_y_name"))
+
+            # Exposure/Saturation/Vibrance only make sense on real color data,
+            # not normal/mask/packed textures, so this is gated on COLOR --
+            # CUSTOM stays fully open for the same reason as detail overlay above.
+            if s.preset in ('COLOR', 'CUSTOM'):
                 adj_box.separator()
-                adj_box.prop(s, "detail_enabled", text=T("core.tex_convert_base.detail_enabled_name"))
-                if s.detail_enabled:
-                    adj_box.prop(s, "detail_path", text=T("core.tex_convert_base.detail_map_name"))
-                    tile_row = adj_box.row(align=True)
-                    tile_row.prop(s, "detail_tiling_x", text=T("core.tex_convert_base.detail_tiling_x_name"))
-                    tile_row.prop(s, "detail_tiling_y", text=T("core.tex_convert_base.detail_tiling_y_name"))
+                adj_box.prop(s, "color_adjust_enabled", text=T("core.tex_convert_base.color_adjust_enabled_name"))
+                if s.color_adjust_enabled:
+                    col = adj_box.column(align=True)
+                    col.prop(s, "adjust_exposure", text=T("core.tex_convert_base.adjust_exposure_name"))
+                    col.prop(s, "adjust_saturation", text=T("core.tex_convert_base.adjust_saturation_name"))
+                    col.prop(s, "adjust_vibrance", text=T("core.tex_convert_base.adjust_vibrance_name"))
 
         # RGBA channel mapping: only pick source image/constant + source channel
         if s.channel_mode == 'RGBA':
@@ -760,7 +852,7 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
         try:
             if s.channel_mode == 'SINGLE':
                 working = src_a
-                if s.detail_enabled and s.detail_path:
+                if s.preset in ('NONCOLOR', 'NRRO', 'CUSTOM') and s.detail_enabled and s.detail_path:
                     detail_path = bpy.path.abspath(s.detail_path)
                     if os.path.isfile(detail_path):
                         working = _blend_detail_normal(
@@ -800,6 +892,12 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
             if not png_path:
                 self.report({'ERROR'}, T("core.tex_convert_base.channel_compose_failed"))
                 return {'CANCELLED'}
+
+            if (s.preset in ('COLOR', 'CUSTOM') and s.color_adjust_enabled
+                    and (s.adjust_exposure or s.adjust_saturation or s.adjust_vibrance)):
+                png_path = _apply_color_adjustments(
+                    png_path, s.adjust_exposure, s.adjust_saturation, s.adjust_vibrance,
+                    temp_dir, "tex_convert_coloradj")
 
             from . import texconv_native
             resize = (s.out_width, s.out_height) if s.resize_enabled else None

@@ -589,6 +589,12 @@ STRINGS = {
     "core.tex_convert_base.detail_blend_failed": {
         "EN": "Detail map blend failed, please check the detail image", "ZH": "细节图混合失败，请检查细节图片"},
 
+    # ── Color adjust (COLOR/CUSTOM preset only) ─────────────────────────────
+    "core.tex_convert_base.color_adjust_enabled_name": {"EN": "Color Adjust", "ZH": "色彩调整"},
+    "core.tex_convert_base.adjust_exposure_name": {"EN": "Exposure", "ZH": "曝光度"},
+    "core.tex_convert_base.adjust_saturation_name": {"EN": "Saturation", "ZH": "饱和度"},
+    "core.tex_convert_base.adjust_vibrance_name": {"EN": "Vibrance", "ZH": "自然饱和度"},
+
     # ── generator: which packed-shader panel to export from ────────────────
     "core.mdf_generator_base.shader_source_pbr": {
         "EN": "Use PBR Inputs", "ZH": "使用PBR槽位组"},
