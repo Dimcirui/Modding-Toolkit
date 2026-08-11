@@ -819,7 +819,7 @@ class MHWI_OT_BatchRenamePhysicsBones(bpy.types.Operator):
     def description(cls, context, properties):
         return T("mhwi.operators.batch_rename_desc")
 
-    _fail_count: bpy.props.IntProperty(default=0, options={'HIDDEN'})
+    fail_count: bpy.props.IntProperty(default=0, options={'HIDDEN'})
 
     @classmethod
     def poll(cls, context):
@@ -867,7 +867,7 @@ class MHWI_OT_BatchRenamePhysicsBones(bpy.types.Operator):
         if total_fail == 0:
             return self.execute(context)
 
-        self._fail_count = total_fail
+        self.fail_count = total_fail
         return context.window_manager.invoke_props_dialog(self, width=360)
 
     def draw(self, context):
@@ -875,7 +875,7 @@ class MHWI_OT_BatchRenamePhysicsBones(bpy.types.Operator):
         layout.label(text=T("mhwi.operators.warning_label"), icon='ERROR')
         layout.separator()
         layout.label(
-            text=T("mhwi.operators.batch_rename_over_limit").format(n=self._fail_count))
+            text=T("mhwi.operators.batch_rename_over_limit").format(n=self.fail_count))
         layout.label(text=T("mhwi.operators.confirm_rename_anyway"))
 
     def execute(self, context):
