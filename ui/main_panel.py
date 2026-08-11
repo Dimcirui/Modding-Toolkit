@@ -693,6 +693,8 @@ class MHW_PT_MainPanel(bpy.types.Panel):
                          text=T("ui.main_panel.btn_apply_mods_keep_sk"), icon='MODIFIER')
             col.operator("mhw.separate_by_materials",
                          text=T("ui.main_panel.btn_separate_by_materials"), icon='MOD_EXPLODE')
+            col.operator("mhw.create_outline",
+                         text=T("ui.main_panel.btn_create_outline"), icon='MOD_SOLIDIFY')
 
             col.separator(factor=0.8)
             col.label(text=T("ui.main_panel.label_texture_processing"), icon='TEXTURE')
@@ -1439,6 +1441,78 @@ shape keys and vertex groups each fragment inherited (see core/mesh_utils.py)"""
         return {'FINISHED'}
 
 
+class MHW_OT_CreateOutline(bpy.types.Operator):
+    """Create a brand new dedicated "<name>_Outline" shell object for each
+selected mesh (backface-culled black material + flipped-normal Solidify on a
+full duplicate, auto-applied — vertex groups, shape keys and the modifier
+stack, including any Armature binding, come along for the ride). The source
+mesh itself is never touched. Every run is independent — no tracking back to
+the source, so running it again just adds another shell rather than
+replacing one (see core/mesh_utils.py)"""
+    bl_idname = "mhw.create_outline"
+    bl_label = "Create Outline"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    vertex_group_name: bpy.props.StringProperty(
+        name="Thickness Vertex Group", default="",
+        description="Optional vertex group controlling per-vertex outline thickness "
+                    "(0 = no outline there, e.g. eyes/mouth interior); leave empty for uniform thickness")
+    thickness: bpy.props.FloatProperty(
+        name="Thickness", default=0.001, min=0.0, precision=4,
+        description="Solidify thickness on the newly created outline shell")
+    ignore_collection_name: bpy.props.StringProperty(
+        name="Ignore Collection", default="IgnoreExport",
+        description="Objects in this collection (or its sub-collections) are skipped")
+
+    @classmethod
+    def poll(cls, context):
+        return any(o.type == 'MESH' for o in context.selected_objects)
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("ui.main_panel.outline_tip")
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=320)
+
+    def draw(self, context):
+        col = self.layout.column()
+        obj = context.active_object
+        if obj and obj.type == 'MESH':
+            col.prop_search(self, "vertex_group_name", obj, "vertex_groups",
+                             text=T("ui.main_panel.outline_field_vgroup"))
+        else:
+            col.prop(self, "vertex_group_name", text=T("ui.main_panel.outline_field_vgroup"))
+        col.prop(self, "thickness", text=T("ui.main_panel.outline_field_thickness"))
+        col.prop(self, "ignore_collection_name", text=T("ui.main_panel.outline_field_ignore_collection"))
+
+    def execute(self, context):
+        from ..core import mesh_utils
+
+        objects = [o for o in context.selected_objects if o.type == 'MESH']
+        if not objects:
+            self.report({'ERROR'}, T("ui.main_panel.outline_no_mesh"))
+            return {'CANCELLED'}
+
+        added, missing_vg, not_baked = mesh_utils.create_outline_shell(
+            context, objects,
+            vertex_group_name=self.vertex_group_name,
+            thickness=self.thickness,
+            ignore_collection_name=self.ignore_collection_name,
+        )
+        if not added:
+            self.report({'WARNING'}, T("ui.main_panel.outline_all_ignored"))
+            return {'CANCELLED'}
+
+        msg = T("ui.main_panel.outline_done").format(added=added)
+        if missing_vg:
+            msg += T("ui.main_panel.outline_warn_missing_vgroup_suffix").format(n=missing_vg)
+        if not_baked:
+            msg += T("ui.main_panel.outline_warn_not_baked_suffix").format(n=not_baked)
+        self.report({'INFO'}, msg)
+        return {'FINISHED'}
+
+
 _RENAMED_VG_PATTERN = re.compile(r'^(.+)\.\d{3}$')
 
 
@@ -1500,6 +1574,7 @@ classes = [
     MHW_OT_ResetFaceNormals,
     MHW_OT_ApplyModifiersKeepShapeKeys,
     MHW_OT_SeparateByMaterials,
+    MHW_OT_CreateOutline,
     MHW_OT_SetChannelSize,
     MHW_OT_SetShaderSource,
     MHW_OT_MergeRenamedVGroups,

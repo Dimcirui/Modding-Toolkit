@@ -304,6 +304,38 @@ STRINGS = {
         "EN": "{n} object(s) after the split; pruned {keys} shape key(s) and {groups} vertex group(s)",
         "ZH": "拆分后共 {n} 个物体；剪掉 {keys} 个形态键、{groups} 个顶点组"},
 
+    # ── MHW_OT_CreateOutline ─────────────────────────────────────────────────────
+    "ui.main_panel.btn_create_outline": {"EN": "Create Outline", "ZH": "一键描边"},
+    "ui.main_panel.outline_tip": {
+        "EN": "Create a brand new '<name>_Outline' shell object for each selected mesh (backface-culled "
+              "black material + flipped-normal Solidify on a full duplicate, so vertex groups, shape keys "
+              "and any Armature binding carry over) without touching the source mesh itself. The Solidify "
+              "is auto-applied (same shape-key-safe path as 'Apply Modifiers (Keep Shape Keys)'), so the "
+              "shell ends up as real baked geometry rather than a live modifier. Every run is independent "
+              "— there's no tracking back to the source, so running it again just adds another shell "
+              "instead of replacing the last one",
+        "ZH": "给每个选中网格生成一份全新独立的 “<名字>_Outline” 描边网格（背面剔除黑色材质 + 翻转法线的 "
+              "Solidify，整份复制自源网格，顶点组权重/形态键/骨架绑定等都会带过去），源网格本身不会被改动。"
+              "Solidify 会自动应用（复用“对有形态键网格应用修改器”同一套形态键安全处理），描边网格最终是"
+              "实体几何，不是挂着的活动修改器。每次执行都是独立的——不会记录跟源网格的关联，"
+              "所以再执行一次只是多生成一份，不会替换掉上一份"},
+    "ui.main_panel.outline_field_vgroup": {"EN": "Thickness Vertex Group", "ZH": "厚度顶点组"},
+    "ui.main_panel.outline_field_thickness": {"EN": "Thickness", "ZH": "厚度"},
+    "ui.main_panel.outline_field_ignore_collection": {"EN": "Ignore Collection", "ZH": "忽略集合"},
+    "ui.main_panel.outline_no_mesh": {"EN": "No mesh objects selected", "ZH": "没有选中任何网格物体"},
+    "ui.main_panel.outline_all_ignored": {
+        "EN": "All selected meshes are in the ignore collection; nothing changed",
+        "ZH": "选中的网格都在忽略集合内，未做任何改动"},
+    "ui.main_panel.outline_done": {
+        "EN": "Created {added} outline shell(s)",
+        "ZH": "已生成 {added} 份描边网格"},
+    "ui.main_panel.outline_warn_missing_vgroup_suffix": {
+        "EN": "; {n} source(s) have no vertex group by that name, outline thickness is uniform there",
+        "ZH": "；其中 {n} 个源网格上没有该名字的顶点组，描边厚度按整网格统一处理"},
+    "ui.main_panel.outline_warn_not_baked_suffix": {
+        "EN": "; {n} shell(s) couldn't be safely auto-applied and were left as a live Solidify modifier",
+        "ZH": "；其中 {n} 份描边网格无法安全自动应用，Solidify 仍以活动修改器的形式保留"},
+
     # ── MHW_OT_MergeRenamedVGroups ───────────────────────────────────────────────
     "ui.main_panel.merge_vg_done": {"EN": "Merge complete: {merged} vertex group(s) merged, {skipped} skipped (matches a real bone)",
                                      "ZH": "合并完成: {merged} 个顶点组已合并，{skipped} 个已跳过（对应真实骨骼）"},
