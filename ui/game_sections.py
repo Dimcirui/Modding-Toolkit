@@ -187,14 +187,34 @@ SECTIONS = {
             op("re4.add_facial_bones", "ui.main_panel.btn_add_facial_bones",
                'SHAPEKEY_DATA'),
         ],
-        'material': [_mdf_pair('re4')],
+        'material': [
+            # Above the processor/generator pair for the same reason as
+            # MHWI/MHWS: convert the materials first, then generate from
+            # them. No prefab/preset resolution here (unlike MHWS) -- RE4's
+            # three archetypes have no bundled prefab, so the dialog is just
+            # a plain pick from `game` (simple_picker).
+            op("mtk.convert_to_packed_shader",
+               "ui.main_panel.btn_convert_packed_shader", 'NODETREE',
+               props={'game': 'RE4_STANDARD', 'scope': 'SELECTED', 'simple_picker': True},
+               only_if=lambda: MTK_SHADER_AVAILABLE),
+            _mdf_pair('re4'),
+        ],
         'physics': [_re_chain('re4')],
     },
     'mhrs': {
         'label': "MHRS Tools", 'icon': 'GHOST_ENABLED',
         'io': [_batch_export('mhrs', "ui.game_sections.btn_batch_export_mhrs")],
         'rig': [],
-        'material': [_mdf_pair('mhrs')],
+        'material': [
+            # MHRS has only one archetype (see games/mhrs/shader_defs.py's
+            # module docstring), so this is pinned like MHWI's button --
+            # nothing to choose, no dialog.
+            op("mtk.convert_to_packed_shader",
+               "ui.main_panel.btn_convert_packed_shader", 'NODETREE',
+               props={'game': 'MHRS', 'scope': 'SELECTED', 'show_dialog': False},
+               only_if=lambda: MTK_SHADER_AVAILABLE),
+            _mdf_pair('mhrs'),
+        ],
         'physics': [_re_chain('mhrs')],
     },
     're9': {
@@ -207,7 +227,15 @@ SECTIONS = {
             op("re9.add_facial_bones", "ui.main_panel.btn_add_facial_bones",
                'SHAPEKEY_DATA'),
         ],
-        'material': [_mdf_pair('re9')],
+        'material': [
+            # Same simple_picker treatment as RE4 -- no bundled prefab, four
+            # archetypes to choose from.
+            op("mtk.convert_to_packed_shader",
+               "ui.main_panel.btn_convert_packed_shader", 'NODETREE',
+               props={'game': 'RE9_STANDARD', 'scope': 'SELECTED', 'simple_picker': True},
+               only_if=lambda: MTK_SHADER_AVAILABLE),
+            _mdf_pair('re9'),
+        ],
         'physics': [_re_chain('re9')],
     },
 }

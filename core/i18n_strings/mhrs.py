@@ -189,4 +189,86 @@ STRINGS = {
         "EN": "MDF2 Processor — processes textures on top of existing MDF2 materials. Requires an existing, "
               "already-named MDF2 collection",
         "ZH": "MDF2 处理器 — 在已有 MDF2 材质的基础上处理贴图。需要有现成的已起好名字的 MDF2 集合"},
+
+    # ══════════════════════════════════════════════════════════════════════
+    # games/mhrs/shader_defs.py — packed shader sockets
+    #
+    # These become node group socket descriptions (tooltips), baked into the
+    # datablock when the group is first built. Switching language does not
+    # retranslate an already-built group; it only affects groups created
+    # afterwards.
+    # ══════════════════════════════════════════════════════════════════════
+
+    "mhrs.shader_defs.panel_pbr": {"EN": "PBR Inputs", "ZH": "PBR 输入"},
+    "mhrs.shader_defs.panel_slots": {
+        "EN": "Game Slots (packed)", "ZH": "游戏槽位 (打包)"},
+
+    "mhrs.shader_defs.albd": {
+        "EN": "BaseDielectricMap — RGB base colour, A inverted metallic (not opacity)",
+        "ZH": "BaseDielectricMap — RGB 基础色, A 反转金属度 (不是透明度)"},
+    "mhrs.shader_defs.nrmr": {
+        "EN": "NRMR_NRRTMap — R/G plain tangent-space normal, B unused, A roughness",
+        "ZH": "NRMR_NRRTMap — R/G 普通切线空间法线, B 未使用, A 粗糙度"},
+    "mhrs.shader_defs.emissive": {
+        "EN": "EmissiveMap — emissive colour",
+        "ZH": "EmissiveMap — 自发光颜色"},
+
+    "mhrs.shader_defs.alphamap": {
+        "EN": "AlphaMap — alpha-test cutout mask. No PBR composition recipe "
+              "exists for this slot, so it is carried through for export only, "
+              "not used by the preview",
+        "ZH": "AlphaMap — 抠图测试遮罩。这个槽位没有 PBR 合成方案，仅为导出保留，"
+              "预览不使用"},
+    "mhrs.shader_defs.usercolorchangemap": {
+        "EN": "UserColorchangeMap — drives the S_col_R/S_col_G two-tone "
+              "colourisation; carried for export, not used by the preview",
+        "ZH": "UserColorchangeMap — 驱动 S_col_R/S_col_G 双色染色；仅为导出保留，"
+              "预览不使用"},
+    "mhrs.shader_defs.furvelocitymap": {
+        "EN": "FurVelocityMap — fur simulation velocity map; carried for "
+              "export, not used by the preview",
+        "ZH": "FurVelocityMap — 毛发模拟速度贴图；仅为导出保留，预览不使用"},
+    "mhrs.shader_defs.fxmap": {
+        "EN": "FxMap — secondary effect mask; carried for export, not used by "
+              "the preview",
+        "ZH": "FxMap — 附加特效遮罩；仅为导出保留，预览不使用"},
+    "mhrs.shader_defs.furtex": {
+        "EN": "FurTex — fur base texture; carried for export, not used by the "
+              "preview",
+        "ZH": "FurTex — 毛发基础贴图；仅为导出保留，预览不使用"},
+
+    "mhrs.shader_defs.pbr_base_color": {
+        "EN": "Base colour. Multiplied with BaseDielectricMap",
+        "ZH": "基础色。与 BaseDielectricMap 相乘"},
+    "mhrs.shader_defs.pbr_alpha": {
+        "EN": "Alpha. No slot carries real opacity for MHRS -- AlphaMap has no "
+              "PBR recipe -- so this panel value is the only source",
+        "ZH": "透明度。MHRS 没有携带真实不透明度的槽位——AlphaMap 没有 PBR 合成"
+              "方案——此项是唯一来源"},
+    "mhrs.shader_defs.pbr_roughness": {
+        "EN": "Roughness. Multiplied with NRMR_NRRTMap.A",
+        "ZH": "粗糙度。与 NRMR_NRRTMap.A 相乘"},
+    "mhrs.shader_defs.pbr_metallic": {
+        "EN": "Metallic. Added to BaseDielectricMap's inverted alpha (1 - alpha)",
+        "ZH": "金属度。与 BaseDielectricMap 反转后的 Alpha (1 - alpha) 相加"},
+    "mhrs.shader_defs.pbr_ao": {
+        "EN": "Ambient occlusion, multiplied into base colour. Preview-only: "
+              "this preset has no AO-carrying slot to write it back to",
+        "ZH": "环境光遮蔽，正片叠底到基础色上。仅预览用——这个材质没有携带 AO 的"
+              "槽位可以写回"},
+    "mhrs.shader_defs.pbr_ao_strength": {
+        "EN": "AO strength: 0 = off, 1 = the full map",
+        "ZH": "AO 强度：0 为关闭，1 为完整应用"},
+    "mhrs.shader_defs.pbr_emission": {
+        "EN": "Emission colour. Added to EmissiveMap",
+        "ZH": "自发光颜色。与 EmissiveMap 相加"},
+    "mhrs.shader_defs.pbr_emission_strength": {
+        "EN": "Emission strength",
+        "ZH": "自发光强度"},
+    "mhrs.shader_defs.pbr_normal": {
+        "EN": "Normal map texture — plug the image in directly, no Normal Map "
+              "node needed. Its deviation from flat is added to "
+              "NRMR_NRRTMap's decoded normal",
+        "ZH": "法线贴图 —— 直接连图片即可，不需要 Normal Map 节点。"
+              "其相对平面的偏移量会和 NRMR_NRRTMap 解码出的法线相加"},
 }

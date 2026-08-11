@@ -305,4 +305,198 @@ STRINGS = {
               "Requires an existing, properly named MDF2 collection",
         "ZH": "MDF2 处理器 — 在已有 MDF2 材质的基础上处理贴图。需要有现成的已起好名字的 MDF2 集合",
     },
+
+    # ══════════════════════════════════════════════════════════════════════
+    # games/re4/shader_defs.py — packed shader sockets
+    #
+    # These become node group socket descriptions (tooltips), which are baked
+    # into the datablock when the group is first built. Switching language
+    # therefore does not retranslate an already-built group; it only affects
+    # groups created afterwards.
+    # ══════════════════════════════════════════════════════════════════════
+
+    "re4.shader_defs.panel_pbr": {"EN": "PBR Inputs", "ZH": "PBR 输入"},
+    "re4.shader_defs.panel_slots_standard": {
+        "EN": "Game Slots (packed) — Standard", "ZH": "游戏槽位 (打包) — 标准"},
+    "re4.shader_defs.panel_slots_hair": {
+        "EN": "Game Slots (packed) — Hair", "ZH": "游戏槽位 (打包) — 毛发"},
+    "re4.shader_defs.panel_slots_emissive": {
+        "EN": "Game Slots (packed) — Emissive", "ZH": "游戏槽位 (打包) — 自发光"},
+
+    "re4.shader_defs.albd": {
+        "EN": "BaseDielectricMap — RGB base colour, A inverted metallic (not opacity)",
+        "ZH": "BaseDielectricMap — RGB 基础色, A 反转金属度 (不是透明度)"},
+    "re4.shader_defs.nrm": {
+        "EN": "NormalRoughnessMap — R/G plain tangent-space normal, B unused, A roughness",
+        "ZH": "NormalRoughnessMap — R/G 普通切线空间法线, B 未使用, A 粗糙度"},
+    "re4.shader_defs.atocm": {
+        "EN": "AlphaTranslucentOcclusionCavityMap — R alpha (real opacity), B AO",
+        "ZH": "AlphaTranslucentOcclusionCavityMap — R 透明度 (真正的不透明度), B 环境光遮蔽"},
+    "re4.shader_defs.baseshift": {
+        "EN": "BaseShiftMap — RGB base colour. Hair's equivalent of "
+              "BaseDielectricMap (hair has no metallic-alpha convention)",
+        "ZH": "BaseShiftMap — RGB 基础色。是毛发用来代替 BaseDielectricMap 的槽位"
+              "（毛发没有反转 Alpha 表示金属度的约定）"},
+    "re4.shader_defs.nrcm": {
+        "EN": "NormalRoughnessCavityMap — R roughness, G/A hemi-octahedral normal, "
+              "B a constant (RE4 writes no Cavity data)",
+        "ZH": "NormalRoughnessCavityMap — R 粗糙度, G/A 半八面体编码法线, "
+              "B 为常量 (RE4 不写入 Cavity 数据)"},
+    "re4.shader_defs.atosss": {
+        "EN": "AlphaTranslucentOcclusionSSSMap — R alpha (real opacity), B AO",
+        "ZH": "AlphaTranslucentOcclusionSSSMap — R 透明度 (真正的不透明度), B 环境光遮蔽"},
+    "re4.shader_defs.occ": {
+        "EN": "OcclusionMap — a second, plain-greyscale AO source (R=G=B)",
+        "ZH": "OcclusionMap — 第二个环境光遮蔽来源 (纯灰度, R=G=B)"},
+    "re4.shader_defs.emissive": {
+        "EN": "EmissiveMap — emissive colour",
+        "ZH": "EmissiveMap — 自发光颜色"},
+
+    # ── Secondary slots: no composition recipe, carried through untouched.
+    "re4.shader_defs.detailmap": {
+        "EN": "DetailMap — a detail-layer texture; carried for export, not used by "
+              "the preview",
+        "ZH": "DetailMap — 细节层贴图；仅为导出保留，预览不使用"},
+    "re4.shader_defs.maskmap": {
+        "EN": "MaskMap — masks in the detail layer; carried for export, not used "
+              "by the preview",
+        "ZH": "MaskMap — 用来遮罩混合细节层；仅为导出保留，预览不使用"},
+    "re4.shader_defs.imperfectdetail_map": {
+        "EN": "ImperfectDetail_Map — skin/surface imperfection detail texture; "
+              "carried for export, not used by the preview",
+        "ZH": "ImperfectDetail_Map — 皮肤/表面瑕疵细节贴图；仅为导出保留，预览不使用"},
+    "re4.shader_defs.wrinklenormalmap": {
+        "EN": "WrinkleNormalMap — skin wrinkle normal detail; carried for export, "
+              "not used by the preview",
+        "ZH": "WrinkleNormalMap — 皮肤皱纹法线细节；仅为导出保留，预览不使用"},
+    "re4.shader_defs.wind_maskmap": {
+        "EN": "Wind_MaskMap — wind/cloth simulation mask; carried for export, not "
+              "used by the preview",
+        "ZH": "Wind_MaskMap — 风力/布料模拟遮罩；仅为导出保留，预览不使用"},
+    "re4.shader_defs.noise3d": {
+        "EN": "Noise3D — generic 3D noise texture used by several effects; "
+              "carried for export, not used by the preview",
+        "ZH": "Noise3D — 多个效果共用的通用 3D 噪声贴图；仅为导出保留，预览不使用"},
+    "re4.shader_defs.recordsys_rtt": {
+        "EN": "RecordSys_rtt — damage-record system render target; carried for "
+              "export, not used by the preview",
+        "ZH": "RecordSys_rtt — 损伤记录系统渲染目标；仅为导出保留，预览不使用"},
+    "re4.shader_defs.recordsys_fix": {
+        "EN": "RecordSys_Fix — damage-record system fixed layer; carried for "
+              "export, not used by the preview",
+        "ZH": "RecordSys_Fix — 损伤记录系统固定层；仅为导出保留，预览不使用"},
+    "re4.shader_defs.recordsys_protect": {
+        "EN": "RecordSys_Protect — damage-record system protected-area mask; "
+              "carried for export, not used by the preview",
+        "ZH": "RecordSys_Protect — 损伤记录系统保护区域遮罩；仅为导出保留，预览不使用"},
+    "re4.shader_defs.bloodmask": {
+        "EN": "BloodMask — blood decal mask; carried for export, not used by "
+              "the preview",
+        "ZH": "BloodMask — 血渍贴花遮罩；仅为导出保留，预览不使用"},
+    "re4.shader_defs.bloodflow_rtt": {
+        "EN": "BloodFlow_rtt — blood-flow simulation render target; carried for "
+              "export, not used by the preview",
+        "ZH": "BloodFlow_rtt — 血流模拟渲染目标；仅为导出保留，预览不使用"},
+    "re4.shader_defs.bloodflow_uv": {
+        "EN": "BloodFlow_uv — blood-flow simulation UV map; carried for export, "
+              "not used by the preview",
+        "ZH": "BloodFlow_uv — 血流模拟 UV 贴图；仅为导出保留，预览不使用"},
+    "re4.shader_defs.injury_map_alba": {
+        "EN": "Injury_Map_ALBA — wound decal colour texture; carried for export, "
+              "not used by the preview",
+        "ZH": "Injury_Map_ALBA — 伤口贴花颜色贴图；仅为导出保留，预览不使用"},
+    "re4.shader_defs.injury_map_nrm": {
+        "EN": "Injury_Map_NRM — wound decal normal texture; carried for export, "
+              "not used by the preview",
+        "ZH": "Injury_Map_NRM — 伤口贴花法线贴图；仅为导出保留，预览不使用"},
+    "re4.shader_defs.stain_cloth_map_msk4": {
+        "EN": "Stain_Cloth_Map_MSK4 — cloth stain mask; carried for export, not "
+              "used by the preview",
+        "ZH": "Stain_Cloth_Map_MSK4 — 布料污渍遮罩；仅为导出保留，预览不使用"},
+    "re4.shader_defs.clothdamagemaskmap": {
+        "EN": "clothDamagemaskMap — cloth damage mask; carried for export, not "
+              "used by the preview",
+        "ZH": "clothDamagemaskMap — 布料损伤遮罩；仅为导出保留，预览不使用"},
+    "re4.shader_defs.dirtmask_atex": {
+        "EN": "DirtMask_Atex — dirt accumulation mask; carried for export, not "
+              "used by the preview",
+        "ZH": "DirtMask_Atex — 污垢积累遮罩；仅为导出保留，预览不使用"},
+    "re4.shader_defs.rec_rain_waterriple": {
+        "EN": "Rec_Rain_WaterRiple — rain ripple normal texture; carried for "
+              "export, not used by the preview",
+        "ZH": "Rec_Rain_WaterRiple — 雨水波纹法线贴图；仅为导出保留，预览不使用"},
+    "re4.shader_defs.rec_rain_wetmask": {
+        "EN": "Rec_Rain_WetMask — rain wetness mask; carried for export, not "
+              "used by the preview",
+        "ZH": "Rec_Rain_WetMask — 雨水湿润遮罩；仅为导出保留，预览不使用"},
+    "re4.shader_defs.secondaryalbedomap": {
+        "EN": "SecondaryAlbedoMap — hair's secondary colour blend texture; "
+              "carried for export, not used by the preview",
+        "ZH": "SecondaryAlbedoMap — 毛发的第二颜色混合贴图；仅为导出保留，预览不使用"},
+    "re4.shader_defs.rimlight_fakenormalmap": {
+        "EN": "RimLight_FakeNormalMap — a substitute normal for rim-light "
+              "calculation; carried for export, not used by the preview",
+        "ZH": "RimLight_FakeNormalMap — 用于边缘光计算的替代法线；仅为导出保留，预览不使用"},
+    "re4.shader_defs.fakespheremap": {
+        "EN": "FakeSphereMap — a fake specular-highlight sphere map (used by "
+              "the Emissive family's eye-highlight trick); carried for export, "
+              "not used by the preview",
+        "ZH": "FakeSphereMap — 假高光球面贴图 (自发光材质做眼睛假高光用)；"
+              "仅为导出保留，预览不使用"},
+    "re4.shader_defs.rainstreakmaskmap": {
+        "EN": "RainStreakMaskMap — rain streak mask; carried for export, not "
+              "used by the preview",
+        "ZH": "RainStreakMaskMap — 雨痕遮罩；仅为导出保留，预览不使用"},
+    "re4.shader_defs.raindropsmaskmap": {
+        "EN": "RainDropsMaskMap — rain droplet mask; carried for export, not "
+              "used by the preview",
+        "ZH": "RainDropsMaskMap — 雨滴遮罩；仅为导出保留，预览不使用"},
+
+    "re4.shader_defs.pbr_base_color": {
+        "EN": "Base colour. Multiplied with BaseDielectricMap/BaseShiftMap",
+        "ZH": "基础色。与 BaseDielectricMap/BaseShiftMap 相乘"},
+    "re4.shader_defs.pbr_alpha": {
+        "EN": "Alpha. Multiplied with the spec's own opacity slot -- "
+              "AlphaTranslucentOcclusionCavityMap.R (Standard/Hair) or "
+              "AlphaTranslucentOcclusionSSSMap.R (Emissive), both real opacity",
+        "ZH": "透明度。与本 spec 自己的不透明度槽位相乘——标准/毛发是 "
+              "AlphaTranslucentOcclusionCavityMap.R，自发光是 "
+              "AlphaTranslucentOcclusionSSSMap.R，两者都是真正的不透明度"},
+    "re4.shader_defs.pbr_roughness": {
+        "EN": "Roughness. Multiplied with NormalRoughnessMap.A (Standard/Hair) "
+              "or NormalRoughnessCavityMap.R (Emissive)",
+        "ZH": "粗糙度。与 NormalRoughnessMap.A (标准/毛发) 或 "
+              "NormalRoughnessCavityMap.R (自发光) 相乘"},
+    "re4.shader_defs.pbr_metallic": {
+        "EN": "Metallic. Added to BaseDielectricMap's inverted alpha (1 - alpha). "
+              "No effect on the Hair spec, which has no metallic slot at all",
+        "ZH": "金属度。与 BaseDielectricMap 反转后的 Alpha (1 - alpha) 相加。"
+              "对毛发 spec 无效——毛发没有金属度槽位"},
+    "re4.shader_defs.pbr_ao": {
+        "EN": "Ambient occlusion, multiplied into base colour. Genuinely exports: "
+              "AlphaTranslucentOcclusionCavityMap.B (Standard/Hair) or both "
+              "OcclusionMap and AlphaTranslucentOcclusionSSSMap.B (Emissive) carry it",
+        "ZH": "环境光遮蔽，正片叠底到基础色上。可以真正导出——标准/毛发由 "
+              "AlphaTranslucentOcclusionCavityMap.B 携带，自发光则由 OcclusionMap 和 "
+              "AlphaTranslucentOcclusionSSSMap.B 共同携带"},
+    "re4.shader_defs.pbr_ao_strength": {
+        "EN": "AO strength: 0 = off, 1 = the full map",
+        "ZH": "AO 强度：0 为关闭，1 为完整应用"},
+    "re4.shader_defs.pbr_emission": {
+        "EN": "Emission colour. Added to EmissiveMap on the Emissive spec; "
+              "Standard/Hair have no emissive slot, so this panel value is the "
+              "only source there",
+        "ZH": "自发光颜色。在自发光 spec 上会与 EmissiveMap 相加；标准/毛发没有"
+              "自发光槽位，此项是唯一来源"},
+    "re4.shader_defs.pbr_emission_strength": {
+        "EN": "Emission strength",
+        "ZH": "自发光强度"},
+    "re4.shader_defs.pbr_normal": {
+        "EN": "Normal map texture — plug the image in directly, no Normal Map "
+              "node needed. Its deviation from flat is added to the decoded "
+              "slot normal (NormalRoughnessMap or NormalRoughnessCavityMap, "
+              "depending on the spec)",
+        "ZH": "法线贴图 —— 直接连图片即可，不需要 Normal Map 节点。"
+              "其相对平面的偏移量会和槽位解码出的法线相加 (NormalRoughnessMap 或 "
+              "NormalRoughnessCavityMap，取决于所用的 spec)"},
 }

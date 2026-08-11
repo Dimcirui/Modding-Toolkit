@@ -47,11 +47,37 @@ GAME_ITEMS = [
     ('MHWS_WEAPON',   "MHWS - Weapon",   "Monster Hunter Wilds: weapon material"),
     ('MHWS_SKIN',     "MHWS - Skin",     "Monster Hunter Wilds: skin material"),
     ('MHWS_HAIR',     "MHWS - Hair",     "Monster Hunter Wilds: hair material"),
+    # RE4 similarly gets one entry per archetype rather than a single "RE4"
+    # ident, for the same reason: Standard (pbr_body/pbr_cloth's real preset),
+    # Hair (pbr_hair's) and Emissive (Eye_EMI's) diverge in base slot,
+    # metallic handling and normal-slot packing -- see
+    # games/re4/shader_defs.py's module docstring.
+    ('RE4_STANDARD',  "RE4 - Standard",  "Resident Evil 4 Remake: body/cloth character materials"),
+    ('RE4_HAIR',      "RE4 - Hair",      "Resident Evil 4 Remake: hair material"),
+    ('RE4_EMISSIVE',  "RE4 - Emissive",  "Resident Evil 4 Remake: general-purpose emissive material"),
+    # MHRS has no cloth/skin/hair split to make -- one general-purpose
+    # material covers essentially everything in practice (confirmed by the
+    # user) -- so it is a single entry like MHWI, not a family like MHWS/RE4.
+    ('MHRS', "MHRS (MDF2)", "Monster Hunter Rise: general-purpose material"),
+    # RE9 mirrors RE4's split: Standard/Skin/Hair (different Master Material
+    # Path each, from real PBR_Cloth/PBR_Skin/PBR_Hair.json presets) plus a
+    # general-purpose Emissive archetype -- see games/re9/shader_defs.py's
+    # module docstring.
+    ('RE9_STANDARD',  "RE9 - Standard",  "Resident Evil 9: body/cloth character materials"),
+    ('RE9_SKIN',      "RE9 - Skin",      "Resident Evil 9: skin material"),
+    ('RE9_HAIR',      "RE9 - Hair",      "Resident Evil 9: hair material"),
+    ('RE9_EMISSIVE',  "RE9 - Emissive",  "Resident Evil 9: general-purpose emissive material"),
 ]
 
 #: Every MHWS variant ident -- kept in one place so spec_for()/_resolve_spec()
 #: can't drift out of sync with VARIANTS as new archetypes are added.
 _MHWS_GAMES = ('MHWS_STANDARD', 'MHWS_WEAPON', 'MHWS_SKIN', 'MHWS_HAIR')
+
+#: Every RE4 variant ident, same reasoning as _MHWS_GAMES.
+_RE4_GAMES = ('RE4_STANDARD', 'RE4_HAIR', 'RE4_EMISSIVE')
+
+#: Every RE9 variant ident, same reasoning as _MHWS_GAMES.
+_RE9_GAMES = ('RE9_STANDARD', 'RE9_SKIN', 'RE9_HAIR', 'RE9_EMISSIVE')
 
 
 def spec_for(game):
@@ -60,6 +86,15 @@ def spec_for(game):
         return SPEC
     if game in _MHWS_GAMES:
         from ..games.mhws.shader_defs import VARIANTS
+        return VARIANTS[game]
+    if game in _RE4_GAMES:
+        from ..games.re4.shader_defs import VARIANTS
+        return VARIANTS[game]
+    if game == 'MHRS':
+        from ..games.mhrs.shader_defs import SPEC
+        return SPEC
+    if game in _RE9_GAMES:
+        from ..games.re9.shader_defs import VARIANTS
         return VARIANTS[game]
     raise ValueError(f"no packed shader spec for game {game!r}")
 
@@ -488,6 +523,11 @@ class MTK_OT_ConvertToPackedShader(bpy.types.Operator):
     show_dialog: BoolProperty(default=True, options={'SKIP_SAVE'})
     use_prefab: BoolProperty(name="Use Prefab", default=True)
     preset_choice: EnumProperty(name="Preset", items=_preset_choice_items)
+    #: True for games with no bundled-prefab/external-preset resolution at
+    #: all (RE4's three archetypes) -- the dialog is just `game` itself, no
+    #: MHWS-style use_prefab/preset_choice widgets. False (default) preserves
+    #: MHWI/MHWS's existing dialog behaviour untouched.
+    simple_picker: BoolProperty(default=False, options={'SKIP_SAVE'})
 
     @classmethod
     def poll(cls, context):
@@ -504,13 +544,16 @@ class MTK_OT_ConvertToPackedShader(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
+        if self.simple_picker:
+            layout.prop(self, 'game', text="")
+            return
         layout.prop(self, 'use_prefab', text=T("core.shader_ops.use_prefab"))
         layout.prop(self, 'preset_choice', text="")
 
     def _resolve_spec(self):
         """(spec, preset_path, locked), or raises ValueError with a
         user-facing message."""
-        if not self.show_dialog:
+        if not self.show_dialog or self.simple_picker:
             return spec_for(self.game), None, False
 
         if self.use_prefab:
