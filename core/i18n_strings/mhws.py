@@ -93,9 +93,11 @@ STRINGS = {
 
     # ── MHWS_OT_PreprocessModel ──────────────────────────────────────────────
     "mhws.operators.preprocess_model_desc": {
-        "EN": "Auto-detect MMD/VRChat -> pose correction -> import reference skeleton -> "
-              "scale/Y-offset calibration -> skeleton alignment",
-        "ZH": "自动识别 MMD/VRChat → 姿态校正 → 导入参考骨架 → 缩放/Y轴偏移校准 → 骨架对齐"},
+        "EN": "Auto-detect MMD/VRChat -> pose correction -> import reference skeleton (merge its facial bones, "
+              "convert to T-Pose) -> scale/Y-offset calibration -> skeleton alignment -> auto-run skeleton "
+              "optimization on the aligned reference skeleton",
+        "ZH": "自动识别 MMD/VRChat → 姿态校正 → 导入参考骨架（合并表情骨、转 T-Pose）→ 缩放/Y轴偏移校准 → "
+              "骨架对齐 → 对齐后的参考骨架自动运行骨架优化"},
     "mhws.operators.preprocess_model_label": {
         "EN": "One-Click Import & Align Wilds Model", "ZH": "一键导入并对齐荒野模型"},
     "mhws.operators.select_armature_first": {"EN": "Please select an armature first", "ZH": "请先选中一个骨架"},
@@ -135,6 +137,7 @@ STRINGS = {
     "mhws.operators.facial_bones_added": {"EN": "Added {n} facial bone(s)", "ZH": "已添加 {n} 根表情骨"},
     "mhws.operators.blink_amplitude_added": {
         "EN": "; blink amplitude increased on {n} side(s)", "ZH": "，{n} 侧已增加眨眼幅度"},
+
 
     # ── MHWS_OT_OptimizeSkeleton ─────────────────────────────────────────────
     "mhws.operators.optimize_skeleton_desc": {

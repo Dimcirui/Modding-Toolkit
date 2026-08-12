@@ -869,20 +869,23 @@ class MHW_PT_MainPanel(bpy.types.Panel):
         if settings.show_pose_convert:
             col = pose_box.column(align=True)
 
-            # The preset is a hard requirement for these two (they resolve
-            # upperarm/clavicle by standard key); Custom Convert below only uses
-            # it as an optional name bridge and falls back to same-name matching
+            # Both fixed-purpose tools below are self-contained: MMD A->T always matches
+            # against the MMD preset internally, REE->T auto-detects the game from its own
+            # private bone list. Neither needs the generic preset selector any more; that
+            # selector now only feeds the Pose Recorder's optional name bridge below
+            # (same-name matching is still the fallback there).
             col.label(text=T("ui.main_panel.label_simple_tools"))
+            col.operator("modder.mmd_a_to_tpose", text=T("ui.main_panel.btn_mmd_a_to_tpose"), icon='EMPTY_SINGLE_ARROW')
+            col.operator("modder.ree_to_tpose", text=T("ui.main_panel.btn_ree_to_tpose"), icon='MESH_GRID')
+
+            col.separator()
+            col.label(text=T("ui.main_panel.label_pose_recorder"))
+
             row = col.row(align=True)
             row.prop(settings, "pose_import_preset_enum", text=T("ui.main_panel.pose_preset_field_label"), icon='IMPORT')
             op = row.operator("modder.auto_detect_preset", text="", icon='VIEWZOOM')
             op.attr_name = 'pose_import_preset_enum'
             op.is_import_x = True
-            col.operator("modder.tpose_direction", text=T("ui.main_panel.btn_tpose_direction"), icon='EMPTY_SINGLE_ARROW')
-            col.operator("modder.tpose_matrix_zero", text=T("ui.main_panel.btn_tpose_matrix_zero"), icon='MESH_GRID')
-
-            col.separator()
-            col.label(text=T("ui.main_panel.label_pose_recorder"))
 
             row = col.row(align=True)
             row.prop(settings, "pose_preset_enum", text="")

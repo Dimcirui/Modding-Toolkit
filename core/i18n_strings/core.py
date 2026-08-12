@@ -175,13 +175,17 @@ STRINGS = {
 
     "core.pose_ops.no_record": {"EN": "No records", "ZH": "无记录"},
 
-    "core.pose_ops.tpose_direction_desc": {
-        "EN": "Rotate upper arms to horizontal only; suitable for simple A-Pose armatures (e.g. MMD). "
-              "If it does not work correctly, use the more general Pose Transform Recorder",
-        "ZH": "仅将上臂旋转到水平方向，适用于简单的 A-Pose 骨架（如MMD），如果无法正确运作，请使用更通用的姿态变换记录器"},
-    "core.pose_ops.matrix_zero_desc": {
-        "EN": "RE Engine only: reset limb bone rotation matrices to T-Pose (for Wilds/SF6/RE4 etc., except RE9)",
-        "ZH": "RE Engine 专用: 重置肢体骨骼旋转矩阵为 T-Pose (适用于荒野/街霸6/生化4等，生化9除外)"},
+    "core.pose_ops.mmd_a_to_tpose_desc": {
+        "EN": "MMD only: rotate upper arms to horizontal, converting an MMD A-Pose armature to T-Pose. Always "
+              "matches against the MMD bone-name preset internally, no preset selection needed. If it does not "
+              "work correctly, use the more general Pose Transform Recorder",
+        "ZH": "仅限 MMD: 将上臂旋转到水平方向，把 MMD 的 A-Pose 骨架转为 T-Pose。内部固定按 MMD 骨骼名匹配，"
+              "不需要选择预设。如果无法正确运作，请使用更通用的姿态变换记录器"},
+    "core.pose_ops.ree_to_tpose_desc": {
+        "EN": "RE Engine only: reset limb bone rotation matrices to T-Pose. Auto-detects the game from a private, "
+              "built-in bone list (currently Wilds only) -- no preset selection needed",
+        "ZH": "RE Engine 专用: 重置肢体骨骼旋转矩阵为 T-Pose。从内置的私有骨架名单里自动识别游戏"
+              "（目前仅支持荒野），不需要选择预设"},
     "core.pose_ops.record_transform_desc": {
         "EN": "Record relative transform: select A-pose armature first, then Ctrl-select B-pose armature, "
               "compute and save A->B transform",
@@ -199,7 +203,9 @@ STRINGS = {
     "core.pose_ops.cannot_load_armature_preset": {
         "EN": "Cannot load armature preset", "ZH": "无法加载骨架预设"},
     "core.pose_ops.upperarm_not_found": {"EN": "Upper arm bones not found", "ZH": "未找到上臂骨骼"},
-    "core.pose_ops.no_bones_matched": {"EN": "No bones matched in preset", "ZH": "预设中没有匹配到任何骨骼"},
+    "core.pose_ops.ree_game_not_recognized": {
+        "EN": "Could not recognize a supported RE Engine game from this armature's bone names (currently Wilds only)",
+        "ZH": "未能从骨骼名识别出受支持的 RE Engine 游戏（目前仅支持荒野）"},
     "core.pose_ops.record_name_label": {"EN": "Name", "ZH": "名称"},
     "core.pose_ops.record_name_desc": {
         "EN": "Filename for the saved transform record (e.g. MMD A-Pose to T-Pose)",
@@ -229,12 +235,12 @@ STRINGS = {
     "core.pose_ops.deleted": {"EN": "Deleted: {name}", "ZH": "已删除: {name}"},
     "core.pose_ops.delete_failed": {"EN": "Delete failed: {err}", "ZH": "删除失败: {err}"},
 
-    "core.pose_ops.tpose_direction_done": {
-        "EN": "Direction calc complete: {bones} upper arm bone(s), {meshes} mesh(es)",
-        "ZH": "方向计算完成: {bones} 根上臂骨骼, {meshes} 个网格"},
-    "core.pose_ops.matrix_zero_done": {
-        "EN": "RE Engine matrix reset complete: {bones} bone(s), {meshes} mesh(es)",
-        "ZH": "RE Engine 矩阵归零完成: {bones} 根骨骼, {meshes} 个网格"},
+    "core.pose_ops.mmd_a_to_tpose_done": {
+        "EN": "MMD A to T-Pose complete: {bones} upper arm bone(s), {meshes} mesh(es)",
+        "ZH": "MMD A转Tpose完成: {bones} 根上臂骨骼, {meshes} 个网格"},
+    "core.pose_ops.ree_to_tpose_done": {
+        "EN": "REE to T-Pose complete ({game}): {bones} bone(s), {meshes} mesh(es)",
+        "ZH": "REE转Tpose完成 ({game}): {bones} 根骨骼, {meshes} 个网格"},
     "core.pose_ops.recorded_transform": {
         "EN": "Recorded transforms for {n} bone(s) -> {filename}", "ZH": "已录制 {n} 根骨骼的变换 -> {filename}"},
     "core.pose_ops.transform_done": {

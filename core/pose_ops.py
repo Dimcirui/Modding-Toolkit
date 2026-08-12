@@ -55,33 +55,29 @@ def get_pose_presets_callback(self, context):
 
 
 # ============================================================
-# 1. 方向计算（独立简易工具）
+# 1. MMD A转Tpose（固定只服务 MMD 骨架，不经过通用骨架预设）
 # ============================================================
 
-class MODDER_OT_TPoseDirection(bpy.types.Operator):
-    bl_idname = "modder.tpose_direction"
-    bl_label = "Direction Calc (Simple T to A)"
+class MODDER_OT_MmdAToTPose(bpy.types.Operator):
+    bl_idname = "modder.mmd_a_to_tpose"
+    bl_label = "MMD A-Pose to T-Pose"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def description(cls, context, properties):
-        return T("core.pose_ops.tpose_direction_desc")
+        return T("core.pose_ops.mmd_a_to_tpose_desc")
 
     def execute(self, context):
-        settings = context.scene.mhw_suite_settings
         arm_obj = context.active_object
 
         if not arm_obj or arm_obj.type != 'ARMATURE':
             self.report({'ERROR'}, T("core.pose_ops.select_armature_first"))
             return {'CANCELLED'}
 
-        pose_preset, err = resolve_preset(settings.pose_import_preset_enum, arm_obj, True)
-        if pose_preset is None:
-            self.report({'WARNING'}, err)
-            return {'CANCELLED'}
-
+        # 固定使用 MMD 骨骼预设做模糊匹配，不再暴露通用预设下拉框——这个工具天生
+        # 只服务 MMD 骨架（旋转上臂到水平方向，为 MMD 的 A-Pose 模型服务）。
         mapper = BoneMapManager()
-        if not mapper.load_preset(pose_preset, is_import_x=True):
+        if not mapper.load_preset("MMD.json", is_import_x=True):
             self.report({'ERROR'}, T("core.pose_ops.cannot_load_armature_preset"))
             return {'CANCELLED'}
 
@@ -120,89 +116,126 @@ class MODDER_OT_TPoseDirection(bpy.types.Operator):
             return {'CANCELLED'}
 
         mesh_count = _apply_and_rebind(arm_obj)
-        self.report({'INFO'}, T("core.pose_ops.tpose_direction_done").format(bones=count, meshes=mesh_count))
+        self.report({'INFO'}, T("core.pose_ops.mmd_a_to_tpose_done").format(bones=count, meshes=mesh_count))
         return {'FINISHED'}
 
 
 # ============================================================
-# 2. RE Engine 矩阵归零（独立特殊功能）
+# 2. REE转Tpose（私有 RE Engine 骨架名单，自动识别游戏，不经过通用骨架预设）
 # ============================================================
+# 目前只收录荒野 (MHWS)；名单直接照搬 MBT (Modder-Batch-Tool) MHWildstpose 算子里的完整
+# 骨骼名单——跨游戏通用的 standard-key 预设系统只覆盖主链骨骼，没有 Knee/Instep/Palm 和
+# 全部扭转/物理辅助骨 (_HJ_) 的标准键，归零后这些子骨仍停留在原始姿态，父骨被摆正后会跟
+# 着扭曲。注意名单里没有锁骨和拇指——锁骨保持原朝向（UpperArm 挂在其骨尾上，一起摆正反而
+# 会带偏位置），拇指天生斜向生长，用同一套"零"朝向硬掰只会拉直变形，因此也不包含它们。
+# 以后要支持其他 RE Engine 游戏，在这里加一个新的 {game_code: bone_tuple} 条目即可。
+_REE_TPOSE_BONES = {
+    "MHWS": (
+        "L_UpperArm", "R_UpperArm", "L_Forearm", "R_Forearm", "L_Hand", "R_Hand",
+        "L_Palm", "R_Palm",
+        "L_IndexF1", "L_IndexF2", "L_IndexF3", "R_IndexF1", "R_IndexF2", "R_IndexF3",
+        "L_MiddleF1", "L_MiddleF2", "L_MiddleF3", "R_MiddleF1", "R_MiddleF2", "R_MiddleF3",
+        "L_RingF1", "L_RingF2", "L_RingF3", "R_RingF1", "R_RingF2", "R_RingF3",
+        "L_PinkyF1", "L_PinkyF2", "L_PinkyF3", "R_PinkyF1", "R_PinkyF2", "R_PinkyF3",
+        "L_HandRZ_HJ_00", "R_HandRZ_HJ_00",
+        "L_IndexF_HJ_00", "L_IndexF_HJ_01", "L_IndexF_HJ_02", "L_IndexF_HJ_03", "L_IndexF_HJ_04",
+        "R_IndexF_HJ_00", "R_IndexF_HJ_01", "R_IndexF_HJ_02", "R_IndexF_HJ_03", "R_IndexF_HJ_04",
+        "L_MiddleF_HJ_00", "L_MiddleF_HJ_01", "L_MiddleF_HJ_02", "L_MiddleF_HJ_03", "L_MiddleF_HJ_04",
+        "R_MiddleF_HJ_00", "R_MiddleF_HJ_01", "R_MiddleF_HJ_02", "R_MiddleF_HJ_03", "R_MiddleF_HJ_04",
+        "L_RingF_HJ_00", "L_RingF_HJ_01", "L_RingF_HJ_02", "L_RingF_HJ_03", "L_RingF_HJ_04",
+        "R_RingF_HJ_00", "R_RingF_HJ_01", "R_RingF_HJ_02", "R_RingF_HJ_03", "R_RingF_HJ_04",
+        "L_PinkyF_HJ_00", "L_PinkyF_HJ_01", "L_PinkyF_HJ_02", "L_PinkyF_HJ_03", "L_PinkyF_HJ_04",
+        "R_PinkyF_HJ_00", "R_PinkyF_HJ_01", "R_PinkyF_HJ_02", "R_PinkyF_HJ_03", "R_PinkyF_HJ_04",
+        "L_Hand_HJ_00", "L_Hand_HJ_01", "R_Hand_HJ_00", "R_Hand_HJ_01",
+        "L_ForearmTwist_HJ_00", "L_ForearmTwist_HJ_01", "L_ForearmTwist_HJ_02",
+        "R_ForearmTwist_HJ_00", "R_ForearmTwist_HJ_01", "R_ForearmTwist_HJ_02",
+        "L_ForearmRY_HJ_00", "L_ForearmRY_HJ_01", "R_ForearmRY_HJ_00", "R_ForearmRY_HJ_01",
+        "L_Elbow_HJ_00", "R_Elbow_HJ_00",
+        "L_UpperArmTwist_HJ_01", "L_UpperArmTwist_HJ_02", "R_UpperArmTwist_HJ_01", "R_UpperArmTwist_HJ_02",
+        "L_Triceps_HJ_00", "R_Triceps_HJ_00",
+        "L_Biceps_HJ_00", "L_Biceps_HJ_01", "R_Biceps_HJ_00", "R_Biceps_HJ_01",
+        "L_Deltoid_HJ_00", "L_Deltoid_HJ_01", "L_Deltoid_HJ_02",
+        "R_Deltoid_HJ_00", "R_Deltoid_HJ_01", "R_Deltoid_HJ_02",
+        "L_Thigh", "R_Thigh", "L_Knee", "R_Knee", "L_Shin", "R_Shin",
+        "L_Foot", "R_Foot", "L_Instep", "R_Instep", "L_Toe", "R_Toe",
+        "L_Foot_HJ_00", "R_Foot_HJ_00", "L_Calf_HJ_00", "R_Calf_HJ_00",
+        "L_Shin_HJ_00", "L_Shin_HJ_01", "R_Shin_HJ_00", "R_Shin_HJ_01",
+        "L_Knee_HJ_00", "R_Knee_HJ_00", "L_KneeRX_HJ_00", "R_KneeRX_HJ_00",
+        "L_ThighTwist_HJ_00", "L_ThighTwist_HJ_01", "L_ThighTwist_HJ_02",
+        "R_ThighTwist_HJ_00", "R_ThighTwist_HJ_01", "R_ThighTwist_HJ_02",
+        "L_ThighRZ_HJ_00", "L_ThighRZ_HJ_01", "R_ThighRZ_HJ_00", "R_ThighRZ_HJ_01",
+        "L_ThighRX_HJ_00", "L_ThighRX_HJ_01", "R_ThighRX_HJ_00", "R_ThighRX_HJ_01",
+        "L_Hip_HJ_00", "L_Hip_HJ_01", "R_Hip_HJ_00", "R_Hip_HJ_01",
+    ),
+}
 
-class MODDER_OT_TPoseMatrixZero(bpy.types.Operator):
-    bl_idname = "modder.tpose_matrix_zero"
-    bl_label = "RE Engine Matrix Reset"
+# 覆盖率门槛：匹配到的骨骼数 / 该游戏名单总数，达到此比例才认定为该游戏骨架
+_REE_MIN_COVERAGE = 0.3
+
+
+def _detect_ree_game(arm_obj):
+    """在私有 REE 游戏名单里按骨骼名覆盖率找最匹配的游戏，返回 game_code 或 None。"""
+    existing = arm_obj.data.bones.keys()
+    best_code, best_ratio = None, 0.0
+    for code, bone_list in _REE_TPOSE_BONES.items():
+        ratio = sum(1 for name in bone_list if name in existing) / len(bone_list)
+        if ratio > best_ratio:
+            best_code, best_ratio = code, ratio
+    return best_code if best_ratio >= _REE_MIN_COVERAGE else None
+
+
+def zero_pose_bone_rotations(arm_obj, bone_names):
+    """将 bone_names 中每根骨骼的姿态旋转矩阵强制设为固定的竖直朝向（保留原有位置不变）。
+    调用方需自行处理模式切换前后的上下文；返回实际处理的骨骼数。"""
+    bpy.ops.object.mode_set(mode='POSE')
+    bpy.ops.pose.select_all(action='DESELECT')
+    pose_bones = arm_obj.pose.bones
+    count = 0
+    for bone_name in bone_names:
+        if bone_name not in pose_bones:
+            continue
+        pb = pose_bones[bone_name]
+        zero = copy.deepcopy(pb.matrix)
+        zero[0][0] = 1.0;  zero[0][1] = 0.0;  zero[0][2] = 0.0
+        zero[1][0] = 0.0;  zero[1][1] = 0.0;  zero[1][2] = -1.0
+        zero[2][0] = 0.0;  zero[2][1] = 1.0;  zero[2][2] = 0.0
+        zero[3][0] = 0.0;  zero[3][1] = 0.0;  zero[3][2] = 0.0;  zero[3][3] = 1.0
+        pb.matrix = zero
+        bpy.context.view_layer.update()
+        count += 1
+    return count
+
+
+class MODDER_OT_ReeToTPose(bpy.types.Operator):
+    bl_idname = "modder.ree_to_tpose"
+    bl_label = "REE to T-Pose"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def description(cls, context, properties):
-        return T("core.pose_ops.matrix_zero_desc")
+        return T("core.pose_ops.ree_to_tpose_desc")
 
     def execute(self, context):
-        settings = context.scene.mhw_suite_settings
         arm_obj = context.active_object
 
         if not arm_obj or arm_obj.type != 'ARMATURE':
             self.report({'ERROR'}, T("core.pose_ops.select_armature_first"))
             return {'CANCELLED'}
 
-        pose_preset, err = resolve_preset(settings.pose_import_preset_enum, arm_obj, True)
-        if pose_preset is None:
-            self.report({'WARNING'}, err)
+        game_code = _detect_ree_game(arm_obj)
+        if game_code is None:
+            self.report({'ERROR'}, T("core.pose_ops.ree_game_not_recognized"))
             return {'CANCELLED'}
 
-        mapper = BoneMapManager()
-        if not mapper.load_preset(pose_preset, is_import_x=True):
-            self.report({'ERROR'}, T("core.pose_ops.cannot_load_armature_preset"))
-            return {'CANCELLED'}
-
-        tpose_std_keys = [
-            "clavicle_L", "upperarm_L", "forearm_L", "hand_L",
-            "clavicle_R", "upperarm_R", "forearm_R", "hand_R",
-            "thumb_01_L", "thumb_02_L", "thumb_03_L",
-            "index_01_L", "index_02_L", "index_03_L",
-            "middle_01_L", "middle_02_L", "middle_03_L",
-            "ring_01_L", "ring_02_L", "ring_03_L",
-            "pinky_01_L", "pinky_02_L", "pinky_03_L",
-            "thumb_01_R", "thumb_02_R", "thumb_03_R",
-            "index_01_R", "index_02_R", "index_03_R",
-            "middle_01_R", "middle_02_R", "middle_03_R",
-            "ring_01_R", "ring_02_R", "ring_03_R",
-            "pinky_01_R", "pinky_02_R", "pinky_03_R",
-            "thigh_L", "shin_L", "foot_L", "toe_L",
-            "thigh_R", "shin_R", "foot_R", "toe_R",
-        ]
-        
-        bone_names = []
         existing = arm_obj.data.bones.keys()
-        for std_key in tpose_std_keys:
-            main_name, __ = mapper.get_matches_for_standard(arm_obj, std_key)
-            if main_name and main_name in existing:
-                bone_names.append(main_name)
-        
-        if not bone_names:
-            self.report({'ERROR'}, T("core.pose_ops.no_bones_matched"))
-            return {'CANCELLED'}
-        
-        bpy.ops.object.mode_set(mode='POSE')
-        bpy.ops.pose.select_all(action='DESELECT')
-        pose_bones = arm_obj.pose.bones
-        count = 0
-        
-        for bone_name in bone_names:
-            if bone_name not in pose_bones:
-                continue
-            pb = pose_bones[bone_name]
-            zero = copy.deepcopy(pb.matrix)
-            zero[0][0] = 1.0;  zero[0][1] = 0.0;  zero[0][2] = 0.0
-            zero[1][0] = 0.0;  zero[1][1] = 0.0;  zero[1][2] = -1.0
-            zero[2][0] = 0.0;  zero[2][1] = 1.0;  zero[2][2] = 0.0
-            zero[3][0] = 0.0;  zero[3][1] = 0.0;  zero[3][2] = 0.0;  zero[3][3] = 1.0
-            pb.matrix = zero
-            bpy.context.view_layer.update()
-            count += 1
-        
+        bone_names = [name for name in _REE_TPOSE_BONES[game_code] if name in existing]
+
+        count = zero_pose_bone_rotations(arm_obj, bone_names)
         mesh_count = _apply_and_rebind(arm_obj)
-        self.report({'INFO'}, T("core.pose_ops.matrix_zero_done").format(bones=count, meshes=mesh_count))
+        self.report(
+            {'INFO'},
+            T("core.pose_ops.ree_to_tpose_done").format(game=game_code, bones=count, meshes=mesh_count)
+        )
         return {'FINISHED'}
 
 
@@ -558,8 +591,8 @@ def _apply_and_rebind(arm_obj):
 # ============================================================
 
 classes = [
-    MODDER_OT_TPoseDirection,
-    MODDER_OT_TPoseMatrixZero,
+    MODDER_OT_MmdAToTPose,
+    MODDER_OT_ReeToTPose,
     MODDER_OT_RecordTransform,
     MODDER_OT_ApplyTransformForward,
     MODDER_OT_ApplyTransformInverse,
