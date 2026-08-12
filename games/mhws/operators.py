@@ -461,7 +461,7 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
 
 _PREPROCESS_X_CANDIDATES = ("MMD.json", "VRChat.json")
 _PREPROCESS_MIN_RATIO = 0.30
-_MHWS_REF_SKELETON_FILE = "hunter_t.fbx"
+_MHWS_REF_SKELETON_FILE = "MHWilds_Female.fbx"
 _PREPROCESS_REF_ARM_BONES = (
     "L_UpperArm", "R_UpperArm",
     "L_Forearm",  "R_Forearm",
@@ -472,6 +472,79 @@ _PREPROCESS_ARM_SLOTS = (
     "forearm_L",  "forearm_R",
     "hand_L",     "hand_R",
 )
+
+# 参考骨架(荒野原生模型)自带的表情骨照搬 MBT importMHWildsfmesh 的 merge_bone_list：
+# 导入后先把这些表情骨合并/删除掉，再转 T-Pose——参考骨架本身没有网格，这一步纯粹是为了
+# 让残留在场景里的参考骨架不至于带着两百多根表情骨，跟 MBT 的行为保持一致。
+# fcParam_000~200 是表情捕捉用的驱动骨，数量固定，用生成式写更不容易抄错。
+_MHWS_FACIAL_MERGE_BONES = (
+    'HeadAll_SCL', 'Ear_SCL', 'Head_SCL', 'C_ForeHead_LOD02', 'L_ForeHead_LOD01',
+    'R_ForeHead_LOD01', 'C_EyeBrow_LOD02', 'L_BetweenEyeBrow_LOD01', 'R_BetweenEyeBrow_LOD01',
+    'L_EyeBrow_LOD02', 'L_EyeBrow_A_LOD01', 'L_EyeBrow_B_LOD01', 'L_EyeBrow_C_LOD01',
+    'R_EyeBrow_LOD02', 'R_EyeBrow_A_LOD01', 'R_EyeBrow_B_LOD01', 'R_EyeBrow_C_LOD01',
+    'L_Eye_Master', 'L_EyeJ_LOD02', 'L_DoubleEyeLidJ_LOD02', 'L_DoubleEyeLid_LOD01',
+    'L_DoubleEyeLid_A_LOD00', 'L_DoubleEyeLid_B_LOD00', 'L_UpEyeLidJ_LOD02', 'L_UpEyeLid_LOD01',
+    'L_UpEyeLid_A_LOD00', 'L_UpEyeLid_B_LOD00', 'L_LoEyeLidJ_LOD02', 'L_LoEyeLid_LOD01',
+    'L_LoEyeLid_A_LOD00', 'L_LoEyeLid_B_LOD00', 'L_EyeBagJ_LOD02', 'L_EyeBagJ_LOD01',
+    'L_EyeBagJ_A_LOD00', 'L_EyeBagJ_B_LOD00', 'L_OuterEyeJ_LOD02', 'L_UpOuterEyeJ_LOD01',
+    'L_LoOuterEyeJ_LOD01', 'L_InnerEyeJ_LOD02', 'L_LoInnerEyeJ_LOD01', 'L_UpInnerEyeJ_LOD01',
+    'R_Eye_Master', 'R_EyeJ_LOD02', 'R_DoubleEyeLidJ_LOD02', 'R_DoubleEyeLid_LOD01',
+    'R_DoubleEyeLid_A_LOD00', 'R_DoubleEyeLid_B_LOD00', 'R_UpEyeLidJ_LOD02', 'R_UpEyeLid_LOD01',
+    'R_UpEyeLid_A_LOD00', 'R_UpEyeLid_B_LOD00', 'R_LoEyeLidJ_LOD02', 'R_LoEyeLid_LOD01',
+    'R_LoEyeLid_A_LOD00', 'R_LoEyeLid_B_LOD00', 'R_EyeBagJ_LOD02', 'R_EyeBagJ_LOD01',
+    'R_EyeBagJ_A_LOD00', 'R_EyeBagJ_B_LOD00', 'R_InnerEyeJ_LOD02', 'R_UpInnerEyeJ_LOD01',
+    'R_LoInnerEyeJ_LOD01', 'R_OuterEyeJ_LOD02', 'R_UpOuterEyeJ_LOD01', 'R_LoOuterEyeJ_LOD01',
+    'C_Nose_Master', 'C_Nose_LOD02', 'L_NoseNaso_LOD02', 'R_NoseNaso_LOD02',
+    'C_Nose_Master_LOD02', 'C_Nose_LOD01', 'L_Nose_LOD01', 'L_NoseUnder_LOD00', 'R_Nose_LOD01',
+    'R_NoseUnder_LOD00', 'L_Naso_LOD02', 'R_Naso_LOD02', 'L_CheekBone_LOD02',
+    'L_malarFat_A_LOD01', 'L_malarFat_B_LOD01', 'R_CheekBone_LOD02', 'R_malarFat_A_LOD01',
+    'R_malarFat_B_LOD01', 'L_NasoB_LOD02', 'R_NasoB_LOD02', 'L_Cheek_LOD02', 'L_Cheek_LOD01',
+    'C_Mouth_Master', 'C_upLip_LOD02', 'C_upLip_LOD01', 'C_upLip_T_LOD01', 'L_upLip_LOD02',
+    'L_upLip_LOD01', 'L_upLip_A_LOD01', 'L_upLip_A_LOD00', 'L_upLip_AT_LOD00', 'L_upLip_B_LOD01',
+    'L_upLip_B_LOD00', 'L_upLip_BT_LOD00', 'L_upLip_T_LOD01', 'R_upLip_LOD02', 'R_upLip_LOD01',
+    'R_upLip_A_LOD01', 'R_upLip_A_LOD00', 'R_upLip_AT_LOD00', 'R_upLip_B_LOD01',
+    'R_upLip_B_LOD00', 'R_upLip_BT_LOD00', 'R_upLip_T_LOD01', 'L_cornerLip_LOD02',
+    'L_cornerLip_A_LOD01', 'L_cornerLip_B_LOD01', 'L_cornerLipInner_LOD01', 'R_cornerLip_LOD02',
+    'R_cornerLip_A_LOD01', 'R_cornerLip_B_LOD01', 'R_cornerLipInner_LOD01', 'C_loLip_LOD02',
+    'C_loLip_LOD01', 'C_loLip_T_LOD01', 'L_loLip_LOD02', 'L_loLip_LOD01', 'L_loLip_A_LOD01',
+    'L_loLip_A_LOD00', 'L_loLip_AT_LOD00', 'L_loLip_B_LOD01', 'L_loLip_B_LOD00',
+    'L_loLip_BT_LOD00', 'L_loLip_T_LOD01', 'R_loLip_LOD02', 'R_loLip_LOD01', 'R_loLip_A_LOD01',
+    'R_loLip_A_LOD00', 'R_loLip_AT_LOD00', 'R_loLip_B_LOD01', 'R_loLip_B_LOD00',
+    'R_loLip_BT_LOD00', 'R_loLip_T_LOD01', 'C_Jaw_LOD02', 'C_Chin_LOD01', 'C_Chin_LOD00',
+    'L_JawLine_LOD01', 'L_JawLine_LOD00', 'R_JawLine_LOD01', 'R_JawLine_LOD00',
+    'C_TongueA_LOD01', 'C_TongueB_LOD01', 'R_TongueB_LOD00', 'C_TongueC_LOD01',
+    'L_TongueC_LOD00', 'R_TongueC_LOD00', 'L_TongueB_LOD00', 'LowerTeeth', 'C_UnderJaw_LOD02',
+    'L_UnderJaw_LOD02', 'R_UnderJaw_LOD02', 'L_Temporal_LOD01', 'R_Temporal_LOD01',
+    'L_Masseter_LOD01', 'R_Masseter_LOD01', 'R_Cheek_LOD02', 'R_Cheek_LOD01', 'HelmJoint_L_Hoho',
+    'HelmJoint_L_Era', 'HelmJoint_Mayu', 'HelmJoint_Ago', 'HelmJoint_R_Era', 'HelmJoint_R_Hoho',
+    'UpperTeeth',
+) + tuple(f"fcParam_{i:03d}" for i in range(201))
+
+
+def _merge_facial_bones_on_reference(armature_obj):
+    """照搬 MBT 的合并算法：对 _MHWS_FACIAL_MERGE_BONES 里的每根骨骼，沿父链向上找到
+    第一个不在这份名单里的祖先，合并权重并删除该骨骼。参考骨架没有网格，这里实际只做
+    删骨骼；权重合并对将来有网格的调用方同样正确。返回实际删除的骨骼数。"""
+    facial_set = set(_MHWS_FACIAL_MERGE_BONES)
+    bones = armature_obj.data.bones
+    pairs = []
+    for name in _MHWS_FACIAL_MERGE_BONES:
+        bone = bones.get(name)
+        if bone is None:
+            continue
+        parent = bone.parent
+        while parent is not None and parent.parent is not None and parent.name in facial_set:
+            parent = parent.parent
+        if parent is None:
+            continue
+        pairs.append((parent.name, name))
+
+    if not pairs:
+        return 0
+    weight_utils.merge_weights_and_delete_bones(armature_obj, pairs)
+    return len(pairs)
+
+
 def _detect_mhws_y_preset(ref_arm_obj=None):
     """Detect the MHWS bone (Y) preset filename.
 
@@ -614,13 +687,24 @@ class MHWS_OT_PreprocessModel(bpy.types.Operator):
             bpy.ops.object.select_all(action='DESELECT')
             source_arm_obj.select_set(True)
             context.view_layer.objects.active = source_arm_obj
-            bpy.ops.modder.tpose_direction()
+            bpy.ops.modder.mmd_a_to_tpose()
 
-        # Step 3: import reference skeleton (T-pose, bundled) + arm-scale calibration
+        # Step 3: import reference skeleton (bundled, default A-Pose) + merge its facial
+        # bones + convert to T-Pose (照搬 MBT importMHWildsfmesh 的两个选项，都默认开启)
+        # + arm-scale calibration. T-Pose 转换必须先做——后面的缩放/偏移/对齐计算全都假定
+        # 参考骨架是 T-Pose。
         ref_arm_obj = ref_skeleton.import_reference_armature('mhws', _MHWS_REF_SKELETON_FILE)
         if ref_arm_obj is None:
             self.report({'ERROR'}, T("mhws.operators.ref_skeleton_import_failed").format(name=_MHWS_REF_SKELETON_FILE))
             return {'CANCELLED'}
+
+        _merge_facial_bones_on_reference(ref_arm_obj)
+
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.select_all(action='DESELECT')
+        ref_arm_obj.select_set(True)
+        context.view_layer.objects.active = ref_arm_obj
+        bpy.ops.modder.ree_to_tpose()
 
         # Detect Y (bone) preset: game_code first, then coverage fallback
         y_preset = _detect_mhws_y_preset(ref_arm_obj)
@@ -656,6 +740,17 @@ class MHWS_OT_PreprocessModel(bpy.types.Operator):
         ref_arm_obj.select_set(True)
         context.view_layer.objects.active = ref_arm_obj
         bpy.ops.modder.universal_snap()
+
+        # Step 6: 对齐后自动跑经验修正。优化荒野骨架只做几何摆位，操作对象是 universal_snap
+        # 真正改动的骨架——ref_arm_obj（荒野骨架，snap 时作为 active/Y 被吸附成这具模型的比例），
+        # 不是 source_arm_obj（还挂着原始 MMD 骨架名，且网格此时仍绑定在它自己身上）。
+        # 优化辅助骨骼及权重需要一具「Wilds 命名骨骼 + 已绑定该骨架的网格」同时具备的对象，
+        # 但这一步流程里两者还没合到一起（网格仍绑在 source_arm_obj 上），放这里无法生效，不调用。
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.select_all(action='DESELECT')
+        ref_arm_obj.select_set(True)
+        context.view_layer.objects.active = ref_arm_obj
+        bpy.ops.mhws.optimize_skeleton()
 
         self.report({'INFO'}, T("mhws.operators.preprocess_done"))
         return {'FINISHED'}
@@ -725,21 +820,28 @@ class MHWS_OT_AddFacialBones(bpy.types.Operator):
             self.report({'ERROR'}, T("mhws.operators.ref_skeleton_import_failed").format(name=_MHWS_REF_SKELETON_FILE))
             return {'CANCELLED'}
 
-        # Step 2: 让参考骨架与选中骨架对齐（按同名骨骼对齐，仅位置）
-        bone_utils.align_armatures_by_name(target_arm, ref_arm_obj, mode='POS_ONLY')
+        try:
+            # Step 2: 让参考骨架与选中骨架对齐（按同名骨骼对齐，仅位置）
+            bone_utils.align_armatures_by_name(target_arm, ref_arm_obj, mode='POS_ONLY')
 
-        # Step 3: 移植 HeadAll_SCL 及其所有子级
-        created = facial_bones.graft_facial_bones(ref_arm_obj, target_arm, _FACIAL_ROOT_BONE)
-        if created == 0:
-            self.report({'WARNING'}, T("mhws.operators.no_facial_root_bone").format(name=_FACIAL_ROOT_BONE))
-            return {'CANCELLED'}
+            # Step 3: 移植 HeadAll_SCL 及其所有子级
+            created = facial_bones.graft_facial_bones(ref_arm_obj, target_arm, _FACIAL_ROOT_BONE)
+            if created == 0:
+                self.report({'WARNING'}, T("mhws.operators.no_facial_root_bone").format(name=_FACIAL_ROOT_BONE))
+                return {'CANCELLED'}
 
-        # Step 4: 假头法增加眨眼幅度
-        fake_count = 0
-        if self.increase_blink_amplitude:
-            for bone_name in _BLINK_TARGET_BONES:
-                if facial_bones.apply_blink_fake_bone(target_arm, bone_name, _BLINK_FAKE_OFFSET_Y):
-                    fake_count += 1
+            # Step 4: 假头法增加眨眼幅度
+            fake_count = 0
+            if self.increase_blink_amplitude:
+                for bone_name in _BLINK_TARGET_BONES:
+                    if facial_bones.apply_blink_fake_bone(target_arm, bone_name, _BLINK_FAKE_OFFSET_Y):
+                        fake_count += 1
+        finally:
+            # 参考骨架仅用于移植数据，用完即清除，避免残留在场景中
+            if context.mode != 'OBJECT':
+                bpy.ops.object.mode_set(mode='OBJECT')
+            if ref_arm_obj.name in bpy.data.objects:
+                bpy.data.objects.remove(ref_arm_obj, do_unlink=True)
 
         bpy.context.view_layer.objects.active = target_arm
         bpy.ops.object.mode_set(mode='OBJECT')

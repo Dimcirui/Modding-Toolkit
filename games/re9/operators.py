@@ -315,21 +315,28 @@ class RE9_OT_AddFacialBones(bpy.types.Operator):
             self.report({'ERROR'}, T("re9.operators.reference_import_failed").format(name=self.reference_character))
             return {'CANCELLED'}
 
-        # Step 2: align the reference armature to the selected armature (by matching bone names, position only)
-        bone_utils.align_armatures_by_name(target_arm, ref_arm_obj, mode='POS_ONLY')
+        try:
+            # Step 2: align the reference armature to the selected armature (by matching bone names, position only)
+            bone_utils.align_armatures_by_name(target_arm, ref_arm_obj, mode='POS_ONLY')
 
-        # Step 3: graft the facial bone root and all its children
-        created = facial_bones.graft_facial_bones(ref_arm_obj, target_arm, _RE9_FACIAL_ROOT_BONE)
-        if created == 0:
-            self.report({'WARNING'}, T("re9.operators.facial_root_not_found").format(name=_RE9_FACIAL_ROOT_BONE))
-            return {'CANCELLED'}
+            # Step 3: graft the facial bone root and all its children
+            created = facial_bones.graft_facial_bones(ref_arm_obj, target_arm, _RE9_FACIAL_ROOT_BONE)
+            if created == 0:
+                self.report({'WARNING'}, T("re9.operators.facial_root_not_found").format(name=_RE9_FACIAL_ROOT_BONE))
+                return {'CANCELLED'}
 
-        # Step 4: fake-head trick to increase blink amplitude
-        fake_count = 0
-        if self.increase_blink_amplitude:
-            for bone_name in _RE9_BLINK_TARGET_BONES:
-                if facial_bones.apply_blink_fake_bone(target_arm, bone_name, _RE9_BLINK_FAKE_OFFSET_Y):
-                    fake_count += 1
+            # Step 4: fake-head trick to increase blink amplitude
+            fake_count = 0
+            if self.increase_blink_amplitude:
+                for bone_name in _RE9_BLINK_TARGET_BONES:
+                    if facial_bones.apply_blink_fake_bone(target_arm, bone_name, _RE9_BLINK_FAKE_OFFSET_Y):
+                        fake_count += 1
+        finally:
+            # The reference armature is only used to source the graft data; discard it once done
+            if context.mode != 'OBJECT':
+                bpy.ops.object.mode_set(mode='OBJECT')
+            if ref_arm_obj.name in bpy.data.objects:
+                bpy.data.objects.remove(ref_arm_obj, do_unlink=True)
 
         bpy.context.view_layer.objects.active = target_arm
         bpy.ops.object.mode_set(mode='OBJECT')
