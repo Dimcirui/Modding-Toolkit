@@ -90,7 +90,7 @@ class MhwiGenMaterialEntry(bpy.types.PropertyGroup):
         name="Hide Snow Overlay (fixes black legs in snow)",
         description="Set the AlbedoBlendMap slot to a fully transparent texture (snow_Col_CMM), "
                     "eliminating the black-leg artifact caused by snow blending",
-        default=False,
+        default=True,
     )
     ao_image:         bpy.props.StringProperty(
         name="AO",

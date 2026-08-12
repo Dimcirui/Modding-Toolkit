@@ -1707,6 +1707,23 @@ def _separate_mesh_by_material(context, mesh_col):
 
 # ── Base operator: Refresh ─────────────────────────────────────────────────────
 
+# User-editable fields on a material_list entry. Preserved by name across a
+# refresh instead of being wiped by clear()-and-rebuild; everything else
+# (strategy_display, strat_*, native_size_*, uses_packed_shader,
+# preset_locked, preset_path_override) is re-derived from the material every
+# time since it reflects current material/shader state, not a user choice.
+# Not every game's entry PropertyGroup has every field (e.g. only MHWI has
+# hide_snow_overlay/ao_strength) -- getattr(..., None) below skips the rest.
+_PRESERVED_ENTRY_FIELDS = (
+    'expanded', 'material_preset', 'shader_source', 'use_toon',
+    'generate_mipmaps', 'skip_textures',
+    'use_ao', 'ao_image', 'ao_ch', 'ao_inv', 'ao_strength',
+    'hide_snow_overlay',
+    'bake_size_color', 'bake_size_normal', 'bake_size_roughness',
+    'bake_size_metallic', 'bake_size_alpha', 'bake_size_emissive',
+)
+
+
 class MdfGenRefreshBase(bpy.types.Operator):
     bl_label   = "Refresh"
     bl_options = {'INTERNAL'}
@@ -1739,6 +1756,15 @@ class MdfGenRefreshBase(bpy.types.Operator):
             return {'CANCELLED'}
 
         preset_items = cls._load_preset_items()
+
+        # Snapshot user-adjusted settings before rebuilding, keyed by material
+        # name, so they can be re-applied instead of lost to clear().
+        preserved = {}
+        for old in settings.material_list:
+            preserved[old.blender_material] = {
+                field: getattr(old, field, None) for field in _PRESERVED_ENTRY_FIELDS
+            }
+
         settings.material_list.clear()
 
         for mat_name in sorted(mat_names):
@@ -1823,9 +1849,20 @@ class MdfGenRefreshBase(bpy.types.Operator):
             for pt in _PBR_CHANNELS:
                 try:
                     setattr(item, f"native_size_{pt}", native_sizes.get(pt, 0))
-                    setattr(item, f"bake_size_{pt}", 0)   # reset override on refresh
                 except Exception:
                     pass
+
+            # Re-apply this material's own previous adjustments, if any,
+            # over the freshly-guessed defaults set above.
+            old_values = preserved.get(mat_name)
+            if old_values:
+                for field, value in old_values.items():
+                    if value is None:
+                        continue
+                    try:
+                        setattr(item, field, value)
+                    except Exception:
+                        pass
 
         self.report({'INFO'}, T("core.mdf_generator_base.scanned_materials").format(n=len(settings.material_list)))
         return {'FINISHED'}
