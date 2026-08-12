@@ -6,8 +6,8 @@ games/mhws/batch_export_ui.py, games/mhws/batch_import.py,
 games/mhws/batch_import_ui.py, games/mhws/mdf_generator.py,
 games/mhws/mdf_generator_ui.py, games/mhws/mdf_tex_processor_ui.py,
 games/mhws/mdf_material_convert.py.
-(games/mhws/fbxskel.py, games/mhws/mdf_tex_processor.py and
-games/mhws/data_maps.py have no UI-facing Chinese text.)
+(games/mhws/fbxskel.py and games/mhws/mdf_tex_processor.py have no UI-facing
+Chinese text.)
 
 Key naming convention: "mhws.<module_without_.py>.<short_purpose>".
 """
