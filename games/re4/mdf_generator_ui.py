@@ -9,12 +9,12 @@ _SETTINGS_ATTR = "re4_mdf_generator"
 
 # T() keys for each channel's display label (resolved fresh at draw time)
 _STRAT_LABEL_KEYS = {
-    'color':     "re4.mdf_generator_ui.strat_color",
-    'normal':    "re4.mdf_generator_ui.strat_normal",
-    'roughness': "re4.mdf_generator_ui.strat_roughness",
-    'metallic':  "re4.mdf_generator_ui.strat_metallic",
-    'alpha':     "re4.mdf_generator_ui.strat_alpha",
-    'emissive':  "re4.mdf_generator_ui.strat_emissive",
+    'color':     "core.mdf_generator_base.strat_color",
+    'normal':    "core.mdf_generator_base.strat_normal",
+    'roughness': "core.mdf_generator_base.strat_roughness",
+    'metallic':  "core.mdf_generator_base.strat_metallic",
+    'alpha':     "core.mdf_generator_base.strat_alpha",
+    'emissive':  "core.mdf_generator_base.strat_emissive",
 }
 
 _STRAT_ICONS = {
@@ -157,12 +157,12 @@ class RE4_OT_MdfGeneratorDialog(bpy.types.Operator):
                 op.settings_attr = _SETTINGS_ATTR
                 op.mat_name      = mat_entry.blender_material
                 op.value         = 'SLOT'
-                box.prop(mat_entry, "generate_mipmaps", text=T("re4.mdf_generator.generate_mipmaps_label"))
+                box.prop(mat_entry, "generate_mipmaps", text=T("core.mdf_tex_processor_base.generate_mipmaps_label"))
                 box.prop(mat_entry, "skip_textures", text=T("re4.mdf_generator.skip_textures_label"))
             else:
                 if preset_has_emissive_slots(mat_entry.material_preset):
                     box.prop(mat_entry, "use_toon", text=T("re4.mdf_generator.use_toon_label"))
-                box.prop(mat_entry, "generate_mipmaps", text=T("re4.mdf_generator.generate_mipmaps_label"))
+                box.prop(mat_entry, "generate_mipmaps", text=T("core.mdf_tex_processor_base.generate_mipmaps_label"))
                 box.prop(mat_entry, "skip_textures", text=T("re4.mdf_generator.skip_textures_label"))
                 box.prop(mat_entry, "use_ao", text=T("ui.prop.use_ao"))
                 if mat_entry.use_ao:

@@ -45,7 +45,7 @@ from ...core.shader_pack import (
 
 _K = "mhrs.shader_defs."
 
-_ALBD = SlotSocket("BaseDielectricMap", _K + "albd",
+_ALBD = SlotSocket("BaseDielectricMap", "core.shader_pack.albd",
                    default_color=(1.0, 1.0, 1.0, 1.0), alpha=True, default_alpha=1.0,
                    supplies=('color', 'metallic'), non_color=False)
 
@@ -53,7 +53,7 @@ _NRMR = SlotSocket("NRMR_NRRTMap", _K + "nrmr",
                    default_color=(0.5, 0.5, 1.0, 1.0), alpha=True, default_alpha=1.0,
                    supplies=('normal', 'roughness'))
 
-_EMISSIVE = SlotSocket("EmissiveMap", _K + "emissive",
+_EMISSIVE = SlotSocket("EmissiveMap", "core.shader_pack.emissive",
                        default_color=(0.0, 0.0, 0.0, 1.0), alpha=True, default_alpha=1.0,
                        supplies=('emissive',), non_color=False)
 
@@ -87,12 +87,12 @@ PBR = (
               min_value=0.0, max_value=1.0, subtype='FACTOR', pbr_type='metallic'),
     PBRSocket("AO", 'NodeSocketColor', (1.0, 1.0, 1.0, 1.0),
               _K + "pbr_ao", pbr_type='ao'),
-    PBRSocket("AO Strength", 'NodeSocketFloat', 0.5, _K + "pbr_ao_strength",
+    PBRSocket("AO Strength", 'NodeSocketFloat', 0.5, "core.shader_pack.pbr_ao_strength",
               min_value=0.0, max_value=1.0, subtype='FACTOR'),
     PBRSocket("Emission", 'NodeSocketColor', (0.0, 0.0, 0.0, 1.0),
               _K + "pbr_emission", pbr_type='emissive', non_color=False),
     PBRSocket("Emission Strength", 'NodeSocketFloat', 1.0,
-              _K + "pbr_emission_strength", min_value=0.0, max_value=9999.0),
+              "core.shader_pack.pbr_emission_strength", min_value=0.0, max_value=9999.0),
     PBRSocket("Normal", 'NodeSocketColor', (0.5, 0.5, 1.0, 1.0),
               _K + "pbr_normal", pbr_type='normal'),
 )
@@ -171,8 +171,8 @@ def _wire(b):
 SPEC = ShaderPackSpec(
     group_name    = "MTK MHRS Standard",
     shader_id     = "mhrs_standard_v1",
-    pbr_panel_key = _K + "panel_pbr",
-    slot_panel_key= _K + "panel_slots",
+    pbr_panel_key = "core.shader_pack.panel_pbr",
+    slot_panel_key= "core.shader_pack.panel_slots",
     pbr           = PBR,
     slots         = SLOTS,
     wire          = _wire,

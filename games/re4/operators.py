@@ -402,8 +402,8 @@ def _get_re4_chain_col_items(self, context):
 
 def _get_settings_mode_items(self, context):
     return [
-        ('SHARED',   T("re4.operators.settings_mode_shared_label"),   T("re4.operators.settings_mode_shared_desc")),
-        ('SEPARATE', T("re4.operators.settings_mode_separate_label"), T("re4.operators.settings_mode_separate_desc")),
+        ('SHARED',   T("core.re_chain_utils.settings_mode_shared"),   T("core.re_chain_utils.settings_mode_shared_desc")),
+        ('SEPARATE', T("core.re_chain_utils.settings_mode_separate"), T("re4.operators.settings_mode_separate_desc")),
         ('GUESS',    T("re4.operators.settings_mode_guess_label"),    T("re4.operators.settings_mode_guess_desc")),
     ]
 
@@ -511,11 +511,11 @@ class RE4_OT_AutoCreateChains(bpy.types.Operator):
         row = layout.row()
         row.prop(self, "auto_create_collection", text=T("re4.operators.auto_create_collection_label"))
         if self.auto_create_collection:
-            layout.prop(self, "collection_name", text=T("re4.operators.collection_name_label"))
-            layout.prop(self, "chain_format", text=T("re4.operators.chain_format_label"), expand=True)
+            layout.prop(self, "collection_name", text=T("core.re_chain_utils.collection"))
+            layout.prop(self, "chain_format", text=T("core.re_chain_utils.chain_format"), expand=True)
         else:
             layout.prop(self, "chain_collection")
-        layout.prop(self, "settings_mode", text=T("re4.operators.settings_mode_label"), expand=True)
+        layout.prop(self, "settings_mode", text=T("core.re_chain_utils.settings_mode"), expand=True)
         layout.prop(self, "straighten_orientation", text=T("re4.operators.straighten_orientation_label"))
         layout.prop(self, "apply_angle_ramp", text=T("re4.operators.apply_angle_ramp_label"))
 
@@ -542,7 +542,7 @@ class RE4_OT_AutoCreateChains(bpy.types.Operator):
         )
         status = auto_create_re_chains(context, armature, config)
         if status == {'CANCELLED'}:
-            self.report({'ERROR'}, T("re4.operators.create_chain_failed"))
+            self.report({'ERROR'}, T("core.re_chain_utils.create_chain_failed"))
             return {'CANCELLED'}
         self.report({'INFO'}, T("re4.operators.create_chain_done"))
         return {'FINISHED'}
@@ -601,7 +601,7 @@ class RE4_OT_AddFacialBones(bpy.types.Operator):
         note.label(text=T("re4.operators.facial_bones_warning"))
         layout.separator()
         layout.prop(self, "target_armature", text=T("re4.operators.target_armature_label"))
-        layout.prop(self, "reference_character", text=T("re4.operators.reference_character_label"))
+        layout.prop(self, "reference_character", text=T("core.re_chain_utils.reference_character"))
         layout.prop(self, "increase_blink_amplitude", text=T("re4.operators.increase_blink_amplitude_label"))
 
     def execute(self, context):
@@ -651,7 +651,7 @@ class RE4_OT_AddFacialBones(bpy.types.Operator):
         bpy.ops.object.select_all(action='DESELECT')
         target_arm.select_set(True)
 
-        msg = T("re4.operators.facial_bones_added").format(n=created)
+        msg = T("core.facial_bones.facial_bones_added").format(n=created)
         if self.increase_blink_amplitude:
             msg += T("re4.operators.blink_amplitude_added").format(n=fake_count)
         self.report({'INFO'}, msg)

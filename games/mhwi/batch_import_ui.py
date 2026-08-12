@@ -119,7 +119,7 @@ class MHWI_OT_BatchImportDialog(bpy.types.Operator):
         # ── 全局选择栏 ──
         enabled_count = sum(1 for it in items if it.enabled)
         row = layout.row(align=True)
-        op_all  = row.operator("mhwi.select_all_import", text=T("mhwi.batch_import_ui.select_all"), icon='CHECKBOX_HLT')
+        op_all  = row.operator("mhwi.select_all_import", text=T("core.export_prep.select_all"), icon='CHECKBOX_HLT')
         op_all.value  = True
         op_none = row.operator("mhwi.select_all_import", text=T("mhwi.batch_import_ui.deselect_all"), icon='CHECKBOX_DEHLT')
         op_none.value = False

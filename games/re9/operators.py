@@ -95,15 +95,15 @@ def _get_re9_chain_col_items(self, context):
 
 def _get_settings_mode_items(self, context):
     return [
-        ('SHARED',   T("re9.operators.settings_mode_shared"),   T("re9.operators.settings_mode_shared_desc")),
-        ('SEPARATE', T("re9.operators.settings_mode_separate"), T("re9.operators.settings_mode_separate_desc")),
+        ('SHARED',   T("core.re_chain_utils.settings_mode_shared"),   T("core.re_chain_utils.settings_mode_shared_desc")),
+        ('SEPARATE', T("core.re_chain_utils.settings_mode_separate"), T("re9.operators.settings_mode_separate_desc")),
         ('GUESS',    T("re9.operators.settings_mode_guess"),    T("re9.operators.settings_mode_guess_desc")),
     ]
 
 
 def _get_chain_format_items(self, context):
     return [
-        (".chain2", "Chain2", T("re9.operators.chain_format_chain2_desc")),
+        (".chain2", "Chain2", T("core.re_chain_utils.chain_format_chain2_desc")),
         (".chain", "Chain", T("re9.operators.chain_format_chain_desc")),
     ]
 
@@ -204,7 +204,7 @@ class RE9_OT_AutoCreateChains(bpy.types.Operator):
         row = layout.row()
         row.prop(self, "auto_create_collection", text=T("re9.operators.auto_create_collection"))
         if self.auto_create_collection:
-            layout.prop(self, "collection_name", text=T("re9.operators.collection_name"))
+            layout.prop(self, "collection_name", text=T("core.re_chain_utils.collection"))
             layout.prop(self, "chain_format", expand=True)
         else:
             layout.prop(self, "chain_collection")
@@ -235,7 +235,7 @@ class RE9_OT_AutoCreateChains(bpy.types.Operator):
         )
         status = auto_create_re_chains(context, armature, config)
         if status == {'CANCELLED'}:
-            self.report({'ERROR'}, T("re9.operators.create_chain_failed"))
+            self.report({'ERROR'}, T("core.re_chain_utils.create_chain_failed"))
             return {'CANCELLED'}
         self.report({'INFO'}, T("re9.operators.create_chain_done"))
         return {'FINISHED'}
@@ -293,13 +293,13 @@ class RE9_OT_AddFacialBones(bpy.types.Operator):
         note.label(text=T("re9.operators.facial_bones_warning"))
         layout.separator()
         layout.prop(self, "target_armature", text=T("re9.operators.target_armature"))
-        layout.prop(self, "reference_character", text=T("re9.operators.reference_character"))
+        layout.prop(self, "reference_character", text=T("core.re_chain_utils.reference_character"))
         layout.prop(self, "increase_blink_amplitude", text=T("re9.operators.increase_blink_amplitude"))
 
     def execute(self, context):
         target_arm = bpy.data.objects.get(self.target_armature)
         if target_arm is None or target_arm.type != 'ARMATURE':
-            self.report({'WARNING'}, T("re9.operators.select_valid_armature"))
+            self.report({'WARNING'}, T("core.re_chain_utils.select_valid_armature"))
             return {'CANCELLED'}
 
         if not self.reference_character or self.reference_character == 'NONE':
@@ -343,7 +343,7 @@ class RE9_OT_AddFacialBones(bpy.types.Operator):
         bpy.ops.object.select_all(action='DESELECT')
         target_arm.select_set(True)
 
-        msg = T("re9.operators.facial_bones_added").format(n=created)
+        msg = T("core.facial_bones.facial_bones_added").format(n=created)
         if self.increase_blink_amplitude:
             msg += T("re9.operators.blink_amplitude_added").format(n=fake_count)
         self.report({'INFO'}, msg)

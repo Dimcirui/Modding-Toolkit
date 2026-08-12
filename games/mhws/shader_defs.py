@@ -74,7 +74,7 @@ _K = "mhws.shader_defs."
 
 # ── Core slots (PBR-recipe-bearing, actually wired) ─────────────────────────
 
-_ALBD = SlotSocket("BaseDielectricMap", _K + "albd",
+_ALBD = SlotSocket("BaseDielectricMap", "core.shader_pack.albd",
                    default_color=(1.0, 1.0, 1.0, 1.0), alpha=True, default_alpha=1.0,
                    supplies=('color', 'metallic'), non_color=False)
 
@@ -85,7 +85,7 @@ _NRRO = SlotSocket("NormalRoughnessOcclusionMap", _K + "nrro",
                    default_color=(1.0, 0.5, 1.0, 1.0), alpha=True, default_alpha=0.5,
                    supplies=('roughness', 'normal', 'ao'))
 
-_EMI = SlotSocket("EmissiveMap", _K + "emissive",
+_EMI = SlotSocket("EmissiveMap", "core.shader_pack.emissive",
                   default_color=(0.0, 0.0, 0.0, 1.0), alpha=True, default_alpha=1.0,
                   supplies=('emissive',), non_color=False)
 
@@ -166,7 +166,7 @@ PBR = (
     PBRSocket("Emission", 'NodeSocketColor', (0.0, 0.0, 0.0, 1.0),
               _K + "pbr_emission", pbr_type='emissive', non_color=False),
     PBRSocket("Emission Strength", 'NodeSocketFloat', 1.0,
-              _K + "pbr_emission_strength", min_value=0.0, max_value=9999.0),
+              "core.shader_pack.pbr_emission_strength", min_value=0.0, max_value=9999.0),
     # A colour, not a vector -- same reasoning as MHWI's spec: the reader hands
     # over the image behind any Normal Map node, which would be wrong to feed
     # into a vector socket (no tangent-space decode done yet).
@@ -391,8 +391,8 @@ SPEC_STANDARD = ShaderPackSpec(
                                            # weapon.json (v3's mistake -- weapon
                                            # is its own separate mmtr/spec, see
                                            # SPEC_WEAPON below)
-    pbr_panel_key = _K + "panel_pbr",
-    slot_panel_key= _K + "panel_slots_standard",
+    pbr_panel_key = "core.shader_pack.panel_pbr",
+    slot_panel_key= "core.shader_pack.panel_slots_standard",
     pbr           = PBR,
     slots         = SLOTS_STANDARD,
     wire          = _wire_standard,
@@ -418,7 +418,7 @@ SLOTS_WEAPON = (
 SPEC_WEAPON = ShaderPackSpec(
     group_name    = "MTK MHWS Weapon",
     shader_id     = "mhws_weapon_v1",
-    pbr_panel_key = _K + "panel_pbr",
+    pbr_panel_key = "core.shader_pack.panel_pbr",
     slot_panel_key= _K + "panel_slots_weapon",
     pbr           = PBR,
     slots         = SLOTS_WEAPON,
@@ -438,8 +438,8 @@ SLOTS_SKIN = (
 SPEC_SKIN = ShaderPackSpec(
     group_name    = "MTK MHWS Skin",
     shader_id     = "mhws_skin_v1",
-    pbr_panel_key = _K + "panel_pbr",
-    slot_panel_key= _K + "panel_slots_skin",
+    pbr_panel_key = "core.shader_pack.panel_pbr",
+    slot_panel_key= "core.shader_pack.panel_slots_skin",
     pbr           = PBR,
     slots         = SLOTS_SKIN,
     wire          = _wire_skin,
@@ -462,8 +462,8 @@ SPEC_HAIR = ShaderPackSpec(
     shader_id     = "mhws_hair_v2",   # v2: added AlphaTranslucentOcclusionSSSMap,
                                        # missing from v1 (hair.json's real Texture
                                        # Bindings list has it; v1 had dropped it)
-    pbr_panel_key = _K + "panel_pbr",
-    slot_panel_key= _K + "panel_slots_hair",
+    pbr_panel_key = "core.shader_pack.panel_pbr",
+    slot_panel_key= "core.shader_pack.panel_slots_hair",
     pbr           = PBR,
     slots         = SLOTS_HAIR,
     wire          = _wire_hair,
@@ -497,7 +497,7 @@ SLOTS_BASIC = (
 SPEC_BASIC = ShaderPackSpec(
     group_name    = "MTK MHWS Basic",
     shader_id     = "mhws_basic_v1",
-    pbr_panel_key = _K + "panel_pbr",
+    pbr_panel_key = "core.shader_pack.panel_pbr",
     slot_panel_key= _K + "panel_slots_basic",
     pbr           = PBR,
     slots         = SLOTS_BASIC,

@@ -112,7 +112,7 @@ def get_mhrs_schemes_callback(self, context):
             name = os.path.splitext(f)[0]
             _scheme_cache.append((f, name, ""))
     if not _scheme_cache:
-        _scheme_cache.append(('NONE', T("mhrs.batch_export.no_armor_pack"), ""))
+        _scheme_cache.append(('NONE', T("core.export_prep.no_armor_pack"), ""))
     return _scheme_cache
 
 
@@ -140,7 +140,7 @@ def get_mhrs_armor_callback(self, context):
             name = armor.get("name", armor_id)
             _armor_cache.append((armor_id, f"{name}  ({armor_id})", ""))
     if not _armor_cache:
-        _armor_cache.append(('NONE', T("mhrs.batch_export.no_armor"), ""))
+        _armor_cache.append(('NONE', T("core.export_prep.no_armor"), ""))
     return _armor_cache
 
 
@@ -382,7 +382,7 @@ class MHRS_OT_BatchExport(bpy.types.Operator):
 
         natives_root = scene.get("mhrs_natives_root", "")
         if not natives_root or not os.path.isdir(natives_root):
-            self.report({'ERROR'}, T("mhrs.batch_export.set_mod_root_first"))
+            self.report({'ERROR'}, T("core.export_prep.set_mod_root_first"))
             return {'CANCELLED'}
 
         scheme = _load_scheme(settings.mhrs_armor_scheme)
@@ -392,7 +392,7 @@ class MHRS_OT_BatchExport(bpy.types.Operator):
 
         armor_id = settings.mhrs_selected_armor
         if not armor_id or armor_id == 'NONE':
-            self.report({'ERROR'}, T("mhrs.batch_export.select_armor_first"))
+            self.report({'ERROR'}, T("core.export_prep.select_armor_first"))
             return {'CANCELLED'}
 
         armor_set = next((a for a in scheme.get("armor_sets", []) if a["id"] == armor_id), None)
@@ -461,10 +461,10 @@ class MHRS_OT_BatchExport(bpy.types.Operator):
                 fail_count += 1
 
         if fail_count > 0:
-            self.report({'WARNING'}, T("mhrs.batch_export.export_done_with_fail").format(
+            self.report({'WARNING'}, T("core.export_prep.export_done_with_fail").format(
                 export=export_count, fail=fail_count, skip=skip_count))
         else:
-            self.report({'INFO'}, T("mhrs.batch_export.export_done").format(
+            self.report({'INFO'}, T("core.export_prep.export_done").format(
                 export=export_count, skip=skip_count))
         return {'FINISHED'}
 

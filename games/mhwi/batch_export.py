@@ -143,7 +143,7 @@ def get_mhwi_hr_armor_callback(self, context):
             if armor.get("rank", "HR") == "HR":
                 _hr_armor_cache.append(_armor_enum_item(armor, len(_hr_armor_cache)))
     if not _hr_armor_cache:
-        _hr_armor_cache.append(('NONE', T("mhwi.batch_export.no_armor"), "", 0))
+        _hr_armor_cache.append(('NONE', T("core.export_prep.no_armor"), "", 0))
     return _hr_armor_cache
 
 def get_mhwi_mr_armor_callback(self, context):
@@ -155,7 +155,7 @@ def get_mhwi_mr_armor_callback(self, context):
             if armor.get("rank", "HR") == "MR":
                 _mr_armor_cache.append(_armor_enum_item(armor, len(_mr_armor_cache)))
     if not _mr_armor_cache:
-        _mr_armor_cache.append(('NONE', T("mhwi.batch_export.no_armor"), "", 0))
+        _mr_armor_cache.append(('NONE', T("core.export_prep.no_armor"), "", 0))
     return _mr_armor_cache
 
 def get_mhwi_sp_armor_callback(self, context):
@@ -167,7 +167,7 @@ def get_mhwi_sp_armor_callback(self, context):
             if armor.get("rank") == "SP":
                 _sp_armor_cache.append(_armor_enum_item(armor, len(_sp_armor_cache)))
     if not _sp_armor_cache:
-        _sp_armor_cache.append(('NONE', T("mhwi.batch_export.no_armor"), "", 0))
+        _sp_armor_cache.append(('NONE', T("core.export_prep.no_armor"), "", 0))
     return _sp_armor_cache
 
 def _armor_enum_item(armor, idx):
@@ -783,11 +783,11 @@ class MHWI_OT_BatchExport(bpy.types.Operator):
 
         if total_fail > 0:
             self.report({'WARNING'},
-                T("mhwi.batch_export.export_done_with_fail").format(
+                T("core.export_prep.export_done_with_fail").format(
                     export=total_export, fail=total_fail, skip=total_skip))
         else:
             self.report({'INFO'},
-                T("mhwi.batch_export.export_done").format(export=total_export, skip=total_skip))
+                T("core.export_prep.export_done").format(export=total_export, skip=total_skip))
         return {'FINISHED'}
 
     def execute(self, context):
@@ -820,7 +820,7 @@ class MHWI_OT_BatchExport(bpy.types.Operator):
             model_id = settings.mhwi_selected_sp_armor
 
         if not model_id or model_id == 'NONE':
-            self.report({'ERROR'}, T("mhwi.batch_export.select_armor_first"))
+            self.report({'ERROR'}, T("core.export_prep.select_armor_first"))
             return {'CANCELLED'}
 
         data        = _load_armor_sets(settings.mhwi_armor_sets_file)
@@ -854,11 +854,11 @@ class MHWI_OT_BatchExport(bpy.types.Operator):
 
         if total_fail > 0:
             self.report({'WARNING'},
-                T("mhwi.batch_export.export_done_with_fail").format(
+                T("core.export_prep.export_done_with_fail").format(
                     export=total_export, fail=total_fail, skip=total_skip))
         else:
             self.report({'INFO'},
-                T("mhwi.batch_export.export_done").format(export=total_export, skip=total_skip))
+                T("core.export_prep.export_done").format(export=total_export, skip=total_skip))
         return {'FINISHED'}
 
 

@@ -13,8 +13,8 @@ def _get_mhrs_chain_col_items(self, context):
 
 def _get_settings_mode_items(self, context):
     return [
-        ('SHARED',   T("mhrs.operators.settings_mode_shared"),   T("mhrs.operators.settings_mode_shared_desc")),
-        ('SEPARATE', T("mhrs.operators.settings_mode_separate"), T("mhrs.operators.settings_mode_separate_desc")),
+        ('SHARED',   T("core.re_chain_utils.settings_mode_shared"),   T("core.re_chain_utils.settings_mode_shared_desc")),
+        ('SEPARATE', T("core.re_chain_utils.settings_mode_separate"), T("mhrs.operators.settings_mode_separate_desc")),
         ('GUESS',    T("mhrs.operators.settings_mode_guess"),    T("mhrs.operators.settings_mode_guess_desc")),
     ]
 
@@ -22,7 +22,7 @@ def _get_settings_mode_items(self, context):
 def _get_chain_format_items(self, context):
     return [
         ('.chain',  "Chain",  T("mhrs.operators.chain_format_chain_desc")),
-        ('.chain2', "Chain2", T("mhrs.operators.chain_format_chain2_desc")),
+        ('.chain2', "Chain2", T("core.re_chain_utils.chain_format_chain2_desc")),
     ]
 
 
@@ -122,11 +122,11 @@ class MHRS_OT_AutoCreateChains(bpy.types.Operator):
         row = layout.row()
         row.prop(self, "auto_create_collection", text=T("mhrs.operators.auto_create_collection_label"))
         if self.auto_create_collection:
-            layout.prop(self, "collection_name", text=T("mhrs.operators.collection_name_label"))
-            layout.prop(self, "chain_format", text=T("mhrs.operators.chain_format_label"), expand=True)
+            layout.prop(self, "collection_name", text=T("core.re_chain_utils.collection"))
+            layout.prop(self, "chain_format", text=T("core.re_chain_utils.chain_format"), expand=True)
         else:
             layout.prop(self, "chain_collection")
-        layout.prop(self, "settings_mode", text=T("mhrs.operators.settings_mode_label"), expand=True)
+        layout.prop(self, "settings_mode", text=T("core.re_chain_utils.settings_mode"), expand=True)
         layout.prop(self, "straighten_orientation", text=T("mhrs.operators.straighten_orientation_label"))
         layout.prop(self, "apply_angle_ramp", text=T("mhrs.operators.apply_angle_ramp_label"))
 

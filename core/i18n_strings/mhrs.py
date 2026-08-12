@@ -16,13 +16,8 @@ STRINGS = {
     # gap as pattern 6 — no per-draw dynamic-tooltip hook), left as a plain English literal in
     # operators.py rather than routed through T().
 
-    "mhrs.operators.settings_mode_label": {"EN": "Settings Mode", "ZH": "Settings 模式"},
-    "mhrs.operators.settings_mode_separate": {"EN": "Separate", "ZH": "各自独立"},
     "mhrs.operators.settings_mode_separate_desc": {
         "EN": "Each chain gets its own independent Chain Settings", "ZH": "每条链拥有独立的 Chain Settings"},
-    "mhrs.operators.settings_mode_shared": {"EN": "Shared", "ZH": "共享同一"},
-    "mhrs.operators.settings_mode_shared_desc": {
-        "EN": "All chains share the same Chain Settings", "ZH": "所有链共用同一个 Chain Settings"},
     "mhrs.operators.settings_mode_guess": {"EN": "Guess Groups", "ZH": "猜测分组"},
     "mhrs.operators.settings_mode_guess_desc": {
         "EN": "Auto-classify by bone name; same-type bones share one Chain Settings with guessed physics "
@@ -30,13 +25,9 @@ STRINGS = {
         "ZH": "根据骨骼名自动分类，同类型共享一组 Chain Settings 并写入推测物理参数；无法识别的归入第一组"},
 
     "mhrs.operators.auto_create_collection_label": {"EN": "Auto-create Collection", "ZH": "自动创建集合"},
-    "mhrs.operators.collection_name_label": {"EN": "Collection Name", "ZH": "集合名称"},
 
-    "mhrs.operators.chain_format_label": {"EN": "Chain Format", "ZH": "Chain 格式"},
     "mhrs.operators.chain_format_chain_desc": {
         "EN": "Legacy format, used by MHRS / RE4 etc.", "ZH": "旧格式，用于 MHRS / RE4 等游戏"},
-    "mhrs.operators.chain_format_chain2_desc": {
-        "EN": "New format, used by MHWilds / RE9", "ZH": "新格式，用于 MHWilds / RE9"},
 
     "mhrs.operators.straighten_orientation_label": {"EN": "Bone Direction Preprocess", "ZH": "骨骼方向预处理"},
     # NOTE: straighten_orientation/auto_refresh/apply_angle_ramp description= are per-property
@@ -69,8 +60,6 @@ STRINGS = {
     "mhrs.batch_export.gender_m": {"EN": "Male",   "ZH": "男"},
 
     # ── get_mhrs_schemes_callback / get_mhrs_armor_callback fallback items ─
-    "mhrs.batch_export.no_armor_pack": {"EN": "No armor pack", "ZH": "无装备包"},
-    "mhrs.batch_export.no_armor":      {"EN": "No armor", "ZH": "无装备"},
 
     # ── MHRS_OT_BatchExport / MHRS_OT_SetNativesRoot ────────────────────────
     "mhrs.batch_export.batch_export_desc": {"EN": "Batch-export MHRS armor", "ZH": "MHRS 装备批量导出"},
@@ -81,18 +70,9 @@ STRINGS = {
 
     "mhrs.batch_export.remesh_not_installed": {
         "EN": "RE Mesh Editor not installed, skipping pre-export cleanup", "ZH": "RE Mesh Editor 未安装，跳过导出前清理"},
-    "mhrs.batch_export.set_mod_root_first": {
-        "EN": "Please set the Mod Root directory first (the parent folder of natives)",
-        "ZH": "请先设置 Mod Root 目录（natives 的上级文件夹）"},
     "mhrs.batch_export.load_scheme_failed": {"EN": "Could not load the armor pack", "ZH": "无法加载装备包"},
-    "mhrs.batch_export.select_armor_first": {"EN": "Please select an armor set first", "ZH": "请先选择一套装备"},
     "mhrs.batch_export.armor_not_found_in_scheme": {
         "EN": "Not found in armor pack: {id}", "ZH": "在装备包中未找到: {id}"},
-    "mhrs.batch_export.export_done_with_fail": {
-        "EN": "Done: exported {export}, failed {fail}, skipped {skip}",
-        "ZH": "完成: 导出 {export}, 失败 {fail}, 跳过 {skip}"},
-    "mhrs.batch_export.export_done": {
-        "EN": "Done: exported {export}, skipped {skip}", "ZH": "完成: 导出 {export}, 跳过 {skip}"},
 
     "mhrs.batch_export.shadow_need_importer": {
         "EN": "Shadow export: requires RE Mesh Editor's mesh importer", "ZH": "Shadow 导出: 需要 RE Mesh Editor 的网格导入器"},
@@ -118,9 +98,7 @@ STRINGS = {
     "mhrs.batch_export_ui.batch_export_dialog_desc": {
         "EN": "MHRS armor batch-export dialog", "ZH": "MHRS 装备批量导出对话框"},
 
-    "mhrs.batch_export_ui.armor_pack_label":      {"EN": "Armor Pack", "ZH": "装备包"},
     "mhrs.batch_export_ui.select_armor_placeholder": {"EN": "Select Armor...", "ZH": "选择装备..."},
-    "mhrs.batch_export_ui.not_set":               {"EN": "Not set", "ZH": "未设置"},
     "mhrs.batch_export_ui.select_armor_to_configure": {
         "EN": "Select an armor set to configure bindings", "ZH": "请选择装备以配置绑定"},
 
@@ -137,9 +115,7 @@ STRINGS = {
     # ══════════════════════════════════════════════════════════════════════
 
     "mhrs.mdf_generator.use_toon_label": {"EN": "Toon Shading", "ZH": "使用三渲二"},
-    "mhrs.mdf_generator.generate_mipmaps_label": {"EN": "Generate MipMaps", "ZH": "生成 MipMaps"},
     "mhrs.mdf_generator.skip_textures_label": {"EN": "Material Only", "ZH": "仅生成材质"},
-    "mhrs.mdf_generator.use_ao_label": {"EN": "Add AO", "ZH": "添加 AO"},
     "mhrs.mdf_generator.flip_normal_g_label": {"EN": "Normal OpenGL -> DirectX", "ZH": "法线 OpenGL → DirectX"},
     # NOTE: use_toon/skip_textures/use_ao/ao_image/flip_normal_g description= are PropertyGroup
     # property tooltips (pattern 6 — no per-draw dynamic-tooltip hook for regular properties),
@@ -150,8 +126,6 @@ STRINGS = {
         "ZH": "选中 Mesh Collection 中所有使用当前材质的网格物体（阶段二：智能筛选）"},
     "mhrs.mdf_generator.select_mesh_collection_first": {
         "EN": "Please select a Mesh Collection first", "ZH": "请先选择 Mesh Collection"},
-    "mhrs.mdf_generator.active_obj_no_material": {
-        "EN": "The active object has no material", "ZH": "激活物体没有材质"},
     "mhrs.mdf_generator.select_same_material_done": {
         "EN": "Selected {n} mesh(es) using '{name}' (including itself: {total} total)",
         "ZH": "已选中 {n} 个使用 '{name}' 的网格（含自身共 {total} 个）"},
@@ -164,13 +138,6 @@ STRINGS = {
         "EN": "MHRS MDF2 Generator — creates MDF2 + textures from Blender mesh materials. Requires an existing "
               "mesh collection with a Principled BSDF wired up in the material",
         "ZH": "MHRS MDF2 Generator — 从 Blender 网格材质创建 MDF2 + 贴图。需要有现成的 mesh 集合，并在材质里连好 Principled BSDF"},
-
-    "mhrs.mdf_generator_ui.strat_color":     {"EN": "Base Color", "ZH": "基础色"},
-    "mhrs.mdf_generator_ui.strat_normal":    {"EN": "Normal", "ZH": "法线"},
-    "mhrs.mdf_generator_ui.strat_roughness": {"EN": "Roughness", "ZH": "粗糙度"},
-    "mhrs.mdf_generator_ui.strat_metallic":  {"EN": "Metallic", "ZH": "金属度"},
-    "mhrs.mdf_generator_ui.strat_alpha":     {"EN": "Alpha", "ZH": "Alpha"},
-    "mhrs.mdf_generator_ui.strat_emissive":  {"EN": "Emissive", "ZH": "自发光"},
 
     "mhrs.mdf_generator_ui.auto_name_hint": {"EN": "    Auto: {name}", "ZH": "    自动: {name}"},
     "mhrs.mdf_generator_ui.base_path_hint": {"EN": "    e.g. player/mod/f/pl279", "ZH": "    例如 player/mod/f/pl279"},
@@ -199,19 +166,9 @@ STRINGS = {
     # afterwards.
     # ══════════════════════════════════════════════════════════════════════
 
-    "mhrs.shader_defs.panel_pbr": {"EN": "PBR Inputs", "ZH": "PBR 输入"},
-    "mhrs.shader_defs.panel_slots": {
-        "EN": "Game Slots (packed)", "ZH": "游戏槽位 (打包)"},
-
-    "mhrs.shader_defs.albd": {
-        "EN": "BaseDielectricMap — RGB base colour, A inverted metallic (not opacity)",
-        "ZH": "BaseDielectricMap — RGB 基础色, A 反转金属度 (不是透明度)"},
     "mhrs.shader_defs.nrmr": {
         "EN": "NRMR_NRRTMap — R/G plain tangent-space normal, B unused, A roughness",
         "ZH": "NRMR_NRRTMap — R/G 普通切线空间法线, B 未使用, A 粗糙度"},
-    "mhrs.shader_defs.emissive": {
-        "EN": "EmissiveMap — emissive colour",
-        "ZH": "EmissiveMap — 自发光颜色"},
 
     "mhrs.shader_defs.alphamap": {
         "EN": "AlphaMap — alpha-test cutout mask. No PBR composition recipe "
@@ -228,10 +185,6 @@ STRINGS = {
         "EN": "FurVelocityMap — fur simulation velocity map; carried for "
               "export, not used by the preview",
         "ZH": "FurVelocityMap — 毛发模拟速度贴图；仅为导出保留，预览不使用"},
-    "mhrs.shader_defs.fxmap": {
-        "EN": "FxMap — secondary effect mask; carried for export, not used by "
-              "the preview",
-        "ZH": "FxMap — 附加特效遮罩；仅为导出保留，预览不使用"},
     "mhrs.shader_defs.furtex": {
         "EN": "FurTex — fur base texture; carried for export, not used by the "
               "preview",
@@ -256,19 +209,17 @@ STRINGS = {
               "this preset has no AO-carrying slot to write it back to",
         "ZH": "环境光遮蔽，正片叠底到基础色上。仅预览用——这个材质没有携带 AO 的"
               "槽位可以写回"},
-    "mhrs.shader_defs.pbr_ao_strength": {
-        "EN": "AO strength: 0 = off, 1 = the full map",
-        "ZH": "AO 强度：0 为关闭，1 为完整应用"},
     "mhrs.shader_defs.pbr_emission": {
         "EN": "Emission colour. Added to EmissiveMap",
         "ZH": "自发光颜色。与 EmissiveMap 相加"},
-    "mhrs.shader_defs.pbr_emission_strength": {
-        "EN": "Emission strength",
-        "ZH": "自发光强度"},
     "mhrs.shader_defs.pbr_normal": {
         "EN": "Normal map texture — plug the image in directly, no Normal Map "
               "node needed. Its deviation from flat is added to "
               "NRMR_NRRTMap's decoded normal",
         "ZH": "法线贴图 —— 直接连图片即可，不需要 Normal Map 节点。"
               "其相对平面的偏移量会和 NRMR_NRRTMap 解码出的法线相加"},
+    "mhrs.shader_defs.fxmap": {
+        "EN": "FxMap — secondary effect mask; carried for export, not used by "
+              "the preview",
+        "ZH": "FxMap — 附加特效遮罩；仅为导出保留，预览不使用"},
 }

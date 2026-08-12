@@ -147,7 +147,7 @@ class MHRS_OT_BatchExportDialog(bpy.types.Operator):
         settings = scene.mhw_suite_settings
 
         # ── Selectors ──
-        layout.prop(settings, "mhrs_armor_scheme", text=T("mhrs.batch_export_ui.armor_pack_label"))
+        layout.prop(settings, "mhrs_armor_scheme", text=T("core.export_prep.armor_pack"))
         row = layout.row(align=True)
         row.prop(settings, "mhrs_gender", text="")
         cur_armor_label = _get_armor_label(context, settings.mhrs_selected_armor)
@@ -164,7 +164,7 @@ class MHRS_OT_BatchExportDialog(bpy.types.Operator):
             short = "/".join(parts[-3:]) if len(parts) > 3 else natives_root
             row.label(text=f".../{short}")
         else:
-            row.label(text=T("mhrs.batch_export_ui.not_set"), icon='ERROR')
+            row.label(text=T("core.export_prep.not_set"), icon='ERROR')
 
         # ── Early out ──
         gender   = settings.mhrs_gender

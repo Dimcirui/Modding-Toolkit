@@ -41,13 +41,8 @@ STRINGS = {
     "mhws.operators.auto_create_chains_label": {"EN": "One-Click Create RE Chain", "ZH": "一键创建 RE Chain"},
     "mhws.operators.chain_collection_desc": {
         "EN": "Select the Chain Collection to write to", "ZH": "选择要写入的 Chain Collection"},
-    "mhws.operators.settings_mode_name": {"EN": "Settings Mode", "ZH": "Settings 模式"},
-    "mhws.operators.settings_mode_separate": {"EN": "Separate", "ZH": "各自独立"},
     "mhws.operators.settings_mode_separate_desc": {
         "EN": "Each chain has its own independent Chain Settings", "ZH": "每条链拥有独立的 Chain Settings"},
-    "mhws.operators.settings_mode_shared": {"EN": "Shared", "ZH": "共享同一"},
-    "mhws.operators.settings_mode_shared_desc": {
-        "EN": "All chains share the same Chain Settings", "ZH": "所有链共用同一个 Chain Settings"},
     "mhws.operators.settings_mode_guess": {"EN": "Guess Grouping", "ZH": "猜测分组"},
     "mhws.operators.settings_mode_guess_desc": {
         "EN": "Auto-classify by bone name; chains of the same type share one Chain Settings group with inferred "
@@ -57,15 +52,11 @@ STRINGS = {
     "mhws.operators.auto_create_collection_desc": {
         "EN": "When checked, automatically create the Chain Collection and Header, no manual prep needed",
         "ZH": "勾选后自动创建 Chain Collection 及 Header，无需预先手动准备"},
-    "mhws.operators.collection_name_name": {"EN": "Collection Name", "ZH": "集合名称"},
     "mhws.operators.collection_name_desc": {
         "EN": "Name of the newly created Chain Collection (without extension)",
         "ZH": "新创建的 Chain Collection 名称（不含扩展名）"},
-    "mhws.operators.chain_format_name": {"EN": "Chain Format", "ZH": "Chain 格式"},
     "mhws.operators.chain_format_chain_desc": {
         "EN": "Old format, used by RE4 and other earlier games", "ZH": "旧格式，用于 RE4 等早期游戏"},
-    "mhws.operators.chain_format_chain2_desc": {
-        "EN": "New format, used by MHWilds / RE9", "ZH": "新格式，用于 MHWilds / RE9"},
     "mhws.operators.apply_mhwilds_tuning_name": {"EN": "Use Wilds-Tuned Header", "ZH": "使用荒野特调Header"},
     "mhws.operators.apply_mhwilds_tuning_desc": {
         "EN": "Override Header parameters with MHWilds calibration values (calculateMode=Quality, etc.)",
@@ -100,7 +91,6 @@ STRINGS = {
               "骨架对齐 → 对齐后的参考骨架自动运行骨架优化"},
     "mhws.operators.preprocess_model_label": {
         "EN": "One-Click Import & Align Wilds Model", "ZH": "一键导入并对齐荒野模型"},
-    "mhws.operators.select_armature_first": {"EN": "Please select an armature first", "ZH": "请先选中一个骨架"},
     "mhws.operators.mmd_vrchat_only": {
         "EN": "This feature currently only supports MMD and VRChat models!",
         "ZH": "目前该功能只适用于MMD和VRChat模型！"},
@@ -130,14 +120,11 @@ STRINGS = {
         "ZH": "对上眼皮骨骼使用假头法，增大闭眼动作的形变幅度"},
     "mhws.operators.facial_bones_note": {
         "EN": "Using this feature will clear any existing facial bones!", "ZH": "使用该功能将清除原本存在的表情骨！"},
-    "mhws.operators.select_valid_armature": {"EN": "Please select a valid armature", "ZH": "请选择一个有效的骨架"},
     "mhws.operators.no_facial_root_bone": {
         "EN": "Facial bone root bone not found in the reference skeleton ({name})",
         "ZH": "参考骨架中未找到表情骨根骨骼 ({name})"},
-    "mhws.operators.facial_bones_added": {"EN": "Added {n} facial bone(s)", "ZH": "已添加 {n} 根表情骨"},
     "mhws.operators.blink_amplitude_added": {
         "EN": "; blink amplitude increased on {n} side(s)", "ZH": "，{n} 侧已增加眨眼幅度"},
-
 
     # ── MHWS_OT_OptimizeSkeleton ─────────────────────────────────────────────
     "mhws.operators.optimize_skeleton_desc": {
@@ -178,8 +165,6 @@ STRINGS = {
 
     # ── Dynamic EnumProperty item fallbacks (get_mhws_schemes_callback /
     #    get_mhws_armor_callback; already callbacks, just wrap literals) ────
-    "mhws.batch_export.no_armor_pack": {"EN": "No armor pack", "ZH": "无装备包"},
-    "mhws.batch_export.no_armor":      {"EN": "No armor", "ZH": "无装备"},
 
     # ── Bonesystem export ────────────────────────────────────────────────────
     "mhws.batch_export.bonesystem_fill_name": {
@@ -197,9 +182,6 @@ STRINGS = {
     "mhws.batch_export.batch_export_desc": {"EN": "MHWs armor batch export", "ZH": "MHWs 装备批量导出"},
     "mhws.batch_export.re_mesh_not_installed_cleanup_skip": {
         "EN": "RE Mesh Editor not installed, skipping pre-export cleanup", "ZH": "RE Mesh Editor 未安装，跳过导出前清理"},
-    "mhws.batch_export.set_mod_root_first": {
-        "EN": "Please set the Mod Root directory first (the parent folder of natives)",
-        "ZH": "请先设置 Mod Root 目录（natives 的上级文件夹）"},
     "mhws.batch_export.cannot_load_armor_pack": {"EN": "Could not load the armor pack", "ZH": "无法加载装备包"},
     "mhws.batch_export.select_armor_set_first": {"EN": "Please select an armor set first", "ZH": "请先选择一套装备"},
     "mhws.batch_export.armor_not_found_in_pack": {
@@ -236,9 +218,6 @@ STRINGS = {
         "ZH": "搜索并选择装备（避免装备过多时下拉表溢出屏幕）"},
     "mhws.batch_export_ui.batch_export_dialog_desc": {
         "EN": "MHWs armor batch export dialog", "ZH": "MHWs 装备批量导出对话框"},
-    "mhws.batch_export_ui.armor_pack_label": {"EN": "Armor Pack", "ZH": "装备包"},
-    "mhws.batch_export_ui.pick_armor_placeholder": {"EN": "Select armor...", "ZH": "选择装备..."},
-    "mhws.batch_export_ui.not_set": {"EN": "Not set", "ZH": "未设置"},
     "mhws.batch_export_ui.select_armor_to_configure": {
         "EN": "Select an armor to configure bindings", "ZH": "请选择装备以配置绑定"},
     "mhws.batch_export_ui.use_bonesystem_label": {"EN": "Use Bonesystem", "ZH": "使用 Bonesystem"},
@@ -283,7 +262,6 @@ STRINGS = {
         "EN": "Click Scan to look for importable files", "ZH": "点击扫描以查找可导入的文件"},
     "mhws.batch_import_ui.set_mod_root_hint": {
         "EN": "Please set Mod Root first, then click Scan", "ZH": "请先设置 Mod Root，再点击扫描"},
-    "mhws.batch_import_ui.select_all": {"EN": "Select All", "ZH": "全选"},
     "mhws.batch_import_ui.deselect_all": {"EN": "Deselect All", "ZH": "取消全选"},
     "mhws.batch_import_ui.selected_count": {
         "EN": "{enabled}/{total} selected", "ZH": "已选 {enabled}/{total}"},
@@ -299,12 +277,10 @@ STRINGS = {
     "mhws.mdf_generator.use_toon_desc": {
         "EN": "Skip emissive texture processing; set the emissive slot path the same as the base color slot",
         "ZH": "跳过自发光贴图处理，将自发光槽位路径设为与基础色槽位相同"},
-    "mhws.mdf_generator.generate_mipmaps_name": {"EN": "Generate MipMaps", "ZH": "生成 MipMaps"},
     "mhws.mdf_generator.skip_textures_name": {"EN": "Material Only", "ZH": "仅生成材质"},
     "mhws.mdf_generator.skip_textures_desc": {
         "EN": "Skip texture composition/conversion; only create the material definition and fill in texture paths",
         "ZH": "跳过贴图合成与转换，仅创建材质定义并填入贴图路径"},
-    "mhws.mdf_generator.use_ao_name": {"EN": "Add AO", "ZH": "添加 AO"},
     "mhws.mdf_generator.use_ao_desc": {
         "EN": "Manually specify an AO texture (Blender has no built-in AO node)",
         "ZH": "手动指定 AO 贴图 (Blender 无内置 AO 节点)"},
@@ -319,8 +295,6 @@ STRINGS = {
         "ZH": "选中 Mesh Collection 中所有使用当前材质的网格物体（阶段二：智能筛选）"},
     "mhws.mdf_generator.select_mesh_collection_first": {
         "EN": "Please select a Mesh Collection first", "ZH": "请先选择 Mesh Collection"},
-    "mhws.mdf_generator.active_obj_no_material": {
-        "EN": "The active object has no material", "ZH": "激活物体没有材质"},
     "mhws.mdf_generator.selected_meshes_report": {
         "EN": "{count} mesh(es) using '{mat}' selected (including itself, {total} total)",
         "ZH": "已选中 {count} 个使用 '{mat}' 的网格（含自身共 {total} 个）"},
@@ -329,17 +303,10 @@ STRINGS = {
     # games/mhws/mdf_generator_ui.py
     # ══════════════════════════════════════════════════════════════════════
 
-    "mhws.mdf_generator_ui.strat_color":     {"EN": "Base Color", "ZH": "基础色"},
-    "mhws.mdf_generator_ui.strat_normal":    {"EN": "Normal",     "ZH": "法线"},
-    "mhws.mdf_generator_ui.strat_roughness": {"EN": "Roughness",  "ZH": "粗糙度"},
-    "mhws.mdf_generator_ui.strat_metallic":  {"EN": "Metallic",   "ZH": "金属度"},
-    "mhws.mdf_generator_ui.strat_alpha":     {"EN": "Alpha",      "ZH": "Alpha"},
-    "mhws.mdf_generator_ui.strat_emissive":  {"EN": "Emissive",   "ZH": "自发光"},
     "mhws.mdf_generator_ui.dialog_desc": {
         "EN": "MDF2 Generator — creates MDF2 + textures from Blender mesh materials. Requires an existing mesh "
               "collection with a Principled BSDF wired up in the material",
         "ZH": "MDF2 Generator — 从 Blender 网格材质创建 MDF2 + 贴图。需要有现成的 mesh 集合，并在材质里连好 Principled BSDF"},
-    "mhws.mdf_generator_ui.auto_name": {"EN": "Auto: {name}", "ZH": "自动: {name}"},
     "mhws.mdf_generator_ui.preset_dir_not_found": {
         "EN": "RE Mesh Editor MHWILDS preset directory not found", "ZH": "未找到 RE Mesh Editor MHWILDS 预设目录"},
     "mhws.mdf_generator_ui.select_mesh_collection_hint": {
@@ -374,27 +341,14 @@ STRINGS = {
     # groups created afterwards.
     # ══════════════════════════════════════════════════════════════════════
 
-    "mhws.shader_defs.panel_pbr": {"EN": "PBR Inputs", "ZH": "PBR 输入"},
-    "mhws.shader_defs.panel_slots_standard": {
-        "EN": "Game Slots (packed) — Standard", "ZH": "游戏槽位 (打包) — 标准"},
     "mhws.shader_defs.panel_slots_weapon": {
         "EN": "Game Slots (packed) — Weapon", "ZH": "游戏槽位 (打包) — 武器"},
-    "mhws.shader_defs.panel_slots_skin": {
-        "EN": "Game Slots (packed) — Skin", "ZH": "游戏槽位 (打包) — 皮肤"},
-    "mhws.shader_defs.panel_slots_hair": {
-        "EN": "Game Slots (packed) — Hair", "ZH": "游戏槽位 (打包) — 毛发"},
     "mhws.shader_defs.panel_slots_basic": {
         "EN": "Game Slots (packed) — Basic", "ZH": "游戏槽位 (打包) — 通用"},
 
-    "mhws.shader_defs.albd": {
-        "EN": "BaseDielectricMap — RGB base colour, A inverted metallic (not opacity)",
-        "ZH": "BaseDielectricMap — RGB 基础色, A 反转金属度 (不是透明度)"},
     "mhws.shader_defs.nrro": {
         "EN": "NormalRoughnessOcclusionMap — R roughness, G/A hemi-octahedral normal, B AO",
         "ZH": "NormalRoughnessOcclusionMap — R 粗糙度, G/A 半八面体编码法线, B 环境光遮蔽"},
-    "mhws.shader_defs.emissive": {
-        "EN": "EmissiveMap — emissive colour",
-        "ZH": "EmissiveMap — 自发光颜色"},
     "mhws.shader_defs.atos": {
         "EN": "AlphaTranslucentOcclusionSSSMap — R alpha (real opacity), B AO",
         "ZH": "AlphaTranslucentOcclusionSSSMap — R 透明度 (真正的不透明度), B 环境光遮蔽"},
@@ -414,9 +368,6 @@ STRINGS = {
         "EN": "Wind_Effect_VolumeMap — wind/cloth simulation volume texture; carried for "
               "export, not used by the preview",
         "ZH": "Wind_Effect_VolumeMap — 风力/布料模拟体积贴图；仅为导出保留，预览不使用"},
-    "mhws.shader_defs.fxmap": {
-        "EN": "FxMap — secondary effect mask; carried for export, not used by the preview",
-        "ZH": "FxMap — 附加特效遮罩；仅为导出保留，预览不使用"},
     "mhws.shader_defs.noisemap": {
         "EN": "noisemap — generic noise texture used by several effects; carried for "
               "export, not used by the preview",
@@ -543,9 +494,6 @@ STRINGS = {
     "mhws.shader_defs.pbr_emission": {
         "EN": "Emission colour. Added to EmissiveMap",
         "ZH": "自发光颜色。与 EmissiveMap 相加"},
-    "mhws.shader_defs.pbr_emission_strength": {
-        "EN": "Emission strength",
-        "ZH": "自发光强度"},
     "mhws.shader_defs.pbr_normal": {
         "EN": "Normal map texture — plug the image in directly, no Normal Map "
               "node needed. Its deviation from flat is added to "
@@ -562,4 +510,7 @@ STRINGS = {
               "AlphaTranslucentOcclusionSSSMap.G 真的携带这个数据，但 Principled "
               "没有对应输入（这跟次表面散射不是一回事，那个需要半径数据，这里没有）——"
               "能正确导出，只是预览不会体现"},
+    "mhws.shader_defs.fxmap": {
+        "EN": "FxMap — secondary effect mask; carried for export, not used by the preview",
+        "ZH": "FxMap — 附加特效遮罩；仅为导出保留，预览不使用"},
 }

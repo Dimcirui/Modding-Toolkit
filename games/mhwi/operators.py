@@ -184,7 +184,7 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
         row = layout.row()
         row.prop(self, "auto_create_collection", text=T("mhwi.operators.auto_create_collection_name"))
         if self.auto_create_collection:
-            layout.prop(self, "collection_name", text=T("mhwi.operators.collection_name_name"))
+            layout.prop(self, "collection_name", text=T("core.re_chain_utils.collection"))
         else:
             layout.prop(self, "ctc_collection")
         layout.prop(self, "straighten_orientation", text=T("mhwi.operators.straighten_orientation_name"))
@@ -195,7 +195,7 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
         # 在任何可能改变激活对象的操作之前先保存骨架引用
         armature = context.active_object
         if not armature or armature.type != 'ARMATURE':
-            self.report({'ERROR'}, T("mhwi.operators.select_armature_first"))
+            self.report({'ERROR'}, T("core.standard_ops.select_armature_first"))
             return {'CANCELLED'}
 
         if self.has_no_markers:

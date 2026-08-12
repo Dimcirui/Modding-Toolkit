@@ -358,7 +358,7 @@ class MHWI_OT_BatchExportDialog(bpy.types.Operator):
 
         cur_armor_label = _get_armor_label(context, rank, model_id)
         op = layout.operator("mhwi.pick_armor",
-                             text=cur_armor_label if cur_armor_label else T("mhwi.batch_export_ui.pick_armor_placeholder"),
+                             text=cur_armor_label if cur_armor_label else T("core.export_prep.pick_armor_placeholder"),
                              icon='DOWNARROW_HLT')
         op.rank = rank
 

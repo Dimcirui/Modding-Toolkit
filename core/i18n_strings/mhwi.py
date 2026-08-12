@@ -36,8 +36,6 @@ STRINGS = {
         "EN": "Select the CTC Collection to write into", "ZH": "选择要写入的 CTC Collection"},
     "mhwi.operators.auto_create_collection_name": {
         "EN": "Auto-create Collection", "ZH": "自动创建集合"},
-    "mhwi.operators.collection_name_name": {
-        "EN": "Collection Name", "ZH": "集合名称"},
     "mhwi.operators.straighten_orientation_name": {
         "EN": "Bone Orientation Preprocessing", "ZH": "骨骼方向预处理"},
     "mhwi.operators.no_markers_warning": {
@@ -45,8 +43,6 @@ STRINGS = {
     "mhwi.operators.no_markers_hint": {
         "EN": "It's recommended to mark chains manually with the physics chain tools first.",
         "ZH": "建议先使用物理链工具手动标记后再使用此功能。"},
-    "mhwi.operators.select_armature_first": {
-        "EN": "Please select an armature first", "ZH": "请先选中一个骨架"},
     "mhwi.operators.branch_detected": {
         "EN": "{n} chain(s) have branches ({names}); CTC doesn't support branching chains. "
               "Mark the branch direction with \"Mark as Main Chain Continue\" and try again",
@@ -193,7 +189,6 @@ STRINGS = {
         "EN": "Click \"Scan\" to scan for equipment files", "ZH": "点击「解析」扫描装备文件"},
     "mhwi.batch_import_ui.set_mod_root_hint": {
         "EN": "Please set Mod Root first", "ZH": "请先设置 Mod Root"},
-    "mhwi.batch_import_ui.select_all": {"EN": "Select All", "ZH": "全选"},
     "mhwi.batch_import_ui.deselect_all": {"EN": "Deselect All", "ZH": "全不选"},
     "mhwi.batch_import_ui.selected_count": {
         "EN": "{enabled} / {total} selected", "ZH": "{enabled} / {total} 已选"},
@@ -235,17 +230,10 @@ STRINGS = {
     # ══════════════════════════════════════════════════════════════════════
 
     "mhwi.batch_export.no_armor_sets": {"EN": "No armor preset packs", "ZH": "无装备包"},
-    "mhwi.batch_export.no_armor": {"EN": "No armor", "ZH": "无装备"},
     "mhwi.batch_export.batch_export_desc": {"EN": "MHWI equipment batch export", "ZH": "MHWI 装备批量导出"},
     "mhwi.batch_export.select_weapon_first": {"EN": "Please select a weapon first", "ZH": "请先选择一件武器"},
     "mhwi.batch_export.weapon_not_found": {
         "EN": "Not found in weapon preset group: {id}", "ZH": "武器预设组中未找到: {id}"},
-    "mhwi.batch_export.export_done_with_fail": {
-        "EN": "Done: exported {export}, failed {fail}, skipped {skip}",
-        "ZH": "完成: 导出 {export}, 失败 {fail}, 跳过 {skip}"},
-    "mhwi.batch_export.export_done": {
-        "EN": "Done: exported {export}, skipped {skip}", "ZH": "完成: 导出 {export}, 跳过 {skip}"},
-    "mhwi.batch_export.select_armor_first": {"EN": "Please select an armor set first", "ZH": "请先选择一套装备"},
     "mhwi.batch_export.armor_not_found": {
         "EN": "Not found in armor pack: {id}", "ZH": "装备包中未找到: {id}"},
     "mhwi.batch_export.set_natives_root_desc": {
@@ -285,7 +273,6 @@ STRINGS = {
               "最好不要使用此功能！"},
     "mhwi.batch_export_ui.preset_group": {"EN": "Preset Group", "ZH": "预设组"},
     "mhwi.batch_export_ui.weapon_type": {"EN": "Weapon Type", "ZH": "武器类型"},
-    "mhwi.batch_export_ui.pick_armor_placeholder": {"EN": "Select armor...", "ZH": "选择装备..."},
     "mhwi.batch_export_ui.select_armor_hint": {
         "EN": "Please select an armor set to configure bindings", "ZH": "请选择装备以配置绑定"},
     "mhwi.batch_export_ui.armor_not_in_pack": {
@@ -334,16 +321,12 @@ STRINGS = {
     "mhwi.mrl3_generator.select_same_material_desc": {
         "EN": "Select all mesh objects in the MOD3 collection using the current material (stage 2: smart filter)",
         "ZH": "选中 MOD3 集合中所有使用当前材质的网格物体（阶段二：智能筛选）"},
-    "mhwi.mrl3_generator.active_obj_no_material": {
-        "EN": "The active object has no material", "ZH": "激活物体没有材质"},
     "mhwi.mrl3_generator.selected_matching_meshes": {
         "EN": "Selected {n} mesh(es) using '{name}' (including self, {total} total)",
         "ZH": "已选中 {n} 个使用 '{name}' 的网格（含自身共 {total} 个）"},
 
     "mhwi.mrl3_generator.use_toon_name": {"EN": "Toon Shading", "ZH": "使用三渲二"},
-    "mhwi.mrl3_generator.generate_mipmaps_name": {"EN": "Generate MipMaps", "ZH": "生成 MipMaps"},
     "mhwi.mrl3_generator.skip_textures_name": {"EN": "Materials Only", "ZH": "仅生成材质"},
-    "mhwi.mrl3_generator.use_ao_name": {"EN": "Add AO", "ZH": "添加 AO"},
     "mhwi.mrl3_generator.ao_strength_name": {
         "EN": "AO Strength", "ZH": "AO 强度"},
     "mhwi.mrl3_generator.hide_snow_overlay_name": {
@@ -354,12 +337,6 @@ STRINGS = {
     # games/mhwi/mrl3_generator_ui.py
     # ══════════════════════════════════════════════════════════════════════
 
-    "mhwi.mrl3_generator_ui.strat_color": {"EN": "Base Color", "ZH": "基础色"},
-    "mhwi.mrl3_generator_ui.strat_normal": {"EN": "Normal", "ZH": "法线"},
-    "mhwi.mrl3_generator_ui.strat_roughness": {"EN": "Roughness", "ZH": "粗糙度"},
-    "mhwi.mrl3_generator_ui.strat_metallic": {"EN": "Metallic", "ZH": "金属度"},
-    "mhwi.mrl3_generator_ui.strat_alpha": {"EN": "Alpha", "ZH": "Alpha"},
-    "mhwi.mrl3_generator_ui.strat_emissive": {"EN": "Emissive", "ZH": "自发光"},
     "mhwi.mrl3_generator_ui.dialog_desc": {
         "EN": "MRL3 Generator - create MRL3 + textures from Blender mesh materials. "
               "Requires an existing MOD3 collection with a Principled BSDF wired up in the material",
@@ -412,9 +389,6 @@ STRINGS = {
     # groups created afterwards.
     # ══════════════════════════════════════════════════════════════════════
 
-    "mhwi.shader_defs.panel_pbr": {"EN": "PBR Inputs", "ZH": "PBR 输入"},
-    "mhwi.shader_defs.panel_slots": {"EN": "Game Slots (packed)", "ZH": "游戏槽位 (打包)"},
-
     "mhwi.shader_defs.albedo": {
         "EN": "AlbedoMap — RGB base colour, A alpha",
         "ZH": "AlbedoMap — RGB 基础色, A 透明度"},
@@ -424,9 +398,6 @@ STRINGS = {
     "mhwi.shader_defs.rmt": {
         "EN": "RMTMap — R roughness, G metallic, B translucency",
         "ZH": "RMTMap — R 粗糙度, G 金属度, B 透光"},
-    "mhwi.shader_defs.emissive": {
-        "EN": "EmissiveMap — emissive colour",
-        "ZH": "EmissiveMap — 自发光颜色"},
     "mhwi.shader_defs.colormask": {
         "EN": "ColorMaskMap — colour-change mask. Carried for export; not previewed",
         "ZH": "ColorMaskMap — 换色遮罩。仅用于导出, 不参与预览"},
@@ -453,15 +424,9 @@ STRINGS = {
         "EN": "Ambient occlusion, multiplied into base colour. MHWI has no AO slot, "
               "so this gets baked into AlbedoMap on export instead of its own texture",
         "ZH": "环境光遮蔽，正片叠底到基础色上。MHWI 没有独立的 AO 槽位，导出时会直接烤进 AlbedoMap，而不是单独出图"},
-    "mhwi.shader_defs.pbr_ao_strength": {
-        "EN": "AO strength: 0 = off, 1 = the full map",
-        "ZH": "AO 强度：0 为关闭，1 为完整应用"},
     "mhwi.shader_defs.pbr_emission": {
         "EN": "Emission colour. Added to EmissiveMap",
         "ZH": "自发光颜色。与 EmissiveMap 相加"},
-    "mhwi.shader_defs.pbr_emission_strength": {
-        "EN": "Emission strength",
-        "ZH": "自发光强度"},
     "mhwi.shader_defs.pbr_normal": {
         "EN": "Normal map texture — plug the image in directly, no Normal Map "
               "node needed. Its deviation from flat is added to NormalMap's",

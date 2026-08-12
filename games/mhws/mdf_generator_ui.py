@@ -10,12 +10,12 @@ GENERATOR_WINDOW_WIDTH = 580
 _SETTINGS_ATTR = "mhws_mdf_generator"
 
 _STRAT_LABEL_KEYS = {
-    'color':     "mhws.mdf_generator_ui.strat_color",
-    'normal':    "mhws.mdf_generator_ui.strat_normal",
-    'roughness': "mhws.mdf_generator_ui.strat_roughness",
-    'metallic':  "mhws.mdf_generator_ui.strat_metallic",
-    'alpha':     "mhws.mdf_generator_ui.strat_alpha",
-    'emissive':  "mhws.mdf_generator_ui.strat_emissive",
+    'color':     "core.mdf_generator_base.strat_color",
+    'normal':    "core.mdf_generator_base.strat_normal",
+    'roughness': "core.mdf_generator_base.strat_roughness",
+    'metallic':  "core.mdf_generator_base.strat_metallic",
+    'alpha':     "core.mdf_generator_base.strat_alpha",
+    'emissive':  "core.mdf_generator_base.strat_emissive",
 }
 
 _STRAT_ICONS = {
@@ -85,7 +85,7 @@ class MHWS_OT_MdfGeneratorDialog(bpy.types.Operator):
             auto_name = (mc.replace('.mesh', '.mdf2')
                          if '.mesh' in mc else mc + ".mdf2")
             layout.row().label(
-                text=f"    {T('mhws.mdf_generator_ui.auto_name').format(name=auto_name)}", icon='INFO')
+                text=f"    {T('core.mdf_generator_base.auto').format(name=auto_name)}", icon='INFO')
 
         # ── Base path ──────────────────────────────────────────────────────────
         row = layout.row(align=True)
@@ -177,14 +177,14 @@ class MHWS_OT_MdfGeneratorDialog(bpy.types.Operator):
                 op.settings_attr = _SETTINGS_ATTR
                 op.mat_name      = mat_entry.blender_material
                 op.value         = 'SLOT'
-                box.prop(mat_entry, "generate_mipmaps", text=T("mhws.mdf_generator.generate_mipmaps_name"))
+                box.prop(mat_entry, "generate_mipmaps", text=T("core.mdf_tex_processor_base.generate_mipmaps_label"))
                 box.prop(mat_entry, "skip_textures", text=T("mhws.mdf_generator.skip_textures_name"))
             else:
                 if preset_has_emissive_slots(mat_entry.material_preset):
                     box.prop(mat_entry, "use_toon", text=T("mhws.mdf_generator.use_toon_name"))
-                box.prop(mat_entry, "generate_mipmaps", text=T("mhws.mdf_generator.generate_mipmaps_name"))
+                box.prop(mat_entry, "generate_mipmaps", text=T("core.mdf_tex_processor_base.generate_mipmaps_label"))
                 box.prop(mat_entry, "skip_textures", text=T("mhws.mdf_generator.skip_textures_name"))
-                box.prop(mat_entry, "use_ao", text=T("mhws.mdf_generator.use_ao_name"))
+                box.prop(mat_entry, "use_ao", text=T("ui.prop.use_ao"))
                 if mat_entry.use_ao:
                     box.prop(mat_entry, "ao_image", text=T("ui.prop.ao_image"))
                     ao_row = box.row(align=True)

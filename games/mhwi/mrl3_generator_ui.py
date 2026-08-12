@@ -7,12 +7,12 @@ GENERATOR_WINDOW_WIDTH = 580
 _SETTINGS_ATTR = "mhwi_mrl3_generator"
 
 _STRAT_LABELS = {
-    'color':     "mhwi.mrl3_generator_ui.strat_color",
-    'normal':    "mhwi.mrl3_generator_ui.strat_normal",
-    'roughness': "mhwi.mrl3_generator_ui.strat_roughness",
-    'metallic':  "mhwi.mrl3_generator_ui.strat_metallic",
-    'alpha':     "mhwi.mrl3_generator_ui.strat_alpha",
-    'emissive':  "mhwi.mrl3_generator_ui.strat_emissive",
+    'color':     "core.mdf_generator_base.strat_color",
+    'normal':    "core.mdf_generator_base.strat_normal",
+    'roughness': "core.mdf_generator_base.strat_roughness",
+    'metallic':  "core.mdf_generator_base.strat_metallic",
+    'alpha':     "core.mdf_generator_base.strat_alpha",
+    'emissive':  "core.mdf_generator_base.strat_emissive",
 }
 
 _STRAT_ICONS = {
@@ -161,14 +161,14 @@ class MHWI_OT_Mrl3GeneratorDialog(bpy.types.Operator):
                 op.settings_attr = _SETTINGS_ATTR
                 op.mat_name      = mat_entry.blender_material
                 op.value         = 'SLOT'
-                box.prop(mat_entry, "generate_mipmaps", text=T("mhwi.mrl3_generator.generate_mipmaps_name"))
+                box.prop(mat_entry, "generate_mipmaps", text=T("core.mdf_tex_processor_base.generate_mipmaps_label"))
                 box.prop(mat_entry, "skip_textures", text=T("mhwi.mrl3_generator.skip_textures_name"))
             else:
                 if preset_has_emissive_slots(mat_entry.material_preset, is_mrl3=True):
                     box.prop(mat_entry, "use_toon", text=T("mhwi.mrl3_generator.use_toon_name"))
-                box.prop(mat_entry, "generate_mipmaps", text=T("mhwi.mrl3_generator.generate_mipmaps_name"))
+                box.prop(mat_entry, "generate_mipmaps", text=T("core.mdf_tex_processor_base.generate_mipmaps_label"))
                 box.prop(mat_entry, "skip_textures", text=T("mhwi.mrl3_generator.skip_textures_name"))
-                box.prop(mat_entry, "use_ao", text=T("mhwi.mrl3_generator.use_ao_name"))
+                box.prop(mat_entry, "use_ao", text=T("ui.prop.use_ao"))
                 if mat_entry.use_ao:
                     box.prop(mat_entry, "ao_image", text=T("ui.prop.ao_image"))
                     box.prop(mat_entry, "ao_strength",

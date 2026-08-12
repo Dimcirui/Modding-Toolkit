@@ -49,7 +49,7 @@ SLOTS = (
     SlotSocket("RMTMap", _K + "rmt",
                default_color=(1.0, 0.0, 0.0, 1.0),
                supplies=('roughness', 'metallic')),
-    SlotSocket("EmissiveMap", _K + "emissive",
+    SlotSocket("EmissiveMap", "core.shader_pack.emissive",
                default_color=(0.0, 0.0, 0.0, 1.0), alpha=True, default_alpha=1.0,
                supplies=('emissive',), non_color=False),
     SlotSocket("ColorMaskMap", _K + "colormask",
@@ -82,14 +82,14 @@ PBR = (
     # because an input that looks exportable and is not would be a trap.
     PBRSocket("AO", 'NodeSocketColor', (1.0, 1.0, 1.0, 1.0),
               _K + "pbr_ao", pbr_type='ao'),
-    PBRSocket("AO Strength", 'NodeSocketFloat', 0.5, _K + "pbr_ao_strength",
+    PBRSocket("AO Strength", 'NodeSocketFloat', 0.5, "core.shader_pack.pbr_ao_strength",
               min_value=0.0, max_value=1.0, subtype='FACTOR'),
     PBRSocket("Emission", 'NodeSocketColor', (0.0, 0.0, 0.0, 1.0),
               _K + "pbr_emission", pbr_type='emissive', non_color=False),
     # Upstream clamps emission to [0, 9999] to keep negatives out of the BSDF.
     # Not a PBR quantity, so it is filled from ir.params instead.
     PBRSocket("Emission Strength", 'NodeSocketFloat', 1.0,
-              _K + "pbr_emission_strength", min_value=0.0, max_value=9999.0),
+              "core.shader_pack.pbr_emission_strength", min_value=0.0, max_value=9999.0),
     # A *colour*, not a vector: you plug the NM texture straight in, with no
     # Normal Map node in between.  That is also what the readers hand over --
     # read_principled penetrates a Normal Map node and returns the image behind
@@ -210,8 +210,8 @@ def _wire(b):
 SPEC = ShaderPackSpec(
     group_name    = "MTK MHWI Standard",
     shader_id     = "mhwi_standard_v1",
-    pbr_panel_key = _K + "panel_pbr",
-    slot_panel_key= _K + "panel_slots",
+    pbr_panel_key = "core.shader_pack.panel_pbr",
+    slot_panel_key= "core.shader_pack.panel_slots",
     pbr           = PBR,
     slots         = SLOTS,
     wire          = _wire,

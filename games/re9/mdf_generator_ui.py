@@ -8,12 +8,12 @@ GENERATOR_WINDOW_WIDTH = 580
 _SETTINGS_ATTR = "re9_mdf_generator"
 
 _STRAT_LABEL_KEYS = {
-    'color':     "re9.mdf_generator_ui.strat_color",
-    'normal':    "re9.mdf_generator_ui.strat_normal",
-    'roughness': "re9.mdf_generator_ui.strat_roughness",
-    'metallic':  "re9.mdf_generator_ui.strat_metallic",
-    'alpha':     "re9.mdf_generator_ui.strat_alpha",
-    'emissive':  "re9.mdf_generator_ui.strat_emissive",
+    'color':     "core.mdf_generator_base.strat_color",
+    'normal':    "core.mdf_generator_base.strat_normal",
+    'roughness': "core.mdf_generator_base.strat_roughness",
+    'metallic':  "core.mdf_generator_base.strat_metallic",
+    'alpha':     "core.mdf_generator_base.strat_alpha",
+    'emissive':  "core.mdf_generator_base.strat_emissive",
 }
 
 _STRAT_ICONS = {
@@ -75,7 +75,7 @@ class RE9_OT_MdfGeneratorDialog(bpy.types.Operator):
         if not settings.mdf_collection_name.strip() and settings.mesh_collection:
             mc        = settings.mesh_collection.name
             auto_name = mc.replace('.mesh', '.mdf2') if '.mesh' in mc else mc + ".mdf2"
-            layout.row().label(text="    " + T("re9.mdf_generator_ui.auto_name_label").format(name=auto_name), icon='INFO')
+            layout.row().label(text="    " + T("core.mdf_generator_base.auto").format(name=auto_name), icon='INFO')
 
         row = layout.row(align=True)
         row.label(text="natives/STM/")
@@ -154,14 +154,14 @@ class RE9_OT_MdfGeneratorDialog(bpy.types.Operator):
                 op.settings_attr = _SETTINGS_ATTR
                 op.mat_name      = mat_entry.blender_material
                 op.value         = 'SLOT'
-                box.prop(mat_entry, "generate_mipmaps", text=T("re9.mdf_generator.generate_mipmaps"))
+                box.prop(mat_entry, "generate_mipmaps", text=T("core.mdf_tex_processor_base.generate_mipmaps_label"))
                 box.prop(mat_entry, "skip_textures", text=T("re9.mdf_generator.skip_textures"))
             else:
                 if preset_has_emissive_slots(mat_entry.material_preset):
                     box.prop(mat_entry, "use_toon", text=T("re9.mdf_generator.use_toon"))
-                box.prop(mat_entry, "generate_mipmaps", text=T("re9.mdf_generator.generate_mipmaps"))
+                box.prop(mat_entry, "generate_mipmaps", text=T("core.mdf_tex_processor_base.generate_mipmaps_label"))
                 box.prop(mat_entry, "skip_textures", text=T("re9.mdf_generator.skip_textures"))
-                box.prop(mat_entry, "use_ao", text=T("re9.mdf_generator.use_ao"))
+                box.prop(mat_entry, "use_ao", text=T("ui.prop.use_ao"))
                 if mat_entry.use_ao:
                     box.prop(mat_entry, "ao_image", text=T("ui.prop.ao_image"))
                     ao_row = box.row(align=True)

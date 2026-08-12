@@ -107,15 +107,15 @@ _K = "re9.shader_defs."
 
 # ── Core slots: plain-normal family (Standard, Skin, Hair) ─────────────────
 
-_NRM = SlotSocket("NormalRoughnessMap", _K + "nrm",
+_NRM = SlotSocket("NormalRoughnessMap", "core.shader_pack.nrm",
                   default_color=(0.5, 0.5, 1.0, 1.0), alpha=True, default_alpha=1.0,
                   supplies=('normal', 'roughness'))
 
-_ALBD = SlotSocket("BaseDielectricMap", _K + "albd",
+_ALBD = SlotSocket("BaseDielectricMap", "core.shader_pack.albd",
                    default_color=(1.0, 1.0, 1.0, 1.0), alpha=True, default_alpha=1.0,
                    supplies=('color', 'metallic'), non_color=False)
 
-_BASESHIFT = SlotSocket("BaseShiftMap", _K + "baseshift",
+_BASESHIFT = SlotSocket("BaseShiftMap", "core.shader_pack.baseshift",
                         default_color=(1.0, 1.0, 1.0, 1.0), non_color=False,
                         supplies=('color',))
 
@@ -137,15 +137,15 @@ _NRCM = SlotSocket("NormalRoughnessCavityMap", _K + "nrcm",
                    default_color=(1.0, 0.5, 1.0, 1.0), alpha=True, default_alpha=0.5,
                    supplies=('roughness', 'normal', 'cavity'))
 
-_ATOSSS = SlotSocket("AlphaTranslucentOcclusionSSSMap", _K + "atosss",
+_ATOSSS = SlotSocket("AlphaTranslucentOcclusionSSSMap", "core.shader_pack.atosss",
                      default_color=(1.0, 0.0, 1.0, 1.0),
                      supplies=('alpha', 'ao', 'translucency'))
 
-_OCC = SlotSocket("OcclusionMap", _K + "occ",
+_OCC = SlotSocket("OcclusionMap", "core.shader_pack.occ",
                   default_color=(1.0, 1.0, 1.0, 1.0),
                   supplies=('ao',))
 
-_EMISSIVE = SlotSocket("EmissiveMap", _K + "emissive",
+_EMISSIVE = SlotSocket("EmissiveMap", "core.shader_pack.emissive",
                        default_color=(0.0, 0.0, 0.0, 1.0), alpha=True, default_alpha=1.0,
                        supplies=('emissive',), non_color=False)
 
@@ -253,7 +253,7 @@ PBR = (
     PBRSocket("Emission", 'NodeSocketColor', (0.0, 0.0, 0.0, 1.0),
               _K + "pbr_emission", pbr_type='emissive', non_color=False),
     PBRSocket("Emission Strength", 'NodeSocketFloat', 1.0,
-              _K + "pbr_emission_strength", min_value=0.0, max_value=9999.0),
+              "core.shader_pack.pbr_emission_strength", min_value=0.0, max_value=9999.0),
     PBRSocket("Normal", 'NodeSocketColor', (0.5, 0.5, 1.0, 1.0),
               _K + "pbr_normal", pbr_type='normal'),
     # 0-neutral (additive), same as Metallic. Standard/Hair's
@@ -516,8 +516,8 @@ def _wire_emissive(b):
 SPEC_STANDARD = ShaderPackSpec(
     group_name    = "MTK RE9 Standard",
     shader_id     = "re9_standard_v1",
-    pbr_panel_key = _K + "panel_pbr",
-    slot_panel_key= _K + "panel_slots_standard",
+    pbr_panel_key = "core.shader_pack.panel_pbr",
+    slot_panel_key= "core.shader_pack.panel_slots_standard",
     pbr           = PBR,
     slots         = SLOTS_STANDARD,
     wire          = _wire_standard,
@@ -527,8 +527,8 @@ SPEC_STANDARD = ShaderPackSpec(
 SPEC_SKIN = ShaderPackSpec(
     group_name    = "MTK RE9 Skin",
     shader_id     = "re9_skin_v1",
-    pbr_panel_key = _K + "panel_pbr",
-    slot_panel_key= _K + "panel_slots_skin",
+    pbr_panel_key = "core.shader_pack.panel_pbr",
+    slot_panel_key= "core.shader_pack.panel_slots_skin",
     pbr           = PBR,
     slots         = SLOTS_SKIN,
     wire          = _wire_skin,
@@ -538,8 +538,8 @@ SPEC_SKIN = ShaderPackSpec(
 SPEC_HAIR = ShaderPackSpec(
     group_name    = "MTK RE9 Hair",
     shader_id     = "re9_hair_v1",
-    pbr_panel_key = _K + "panel_pbr",
-    slot_panel_key= _K + "panel_slots_hair",
+    pbr_panel_key = "core.shader_pack.panel_pbr",
+    slot_panel_key= "core.shader_pack.panel_slots_hair",
     pbr           = PBR,
     slots         = SLOTS_HAIR,
     wire          = _wire_hair,
@@ -549,8 +549,8 @@ SPEC_HAIR = ShaderPackSpec(
 SPEC_EMISSIVE = ShaderPackSpec(
     group_name    = "MTK RE9 Emissive",
     shader_id     = "re9_emissive_v1",
-    pbr_panel_key = _K + "panel_pbr",
-    slot_panel_key= _K + "panel_slots_emissive",
+    pbr_panel_key = "core.shader_pack.panel_pbr",
+    slot_panel_key= "core.shader_pack.panel_slots_emissive",
     pbr           = PBR,
     slots         = SLOTS_EMISSIVE,
     wire          = _wire_emissive,

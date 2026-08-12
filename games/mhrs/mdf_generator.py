@@ -190,7 +190,7 @@ class MHRS_OT_SelectSameMaterial(bpy.types.Operator):
         active_obj = context.active_object
         target_mat = active_obj.material_slots[active_obj.active_material_index].material
         if not target_mat:
-            self.report({'ERROR'}, T("mhrs.mdf_generator.active_obj_no_material"))
+            self.report({'ERROR'}, T("core.mdf_generator_base.active_obj_no_material"))
             return {'CANCELLED'}
 
         # 查找同集合下共享相同材质的所有网格

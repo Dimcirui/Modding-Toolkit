@@ -73,7 +73,7 @@ class MHWS_OT_BatchImportDialog(bpy.types.Operator):
         settings = scene.mhw_suite_settings
 
         # ── 装备包 ──
-        layout.prop(settings, "mhws_armor_scheme", text=T("mhws.batch_export_ui.armor_pack_label"))
+        layout.prop(settings, "mhws_armor_scheme", text=T("core.export_prep.armor_pack"))
 
         # ── Mod Root ──
         natives_root = scene.get("mhws_natives_root", "")
@@ -84,7 +84,7 @@ class MHWS_OT_BatchImportDialog(bpy.types.Operator):
             short = "/".join(parts[-3:]) if len(parts) > 3 else natives_root
             row.label(text=f".../{short}")
         else:
-            row.label(text=T("mhws.batch_export_ui.not_set"), icon='ERROR')
+            row.label(text=T("core.export_prep.not_set"), icon='ERROR')
 
         # ── 解析按钮 ──
         layout.operator("mhws.scan_import_files", text=T("mhws.batch_import_ui.scan_btn"), icon='FILE_REFRESH')
@@ -107,7 +107,7 @@ class MHWS_OT_BatchImportDialog(bpy.types.Operator):
         # ── 全局选择栏 ──
         enabled_count = sum(1 for it in items if it.enabled)
         row = layout.row(align=True)
-        op_all  = row.operator("mhws.select_all_import", text=T("mhws.batch_import_ui.select_all"), icon='CHECKBOX_HLT')
+        op_all  = row.operator("mhws.select_all_import", text=T("core.export_prep.select_all"), icon='CHECKBOX_HLT')
         op_all.value  = True
         op_none = row.operator("mhws.select_all_import", text=T("mhws.batch_import_ui.deselect_all"), icon='CHECKBOX_DEHLT')
         op_none.value = False

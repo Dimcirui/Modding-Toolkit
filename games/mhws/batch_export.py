@@ -87,7 +87,7 @@ def get_mhws_schemes_callback(self, context):
             name = os.path.splitext(f)[0]
             _scheme_cache.append((f, name, ""))
     if not _scheme_cache:
-        _scheme_cache.append(('NONE', T("mhws.batch_export.no_armor_pack"), ""))
+        _scheme_cache.append(('NONE', T("core.export_prep.no_armor_pack"), ""))
     return _scheme_cache
 
 
@@ -114,7 +114,7 @@ def get_mhws_armor_callback(self, context):
             name = armor.get("name", armor_id)
             _armor_cache.append((armor_id, f"{name}  ({armor_id})", ""))
     if not _armor_cache:
-        _armor_cache.append(('NONE', T("mhws.batch_export.no_armor"), ""))
+        _armor_cache.append(('NONE', T("core.export_prep.no_armor"), ""))
     return _armor_cache
 
 
@@ -397,7 +397,7 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
 
         natives_root = scene.get("mhws_natives_root", "")
         if not natives_root or not os.path.isdir(natives_root):
-            self.report({'ERROR'}, T("mhws.batch_export.set_mod_root_first"))
+            self.report({'ERROR'}, T("core.export_prep.set_mod_root_first"))
             return {'CANCELLED'}
 
         scheme = _load_scheme(settings.mhws_armor_scheme)

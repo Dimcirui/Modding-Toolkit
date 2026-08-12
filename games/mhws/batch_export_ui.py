@@ -150,12 +150,12 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
         settings = scene.mhw_suite_settings
 
         # ── Selectors ──
-        layout.prop(settings, "mhws_armor_scheme", text=T("mhws.batch_export_ui.armor_pack_label"))
+        layout.prop(settings, "mhws_armor_scheme", text=T("core.export_prep.armor_pack"))
         row = layout.row(align=True)
         row.prop(settings, "mhws_armor_variant", text="")
         cur_armor_label = _get_armor_label(context, settings.mhws_selected_armor)
         row.operator("mhws.pick_armor",
-                     text=cur_armor_label if cur_armor_label else T("mhws.batch_export_ui.pick_armor_placeholder"),
+                     text=cur_armor_label if cur_armor_label else T("core.export_prep.pick_armor_placeholder"),
                      icon='DOWNARROW_HLT')
 
         # ── Natives Root ──
@@ -167,7 +167,7 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
             short = "/".join(parts[-3:]) if len(parts) > 3 else natives_root
             row.label(text=f".../{short}")
         else:
-            row.label(text=T("mhws.batch_export_ui.not_set"), icon='ERROR')
+            row.label(text=T("core.export_prep.not_set"), icon='ERROR')
 
         # ── Early out ──
         variant  = settings.mhws_armor_variant

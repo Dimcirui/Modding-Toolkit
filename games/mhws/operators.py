@@ -284,15 +284,15 @@ def _get_chain_col_items(self, context):
 
 def _get_settings_mode_items(self, context):
     return [
-        ('SHARED',   T("mhws.operators.settings_mode_shared"),   T("mhws.operators.settings_mode_shared_desc")),
-        ('SEPARATE', T("mhws.operators.settings_mode_separate"), T("mhws.operators.settings_mode_separate_desc")),
+        ('SHARED',   T("core.re_chain_utils.settings_mode_shared"),   T("core.re_chain_utils.settings_mode_shared_desc")),
+        ('SEPARATE', T("core.re_chain_utils.settings_mode_separate"), T("mhws.operators.settings_mode_separate_desc")),
         ('GUESS',    T("mhws.operators.settings_mode_guess"),    T("mhws.operators.settings_mode_guess_desc")),
     ]
 
 
 def _get_chain_format_items(self, context):
     return [
-        ('.chain2', "Chain2", T("mhws.operators.chain_format_chain2_desc")),
+        ('.chain2', "Chain2", T("core.re_chain_utils.chain_format_chain2_desc")),
         ('.chain',  "Chain",  T("mhws.operators.chain_format_chain_desc")),
     ]
 
@@ -411,13 +411,13 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
         row = layout.row()
         row.prop(self, "auto_create_collection", text=T("mhws.operators.auto_create_collection_name"))
         if self.auto_create_collection:
-            layout.prop(self, "collection_name", text=T("mhws.operators.collection_name_name"))
-            layout.prop(self, "chain_format", expand=True, text=T("mhws.operators.chain_format_name"))
+            layout.prop(self, "collection_name", text=T("core.re_chain_utils.collection"))
+            layout.prop(self, "chain_format", expand=True, text=T("core.re_chain_utils.chain_format"))
             if self.chain_format == '.chain2':
                 layout.prop(self, "apply_mhwilds_tuning", text=T("mhws.operators.apply_mhwilds_tuning_name"))
         else:
             layout.prop(self, "chain_collection")
-        layout.prop(self, "settings_mode", expand=True, text=T("mhws.operators.settings_mode_name"))
+        layout.prop(self, "settings_mode", expand=True, text=T("core.re_chain_utils.settings_mode"))
         layout.prop(self, "straighten_orientation", text=T("mhws.operators.straighten_orientation_name"))
         layout.prop(self, "apply_angle_ramp", text=T("mhws.operators.apply_angle_ramp_name"))
 
@@ -670,7 +670,7 @@ class MHWS_OT_PreprocessModel(bpy.types.Operator):
 
         source_arm_obj = context.active_object
         if not source_arm_obj or source_arm_obj.type != 'ARMATURE':
-            self.report({'WARNING'}, T("mhws.operators.select_armature_first"))
+            self.report({'WARNING'}, T("core.standard_ops.select_armature_first"))
             return {'CANCELLED'}
 
         # Step 1: auto-detect X preset (MMD / VRChat only)
@@ -808,7 +808,7 @@ class MHWS_OT_AddFacialBones(bpy.types.Operator):
     def execute(self, context):
         target_arm = bpy.data.objects.get(self.target_armature)
         if target_arm is None or target_arm.type != 'ARMATURE':
-            self.report({'WARNING'}, T("mhws.operators.select_valid_armature"))
+            self.report({'WARNING'}, T("core.re_chain_utils.select_valid_armature"))
             return {'CANCELLED'}
 
         if context.mode != 'OBJECT':
@@ -848,7 +848,7 @@ class MHWS_OT_AddFacialBones(bpy.types.Operator):
         bpy.ops.object.select_all(action='DESELECT')
         target_arm.select_set(True)
 
-        msg = T("mhws.operators.facial_bones_added").format(n=created)
+        msg = T("core.facial_bones.facial_bones_added").format(n=created)
         if self.increase_blink_amplitude:
             msg += T("mhws.operators.blink_amplitude_added").format(n=fake_count)
         self.report({'INFO'}, msg)
