@@ -18,6 +18,8 @@ from .core import migrate
 from .core import i18n
 from .core import standard_ops
 from .core import pose_ops
+from .core import bone_ops
+from .core import mesh_ops
 from .core import editor_props
 from .core import editor_ops
 from .core import mdf_tex_processor_base
@@ -77,6 +79,11 @@ modules = [
     editor_ops,
     standard_ops,
     pose_ops,
+    # Registered here rather than by ui.main_panel, which is where these
+    # operators used to live. They own no PropertyGroup and no scene property,
+    # so their position relative to ui/ does not matter.
+    bone_ops,
+    mesh_ops,
     mdf_tex_processor_base,
     tex_convert_base,
     shader_ops,
