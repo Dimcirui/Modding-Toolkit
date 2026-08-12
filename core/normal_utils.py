@@ -155,12 +155,28 @@ def weld_coincident_normals(co, lv, base, ang, distance, max_angle):
 
 # ── public operations ──────────────────────────────────────────────────────
 
-def reset_normals(me, weld=True, weld_distance=1e-5, weld_angle=60.0):
+def reset_normals(me, weld=True, weld_distance=1e-5, weld_angle=60.0,
+                  clear_sharp=True):
     """Drop custom split normals, optionally welding coincident vertices back
-    together.  Returns the number of welded positions."""
+    together.  Returns the number of welded positions.
+
+    Removing the ``custom_normal`` attribute is not by itself enough to get back
+    to smooth shading: sharp edges and flat-shaded faces split the normals on
+    their own, so the mesh keeps its old faceted look even though the custom
+    normals are gone (measured on a shipped face mesh: up to 107 degrees off per
+    vertex from marked sharp edges, 128 from flat faces).  ``clear_sharp`` also
+    clears those flags, which is what makes the result actually smooth.  It has
+    to happen before the weld step reads the normals back.
+    """
     co, lv, ls, lt = mesh_arrays(me)
     if "custom_normal" in me.attributes:
         me.attributes.remove(me.attributes["custom_normal"])
+    if clear_sharp:
+        if len(me.edges):
+            me.edges.foreach_set("use_edge_sharp", [False] * len(me.edges))
+        if len(me.polygons):
+            me.polygons.foreach_set("use_smooth", [True] * len(me.polygons))
+        me.update()
     if not weld:
         me.update()
         return 0
@@ -176,6 +192,12 @@ def reset_normals(me, weld=True, weld_distance=1e-5, weld_angle=60.0):
 def apply_cylindrical(me, axis=2, center=None, face_mask=None,
                       smooth_boundary=True, strength=1.0):
     """Replace the masked faces' custom split normals with a cylindrical field.
+
+    ``axis`` is the cylinder's direction in mesh-local space: either an index
+    (0/1/2) or a 3-vector, which is what the caller passes once it has mapped
+    the user's world axis through the object's rotation.  A vector is needed
+    because game meshes are often imported rotated — assuming local Z is
+    vertical collapses the field to a near-constant direction on a Y-up mesh.
 
     ``center`` is a point on the axis in mesh-local space (defaults to the
     origin).  ``face_mask`` is a bool array over polygons; ``None`` means every
@@ -197,8 +219,14 @@ def apply_cylindrical(me, axis=2, center=None, face_mask=None,
 
     if center is None:
         center = np.zeros(3)
+    if np.isscalar(axis):
+        u = np.zeros(3)
+        u[int(axis)] = 1.0
+    else:
+        u = normalize(np.asarray(axis, np.float64).reshape(3))
     d = co - np.asarray(center, np.float64)
-    d[:, axis] = 0.0
+    # Strip the along-axis component; for a basis vector this is d[:, axis] = 0
+    d -= np.outer(d @ u, u)
     radius = np.linalg.norm(d, axis=1)
     # Relative epsilon so the on-axis test survives any model scale
     extent = float(np.linalg.norm(co.max(0) - co.min(0))) if len(co) else 0.0

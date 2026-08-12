@@ -79,6 +79,14 @@ def _face_normal_origin_items(self, context):
     ]
 
 
+def _face_normal_axis_items(self, context):
+    return [
+        ('Z', T("ui.main_panel.fn_axis_z"), T("ui.main_panel.fn_axis_z_desc")),
+        ('Y', T("ui.main_panel.fn_axis_y"), ""),
+        ('X', T("ui.main_panel.fn_axis_x"), ""),
+    ]
+
+
 class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     # Top toggle row
     show_mhwi: bpy.props.BoolProperty(name="MHWI", default=False)
@@ -1185,6 +1193,11 @@ Unselected faces keep their own normals; the boundary transitions on its own."""
     bl_label = "Cylindrical Face Normals"
     bl_options = {'REGISTER', 'UNDO'}
 
+    axis: bpy.props.EnumProperty(
+        name="Axis",
+        items=_face_normal_axis_items,
+        default=0,
+    )
     origin: bpy.props.EnumProperty(
         name="Axis Center",
         items=_face_normal_origin_items,
@@ -1220,6 +1233,7 @@ Unselected faces keep their own normals; the boundary transitions on its own."""
 
     def draw(self, context):
         col = self.layout.column()
+        col.prop(self, "axis", text=T("ui.main_panel.fn_field_axis"))
         col.prop(self, "origin", text=T("ui.main_panel.fn_field_origin"))
         col.prop(self, "only_selected", text=T("ui.main_panel.fn_field_only_selected"))
         col.prop(self, "smooth_boundary", text=T("ui.main_panel.fn_field_smooth_boundary"))
@@ -1230,6 +1244,7 @@ Unselected faces keep their own normals; the boundary transitions on its own."""
 
     def execute(self, context):
         import numpy as np
+        import mathutils
         from ..core import normal_utils
 
         obj = context.active_object
@@ -1259,8 +1274,20 @@ Unselected faces keep their own normals; the boundary transitions on its own."""
             else:
                 center = None
 
+            # The axis is picked in world space — game meshes are usually
+            # imported rotated (local Y up), so a local axis index would send
+            # the field sideways.  Map it through the object's rotation instead
+            # of snapping to the nearest local axis, so arbitrary orientations
+            # still give a true cylinder.
+            world_axis = mathutils.Vector((0.0, 0.0, 0.0))
+            world_axis['XYZ'.index(self.axis)] = 1.0
+            axis = obj.matrix_world.to_3x3().inverted() @ world_axis
+            if axis.length < 1e-12:
+                self.report({'ERROR'}, T("ui.main_panel.fn_err_bad_axis"))
+                return {'CANCELLED'}
+
             n_faces, n_boundary = normal_utils.apply_cylindrical(
-                me, axis=2, center=center, face_mask=mask,
+                me, axis=tuple(axis.normalized()), center=center, face_mask=mask,
                 smooth_boundary=self.smooth_boundary,
                 strength=self.strength,
             )
@@ -1284,6 +1311,11 @@ welding the vertices that UV/material borders split apart"""
     bl_label = "Reset Face Normals"
     bl_options = {'REGISTER', 'UNDO'}
 
+    clear_sharp: bpy.props.BoolProperty(
+        name="Clear Sharp Edges",
+        default=True,
+        description="Also clear sharp edges and flat shading, which split the normals on their own",
+    )
     weld: bpy.props.BoolProperty(
         name="Weld Coincident Vertices",
         default=True,
@@ -1314,6 +1346,8 @@ welding the vertices that UV/material borders split apart"""
 
     def draw(self, context):
         col = self.layout.column()
+        col.prop(self, "clear_sharp", text=T("ui.main_panel.fn_field_clear_sharp"))
+        col.separator()
         col.prop(self, "weld", text=T("ui.main_panel.fn_field_weld"))
         sub = col.column(align=True)
         sub.enabled = self.weld
@@ -1333,7 +1367,7 @@ welding the vertices that UV/material borders split apart"""
                 self.report({'ERROR'}, T("ui.main_panel.fn_err_no_faces"))
                 return {'CANCELLED'}
             n = normal_utils.reset_normals(
-                me, weld=self.weld,
+                me, weld=self.weld, clear_sharp=self.clear_sharp,
                 weld_distance=self.weld_distance, weld_angle=self.weld_angle)
             self.report({'INFO'}, T("ui.main_panel.fn_info_reset").format(n=n))
             return {'FINISHED'}
