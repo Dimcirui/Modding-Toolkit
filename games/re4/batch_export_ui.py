@@ -82,61 +82,58 @@ class RE4_OT_ToggleSimplified(bpy.types.Operator):
         return {'FINISHED'}
 
 
-# ============================================================
-# Collection / armature pickers
-# ============================================================
+# ── Unified collection picker ─────────────────────────────────────────────────
+# One operator for what used to be 9: 3 slots x 3 scopes, each a verbatim
+# copy of this body differing only in a suffix string. The scope/slot pair now
+# arrives as operator properties -- the same shape mhwi/mhws/mhrs have always
+# used (see MHWS_OT_PickCollection's `filetype`), which is also why the dynamic
+# `items=` callback reading self.slot is safe: those three already ship it.
+#
+# 'EMPTY' has no call site. The per-entry "empty" bindings are only ever cleared
+# (re4.clear_se), never picked, so the 3 RE4_OT_PickSimplifiedEmpty*
+# classes it replaces were unreachable. The scope is kept because the capability
+# behind it exists -- wiring a button is now one line rather than a new class.
 
-class RE4_OT_PickMeshCollection(bpy.types.Operator):
-    bl_idname = "re4.pick_mesh_collection"
-    bl_label = "Pick Mesh Collection"
+class RE4_OT_PickBinding(bpy.types.Operator):
+    bl_idname = "re4.pick_binding"
+    bl_label = "Pick Collection"
     bl_options = {'INTERNAL'}
     bl_property = "collection_name"
+
+    #: 'ENTRY' | 'GROUP' | 'EMPTY'. A plain string, not an enum, because
+    #: bl_property already designates collection_name as the searched enum and
+    #: no operator in this addon has been proven to work with a second one.
+    scope: bpy.props.StringProperty(default="ENTRY")
+    slot: bpy.props.StringProperty()
     character_id: bpy.props.StringProperty()
     entry_id: bpy.props.StringProperty()
-    collection_name: bpy.props.EnumProperty(name="Mesh Collection",
-        items=lambda self, ctx: _get_filtered_collections("mesh"))
+    group_name: bpy.props.StringProperty()
+    collection_name: bpy.props.EnumProperty(
+        name="Collection",
+        items=lambda self, ctx: _get_filtered_collections(self.slot)
+    )
+
     def invoke(self, context, event):
         context.window_manager.invoke_search_popup(self)
         return {'RUNNING_MODAL'}
+
     def execute(self, context):
         if self.collection_name != "NONE":
-            _set_binding(context.scene, self.character_id, self.entry_id, "mesh", self.collection_name)
-        return {'FINISHED'}
-
-
-class RE4_OT_PickMdfCollection(bpy.types.Operator):
-    bl_idname = "re4.pick_mdf_collection"
-    bl_label = "Pick MDF2 Collection"
-    bl_options = {'INTERNAL'}
-    bl_property = "collection_name"
-    character_id: bpy.props.StringProperty()
-    entry_id: bpy.props.StringProperty()
-    collection_name: bpy.props.EnumProperty(name="MDF2 Collection",
-        items=lambda self, ctx: _get_filtered_collections("mdf2"))
-    def invoke(self, context, event):
-        context.window_manager.invoke_search_popup(self)
-        return {'RUNNING_MODAL'}
-    def execute(self, context):
-        if self.collection_name != "NONE":
-            _set_binding(context.scene, self.character_id, self.entry_id, "mdf2", self.collection_name)
-        return {'FINISHED'}
-
-
-class RE4_OT_PickChainCollection(bpy.types.Operator):
-    bl_idname = "re4.pick_chain_collection"
-    bl_label = "Pick Chain Collection"
-    bl_options = {'INTERNAL'}
-    bl_property = "collection_name"
-    character_id: bpy.props.StringProperty()
-    entry_id: bpy.props.StringProperty()
-    collection_name: bpy.props.EnumProperty(name="Chain Collection",
-        items=lambda self, ctx: _get_filtered_collections("chain"))
-    def invoke(self, context, event):
-        context.window_manager.invoke_search_popup(self)
-        return {'RUNNING_MODAL'}
-    def execute(self, context):
-        if self.collection_name != "NONE":
-            _set_binding(context.scene, self.character_id, self.entry_id, "chain", self.collection_name)
+            scene = context.scene
+            if self.scope == "GROUP":
+                _set_simplified_group_binding(scene, self.character_id,
+                                              self.group_name, self.slot,
+                                              self.collection_name)
+            elif self.scope == "EMPTY":
+                _set_simplified_empty_binding(scene, self.character_id, self.slot,
+                                              self.collection_name)
+            elif self.scope == "ENTRY":
+                _set_binding(scene, self.character_id, self.entry_id, self.slot,
+                             self.collection_name)
+            else:
+                # Silently doing nothing is how a typo'd scope would hide.
+                self.report({'ERROR'}, f"unknown pick scope {self.scope!r}")
+                return {'CANCELLED'}
         return {'FINISHED'}
 
 
@@ -154,112 +151,6 @@ class RE4_OT_PickArmature(bpy.types.Operator):
     def execute(self, context):
         if self.armature_name != "NONE":
             _set_binding(context.scene, self.character_id, "_fbxskel", "fbxskel", self.armature_name)
-        return {'FINISHED'}
-
-
-# Simplified mode: per-group pickers
-class RE4_OT_PickSimplifiedGroupMesh(bpy.types.Operator):
-    bl_idname = "re4.pick_sg_mesh"
-    bl_label = "Pick Group Mesh"
-    bl_options = {'INTERNAL'}
-    bl_property = "collection_name"
-    character_id: bpy.props.StringProperty()
-    group_name: bpy.props.StringProperty()
-    collection_name: bpy.props.EnumProperty(name="Mesh",
-        items=lambda self, ctx: _get_filtered_collections("mesh"))
-    def invoke(self, context, event):
-        context.window_manager.invoke_search_popup(self)
-        return {'RUNNING_MODAL'}
-    def execute(self, context):
-        if self.collection_name != "NONE":
-            _set_simplified_group_binding(context.scene, self.character_id, self.group_name, "mesh", self.collection_name)
-        return {'FINISHED'}
-
-
-class RE4_OT_PickSimplifiedGroupMdf(bpy.types.Operator):
-    bl_idname = "re4.pick_sg_mdf"
-    bl_label = "Pick Group MDF2"
-    bl_options = {'INTERNAL'}
-    bl_property = "collection_name"
-    character_id: bpy.props.StringProperty()
-    group_name: bpy.props.StringProperty()
-    collection_name: bpy.props.EnumProperty(name="MDF2",
-        items=lambda self, ctx: _get_filtered_collections("mdf2"))
-    def invoke(self, context, event):
-        context.window_manager.invoke_search_popup(self)
-        return {'RUNNING_MODAL'}
-    def execute(self, context):
-        if self.collection_name != "NONE":
-            _set_simplified_group_binding(context.scene, self.character_id, self.group_name, "mdf2", self.collection_name)
-        return {'FINISHED'}
-
-
-class RE4_OT_PickSimplifiedGroupChain(bpy.types.Operator):
-    bl_idname = "re4.pick_sg_chain"
-    bl_label = "Pick Group Chain"
-    bl_options = {'INTERNAL'}
-    bl_property = "collection_name"
-    character_id: bpy.props.StringProperty()
-    group_name: bpy.props.StringProperty()
-    collection_name: bpy.props.EnumProperty(name="Chain",
-        items=lambda self, ctx: _get_filtered_collections("chain"))
-    def invoke(self, context, event):
-        context.window_manager.invoke_search_popup(self)
-        return {'RUNNING_MODAL'}
-    def execute(self, context):
-        if self.collection_name != "NONE":
-            _set_simplified_group_binding(context.scene, self.character_id, self.group_name, "chain", self.collection_name)
-        return {'FINISHED'}
-
-
-class RE4_OT_PickSimplifiedEmptyMesh(bpy.types.Operator):
-    bl_idname = "re4.pick_se_mesh"
-    bl_label = "Pick Empty Mesh"
-    bl_options = {'INTERNAL'}
-    bl_property = "collection_name"
-    character_id: bpy.props.StringProperty()
-    collection_name: bpy.props.EnumProperty(name="Empty Mesh",
-        items=lambda self, ctx: _get_filtered_collections("mesh"))
-    def invoke(self, context, event):
-        context.window_manager.invoke_search_popup(self)
-        return {'RUNNING_MODAL'}
-    def execute(self, context):
-        if self.collection_name != "NONE":
-            _set_simplified_empty_binding(context.scene, self.character_id, "mesh", self.collection_name)
-        return {'FINISHED'}
-
-
-class RE4_OT_PickSimplifiedEmptyMdf(bpy.types.Operator):
-    bl_idname = "re4.pick_se_mdf"
-    bl_label = "Pick Empty MDF2"
-    bl_options = {'INTERNAL'}
-    bl_property = "collection_name"
-    character_id: bpy.props.StringProperty()
-    collection_name: bpy.props.EnumProperty(name="Empty MDF2",
-        items=lambda self, ctx: _get_filtered_collections("mdf2"))
-    def invoke(self, context, event):
-        context.window_manager.invoke_search_popup(self)
-        return {'RUNNING_MODAL'}
-    def execute(self, context):
-        if self.collection_name != "NONE":
-            _set_simplified_empty_binding(context.scene, self.character_id, "mdf2", self.collection_name)
-        return {'FINISHED'}
-
-
-class RE4_OT_PickSimplifiedEmptyChain(bpy.types.Operator):
-    bl_idname = "re4.pick_se_chain"
-    bl_label = "Pick Empty Chain"
-    bl_options = {'INTERNAL'}
-    bl_property = "collection_name"
-    character_id: bpy.props.StringProperty()
-    collection_name: bpy.props.EnumProperty(name="Empty Chain",
-        items=lambda self, ctx: _get_filtered_collections("chain"))
-    def invoke(self, context, event):
-        context.window_manager.invoke_search_popup(self)
-        return {'RUNNING_MODAL'}
-    def execute(self, context):
-        if self.collection_name != "NONE":
-            _set_simplified_empty_binding(context.scene, self.character_id, "chain", self.collection_name)
         return {'FINISHED'}
 
 
@@ -412,7 +303,8 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
                 row = box.row(align=True)
                 row.label(text="MESH:", icon='OUTLINER_OB_MESH')
                 cur = _get_simplified_group_binding(scene, character_id, group_name, "mesh")
-                op = row.operator("re4.pick_sg_mesh", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                op = row.operator("re4.pick_binding", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                op.scope = "GROUP"; op.slot = "mesh"
                 op.character_id = character_id; op.group_name = group_name
                 if cur:
                     op_c = row.operator("re4.clear_sg", text="", icon='X')
@@ -422,7 +314,8 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
                 row = box.row(align=True)
                 row.label(text="MDF2:", icon='MATERIAL')
                 cur = _get_simplified_group_binding(scene, character_id, group_name, "mdf2")
-                op = row.operator("re4.pick_sg_mdf", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                op = row.operator("re4.pick_binding", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                op.scope = "GROUP"; op.slot = "mdf2"
                 op.character_id = character_id; op.group_name = group_name
                 if cur:
                     op_c = row.operator("re4.clear_sg", text="", icon='X')
@@ -432,7 +325,8 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
                 row = box.row(align=True)
                 row.label(text="Chain:", icon='CONSTRAINT_BONE')
                 cur = _get_simplified_group_binding(scene, character_id, group_name, "chain")
-                op = row.operator("re4.pick_sg_chain", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                op = row.operator("re4.pick_binding", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                op.scope = "GROUP"; op.slot = "chain"
                 op.character_id = character_id; op.group_name = group_name
                 if cur:
                     op_c = row.operator("re4.clear_sg", text="", icon='X')
@@ -481,8 +375,9 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
                         ct = bpy.data.collections[cur].color_tag
                         if ct != "NONE": ic = f"COLLECTION_{ct}"
                     row.label(text="MESH", icon=ic)
-                    op_p = row.operator("re4.pick_mesh_collection",
+                    op_p = row.operator("re4.pick_binding",
                                         text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                    op_p.scope = "ENTRY"; op_p.slot = "mesh"
                     op_p.character_id = character_id; op_p.entry_id = entry_id
 
                 if entry.get("mdf2"):
@@ -497,8 +392,9 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
                         ct = bpy.data.collections[cur].color_tag
                         if ct != "NONE": ic = f"COLLECTION_{ct}"
                     row.label(text=f"MDF2 x{len(entry['mdf2'])}", icon=ic)
-                    op_p = row.operator("re4.pick_mdf_collection",
+                    op_p = row.operator("re4.pick_binding",
                                         text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                    op_p.scope = "ENTRY"; op_p.slot = "mdf2"
                     op_p.character_id = character_id; op_p.entry_id = entry_id
 
                 if entry.get("chain"):
@@ -513,8 +409,9 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
                         ct = bpy.data.collections[cur].color_tag
                         if ct != "NONE": ic = f"COLLECTION_{ct}"
                     row.label(text="Chain", icon=ic)
-                    op_p = row.operator("re4.pick_chain_collection",
+                    op_p = row.operator("re4.pick_binding",
                                         text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                    op_p.scope = "ENTRY"; op_p.slot = "chain"
                     op_p.character_id = character_id; op_p.entry_id = entry_id
 
     def execute(self, context):
@@ -523,19 +420,11 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
 
 
 classes = [
+    RE4_OT_PickBinding,
     RE4_OT_ToggleEntry,
     RE4_OT_ToggleGroup,
     RE4_OT_ToggleSimplified,
-    RE4_OT_PickMeshCollection,
-    RE4_OT_PickMdfCollection,
-    RE4_OT_PickChainCollection,
     RE4_OT_PickArmature,
-    RE4_OT_PickSimplifiedGroupMesh,
-    RE4_OT_PickSimplifiedGroupMdf,
-    RE4_OT_PickSimplifiedGroupChain,
-    RE4_OT_PickSimplifiedEmptyMesh,
-    RE4_OT_PickSimplifiedEmptyMdf,
-    RE4_OT_PickSimplifiedEmptyChain,
     RE4_OT_ClearSimplifiedGroup,
     RE4_OT_ClearSimplifiedEmpty,
     RE4_OT_BatchExportDialog,
