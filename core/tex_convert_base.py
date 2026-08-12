@@ -588,6 +588,10 @@ class TexConvertSettings(bpy.types.PropertyGroup):
     src_a_invert: bpy.props.BoolProperty(name="Invert", default=False)
     src_b: bpy.props.StringProperty(name="Alpha Source", subtype='FILE_PATH')
     src_b_invert: bpy.props.BoolProperty(name="Invert", default=False)
+    # RGB_A mode only, and only while no Alpha Source image is picked: lets the
+    # user opt into a black-filled alpha instead of the default white/opaque
+    # fill (matching PBR_DEFAULTS['alpha'] in mdf_tex_processor_base.py).
+    alpha_fill_black: bpy.props.BoolProperty(name="Fill Alpha with Black", default=False)
 
     # SINGLE mode only: overlay a tiled detail normal map onto the source
     # image (blends only the X/Y components, Z is re-derived to keep the
@@ -728,6 +732,8 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
         elif s.channel_mode == 'RGB_A':
             layout.prop(s, "src_a", text=T("core.tex_convert_base.rgb_source_label"))
             layout.prop(s, "src_b", text=T("core.tex_convert_base.src_b_name"))
+            if not s.src_b:
+                layout.prop(s, "alpha_fill_black", text=T("core.tex_convert_base.alpha_fill_black_name"))
         else:  # RGBA
             layout.prop(s, "src_a", text=T("core.tex_convert_base.src_image_a"))
             layout.prop(s, "src_b", text=T("core.tex_convert_base.src_image_b"))
@@ -871,9 +877,16 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
                 else:
                     png_path = working
             elif s.channel_mode == 'RGB_A':
+                if src_b and os.path.isfile(src_b):
+                    alpha_entry = ('B', 0, s.src_b_invert)
+                else:
+                    # No alpha source picked: default to white/opaque (matches
+                    # PBR_DEFAULTS['alpha'] in mdf_tex_processor_base.py) unless
+                    # the user opted into a black fill via alpha_fill_black.
+                    alpha_entry = ('CONST0', 0, False) if s.alpha_fill_black else ('CONST1', 0, False)
                 channel_map = {
                     'R': ('A', 0, s.src_a_invert), 'G': ('A', 1, s.src_a_invert),
-                    'B': ('A', 2, s.src_a_invert), 'A': ('B', 0, s.src_b_invert),
+                    'B': ('A', 2, s.src_a_invert), 'A': alpha_entry,
                 }
                 png_path = _compose_channels(channel_map, src_a, src_b, temp_dir, "tex_convert",
                                              encode_octahedral=encode_octahedral)

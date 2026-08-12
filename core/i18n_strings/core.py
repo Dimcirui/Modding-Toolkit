@@ -567,6 +567,7 @@ STRINGS = {
     "core.tex_convert_base.guess_fallback_warning": {
         "EN": "Unrecognized filename, fell back to the current format — please confirm manually", "ZH": "未识别命名，已回退当前格式，请手动确认"},
     "core.tex_convert_base.rgb_source_label": {"EN": "RGB Source", "ZH": "RGB 来源"},
+    "core.tex_convert_base.alpha_fill_black_name": {"EN": "Fill Alpha with Black", "ZH": "使用黑色填充 Alpha 通道"},
     "core.tex_convert_base.adjust_header": {"EN": "Adjust", "ZH": "调整"},
     "core.tex_convert_base.invert_rgb_name": {"EN": "Invert RGB", "ZH": "RGB 翻转"},
     "core.tex_convert_base.invert_alpha_name": {"EN": "Invert Alpha", "ZH": "Alpha 翻转"},
