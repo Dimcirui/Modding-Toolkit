@@ -1,0 +1,436 @@
+{
+    "presetType": "RE_MDF_MATERIAL",
+    "MDFVersion": "RE4",
+    "presetVersion": 5,
+    "Material Header": {
+        "Material Name": "Hair",
+        "Master Material Path": "_Chainsaw/MasterMaterial/Master/Character_Hair.mmtr",
+        "Material Shader Type": "0"
+    },
+    "Flags": {
+        "Ver32Unknown": -1,
+        "Ver32Unknown1": -1,
+        "Ver32Unknown2": -1,
+        "FlagBitFlag": 155,
+        "FlagBitFlagB": 0,
+        "ShaderLODNum": 0,
+        "BakeTextureArraySize": 0
+    },
+    "Property List": [
+        {
+            "Property Name": "Wind_SpeedXYZ",
+            "Data Type": "VEC4",
+            "Value": [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            "Padding": 0
+        },
+        {
+            "Property Name": "Wind_InfluenceXYZ",
+            "Data Type": "VEC4",
+            "Value": [
+                1.0,
+                0.5,
+                1.0,
+                0.0
+            ],
+            "Padding": 0
+        },
+        {
+            "Property Name": "BaseColor",
+            "Data Type": "COLOR",
+            "Value": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "Padding": 0
+        },
+        {
+            "Property Name": "OcclusionColor",
+            "Data Type": "COLOR",
+            "Value": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "Padding": 0
+        },
+        {
+            "Property Name": "PrimalySpecularColor",
+            "Data Type": "COLOR",
+            "Value": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "Padding": 0
+        },
+        {
+            "Property Name": "SecondarySpecularColor",
+            "Data Type": "COLOR",
+            "Value": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "Padding": 0
+        },
+        {
+            "Property Name": "LightDirection",
+            "Data Type": "VEC4",
+            "Value": [
+                0.501960813999176,
+                0.250980406999588,
+                0.250980406999588,
+                1.0
+            ],
+            "Padding": 0
+        },
+        {
+            "Property Name": "RimLight_Color",
+            "Data Type": "COLOR",
+            "Value": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "Padding": 0
+        },
+        {
+            "Property Name": "Frenel_Color",
+            "Data Type": "COLOR",
+            "Value": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "Padding": 0
+        },
+        {
+            "Property Name": "WindMaskMap_UseSecondaryUV",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Wind_Intensity",
+            "Data Type": "FLOAT",
+            "Value": 0.009999999776482582,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Wind_Scale",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "WindRate",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Enable_SecondaryAlbedoMap",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "UseAlphaAsRoughnessMask",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "SecondaryRoughness",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Alpha_UseSecondaryUV",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Occlusion_UseSecondaryUV",
+            "Data Type": "BOOL",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Cavity_UseSecondaryUV",
+            "Data Type": "BOOL",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Roughness",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "BaseTranslucency",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Translucency",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Cavity",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "OcclusionIntensity",
+            "Data Type": "FLOAT",
+            "Value": 0.699999988079071,
+            "Padding": 0
+        },
+        {
+            "Property Name": "BackfaceNormalReverse",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "DissolveRange",
+            "Data Type": "FLOAT",
+            "Value": 0.3799999952316284,
+            "Padding": 0
+        },
+        {
+            "Property Name": "DissolveThreshold",
+            "Data Type": "FLOAT",
+            "Value": 0.25999999046325684,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Enable_BlueNoiseDither",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "OcclusionToAlbedo",
+            "Data Type": "FLOAT",
+            "Value": 0.8500000238418579,
+            "Padding": 0
+        },
+        {
+            "Property Name": "SpecularIntensity",
+            "Data Type": "FLOAT",
+            "Value": 0.15000000596046448,
+            "Padding": 0
+        },
+        {
+            "Property Name": "SpecularShiftOffset",
+            "Data Type": "FLOAT",
+            "Value": 0.800000011920929,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Primaly_Anisotropy",
+            "Data Type": "FLOAT",
+            "Value": 2.5,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Secondary_AnisoOffset",
+            "Data Type": "FLOAT",
+            "Value": 0.08999998867511749,
+            "Padding": 0
+        },
+        {
+            "Property Name": "PrimalySpec_Sharpness",
+            "Data Type": "FLOAT",
+            "Value": 50.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "SecondSpec_Sharpness",
+            "Data Type": "FLOAT",
+            "Value": 20.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Enable_WetParam",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "SpecularIntensity_Wet",
+            "Data Type": "FLOAT",
+            "Value": 0.8999999761581421,
+            "Padding": 0
+        },
+        {
+            "Property Name": "SpecularShiftOffset_Wet",
+            "Data Type": "FLOAT",
+            "Value": 0.6000000238418579,
+            "Padding": 0
+        },
+        {
+            "Property Name": "PrimalySpec_Sharpness_Wet",
+            "Data Type": "FLOAT",
+            "Value": 200.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "SecondSpec_Sharpness_Wet",
+            "Data Type": "FLOAT",
+            "Value": 180.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "RimLight_Intensity",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "RimLight_Pow",
+            "Data Type": "FLOAT",
+            "Value": 9.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "RimLight_UseMeshNormal",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "RimLight_FakeNormalCheck",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Frenel_On",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Frenel_Intensity",
+            "Data Type": "FLOAT",
+            "Value": 30.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Frenel_Min",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Frenel_Max",
+            "Data Type": "FLOAT",
+            "Value": -2.5,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Dissolve_Saturation",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Rec_Cloth",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Rec_Rain_WetRate",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Rec_Rain_RainRate",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Rec_Rain_Scale",
+            "Data Type": "FLOAT",
+            "Value": 4.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Rec_Rain_UseSecondaryUV",
+            "Data Type": "BOOL",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "ForceCull",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 8
+        }
+    ],
+    "Texture Bindings": [
+        {
+            "Texture Type": "BaseShiftMap",
+            "Texture Path": "systems/rendering/NullBlack.tex"
+        },
+        {
+            "Texture Type": "SecondaryAlbedoMap",
+            "Texture Path": "systems/rendering/NullBlack.tex"
+        },
+        {
+            "Texture Type": "NormalRoughnessMap",
+            "Texture Path": "systems/rendering/NullNormalRoughnessOcclusion.tex"
+        },
+        {
+            "Texture Type": "AlphaTranslucentOcclusionCavityMap",
+            "Texture Path": "systems/rendering/NullATOS.tex"
+        },
+        {
+            "Texture Type": "RimLight_FakeNormalMap",
+            "Texture Path": "systems/rendering/NullNormalRoughness.tex"
+        },
+        {
+            "Texture Type": "Wind_MaskMap",
+            "Texture Path": "systems/rendering/NullWhite.tex"
+        },
+        {
+            "Texture Type": "Noise3D",
+            "Texture Path": "systems/rendering/NullGray.tex"
+        },
+        {
+            "Texture Type": "Rec_Rain_WaterRiple",
+            "Texture Path": "systems/rendering/NullWhite.tex"
+        },
+        {
+            "Texture Type": "Rec_Rain_WetMask",
+            "Texture Path": "systems/rendering/NullNormalRoughness.tex"
+        }
+    ],
+    "MMTRS Data": [],
+    "GPBF Data": []
+}

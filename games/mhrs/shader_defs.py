@@ -176,4 +176,5 @@ SPEC = ShaderPackSpec(
     pbr           = PBR,
     slots         = SLOTS,
     wire          = _wire,
+    preset_filename = "standard.json",
 )

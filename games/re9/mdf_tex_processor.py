@@ -22,16 +22,13 @@ RE9_TEXTURE_TYPE_ABBREV = {
     'OcclusionMap': 'OCC',
 }
 
-# RE9 channel maps: same as base but NRRC B channel = pure white (no Cavity input),
-# plus OcclusionMap slot (AO packed into RGB).
+# RE9 channel maps: same as base -- BASE_SLOT_CHANNEL_MAPS's own
+# NormalRoughnessCavityMap entry already applies unmodified (its B genuinely
+# carries cavity data, confirmed by the user; an earlier version of this
+# override wrongly forced it to a constant). Only RE9's own OcclusionMap
+# slot (AO packed into RGB) needs adding.
 RE9_SLOT_CHANNEL_MAPS = {
     **BASE_SLOT_CHANNEL_MAPS,
-    'NormalRoughnessCavityMap': {
-        'R': ('roughness', 0),
-        'G': ('normal',    1),
-        'B': 1.0,              # Cavity — always pure white for RE9
-        'A': ('normal',    0),
-    },
     'OcclusionMap': {
         'R': ('ao', 0),
         'G': ('ao', 0),

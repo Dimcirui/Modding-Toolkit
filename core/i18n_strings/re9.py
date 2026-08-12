@@ -363,9 +363,28 @@ STRINGS = {
               "AlphaCavityOcclusionTranslucentMap.B/"
               "SSSCavityOcclusionTranslucentMap.B 携带，自发光则由 "
               "OcclusionMap 和 AlphaTranslucentOcclusionSSSMap.B 共同携带"},
-    "re9.shader_defs.pbr_ao_strength": {
-        "EN": "AO strength: 0 = off, 1 = the full map",
-        "ZH": "AO 强度：0 为关闭，1 为完整应用"},
+    "re9.shader_defs.pbr_cavity": {
+        "EN": "Cavity, multiplied into the same AO chain. Genuinely exports: "
+              "AlphaCavityOcclusionTranslucentMap.G (Standard/Hair), "
+              "SSSCavityOcclusionTranslucentMap.G (Skin), or "
+              "NormalRoughnessCavityMap.B (Emissive) carry it",
+        "ZH": "腔体遮蔽 (Cavity)，并入同一条 AO 正片叠底链。可以真正导出——标准/毛发由 "
+              "AlphaCavityOcclusionTranslucentMap.G 携带，皮肤由 "
+              "SSSCavityOcclusionTranslucentMap.G 携带，自发光由 "
+              "NormalRoughnessCavityMap.B 携带"},
+    "re9.shader_defs.pbr_translucency": {
+        "EN": "Translucency. Genuinely carried by "
+              "AlphaCavityOcclusionTranslucentMap.A (Standard/Hair) or "
+              "AlphaTranslucentOcclusionSSSMap.G (Emissive), but Principled "
+              "has no matching input (not the same thing as Subsurface "
+              "Scattering) -- this value round-trips to the exporter, the "
+              "preview does not show it. Skin has no translucency channel at "
+              "all, so this panel value has nothing to combine with there",
+        "ZH": "半透 (Translucency)。标准/毛发由 "
+              "AlphaCavityOcclusionTranslucentMap.A 真实携带，自发光由 "
+              "AlphaTranslucentOcclusionSSSMap.G 真实携带，但 Principled 没有对应"
+              "输入 (不等同于次表面散射)——此值仅在导出时生效，预览不会显示。皮肤"
+              "完全没有半透通道，此项在皮肤 spec 上没有对应槽位可以结合"},
     "re9.shader_defs.pbr_emission": {
         "EN": "Emission colour. Added to EmissiveMap on the Emissive spec; "
               "Standard/Skin/Hair have no emissive slot, so this panel value "

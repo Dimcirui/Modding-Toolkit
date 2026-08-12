@@ -164,10 +164,10 @@ SECTIONS = {
             # convert the materials first, then generate from them. One
             # button, not one per archetype -- MTK_OT_ConvertToPackedShader's
             # own dialog (use_prefab checkbox + preset dropdown) resolves which
-            # spec/preset to use, so no game/scope needs presetting here.
+            # spec/preset to use, so no game needs presetting here.
             op("mtk.convert_to_packed_shader",
                "ui.main_panel.btn_convert_packed_shader", 'NODETREE',
-               props={'scope': 'SELECTED'},
+               props={'scope': 'SELECTED', 'family': 'MHWS'},
                only_if=lambda: MTK_SHADER_AVAILABLE),
             _mdf_pair('mhws'),
             # Below the processor/generator pair: convert an existing MDF
@@ -190,12 +190,12 @@ SECTIONS = {
         'material': [
             # Above the processor/generator pair for the same reason as
             # MHWI/MHWS: convert the materials first, then generate from
-            # them. No prefab/preset resolution here (unlike MHWS) -- RE4's
-            # three archetypes have no bundled prefab, so the dialog is just
-            # a plain pick from `game` (simple_picker).
+            # them. Same use_prefab/preset_choice dialog as MHWS, scoped to
+            # RE4's three bundled prefabs (assets/mdf_presets/re4/) via
+            # `family`.
             op("mtk.convert_to_packed_shader",
                "ui.main_panel.btn_convert_packed_shader", 'NODETREE',
-               props={'game': 'RE4_STANDARD', 'scope': 'SELECTED', 'simple_picker': True},
+               props={'scope': 'SELECTED', 'family': 'RE4'},
                only_if=lambda: MTK_SHADER_AVAILABLE),
             _mdf_pair('re4'),
         ],
@@ -228,11 +228,11 @@ SECTIONS = {
                'SHAPEKEY_DATA'),
         ],
         'material': [
-            # Same simple_picker treatment as RE4 -- no bundled prefab, four
-            # archetypes to choose from.
+            # Same use_prefab/preset_choice dialog as MHWS/RE4, scoped to
+            # RE9's four bundled prefabs (assets/mdf_presets/re9/).
             op("mtk.convert_to_packed_shader",
                "ui.main_panel.btn_convert_packed_shader", 'NODETREE',
-               props={'game': 'RE9_STANDARD', 'scope': 'SELECTED', 'simple_picker': True},
+               props={'scope': 'SELECTED', 'family': 'RE9'},
                only_if=lambda: MTK_SHADER_AVAILABLE),
             _mdf_pair('re9'),
         ],

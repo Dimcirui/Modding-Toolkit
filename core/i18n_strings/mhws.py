@@ -380,6 +380,8 @@ STRINGS = {
         "EN": "Game Slots (packed) — Skin", "ZH": "游戏槽位 (打包) — 皮肤"},
     "mhws.shader_defs.panel_slots_hair": {
         "EN": "Game Slots (packed) — Hair", "ZH": "游戏槽位 (打包) — 毛发"},
+    "mhws.shader_defs.panel_slots_basic": {
+        "EN": "Game Slots (packed) — Basic", "ZH": "游戏槽位 (打包) — 通用"},
 
     "mhws.shader_defs.albd": {
         "EN": "BaseDielectricMap — RGB base colour, A inverted metallic (not opacity)",
@@ -500,6 +502,14 @@ STRINGS = {
         "EN": "HairOverMap — hair overlay/highlight map; carried for export, not used "
               "by the preview",
         "ZH": "HairOverMap — 毛发叠加/高光贴图；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.multiblend_albdmap": {
+        "EN": "MultiBlend_ALBDMap — a secondary colour layer for the Basic material's "
+              "own multi-blend system; carried for export, not used by the preview",
+        "ZH": "MultiBlend_ALBDMap — 通用材质自带多层混合系统的第二颜色层；仅为导出保留，预览不使用"},
+    "mhws.shader_defs.multiblend_nrmmap": {
+        "EN": "MultiBlend_NRMMap — a secondary normal layer for the Basic material's "
+              "own multi-blend system; carried for export, not used by the preview",
+        "ZH": "MultiBlend_NRMMap — 通用材质自带多层混合系统的第二法线层；仅为导出保留，预览不使用"},
 
     "mhws.shader_defs.pbr_base_color": {
         "EN": "Base colour. Multiplied with BaseDielectricMap",
@@ -521,9 +531,12 @@ STRINGS = {
               "AlphaTranslucentOcclusionSSSMap.B carry it",
         "ZH": "环境光遮蔽，预览时正片叠底到基础色上。和 MHWI 不同，这个是真的能导出的——"
               "NormalRoughnessOcclusionMap.B 和 AlphaTranslucentOcclusionSSSMap.B 都会带上它"},
-    "mhws.shader_defs.pbr_ao_strength": {
-        "EN": "AO strength: 0 = off, 1 = the full map",
-        "ZH": "AO 强度：0 为关闭，1 为完整应用"},
+    "mhws.shader_defs.pbr_cavity": {
+        "EN": "Cavity. Multiplicative, like Roughness/AO. No MHWS slot here "
+              "supplies real cavity data (RE4/RE9 do), so this is preview-only "
+              "for now",
+        "ZH": "Cavity。像粗糙度/AO 一样是乘法组合。MHWS 这边目前没有槎位携带真实 "
+              "Cavity 数据（RE4/RE9 有），暂时只用于预览"},
     "mhws.shader_defs.pbr_emission": {
         "EN": "Emission colour. Added to EmissiveMap",
         "ZH": "自发光颜色。与 EmissiveMap 相加"},
@@ -536,4 +549,14 @@ STRINGS = {
               "NormalRoughnessOcclusionMap's decoded normal",
         "ZH": "法线贴图 —— 直接连图片即可，不需要 Normal Map 节点。"
               "其相对平面的偏移量会和 NormalRoughnessOcclusionMap 解码出的法线相加"},
+    "mhws.shader_defs.pbr_translucency": {
+        "EN": "Translucency. Additive, like Metallic. AlphaTranslucentOcclusionSSSMap.G "
+              "genuinely carries this, but Principled has no matching input "
+              "(this is not the same as Subsurface Scattering, which needs "
+              "radius data this module does not have) -- exports correctly, "
+              "the preview does not attempt to show it",
+        "ZH": "Translucency。像金属度一样是加法组合。"
+              "AlphaTranslucentOcclusionSSSMap.G 真的携带这个数据，但 Principled "
+              "没有对应输入（这跟次表面散射不是一回事，那个需要半径数据，这里没有）——"
+              "能正确导出，只是预览不会体现"},
 }

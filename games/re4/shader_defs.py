@@ -27,9 +27,11 @@ shader, so one merged spec is correct here. Both use:
     that don't [pack a third quantity into B]: NormalRoughness/
     NormalRoughnessMap"), this decodes the *plain* way — reconstruct Z from
     R/G, no hemi-octahedral transform.
-  * AlphaTranslucentOcclusionCavityMap — R real opacity, B AO (G/A are
-    constants per BASE_SLOT_CHANNEL_MAPS). Same layout as MHWS's
-    AlphaTranslucentOcclusionSSSMap under a different RE4 name.
+  * AlphaTranslucentOcclusionCavityMap — R real opacity, B AO, A cavity, G
+    translucency (per BASE_SLOT_CHANNEL_MAPS; G is export-only, no
+    Principled input matches it). Same layout as MHWS's
+    AlphaTranslucentOcclusionSSSMap under a different RE4 name, plus the two
+    extra channels its name promises.
 
 No EmissiveMap in either preset's Texture Bindings — omitted here, following
 MHWS's rule of not adding bindings a real compiled shader doesn't carry.
@@ -59,16 +61,18 @@ rather than folded into Standard. Its Texture Bindings are exactly what this
 module's first draft wrongly guessed for Standard:
 
   * BaseDielectricMap — same as Standard.
-  * NormalRoughnessCavityMap — R roughness, G/A hemi-octahedral normal, B a
-    constant (no Cavity data written) per RE4's own override in
-    games/re4/mdf_tex_processor.py's RE4_SLOT_CHANNEL_MAPS. Unlike Standard's
-    NormalRoughnessMap, this slot *does* pack a third quantity's encoding
-    scheme into its G/A pair (shared with RE9 -- see that module's comment),
-    so it decodes the hemi-octahedral way, matching
-    games/mhws/shader_defs.py's NRRO decode almost exactly.
-  * AlphaTranslucentOcclusionSSSMap — R real opacity, B AO. Identical
-    recipe to Standard's AlphaTranslucentOcclusionCavityMap in
-    BASE_SLOT_CHANNEL_MAPS, just a different RE4 slot name.
+  * NormalRoughnessCavityMap — R roughness, G/A hemi-octahedral normal, B
+    cavity (confirmed by the user; an earlier version of this module wrongly
+    treated B as an unused constant). Unlike Standard's NormalRoughnessMap,
+    this slot *does* pack third/fourth quantities into its G/A/B channels
+    (shared with RE9 -- see that module's comment), so its normal decodes
+    the hemi-octahedral way, matching games/mhws/shader_defs.py's NRRO decode
+    almost exactly, while B is a plain multiplicative cavity value read via a
+    second, independent separate() alongside the normal/roughness one.
+  * AlphaTranslucentOcclusionSSSMap — R real opacity, B AO, G translucency
+    (export-only). Identical recipe to Standard's
+    AlphaTranslucentOcclusionCavityMap in BASE_SLOT_CHANNEL_MAPS minus the
+    cavity channel (this slot has none), just a different RE4 slot name.
   * OcclusionMap — RE4's own dedicated AO slot (R=G=B=ao, plain greyscale;
     see RE4_SLOT_CHANNEL_MAPS's override). A second genuine AO source
     alongside AlphaTranslucentOcclusionSSSMap.B, multiplied together the
@@ -114,9 +118,14 @@ _NRM = SlotSocket("NormalRoughnessMap", _K + "nrm",
                   default_color=(0.5, 0.5, 1.0, 1.0), alpha=True, default_alpha=1.0,
                   supplies=('normal', 'roughness'))
 
+# R alpha (1-neutral), G translucency (0-neutral), B ao (1-neutral), A cavity
+# (1-neutral) -- all four channels genuinely carry data (confirmed by the
+# user; an earlier version of this file assumed G/A were unused constants).
+# default_color/default_alpha mix 1s and a 0 because each channel's neutral
+# differs -- not a typo.
 _ATOCM = SlotSocket("AlphaTranslucentOcclusionCavityMap", _K + "atocm",
-                    default_color=(1.0, 1.0, 1.0, 1.0),
-                    supplies=('alpha', 'ao'))
+                    default_color=(1.0, 0.0, 1.0, 1.0), alpha=True, default_alpha=1.0,
+                    supplies=('alpha', 'ao', 'translucency', 'cavity'))
 
 _ALBD = SlotSocket("BaseDielectricMap", _K + "albd",
                    default_color=(1.0, 1.0, 1.0, 1.0), alpha=True, default_alpha=1.0,
@@ -130,15 +139,19 @@ _BASESHIFT = SlotSocket("BaseShiftMap", _K + "baseshift",
 
 # ── Core slots: hemi-octahedral-normal family (Emissive) ───────────────────
 
-# R roughness, G/A hemi-octahedral normal, B a constant (no Cavity data for
-# RE4). G=0.5/A=0.5 decodes to a flat normal.
+# R roughness, G/A hemi-octahedral normal, B genuinely carries cavity data
+# (confirmed by the user; an earlier version of this file assumed B was
+# forced to a constant). G=0.5/A=0.5 decodes to a flat normal; B=1.0 is
+# cavity's own multiplicative neutral -- same value, different reason.
 _NRCM = SlotSocket("NormalRoughnessCavityMap", _K + "nrcm",
                    default_color=(1.0, 0.5, 1.0, 1.0), alpha=True, default_alpha=0.5,
-                   supplies=('roughness', 'normal'))
+                   supplies=('roughness', 'normal', 'cavity'))
 
+# R alpha, G translucency (real data, confirmed shared engine convention),
+# B ao. A stays a constant -- no further quantity confirmed there.
 _ATOSSS = SlotSocket("AlphaTranslucentOcclusionSSSMap", _K + "atosss",
-                     default_color=(1.0, 1.0, 1.0, 1.0),
-                     supplies=('alpha', 'ao'))
+                     default_color=(1.0, 0.0, 1.0, 1.0),
+                     supplies=('alpha', 'ao', 'translucency'))
 
 _OCC = SlotSocket("OcclusionMap", _K + "occ",
                   default_color=(1.0, 1.0, 1.0, 1.0),
@@ -214,16 +227,34 @@ PBR = (
               min_value=0.0, max_value=1.0, subtype='FACTOR', pbr_type='roughness'),
     PBRSocket("Metallic", 'NodeSocketFloat', 0.0, _K + "pbr_metallic",
               min_value=0.0, max_value=1.0, subtype='FACTOR', pbr_type='metallic'),
+    # A plain multiply, same as Roughness/Metallic -- no separate "strength"
+    # lerp knob. Every spec here has a genuine AO-carrying slot
+    # (AlphaTranslucentOcclusionCavityMap.B / OcclusionMap), unlike MHWI,
+    # which needs the strength knob because it has no AO slot at all.
     PBRSocket("AO", 'NodeSocketColor', (1.0, 1.0, 1.0, 1.0),
               _K + "pbr_ao", pbr_type='ao'),
-    PBRSocket("AO Strength", 'NodeSocketFloat', 0.5, _K + "pbr_ao_strength",
-              min_value=0.0, max_value=1.0, subtype='FACTOR'),
+    # 1-neutral (multiplicative), same as AO/Roughness. Standard/Hair's
+    # AlphaTranslucentOcclusionCavityMap.A and Emissive's
+    # NormalRoughnessCavityMap.B both genuinely carry cavity data; both feed
+    # the same AO-darkening chain their wire() function already builds.
+    PBRSocket("Cavity", 'NodeSocketFloat', 1.0, _K + "pbr_cavity",
+              min_value=0.0, max_value=1.0, subtype='FACTOR', pbr_type='cavity'),
     PBRSocket("Emission", 'NodeSocketColor', (0.0, 0.0, 0.0, 1.0),
               _K + "pbr_emission", pbr_type='emissive', non_color=False),
     PBRSocket("Emission Strength", 'NodeSocketFloat', 1.0,
               _K + "pbr_emission_strength", min_value=0.0, max_value=9999.0),
     PBRSocket("Normal", 'NodeSocketColor', (0.5, 0.5, 1.0, 1.0),
               _K + "pbr_normal", pbr_type='normal'),
+    # 0-neutral (additive), same as Metallic. Standard/Hair's
+    # AlphaTranslucentOcclusionCavityMap.G and Emissive's
+    # AlphaTranslucentOcclusionSSSMap.G both genuinely carry translucency
+    # data, but Principled has no matching input (not the same thing as
+    # Subsurface Scattering, which needs radius data this module does not
+    # have) -- same treatment MHWI gives RMTMap's blue channel: the socket
+    # exists so the value round-trips to the exporter, the preview does not
+    # attempt to show it.
+    PBRSocket("Translucency", 'NodeSocketFloat', 0.0, _K + "pbr_translucency",
+              min_value=0.0, max_value=1.0, subtype='FACTOR', pbr_type='translucency'),
 )
 
 _FLAT = 0.5
@@ -279,16 +310,18 @@ def _wire_normal_roughness_plain(b, row):
 
 def _wire_alpha_ao_single(b, atocm_sep, row):
     """Standard/Hair: AlphaTranslucentOcclusionCavityMap.R is real opacity,
-    .B is AO (G/A are constants) -- exactly the layout MHWS's
-    AlphaTranslucentOcclusionSSSMap has under a different RE4 name. Returns
-    the AO colour output; the caller multiplies it into its own base colour."""
+    .B is AO, .A is cavity (.G is translucency, export-only -- see module
+    docstring). Returns the AO colour output; the caller multiplies it into
+    its own base colour."""
     alpha = b.math('MULTIPLY', atocm_sep.outputs[0], b.inp('Alpha'),
                    clamp=True, col=2, row=row + 2)
     b.link(alpha.outputs['Value'], b.bsdf_in('Alpha'))
 
-    ao_combined = b.mix('MULTIPLY', atocm_sep.outputs[2], b.inp('AO'), col=2, row=row)
-    ao_final = b.mix('MIX', (1.0, 1.0, 1.0, 1.0), ao_combined.outputs['Color'],
-                     fac=b.inp('AO Strength'), col=3, row=row)
+    cavity = b.math('MULTIPLY', b.inp('AlphaTranslucentOcclusionCavityMap' + ALPHA_SUFFIX),
+                    b.inp('Cavity'), clamp=True, col=2, row=row + 4)
+
+    ao_slot = b.mix('MULTIPLY', atocm_sep.outputs[2], b.inp('AO'), col=2, row=row)
+    ao_final = b.mix('MULTIPLY', ao_slot.outputs['Color'], cavity.outputs['Value'], col=3, row=row)
     return ao_final.outputs['Color']
 
 
@@ -423,16 +456,22 @@ def _wire_emissive(b):
 
     # Two genuine AO sources here (unlike Standard/Hair's one) -- OcclusionMap
     # and AlphaTranslucentOcclusionSSSMap.B -- multiplied together the same
-    # way MHWS multiplies its NRRO.B and ATOS.B.
+    # way MHWS multiplies its NRRO.B and ATOS.B. Cavity comes from a third
+    # source, NormalRoughnessCavityMap.B -- a second, independent separate()
+    # of that slot alongside the one _wire_normal_roughness_oct does below
+    # for its normal/roughness channels.
     atosss_sep = b.separate(b.inp('AlphaTranslucentOcclusionSSSMap'), col=1, row=1)
     alpha = b.math('MULTIPLY', atosss_sep.outputs[0], b.inp('Alpha'),
                    clamp=True, col=2, row=3)
     b.link(alpha.outputs['Value'], b.bsdf_in('Alpha'))
 
+    nrcm_cavity_sep = b.separate(b.inp('NormalRoughnessCavityMap'), col=1, row=5)
+    cavity = b.math('MULTIPLY', nrcm_cavity_sep.outputs[2], b.inp('Cavity'),
+                    clamp=True, col=2, row=5)
+
     ao_slots = b.mix('MULTIPLY', b.inp('OcclusionMap'), atosss_sep.outputs[2], col=2, row=1)
-    ao_combined = b.mix('MULTIPLY', ao_slots.outputs['Color'], b.inp('AO'), col=3, row=1)
-    ao_final = b.mix('MIX', (1.0, 1.0, 1.0, 1.0), ao_combined.outputs['Color'],
-                     fac=b.inp('AO Strength'), col=4, row=1)
+    ao_cavity = b.mix('MULTIPLY', ao_slots.outputs['Color'], cavity.outputs['Value'], col=3, row=1)
+    ao_final = b.mix('MULTIPLY', ao_cavity.outputs['Color'], b.inp('AO'), col=4, row=1)
     shaded = b.mix('MULTIPLY', base.outputs['Color'], ao_final.outputs['Color'], col=5, row=0)
     b.link(shaded.outputs['Color'], b.bsdf_in('Base Color'))
 
@@ -460,6 +499,7 @@ SPEC_STANDARD = ShaderPackSpec(
     pbr           = PBR,
     slots         = SLOTS_STANDARD,
     wire          = _wire_standard,
+    preset_filename = "standard.json",
 )
 
 SPEC_HAIR = ShaderPackSpec(
@@ -470,6 +510,7 @@ SPEC_HAIR = ShaderPackSpec(
     pbr           = PBR,
     slots         = SLOTS_HAIR,
     wire          = _wire_hair,
+    preset_filename = "hair.json",
 )
 
 SPEC_EMISSIVE = ShaderPackSpec(
@@ -480,6 +521,7 @@ SPEC_EMISSIVE = ShaderPackSpec(
     pbr           = PBR,
     slots         = SLOTS_EMISSIVE,
     wire          = _wire_emissive,
+    preset_filename = "emissive.json",
 )
 
 #: Registry for core/shader_ops.py -- one "game" ident per archetype.

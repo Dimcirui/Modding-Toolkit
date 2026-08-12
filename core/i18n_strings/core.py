@@ -337,6 +337,8 @@ STRINGS = {
     "core.mdf_tex_processor_base.pbr_roughness": {"EN": "Roughness", "ZH": "粗糙度 (Roughness)"},
     "core.mdf_tex_processor_base.pbr_metallic": {"EN": "Metallic", "ZH": "金属度 (Metallic)"},
     "core.mdf_tex_processor_base.pbr_ao": {"EN": "AO", "ZH": "AO"},
+    "core.mdf_tex_processor_base.pbr_cavity": {"EN": "Cavity", "ZH": "Cavity (缝隙遮蔽)"},
+    "core.mdf_tex_processor_base.pbr_translucency": {"EN": "Translucency", "ZH": "Translucency (半透)"},
 
     "core.mdf_tex_processor_base.prop_invert": {"EN": "Invert", "ZH": "反相"},
     "core.mdf_tex_processor_base.normal_flip_g_desc": {
@@ -703,6 +705,100 @@ STRINGS = {
         "ZH": "使用 BaseAlphaMap 而非 BaseDielectricMap（非金属，含真实透明度），"
               "以及毛发流向/偏移/叠加槽位。内置自 RE Mesh Editor 自身的 "
               "hair.json 预设，未作修改"},
+    "core.shader_ops.prefab_basic": {
+        "EN": "Basic (general-purpose)",
+        "ZH": "通用（不确定用哪个就用这个）"},
+    "core.shader_ops.prefab_basic_desc": {
+        "EN": "Same core slots as Standard, plus wind/VFX/hair-overlay/"
+              "multi-blend slots -- MHWILDS's own general-purpose fallback "
+              "material (Base_Equip.mmtr). Bundled from RE Mesh Editor's own "
+              "Character.json preset, unmodified",
+        "ZH": "核心槽位与标准相同，额外带风力/VFX/毛发叠加/多重混合槽位——"
+              "是荒野本身的通用兜底材质（Base_Equip.mmtr）。内置自 RE Mesh "
+              "Editor 自身的 Character.json 预设，未作修改"},
+    "core.shader_ops.prefab_re4_standard": {
+        "EN": "Standard (body/cloth)",
+        "ZH": "标准（身体/布料）"},
+    "core.shader_ops.prefab_re4_standard_desc": {
+        "EN": "BaseDielectricMap / NormalRoughnessMap (plain normal decode) / "
+              "AlphaTranslucentOcclusionCavityMap, plus detail/record-system/"
+              "rain slots. Sanitized from RE Mesh Editor's real pbr_cloth.json "
+              "preset -- texture paths replaced with vanilla Null placeholders, "
+              "everything else unmodified",
+        "ZH": "BaseDielectricMap / NormalRoughnessMap（普通法线解码）/ "
+              "AlphaTranslucentOcclusionCavityMap，以及细节/记录系统/雨水槽位。"
+              "脱敏自 RE Mesh Editor 真实的 pbr_cloth.json 预设——贴图路径换成了"
+              "官方空白占位贴图，其余未作修改"},
+    "core.shader_ops.prefab_re4_hair": {
+        "EN": "Hair",
+        "ZH": "毛发"},
+    "core.shader_ops.prefab_re4_hair_desc": {
+        "EN": "BaseShiftMap instead of BaseDielectricMap (no metallic-alpha "
+              "convention), plus secondary-albedo/rim-light slots. Sanitized "
+              "from RE Mesh Editor's real pbr_hair.json preset",
+        "ZH": "使用 BaseShiftMap 而非 BaseDielectricMap（没有反转 Alpha 表示"
+              "金属度的约定），以及第二颜色/边缘光槽位。脱敏自 RE Mesh Editor "
+              "真实的 pbr_hair.json 预设"},
+    "core.shader_ops.prefab_re4_emissive": {
+        "EN": "Emissive (general-purpose)",
+        "ZH": "自发光（通用）"},
+    "core.shader_ops.prefab_re4_emissive_desc": {
+        "EN": "NormalRoughnessCavityMap (hemi-octahedral normal decode) / "
+              "OcclusionMap / AlphaTranslucentOcclusionSSSMap / a real "
+              "EmissiveMap slot -- a genuinely general-purpose emissive "
+              "master material, not eye-specific. Sanitized from RE Mesh "
+              "Editor's real Eye_EMI.json preset",
+        "ZH": "NormalRoughnessCavityMap（半八面体法线解码）/ OcclusionMap / "
+              "AlphaTranslucentOcclusionSSSMap / 真正的 EmissiveMap 槽位——是"
+              "通用自发光主材质，不是眼睛专用。脱敏自 RE Mesh Editor 真实的 "
+              "Eye_EMI.json 预设"},
+    "core.shader_ops.prefab_re9_standard": {
+        "EN": "Standard (body/cloth)",
+        "ZH": "标准（身体/布料）"},
+    "core.shader_ops.prefab_re9_standard_desc": {
+        "EN": "BaseDielectricMap / NormalRoughnessMap / "
+              "AlphaCavityOcclusionTranslucentMap, plus the Record-system "
+              "damage/wet/rain slots. Sanitized from RE Mesh Editor's real "
+              "PBR_Cloth.json preset",
+        "ZH": "BaseDielectricMap / NormalRoughnessMap / "
+              "AlphaCavityOcclusionTranslucentMap，以及 Record 系统的损伤/"
+              "潮湿/雨水槽位。脱敏自 RE Mesh Editor 真实的 PBR_Cloth.json 预设"},
+    "core.shader_ops.prefab_re9_skin": {
+        "EN": "Skin",
+        "ZH": "皮肤"},
+    "core.shader_ops.prefab_re9_skin_desc": {
+        "EN": "SSSCavityOcclusionTranslucentMap instead of "
+              "AlphaCavityOcclusionTranslucentMap -- its R is a fixed "
+              "constant (no real opacity data), only AO. Sanitized from RE "
+              "Mesh Editor's real PBR_Skin.json preset",
+        "ZH": "使用 SSSCavityOcclusionTranslucentMap 而非 "
+              "AlphaCavityOcclusionTranslucentMap——它的 R 是固定常量（没有"
+              "真实透明度数据），只有 AO。脱敏自 RE Mesh Editor 真实的 "
+              "PBR_Skin.json 预设"},
+    "core.shader_ops.prefab_re9_hair": {
+        "EN": "Hair",
+        "ZH": "毛发"},
+    "core.shader_ops.prefab_re9_hair_desc": {
+        "EN": "BaseShiftMap instead of BaseDielectricMap (no metallic-alpha "
+              "convention), plus secondary-albedo/specular-flow/rim-light "
+              "slots. Sanitized from RE Mesh Editor's real PBR_Hair.json preset",
+        "ZH": "使用 BaseShiftMap 而非 BaseDielectricMap（没有反转 Alpha 表示"
+              "金属度的约定），以及第二颜色/高光流向/边缘光槽位。脱敏自 RE "
+              "Mesh Editor 真实的 PBR_Hair.json 预设"},
+    "core.shader_ops.prefab_re9_emissive": {
+        "EN": "Emissive (general-purpose)",
+        "ZH": "自发光（通用）"},
+    "core.shader_ops.prefab_re9_emissive_desc": {
+        "EN": "NormalRoughnessCavityMap (hemi-octahedral normal decode) / "
+              "OcclusionMap / AlphaTranslucentOcclusionSSSMap / a real "
+              "EmissiveMap slot -- confirmed general-purpose (cloth/body/hair "
+              "all use the identical Env_Default_Emissive.mmtr). Sanitized "
+              "from RE Mesh Editor's real EMI_Body.json preset",
+        "ZH": "NormalRoughnessCavityMap（半八面体法线解码）/ OcclusionMap / "
+              "AlphaTranslucentOcclusionSSSMap / 真正的 EmissiveMap 槽位——"
+              "确认是通用材质（布料/身体/毛发用的都是同一个 "
+              "Env_Default_Emissive.mmtr）。脱敏自 RE Mesh Editor 真实的 "
+              "EMI_Body.json 预设"},
     "core.shader_ops.no_preset_selected": {
         "EN": "Pick a prefab or an external preset before converting",
         "ZH": "转换前请先选择一个预制材质或外部预设"},

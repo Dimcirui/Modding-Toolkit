@@ -47,6 +47,9 @@ GAME_ITEMS = [
     ('MHWS_WEAPON',   "MHWS - Weapon",   "Monster Hunter Wilds: weapon material"),
     ('MHWS_SKIN',     "MHWS - Skin",     "Monster Hunter Wilds: skin material"),
     ('MHWS_HAIR',     "MHWS - Hair",     "Monster Hunter Wilds: hair material"),
+    # Basic: MHWILDS's own general-purpose fallback (Base_Equip.mmtr) -- "use
+    # this one if you don't know which material to use" (the user's words).
+    ('MHWS_BASIC',    "MHWS - Basic",    "Monster Hunter Wilds: general-purpose fallback material"),
     # RE4 similarly gets one entry per archetype rather than a single "RE4"
     # ident, for the same reason: Standard (pbr_body/pbr_cloth's real preset),
     # Hair (pbr_hair's) and Emissive (Eye_EMI's) diverge in base slot,
@@ -71,7 +74,12 @@ GAME_ITEMS = [
 
 #: Every MHWS variant ident -- kept in one place so spec_for()/_resolve_spec()
 #: can't drift out of sync with VARIANTS as new archetypes are added.
-_MHWS_GAMES = ('MHWS_STANDARD', 'MHWS_WEAPON', 'MHWS_SKIN', 'MHWS_HAIR')
+#: Basic first: it is MHWILDS's own general-purpose fallback ("use this one
+#: if you don't know which material to use" -- the user's words), so it is
+#: also the prefab dropdown's default (dynamic EnumProperty with no explicit
+#: default resolves to index 0 of whatever items() returns -- see
+#: _prefab_enum_items, which iterates this tuple's own order).
+_MHWS_GAMES = ('MHWS_BASIC', 'MHWS_STANDARD', 'MHWS_WEAPON', 'MHWS_SKIN', 'MHWS_HAIR')
 
 #: Every RE4 variant ident, same reasoning as _MHWS_GAMES.
 _RE4_GAMES = ('RE4_STANDARD', 'RE4_HAIR', 'RE4_EMISSIVE')
@@ -103,47 +111,210 @@ def slot_types_for(spec):
     return [s.name for s in spec.slots]
 
 
-# ── Prefab / external preset resolution (MHWS) ─────────────────────────────────
+def _family_for(game):
+    """Which _FAMILY_CONFIG entry a game ident belongs to, or None."""
+    if game in _MHWS_GAMES:
+        return 'MHWS'
+    if game in _RE4_GAMES:
+        return 'RE4'
+    if game in _RE9_GAMES:
+        return 'RE9'
+    if game == 'MHRS':
+        return 'MHRS'
+    return None
+
+
+# ── Prefab / external preset resolution ─────────────────────────────────────
 # The "使用插件预制材质" checkbox in MTK_OT_ConvertToPackedShader's dialog picks
 # between two different sources for the same decision -- which spec, and which
-# MDF preset that spec implies -- rather than two independent axes. See the
-# module docstring in games/mhws/shader_defs.py for why Standard/Skin/Hair
-# need to diverge at all, and core/mdf_generator_base.py's load_preset_enum_items
-# for the external side of this (same RE Mesh Editor preset scan the generator
-# already uses, reused as-is rather than duplicated).
+# MDF preset that spec implies -- rather than two independent axes. This is
+# the same mechanism for every family (MHWS, RE4, RE9, MHRS): a per-family
+# folder under assets/mdf_presets/, and a per-family classify() that reads an
+# externally-picked preset's own declared Texture Bindings to guess which
+# spec it matches -- see each games/*/shader_defs.py module docstring for the
+# facts each family's classifier is built from, and
+# core/mdf_generator_base.py's load_preset_enum_items for the external-preset
+# scan itself (the same one the generator dialogs already use, reused as-is
+# rather than duplicated).
+#
+# Which family a given dialog resolves against comes from the operator's own
+# `family` property, set explicitly by whichever button invokes it (MHWS's,
+# RE4's, RE9's) -- deliberately NOT derived from `game`: resolving a dynamic
+# EnumProperty read (self.game) requires Blender to call that property's own
+# items() callback to turn the stored index back into a string, so an
+# items() callback that read self.game to decide family (an earlier version
+# of this) recursed into itself forever and froze Blender on every click of
+# "Convert to Packed Shader" -- any caller, not just the family-aware ones,
+# since _resolve_spec() and draw()'s old layout.prop(self, 'game') both read
+# self.game too. `game` is a plain static EnumProperty again for exactly this
+# reason.
 
-#: RE Mesh Editor's own Presets/ subfolder name for MHWS -- imported lazily
-#: from games/* for the same load-order reason as spec_for() below.
 def _mhws_gen_game():
     from ..games.mhws.mdf_generator import MHWS_GEN_GAME
     return MHWS_GEN_GAME
 
+
+def _re4_gen_game():
+    from ..games.re4.mdf_generator import RE4_GEN_GAME
+    return RE4_GEN_GAME
+
+
+def _re9_gen_game():
+    from ..games.re9.mdf_generator import RE9_GEN_GAME
+    return RE9_GEN_GAME
+
+
+def _mhrs_gen_game():
+    from ..games.mhrs.mdf_generator import MHRS_GEN_GAME
+    return MHRS_GEN_GAME
+
+
+def _preset_texture_types(preset_path):
+    """{Texture Type, ...} declared in an MDF preset JSON, or None if it
+    can't be read."""
+    import json
+    try:
+        with open(preset_path, encoding='utf-8-sig') as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return None
+    return {b.get('Texture Type') for b in data.get('Texture Bindings', [])}
+
+
+def _classify_mhws_preset_spec(preset_path):
+    """Which MHWS spec an externally-picked RE Mesh Editor preset corresponds
+    to, read from that preset's *own* declared Texture Bindings -- the same
+    facts games/mhws/shader_defs.py's five specs were built from, not a
+    structural guess: SkinMap/BlendNormalMap only ever appear on skin.json,
+    BaseAlphaMap (in place of BaseDielectricMap) only on hair.json, and
+    MultiBlend_ALBDMap/MultiBlend_NRMMap only on Character.json (Basic) --
+    checked before the Weapon/GpuWind check below, since Basic *also* carries
+    Wind_Effect_VolumeMap/GpuWind_MaskMap (Character.json has both) and would
+    otherwise misclassify as Weapon. Wind_Effect_VolumeMap/GpuWind_MaskMap
+    without MultiBlend narrows it to weapon.json specifically (cloth.json has
+    neither). Standard (cloth-shaped) is the default for anything else
+    opaque, since it's the more common case (most armour and character
+    parts) than Weapon.
+    """
+    names = _preset_texture_types(preset_path)
+    if names is None:
+        return 'MHWS_STANDARD'
+    if 'BaseAlphaMap' in names:
+        return 'MHWS_HAIR'
+    if 'SkinMap' in names or 'BlendNormalMap' in names:
+        return 'MHWS_SKIN'
+    if 'MultiBlend_ALBDMap' in names or 'MultiBlend_NRMMap' in names:
+        return 'MHWS_BASIC'
+    if 'Wind_Effect_VolumeMap' in names or 'GpuWind_MaskMap' in names:
+        return 'MHWS_WEAPON'
+    return 'MHWS_STANDARD'
+
+
+def _classify_re4_preset_spec(preset_path):
+    """Which RE4 spec an externally-picked preset corresponds to -- see
+    games/re4/shader_defs.py's module docstring for where these facts come
+    from: BaseShiftMap only appears on Hair (pbr_hair.json), and
+    NormalRoughnessCavityMap/OcclusionMap only appear on Emissive
+    (Eye_EMI.json) -- Standard's NormalRoughnessMap has neither."""
+    names = _preset_texture_types(preset_path)
+    if names is None:
+        return 'RE4_STANDARD'
+    if 'BaseShiftMap' in names:
+        return 'RE4_HAIR'
+    if 'NormalRoughnessCavityMap' in names or 'OcclusionMap' in names:
+        return 'RE4_EMISSIVE'
+    return 'RE4_STANDARD'
+
+
+def _classify_re9_preset_spec(preset_path):
+    """Which RE9 spec an externally-picked preset corresponds to -- see
+    games/re9/shader_defs.py's module docstring: BaseShiftMap only appears on
+    Hair, SSSCavityOcclusionTranslucentMap only on Skin, and
+    NormalRoughnessCavityMap/OcclusionMap only on Emissive."""
+    names = _preset_texture_types(preset_path)
+    if names is None:
+        return 'RE9_STANDARD'
+    if 'BaseShiftMap' in names:
+        return 'RE9_HAIR'
+    if 'SSSCavityOcclusionTranslucentMap' in names:
+        return 'RE9_SKIN'
+    if 'NormalRoughnessCavityMap' in names or 'OcclusionMap' in names:
+        return 'RE9_EMISSIVE'
+    return 'RE9_STANDARD'
+
+
+def _classify_mhrs_preset_spec(preset_path):
+    """MHRS has only one archetype -- nothing to classify."""
+    return 'MHRS'
+
+
+#: Per-family config for the prefab/external-preset dialog: which game
+#: idents belong to it, its bundled-prefab function to find the RE Mesh
+#: Editor Presets/ subfolder name (for external scanning), its
+#: assets/mdf_presets/ subfolder (for bundled prefabs) and its
+#: preset -> spec classifier.
+_FAMILY_CONFIG = {
+    'MHWS': {'idents': _MHWS_GAMES, 'folder': 'mhws', 'gen_game': _mhws_gen_game,
+             'classify': _classify_mhws_preset_spec},
+    'RE4':  {'idents': _RE4_GAMES,  'folder': 're4',  'gen_game': _re4_gen_game,
+             'classify': _classify_re4_preset_spec},
+    'RE9':  {'idents': _RE9_GAMES,  'folder': 're9',  'gen_game': _re9_gen_game,
+             'classify': _classify_re9_preset_spec},
+    'MHRS': {'idents': ('MHRS',),   'folder': 'mhrs', 'gen_game': _mhrs_gen_game,
+             'classify': _classify_mhrs_preset_spec},
+}
+
+#: Per-ident (short label key, tooltip key) for the prefab dropdown --
+#: deliberately its own labels rather than GAME_ITEMS' ("MHWS - Standard"):
+#: this dropdown is already scoped to one family by `family`, so repeating
+#: the game name on every entry is just noise, and the tooltip here can be
+#: prefab-specific (slot composition + which real RE Mesh Editor preset it
+#: was bundled from) in a way GAME_ITEMS' own cross-game description isn't.
+_PREFAB_LABELS = {
+    'MHWS_STANDARD': ("core.shader_ops.prefab_standard", "core.shader_ops.prefab_standard_desc"),
+    'MHWS_WEAPON':   ("core.shader_ops.prefab_weapon",   "core.shader_ops.prefab_weapon_desc"),
+    'MHWS_SKIN':      ("core.shader_ops.prefab_skin",     "core.shader_ops.prefab_skin_desc"),
+    'MHWS_HAIR':      ("core.shader_ops.prefab_hair",     "core.shader_ops.prefab_hair_desc"),
+    'MHWS_BASIC':     ("core.shader_ops.prefab_basic",    "core.shader_ops.prefab_basic_desc"),
+    'RE4_STANDARD':   ("core.shader_ops.prefab_re4_standard",  "core.shader_ops.prefab_re4_standard_desc"),
+    'RE4_HAIR':       ("core.shader_ops.prefab_re4_hair",      "core.shader_ops.prefab_re4_hair_desc"),
+    'RE4_EMISSIVE':   ("core.shader_ops.prefab_re4_emissive",  "core.shader_ops.prefab_re4_emissive_desc"),
+    'RE9_STANDARD':   ("core.shader_ops.prefab_re9_standard",  "core.shader_ops.prefab_re9_standard_desc"),
+    'RE9_SKIN':       ("core.shader_ops.prefab_re9_skin",      "core.shader_ops.prefab_re9_skin_desc"),
+    'RE9_HAIR':       ("core.shader_ops.prefab_re9_hair",      "core.shader_ops.prefab_re9_hair_desc"),
+    'RE9_EMISSIVE':   ("core.shader_ops.prefab_re9_emissive",  "core.shader_ops.prefab_re9_emissive_desc"),
+}
 
 _prefab_items_cache = []
 _external_items_cache = []
 
 
 def _prefab_enum_items(self, context):
-    """The 4 bundled MHWS prefabs -- values are the same idents GAME_ITEMS/
-    VARIANTS already use, not a separate namespace."""
+    """The calling button's own family's bundled prefabs -- values are the
+    same idents GAME_ITEMS/VARIANTS already use, not a separate namespace.
+    See _PREFAB_LABELS for why labels/descriptions come from their own keys
+    rather than GAME_ITEMS'."""
     global _prefab_items_cache
-    _prefab_items_cache = [
-        ('MHWS_STANDARD', T("core.shader_ops.prefab_standard"),
-         T("core.shader_ops.prefab_standard_desc")),
-        ('MHWS_WEAPON', T("core.shader_ops.prefab_weapon"),
-         T("core.shader_ops.prefab_weapon_desc")),
-        ('MHWS_SKIN', T("core.shader_ops.prefab_skin"),
-         T("core.shader_ops.prefab_skin_desc")),
-        ('MHWS_HAIR', T("core.shader_ops.prefab_hair"),
-         T("core.shader_ops.prefab_hair_desc")),
-    ]
+    cfg = _FAMILY_CONFIG.get(self.family)
+    idents = cfg['idents'] if cfg else ()
+    items = []
+    for ident in idents:
+        if not spec_for(ident).preset_filename:
+            continue
+        label_key, desc_key = _PREFAB_LABELS.get(ident, (None, None))
+        label = T(label_key) if label_key else ident
+        desc = T(desc_key) if desc_key else ""
+        items.append((ident, label, desc))
+    _prefab_items_cache = items
     return _prefab_items_cache
 
 
 def _external_preset_enum_items(self, context):
     global _external_items_cache
     from .mdf_generator_base import load_preset_enum_items
-    _external_items_cache = load_preset_enum_items(_mhws_gen_game())
+    cfg = _FAMILY_CONFIG.get(self.family)
+    game_name = cfg['gen_game']() if cfg else _mhws_gen_game()
+    _external_items_cache = load_preset_enum_items(game_name)
     return _external_items_cache
 
 
@@ -151,43 +322,17 @@ def _preset_choice_items(self, context):
     """items= callback for MTK_OT_ConvertToPackedShader.preset_choice -- which
     list it shows switches on the use_prefab checkbox, but it is one property,
     not two: choosing a prefab picks the spec *and* the preset in one step,
-    exactly like picking an external preset does via _classify_preset_spec."""
+    exactly like picking an external preset does via each family's classify()."""
     return (_prefab_enum_items(self, context) if self.use_prefab
             else _external_preset_enum_items(self, context))
 
 
-def _prefab_preset_path(spec):
+def _prefab_preset_path(spec, family):
     """Absolute path to the bundled MDF preset a prefab spec implies."""
     import os
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(root, "assets", "mdf_presets", "mhws", spec.preset_filename)
-
-
-def _classify_preset_spec(preset_path):
-    """Which MHWS spec an externally-picked RE Mesh Editor preset corresponds
-    to, read from that preset's *own* declared Texture Bindings -- the same
-    facts games/mhws/shader_defs.py's four specs were built from, not a
-    structural guess: SkinMap/BlendNormalMap only ever appear on skin.json,
-    BaseAlphaMap (in place of BaseDielectricMap) only on hair.json, and
-    Wind_Effect_VolumeMap/GpuWind_MaskMap only on weapon.json (cloth.json has
-    neither), so their presence is as good as reading the preset's own name.
-    Standard (cloth-shaped) is the default for anything else opaque, since
-    it's the more common case (most armour and character parts) than Weapon.
-    """
-    import json
-    try:
-        with open(preset_path, encoding='utf-8-sig') as f:
-            data = json.load(f)
-    except (OSError, ValueError):
-        return 'MHWS_STANDARD'
-    names = {b.get('Texture Type') for b in data.get('Texture Bindings', [])}
-    if 'BaseAlphaMap' in names:
-        return 'MHWS_HAIR'
-    if 'SkinMap' in names or 'BlendNormalMap' in names:
-        return 'MHWS_SKIN'
-    if 'Wind_Effect_VolumeMap' in names or 'GpuWind_MaskMap' in names:
-        return 'MHWS_WEAPON'
-    return 'MHWS_STANDARD'
+    folder = _FAMILY_CONFIG.get(family, _FAMILY_CONFIG['MHWS'])['folder']
+    return os.path.join(root, "assets", "mdf_presets", folder, spec.preset_filename)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -503,6 +648,9 @@ class MTK_OT_ConvertToPackedShader(bpy.types.Operator):
     bl_label   = "Convert to Packed Shader"
     bl_options = {'REGISTER', 'UNDO'}
 
+    #: A plain static list -- resolving this must never depend on reading
+    #: `game` itself (see the "Prefab / external preset resolution" comment
+    #: block above for why that recursed and froze Blender).
     game: EnumProperty(name="Game", items=GAME_ITEMS, default='MHWI')
     scope: EnumProperty(
         name="Scope",
@@ -523,11 +671,16 @@ class MTK_OT_ConvertToPackedShader(bpy.types.Operator):
     show_dialog: BoolProperty(default=True, options={'SKIP_SAVE'})
     use_prefab: BoolProperty(name="Use Prefab", default=True)
     preset_choice: EnumProperty(name="Preset", items=_preset_choice_items)
-    #: True for games with no bundled-prefab/external-preset resolution at
-    #: all (RE4's three archetypes) -- the dialog is just `game` itself, no
-    #: MHWS-style use_prefab/preset_choice widgets. False (default) preserves
-    #: MHWI/MHWS's existing dialog behaviour untouched.
-    simple_picker: BoolProperty(default=False, options={'SKIP_SAVE'})
+    #: Which _FAMILY_CONFIG entry the use_prefab/preset_choice dialog
+    #: resolves against (e.g. 'RE4'). Set by the calling button -- MHWS's,
+    #: RE4's, RE9's -- alongside show_dialog. Ignored when show_dialog is
+    #: False (MHWI's and MHRS's pinned buttons; MHRS has only one archetype,
+    #: nothing to choose either way).
+    family: EnumProperty(
+        name="Family",
+        items=[('MHWS', "MHWS", ""), ('RE4', "RE4", ""), ('RE9', "RE9", "")],
+        default='MHWS',
+    )
 
     @classmethod
     def poll(cls, context):
@@ -544,29 +697,36 @@ class MTK_OT_ConvertToPackedShader(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        if self.simple_picker:
-            layout.prop(self, 'game', text="")
-            return
         layout.prop(self, 'use_prefab', text=T("core.shader_ops.use_prefab"))
         layout.prop(self, 'preset_choice', text="")
 
     def _resolve_spec(self):
         """(spec, preset_path, locked), or raises ValueError with a
         user-facing message."""
-        if not self.show_dialog or self.simple_picker:
-            return spec_for(self.game), None, False
+        if not self.show_dialog:
+            # Pinned callers (MHWI, MHRS): nothing to choose, but a spec
+            # with its own bundled prefab still resolves to it automatically
+            # -- there is no ambiguity to ask the user about, and doing so
+            # lets core.mdf_generator_base pick up the right MDF preset by
+            # itself later instead of guessing from the material's name.
+            spec = spec_for(self.game)
+            if spec.preset_filename:
+                return spec, _prefab_preset_path(spec, _family_for(self.game)), True
+            return spec, None, False
+
+        cfg = _FAMILY_CONFIG.get(self.family, _FAMILY_CONFIG['MHWS'])
 
         if self.use_prefab:
             game = self.preset_choice
-            if game not in _MHWS_GAMES:
+            if game not in cfg['idents']:
                 raise ValueError(T("core.shader_ops.no_preset_selected"))
             spec = spec_for(game)
-            return spec, _prefab_preset_path(spec), True
+            return spec, _prefab_preset_path(spec, self.family), True
 
         preset_path = self.preset_choice
         if not preset_path or preset_path == 'NONE':
             raise ValueError(T("core.shader_ops.no_preset_selected"))
-        spec = spec_for(_classify_preset_spec(preset_path))
+        spec = spec_for(cfg['classify'](preset_path))
         return spec, preset_path, False
 
     def execute(self, context):

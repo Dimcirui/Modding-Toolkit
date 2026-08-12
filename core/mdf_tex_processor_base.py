@@ -11,16 +11,27 @@ from .re_normal_pack import encode_normal_ga
 
 # ── PBR Constants ──────────────────────────────────────────────────────────────
 
-PBR_TYPES = ['color', 'alpha', 'emissive', 'normal', 'roughness', 'metallic', 'ao']
+#: cavity/translucency: RE4/RE9's ATOC/ACOT/SCOT/NRRC/NRRT slots genuinely
+#: pack these into previously-assumed-constant channels (confirmed against
+#: real presets, not a guess -- see games/re4/shader_defs.py and
+#: games/re9/shader_defs.py's module docstrings). MHWS's
+#: AlphaTranslucentOcclusionSSSMap shares the same engine-wide convention on
+#: its G channel (confirmed by the user), so this is a shared-engine fact,
+#: not an RE4/RE9-only one, and belongs in the global list rather than a
+#: per-game addition.
+PBR_TYPES = ['color', 'alpha', 'emissive', 'normal', 'roughness', 'metallic', 'ao',
+             'cavity', 'translucency']
 
 _PBR_TYPE_LABEL_KEYS = {
-    'color':     "core.mdf_tex_processor_base.pbr_color",
-    'alpha':     "core.mdf_tex_processor_base.pbr_alpha",
-    'emissive':  "core.mdf_tex_processor_base.pbr_emissive",
-    'normal':    "core.mdf_tex_processor_base.pbr_normal",
-    'roughness': "core.mdf_tex_processor_base.pbr_roughness",
-    'metallic':  "core.mdf_tex_processor_base.pbr_metallic",
-    'ao':        "core.mdf_tex_processor_base.pbr_ao",
+    'color':        "core.mdf_tex_processor_base.pbr_color",
+    'alpha':        "core.mdf_tex_processor_base.pbr_alpha",
+    'emissive':     "core.mdf_tex_processor_base.pbr_emissive",
+    'normal':       "core.mdf_tex_processor_base.pbr_normal",
+    'roughness':    "core.mdf_tex_processor_base.pbr_roughness",
+    'metallic':     "core.mdf_tex_processor_base.pbr_metallic",
+    'ao':           "core.mdf_tex_processor_base.pbr_ao",
+    'cavity':       "core.mdf_tex_processor_base.pbr_cavity",
+    'translucency': "core.mdf_tex_processor_base.pbr_translucency",
 }
 
 class _LiveTranslatedLabels(dict):
@@ -40,17 +51,22 @@ class _LiveTranslatedLabels(dict):
 PBR_TYPE_LABELS = _LiveTranslatedLabels(_PBR_TYPE_LABEL_KEYS)
 
 PBR_DEFAULTS = {
-    'color':     [0.0, 0.0, 0.0, 1.0],
-    'alpha':     [1.0, 1.0, 1.0, 1.0],
-    'emissive':  [0.0, 0.0, 0.0, 0.0],
-    'normal':    [0.5, 0.5, 1.0, 1.0],
-    'roughness': [1.0, 1.0, 1.0, 1.0],
-    'metallic':  [0.0, 0.0, 0.0, 1.0],
-    'ao':        [1.0, 1.0, 1.0, 1.0],
+    'color':        [0.0, 0.0, 0.0, 1.0],
+    'alpha':        [1.0, 1.0, 1.0, 1.0],
+    'emissive':     [0.0, 0.0, 0.0, 0.0],
+    'normal':       [0.5, 0.5, 1.0, 1.0],
+    'roughness':    [1.0, 1.0, 1.0, 1.0],
+    'metallic':     [0.0, 0.0, 0.0, 1.0],
+    'ao':           [1.0, 1.0, 1.0, 1.0],
+    # 1-neutral (multiplicative, like roughness/ao): unconnected means "no
+    # extra darkening".
+    'cavity':       [1.0, 1.0, 1.0, 1.0],
+    # 0-neutral (additive, like metallic): unconnected means "none".
+    'translucency': [0.0, 0.0, 0.0, 1.0],
 }
 
 # Only these PBR types expose a per-channel selector in the UI
-PBR_CHANNEL_SELECTABLE = {'alpha', 'roughness', 'metallic', 'ao'}
+PBR_CHANNEL_SELECTABLE = {'alpha', 'roughness', 'metallic', 'ao', 'cavity', 'translucency'}
 
 # Slot types that should be converted as BC7_UNORM_SRGB (colour / emissive data)
 SRGB_SLOT_TYPES = {'BaseDielectricMap', 'BaseAlphaMap', 'EmissiveMap', 'Emissive_ColorMap', 'BaseShiftMap'}
@@ -61,7 +77,8 @@ SRGB_SLOT_TYPES = {'BaseDielectricMap', 'BaseAlphaMap', 'EmissiveMap', 'Emissive
 # NormalRoughness/NormalRoughnessMap/NRMR_NRRTMap keep their normal in R/G and
 # are correctly a plain copy already; not game-specific, RE Mesh Editor's own
 # texture packer branches on this same slot distinction, not on which game.
-NORMAL_OCTAHEDRAL_SLOT_TYPES = {'NormalRoughnessOcclusionMap', 'NormalRoughnessCavityMap'}
+NORMAL_OCTAHEDRAL_SLOT_TYPES = {'NormalRoughnessOcclusionMap', 'NormalRoughnessCavityMap',
+                                'NormalRoughnessTranslucentMap'}
 
 _CH           = {'R': 0, 'G': 1, 'B': 2, 'A': 3}
 _CH_ENUM_ITEMS = [('R', 'R', ''), ('G', 'G', ''), ('B', 'B', ''), ('A', 'A', '')]
@@ -138,11 +155,22 @@ BASE_SLOT_CHANNEL_MAPS = {
         'B': None,
         'A': ('roughness', 0),
     },
-    'NormalRoughnessCavityMap': {   # default: same layout as NRRO; RE9 overrides B=1.0
+    # RE4/RE9's NRRC (see games/re4/shader_defs.py's module docstring): B
+    # genuinely packs cavity data -- an earlier version of this dict assumed
+    # RE4/RE9 forced B to a constant, which was wrong (confirmed by the user).
+    'NormalRoughnessCavityMap': {
         'R': ('roughness', 0),
         'G': ('normal',    1),
-        'B': ('ao',        0),
+        'B': ('cavity',    0),
         'A': ('normal',    0),
+    },
+    # NormalRoughnessCavityMap's twin: identical layout, B carries
+    # translucency instead of cavity.
+    'NormalRoughnessTranslucentMap': {
+        'R': ('roughness',    0),
+        'G': ('normal',       1),
+        'B': ('translucency', 0),
+        'A': ('normal',       0),
     },
     'EmissiveMap': {
         'R': ('emissive', 0),
@@ -156,29 +184,39 @@ BASE_SLOT_CHANNEL_MAPS = {
         'B': ('emissive', 2),
         'A': ('emissive', 3),
     },
+    # G genuinely carries translucency (confirmed by the user, and confirmed
+    # to be a shared engine convention -- MHWS's own AlphaTranslucentOcclusionSSSMap
+    # is this exact slot too, not just RE4/RE9's Emissive one). A stays a
+    # constant -- no further quantity confirmed there.
     'AlphaTranslucentOcclusionSSSMap': {
         'R': ('alpha', 0),
-        'G': 1.0,
+        'G': ('translucency', 0),
         'B': ('ao',   0),
         'A': 1.0,
     },
+    # G genuinely carries cavity (confirmed by the user). R/A stay constants
+    # -- SSSCavityOcclusionTranslucentMap has no real opacity data (R) and no
+    # confirmed translucency channel (A).
     'SSSCavityOcclusionTranslucentMap': {
         'R': 1.0,
-        'G': 1.0,
+        'G': ('cavity', 0),
         'B': ('ao', 0),
         'A': 1.0,
     },
+    # G/A genuinely carry cavity/translucency respectively (confirmed by the user).
     'AlphaCavityOcclusionTranslucentMap': {
         'R': ('alpha', 0),
-        'G': 1.0,
+        'G': ('cavity', 0),
         'B': ('ao', 0),
-        'A': 1.0,
+        'A': ('translucency', 0),
     },
+    # Same four quantities as AlphaCavityOcclusionTranslucentMap, but G/A
+    # swapped (translucency/cavity respectively) -- confirmed by the user.
     'AlphaTranslucentOcclusionCavityMap': {
         'R': ('alpha', 0),
-        'G': 1.0,
+        'G': ('translucency', 0),
         'B': ('ao', 0),
-        'A': 1.0,
+        'A': ('cavity', 0),
     },
 }
 
@@ -190,6 +228,7 @@ BASE_COMMON_SLOT_TYPES = {
     'Emissive_ColorMap',
     'NormalRoughnessOcclusionMap',
     'NormalRoughnessCavityMap',
+    'NormalRoughnessTranslucentMap',
     'NormalRoughness',
     'NormalRoughnessMap',
     'AlphaTranslucentOcclusionSSSMap',
@@ -212,6 +251,7 @@ BASE_NULL_TEX_BY_TYPE = {
     'BaseAlphaMap':                  'systems/rendering/NullBlack.tex',
     'NormalRoughnessOcclusionMap':   'systems/rendering/NullNormalRoughnessOcclusion.tex',
     'NormalRoughnessCavityMap':      'systems/rendering/NullNormalRoughnessOcclusion.tex',
+    'NormalRoughnessTranslucentMap': 'systems/rendering/NullNormalRoughnessOcclusion.tex',
     'NormalRoughnessMap':            'systems/rendering/NullNormalRoughnessOcclusion.tex',
     'EmissiveMap':                   'systems/rendering/NullBlack.tex',
     'Emissive_ColorMap':             'systems/rendering/NullBlack.tex',
@@ -599,21 +639,27 @@ def mdf_collection_poll(self, col):
 # ── Shared PropertyGroups ──────────────────────────────────────────────────────
 
 class MdfTexPBRInputs(bpy.types.PropertyGroup):
-    color:     bpy.props.StringProperty(name="Base Color (Albedo)", subtype='FILE_PATH')
-    alpha:     bpy.props.StringProperty(name="Alpha Mask",          subtype='FILE_PATH')
-    emissive:  bpy.props.StringProperty(name="Emissive",            subtype='FILE_PATH')
-    normal:    bpy.props.StringProperty(name="Normal",              subtype='FILE_PATH')
-    roughness: bpy.props.StringProperty(name="Roughness",           subtype='FILE_PATH')
-    metallic:  bpy.props.StringProperty(name="Metallic",            subtype='FILE_PATH')
-    ao:        bpy.props.StringProperty(name="AO",                  subtype='FILE_PATH')
-    alpha_ch:     bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
-    roughness_ch: bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
-    metallic_ch:  bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
-    ao_ch:        bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
-    alpha_inv:     bpy.props.BoolProperty(name="Invert", default=False)
-    roughness_inv: bpy.props.BoolProperty(name="Invert", default=False)
-    metallic_inv:  bpy.props.BoolProperty(name="Invert", default=False)
-    ao_inv:        bpy.props.BoolProperty(name="Invert", default=False)
+    color:        bpy.props.StringProperty(name="Base Color (Albedo)", subtype='FILE_PATH')
+    alpha:        bpy.props.StringProperty(name="Alpha Mask",          subtype='FILE_PATH')
+    emissive:     bpy.props.StringProperty(name="Emissive",            subtype='FILE_PATH')
+    normal:       bpy.props.StringProperty(name="Normal",              subtype='FILE_PATH')
+    roughness:    bpy.props.StringProperty(name="Roughness",           subtype='FILE_PATH')
+    metallic:     bpy.props.StringProperty(name="Metallic",            subtype='FILE_PATH')
+    ao:           bpy.props.StringProperty(name="AO",                  subtype='FILE_PATH')
+    cavity:       bpy.props.StringProperty(name="Cavity",               subtype='FILE_PATH')
+    translucency: bpy.props.StringProperty(name="Translucency",         subtype='FILE_PATH')
+    alpha_ch:        bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
+    roughness_ch:    bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
+    metallic_ch:     bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
+    ao_ch:           bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
+    cavity_ch:       bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
+    translucency_ch: bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
+    alpha_inv:        bpy.props.BoolProperty(name="Invert", default=False)
+    roughness_inv:    bpy.props.BoolProperty(name="Invert", default=False)
+    metallic_inv:     bpy.props.BoolProperty(name="Invert", default=False)
+    ao_inv:           bpy.props.BoolProperty(name="Invert", default=False)
+    cavity_inv:       bpy.props.BoolProperty(name="Invert", default=False)
+    translucency_inv: bpy.props.BoolProperty(name="Invert", default=False)
     normal_flip_g: bpy.props.BoolProperty(name="GL>DX", default=False,
                                           description="Flip the normal map's G channel when composing (OpenGL to DirectX)")
 

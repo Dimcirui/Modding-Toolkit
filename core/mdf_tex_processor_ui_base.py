@@ -6,8 +6,27 @@ from .mdf_tex_processor_base import (
     PBR_TYPES, PBR_TYPE_LABELS, PBR_CHANNEL_SELECTABLE,
     BASE_COMMON_SLOT_TYPES, BASE_NULL_TEX_BY_TYPE,
 )
+from .slot_sources import find_shader_slot_supplies
 
 PROCESSOR_WINDOW_WIDTH = 660
+
+# These two PBR types only exist because a handful of RE4/RE9/MHWS packed-shader
+# slots genuinely carry them -- MHWI/MHRS materials, and any material with no
+# packed shader at all, have no way to supply either one. Showing the row
+# regardless would just offer a manual picker with nothing real behind it, so
+# it is gated on whichever game slots the bound material's own packed shader
+# (if any) reports supplying -- see core.shader_pack.SLOT_SUPPLIES_KEY.
+_CONDITIONAL_PBR_TYPES = {'cavity', 'translucency'}
+
+
+def _supplied_pbr_types(material_name):
+    mat = bpy.data.materials.get(material_name)
+    if mat is None:
+        return set()
+    out = set()
+    for pbr_types in find_shader_slot_supplies(mat).values():
+        out.update(pbr_types)
+    return out
 
 
 class MdfTexDialogBase(bpy.types.Operator):
@@ -124,7 +143,10 @@ class MdfTexDialogBase(bpy.types.Operator):
 
             if mat.pbr_expanded:
                 pbr_box = pbr_col.box()
+                slot_supplies = _supplied_pbr_types(mat.material_name)
                 for pt in PBR_TYPES:
+                    if pt in _CONDITIONAL_PBR_TYPES and pt not in slot_supplies:
+                        continue
                     row = pbr_box.row(align=True)
                     row.label(text=PBR_TYPE_LABELS[pt])
                     cur = getattr(mat.pbr, pt)

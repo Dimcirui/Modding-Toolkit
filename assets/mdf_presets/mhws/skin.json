@@ -337,19 +337,19 @@
         {
             "Property Name": "RoughnessParam",
             "Data Type": "FLOAT",
-            "Value": 0.8999999761581421,
+            "Value": 1.0,
             "Padding": 0
         },
         {
             "Property Name": "MetalParam",
             "Data Type": "FLOAT",
-            "Value": 0.0,
+            "Value": 1.0,
             "Padding": 0
         },
         {
             "Property Name": "TranslucentParam",
             "Data Type": "FLOAT",
-            "Value": 0.0,
+            "Value": 1.0,
             "Padding": 0
         },
         {
@@ -373,7 +373,7 @@
         {
             "Property Name": "OcclusionParam",
             "Data Type": "FLOAT",
-            "Value": 0.0,
+            "Value": 1.0,
             "Padding": 0
         },
         {

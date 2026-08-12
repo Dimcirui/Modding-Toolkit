@@ -89,11 +89,12 @@ _EMI = SlotSocket("EmissiveMap", _K + "emissive",
                   default_color=(0.0, 0.0, 0.0, 1.0), alpha=True, default_alpha=1.0,
                   supplies=('emissive',), non_color=False)
 
-# G/A are constants in BASE_SLOT_CHANNEL_MAPS (not used by any PBR type); only
-# R (alpha/opacity) and B (AO) carry real data.
+# G genuinely carries translucency (confirmed shared engine convention, see
+# core/mdf_tex_processor_base.py's BASE_SLOT_CHANNEL_MAPS) -- A stays a
+# constant, no further quantity confirmed there.
 _ATOS = SlotSocket("AlphaTranslucentOcclusionSSSMap", _K + "atos",
                    default_color=(1.0, 1.0, 1.0, 1.0),
-                   supplies=('alpha', 'ao'))
+                   supplies=('alpha', 'ao', 'translucency'))
 
 # Hair's base slot: RGB colour, A real opacity (unlike BaseDielectricMap).
 _BASEALPHA = SlotSocket("BaseAlphaMap", _K + "basealpha",
@@ -131,6 +132,8 @@ _BLEND_NORMAL   = _inert("BlendNormalMap")
 _HAIR_FLOW      = _inert("HairFlowMap")
 _HAIR_SPECSHIFT = _inert("Hair_Height_SpecMask_Shift_Map")
 _HAIR_OVER      = _inert("HairOverMap", default_color=(0.5, 0.5, 0.5, 1.0), non_color=False)
+_MULTIBLEND_ALBD = _inert("MultiBlend_ALBDMap", default_color=(0.5, 0.5, 0.5, 1.0), non_color=False)
+_MULTIBLEND_NRM  = _inert("MultiBlend_NRMMap", default_color=(0.5, 0.5, 1.0, 1.0))
 
 # ── Scattered PBR inputs (shared by all four specs) ─────────────────────────
 # Defaults are the neutral element of each quantity's combiner (see module
@@ -146,10 +149,20 @@ PBR = (
               min_value=0.0, max_value=1.0, subtype='FACTOR', pbr_type='roughness'),
     PBRSocket("Metallic", 'NodeSocketFloat', 0.0, _K + "pbr_metallic",
               min_value=0.0, max_value=1.0, subtype='FACTOR', pbr_type='metallic'),
+    # A plain multiply, same as Roughness/Metallic -- no separate "strength"
+    # lerp knob. MHWI needs one (it has no real AO slot at all, so the panel
+    # value's own strength has to be dialled in for preview and to control
+    # how hard bake_ao_into_color darkens the exported albedo); every spec in
+    # this module has a genuine AO-carrying slot (NRRO.B / ATOS.B), so the
+    # panel value just multiplies straight into it like any other PBR input.
     PBRSocket("AO", 'NodeSocketColor', (1.0, 1.0, 1.0, 1.0),
               _K + "pbr_ao", pbr_type='ao'),
-    PBRSocket("AO Strength", 'NodeSocketFloat', 0.5, _K + "pbr_ao_strength",
-              min_value=0.0, max_value=1.0, subtype='FACTOR'),
+    # 1-neutral (multiplicative), same as AO/Roughness. No MHWS slot here
+    # supplies cavity -- present anyway for consistency with the panel's
+    # shared shape across games (RE4/RE9 do have a source). Unwired to the
+    # preview for the same reason: nothing here darkens with it yet.
+    PBRSocket("Cavity", 'NodeSocketFloat', 1.0, _K + "pbr_cavity",
+              min_value=0.0, max_value=1.0, subtype='FACTOR', pbr_type='cavity'),
     PBRSocket("Emission", 'NodeSocketColor', (0.0, 0.0, 0.0, 1.0),
               _K + "pbr_emission", pbr_type='emissive', non_color=False),
     PBRSocket("Emission Strength", 'NodeSocketFloat', 1.0,
@@ -159,6 +172,14 @@ PBR = (
     # into a vector socket (no tangent-space decode done yet).
     PBRSocket("Normal", 'NodeSocketColor', (0.5, 0.5, 1.0, 1.0),
               _K + "pbr_normal", pbr_type='normal'),
+    # 0-neutral (additive), same as Metallic. ATOS.G supplies real
+    # translucency data, but Principled has no matching input (this is not
+    # the same thing as Subsurface Scattering, which needs radius data this
+    # module does not have) -- same treatment MHWI gives RMTMap's blue
+    # channel: the socket exists so the value round-trips to the exporter,
+    # the preview does not attempt to show it.
+    PBRSocket("Translucency", 'NodeSocketFloat', 0.0, _K + "pbr_translucency",
+              min_value=0.0, max_value=1.0, subtype='FACTOR', pbr_type='translucency'),
 )
 
 
@@ -259,10 +280,8 @@ def _wire_dielectric(b):
     atos_sep = b.separate(b.inp('AlphaTranslucentOcclusionSSSMap'), col=1, row=2)
 
     ao_slots = b.math('MULTIPLY', nrro_sep.outputs[2], atos_sep.outputs[2], col=2, row=1)
-    ao_combined = b.mix('MULTIPLY', ao_slots.outputs['Value'], b.inp('AO'), col=3, row=1)
-    ao_final = b.mix('MIX', (1.0, 1.0, 1.0, 1.0), ao_combined.outputs['Color'],
-                     fac=b.inp('AO Strength'), col=4, row=1)
-    shaded = b.mix('MULTIPLY', base.outputs['Color'], ao_final.outputs['Color'], col=5, row=0)
+    ao_final = b.mix('MULTIPLY', ao_slots.outputs['Value'], b.inp('AO'), col=3, row=1)
+    shaded = b.mix('MULTIPLY', base.outputs['Color'], ao_final.outputs['Color'], col=4, row=0)
     b.link(shaded.outputs['Color'], b.bsdf_in('Base Color'))
 
     # Alpha from ATOS.R -- BaseDielectricMap's own alpha is metallic, not opacity.
@@ -322,10 +341,8 @@ def _wire_hair(b):
     atos_sep = b.separate(b.inp('AlphaTranslucentOcclusionSSSMap'), col=1, row=2)
 
     ao_slots = b.math('MULTIPLY', nrro_sep.outputs[2], atos_sep.outputs[2], col=2, row=1)
-    ao_combined = b.mix('MULTIPLY', ao_slots.outputs['Value'], b.inp('AO'), col=3, row=1)
-    ao_final = b.mix('MIX', (1.0, 1.0, 1.0, 1.0), ao_combined.outputs['Color'],
-                     fac=b.inp('AO Strength'), col=4, row=1)
-    shaded = b.mix('MULTIPLY', base.outputs['Color'], ao_final.outputs['Color'], col=5, row=0)
+    ao_final = b.mix('MULTIPLY', ao_slots.outputs['Value'], b.inp('AO'), col=3, row=1)
+    shaded = b.mix('MULTIPLY', base.outputs['Color'], ao_final.outputs['Color'], col=4, row=0)
     b.link(shaded.outputs['Color'], b.bsdf_in('Base Color'))
 
     alpha_base = b.math('MULTIPLY', b.inp('BaseAlphaMap' + ALPHA_SUFFIX), atos_sep.outputs[0],
@@ -454,10 +471,46 @@ SPEC_HAIR = ShaderPackSpec(
 )
 
 
+# ── Basic: MHWILDS's own general-purpose fallback material
+# (MaterialShader/Variation/Base_Equip.mmtr, Presets/MHWILDS/Character.json)
+# -- "use this one if you don't know which material to use" (the user's own
+# words). Same core-4 as Standard, but its own extras: Wind_Effect_VolumeMap/
+# VFX_Texture2D/VFX_Texture3D/HairOverMap/GpuWind_MaskMap (all already
+# defined above, shared with Weapon/Skin/Hair) plus MultiBlend_ALBDMap/
+# MultiBlend_NRMMap, which no other MHWS spec here uses -- explicitly called
+# out and excluded from Standard for exactly that reason (see SLOTS_STANDARD's
+# comment above). No VectorEmitMap, unlike Standard/Weapon -- Character.json's
+# own Texture Bindings genuinely has none. Slot list matches
+# Presets/MHWILDS/Character.json's own Texture Bindings exactly (24 slots).
+# Wiring is identical to Standard's (same core-4, same combiner), so it
+# reuses _wire_standard rather than a new function. ─────────────────────────
+
+SLOTS_BASIC = (
+    _ALBD, _NRRO, _EMI, _ATOS,
+    _MP_NOISE, _WIND_VOLUME, _FX, _NOISEMAP, _DETAIL_MASK,
+    _DETAIL_ALBD_R, _DETAIL_NRRH_R, _DETAIL_ALBD_G, _DETAIL_NRRH_G,
+    _DETAIL_ALBD_B, _DETAIL_NRRH_B, _DETAIL_ALBD_A, _DETAIL_NRRH_A,
+    _PANORAMA, _VFX_2D, _VFX_3D, _HAIR_OVER,
+    _MULTIBLEND_ALBD, _MULTIBLEND_NRM, _GPUWIND_MASK, _COLORLAYER_MASK,
+)
+
+SPEC_BASIC = ShaderPackSpec(
+    group_name    = "MTK MHWS Basic",
+    shader_id     = "mhws_basic_v1",
+    pbr_panel_key = _K + "panel_pbr",
+    slot_panel_key= _K + "panel_slots_basic",
+    pbr           = PBR,
+    slots         = SLOTS_BASIC,
+    wire          = _wire_standard,
+    preset_filename = "basic.json",
+)
+
+
 #: Registry for core/shader_ops.py -- one "game" ident per variant.
 VARIANTS = {
     'MHWS_STANDARD': SPEC_STANDARD,
     'MHWS_WEAPON':   SPEC_WEAPON,
     'MHWS_SKIN':     SPEC_SKIN,
     'MHWS_HAIR':     SPEC_HAIR,
+    'MHWS_BASIC':    SPEC_BASIC,
 }

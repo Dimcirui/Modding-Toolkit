@@ -1,0 +1,246 @@
+{
+    "presetType": "RE_MDF_MATERIAL",
+    "MDFVersion": "MHRSB",
+    "presetVersion": 5,
+    "Material Header": {
+        "Material Name": "Standard",
+        "Master Material Path": "MasterMaterial/Master/Obj/NPC/PL_NPC_mmtrv/PL_Default.mmtr",
+        "Material Shader Type": "0"
+    },
+    "Flags": {
+        "Ver32Unknown": -1,
+        "Ver32Unknown1": -1,
+        "Ver32Unknown2": -1,
+        "FlagBitFlag": 100674331,
+        "FlagBitFlagB": 0,
+        "ShaderLODNum": 0,
+        "BakeTextureArraySize": 0
+    },
+    "Property List": [
+        {
+            "Property Name": "S_col_R",
+            "Data Type": "COLOR",
+            "Value": [
+                0.17254899442195892,
+                0.043137259781360626,
+                0.03921569138765335,
+                1.0
+            ],
+            "Padding": 0
+        },
+        {
+            "Property Name": "S_col_G",
+            "Data Type": "COLOR",
+            "Value": [
+                0.8509804010391235,
+                0.7686275243759155,
+                0.5176470875740051,
+                1.0
+            ],
+            "Padding": 0
+        },
+        {
+            "Property Name": "Emissive_color",
+            "Data Type": "COLOR",
+            "Value": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            "Padding": 0
+        },
+        {
+            "Property Name": "Metallic_Param",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "BackFaceNormalFilp",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Blend_rate",
+            "Data Type": "FLOAT",
+            "Value": 0.4000000059604645,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Blend_roughness",
+            "Data Type": "FLOAT",
+            "Value": 0.6499999761581421,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Translucency_Param",
+            "Data Type": "FLOAT",
+            "Value": 0.5,
+            "Padding": 0
+        },
+        {
+            "Property Name": "NoMap_Translucency_Param",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "uv1or2_AlphaMap",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Nuki",
+            "Data Type": "FLOAT",
+            "Value": 0.5,
+            "Padding": 0
+        },
+        {
+            "Property Name": "UseNuki_Dissolve",
+            "Data Type": "BOOL",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Nuki_Dissolve",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Dissolve",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "S_col_R_Emissive_intensity",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "S_col_G_Emissive_intensity",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Film_Thickness",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Film_IOR",
+            "Data Type": "FLOAT",
+            "Value": 0.5,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Film_Blend",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Emissive_intensity",
+            "Data Type": "FLOAT",
+            "Value": 0.30000001192092896,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Emissive_speed",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Fur_Tile",
+            "Data Type": "FLOAT",
+            "Value": 10.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Fur_ColorBlend",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Fur_velocity_intensity",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Fur_edge_Blend",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "UseNRRT",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Rim_Emissive_intensity",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Rim_Emissive_Blur",
+            "Data Type": "FLOAT",
+            "Value": 2.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Rim_Emissive_Blend",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 8
+        }
+    ],
+    "Texture Bindings": [
+        {
+            "Texture Type": "BaseDielectricMap",
+            "Texture Path": "systems/rendering/NullWhite.tex"
+        },
+        {
+            "Texture Type": "NRMR_NRRTMap",
+            "Texture Path": "systems/rendering/NullNormalRoughness.tex"
+        },
+        {
+            "Texture Type": "AlphaMap",
+            "Texture Path": "MasterMaterial/Textures/NullMSK1.tex"
+        },
+        {
+            "Texture Type": "UserColorchangeMap",
+            "Texture Path": "systems/rendering/NullBlack.tex"
+        },
+        {
+            "Texture Type": "FurVelocityMap",
+            "Texture Path": "MasterMaterial/Textures/NullFurVelocity.tex"
+        },
+        {
+            "Texture Type": "FxMap",
+            "Texture Path": "systems/rendering/NullBlack.tex"
+        },
+        {
+            "Texture Type": "EmissiveMap",
+            "Texture Path": "systems/rendering/NullBlack.tex"
+        },
+        {
+            "Texture Type": "FurTex",
+            "Texture Path": "systems/rendering/NullBlack.tex"
+        }
+    ],
+    "MMTRS Data": [],
+    "GPBF Data": []
+}
