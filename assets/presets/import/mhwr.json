@@ -6,6 +6,9 @@
     "description": "Source preset for MHR. Merges twists (T) and helpers (W).",
     "category": "怪猎系"
   },
+  "exclude": [
+   "L_Finger_09"
+  ],
   "mappings": {
     "pelvis": {
       "main": [

@@ -7,6 +7,26 @@
     "description": "Auto-mapped from MHWI->RE4 table. Merges twists, helpers, and facial bones into standard hierarchy.",
     "category": "Capcom RE引擎"
   },
+  "exclude": [
+   "L_Help_CubitalFossa_s",
+   "L_Help_CubitalFossa_s1",
+   "L_Help_Elbow_s",
+   "L_Palm",
+   "L_Shin_Twist_s",
+   "L_Thigh_Twist_s",
+   "L_Toe_Twist_s",
+   "L_Wep",
+   "L_Wrist_Twist_s",
+   "R_Help_CubitalFossa_s",
+   "R_Help_CubitalFossa_s1",
+   "R_Help_Elbow_s",
+   "R_Palm",
+   "R_Shin_Twist_s",
+   "R_Thigh_Twist_s",
+   "R_Toe_Twist_s",
+   "R_Wep",
+   "R_Wrist_Twist_s"
+  ],
   "mappings": {
     "pelvis": {
       "main": [

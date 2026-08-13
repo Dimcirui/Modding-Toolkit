@@ -7,6 +7,38 @@
     "description": "Updated SF6 target preset with 3-spine support and bone overlap correction.",
     "category": "Capcom RE引擎"
   },
+  "exclude": [
+   "L_Ankle",
+   "L_Innerfoot",
+   "L_Innerfoot2",
+   "L_Knee",
+   "L_Metatarsal",
+   "L_Outerfoot",
+   "L_Outerfoot2",
+   "L_Shin_1",
+   "L_Shin_2",
+   "L_Shin_3",
+   "L_Shin_4",
+   "L_Shin_5",
+   "L_vfx_Foot",
+   "L_vfx_Hand_00",
+   "L_vfx_Hand_01",
+   "R_Ankle",
+   "R_Innerfoot",
+   "R_Innerfoot2",
+   "R_Knee",
+   "R_Metatarsal",
+   "R_Outerfoot",
+   "R_Outerfoot2",
+   "R_Shin_1",
+   "R_Shin_2",
+   "R_Shin_3",
+   "R_Shin_4",
+   "R_Shin_5",
+   "R_vfx_Foot",
+   "R_vfx_Hand_00",
+   "R_vfx_Hand_01"
+  ],
   "mappings": {
     "pelvis": {
       "main": [
