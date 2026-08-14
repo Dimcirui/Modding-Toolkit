@@ -34,12 +34,15 @@ def _cached(key, items):
 
 
 def _model_items(self, context):
-    entries = ref_model.MODELS.get(self.source_game, ())
+    """Cached **per game**: one shared cache list would be refilled with another
+    game's models while Blender still points at it."""
+    game = self.source_game or ""
+    entries = ref_model.MODELS.get(game, ())
     items = [(ident, T(label) if label else ident.capitalize(), "", i)
              for i, (ident, label, _kind, _payload) in enumerate(entries)]
     if not items:
         items = [("NONE", "-", "", 0)]
-    return _cached("model", items)
+    return _cached("model:" + game, items)
 
 
 def _entry(game, ident):
@@ -193,7 +196,26 @@ class MODDER_OT_ImportReferenceModel(bpy.types.Operator):
         return T("core.ref_model_ops.desc")
 
     def invoke(self, context, event):
+        # Blender remembers an operator's last-used property values, and this one is
+        # shared by five sections whose model lists have nothing in common.  Opening
+        # RE4R's dialog (model="leon") and then MHWilds' left "leon" in place, which
+        # matches no MHWilds entry -- the dialog then reported "no reference model
+        # registered" for a game that plainly has one.  Reset to this game's first
+        # model whenever the carried-over value does not belong to it.
+        self.model = self._valid_model()
         return context.window_manager.invoke_props_dialog(self, width=380)
+
+    def _valid_model(self):
+        """The chosen model if this game has it, else its first one."""
+        entries = ref_model.MODELS.get(self.source_game, ())
+        idents = [e[0] for e in entries]
+        try:
+            current = self.model
+        except (TypeError, ValueError):
+            current = None
+        if current in idents:
+            return current
+        return idents[0] if idents else "NONE"
 
     def draw(self, context):
         layout = self.layout
@@ -216,18 +238,19 @@ class MODDER_OT_ImportReferenceModel(bpy.types.Operator):
         elif ref_model.load_base_bones(game) is None:
             layout.label(text=T("core.ref_model_ops.no_native_skeleton"), icon='INFO')
 
-        ok, reason = model_available(game, self.model)
+        ok, reason = model_available(game, self._valid_model())
         if not ok:
             layout.label(text=T(reason), icon='ERROR')
 
     def execute(self, context):
         game = self.source_game
-        ok, reason = model_available(game, self.model)
+        model = self._valid_model()
+        ok, reason = model_available(game, model)
         if not ok:
             self.report({'ERROR'}, T(reason))
             return {'CANCELLED'}
 
-        arm = import_model(game, self.model)
+        arm = import_model(game, model)
         if arm is None:
             self.report({'ERROR'}, T("core.ref_model_ops.import_failed"))
             return {'CANCELLED'}
