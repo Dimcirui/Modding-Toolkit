@@ -102,7 +102,11 @@ def register():
     for mod in modules:
         mod.register()
 
-    _patch_chain_import()
+    _start_chain_patch_timer()
+
+#: Remaining deferred attempts at patching RE Chain's import (see below).
+_chain_patch_retries = 20
+
 
 def _patch_chain_import():
     """给 RE-Chain-Editor 的 chain/chain2 导入打上快速补丁。
@@ -111,20 +115,48 @@ def _patch_chain_import():
     导入代价是 O(G²·m)。实测导入 196 组需约 78 分钟（因此容易被误当成卡死而中断，
     留下静态看不出异常的残缺数据）；补丁后约 32 秒。细节见 core/re_chain_utils.py。
 
-    RE-Chain-Editor 未安装时静默跳过；任何异常都不能影响本插件注册。
+    补丁靠扫 sys.modules 找目标，所以**依赖 RE-Chain-Editor 已经加载**。Blender 启用
+    插件的顺序不保证，冷启动时很可能轮到我们时它还没加载 —— 那一次扫描会一无所获。
+    因此这里用定时器重试，直到装上或次数用尽；否则补丁只在"先有 RE Chain、再重新启用
+    本插件"时才生效，而那恰好不是用户的正常启动路径。
+
+    RE-Chain-Editor 未安装时会把重试用完然后明确说一声（早先的版本在这条路径上完全
+    不打日志，等于静默失败）。任何异常都不能影响本插件注册。
     """
+    global _chain_patch_retries
     try:
         from .core.re_chain_utils import install_fast_chain_import
         n = install_fast_chain_import()
-        if n:
-            print(f"[Modding-Toolkit] fast chain import patch applied to {n} binding(s)")
     except Exception as e:
         print(f"[Modding-Toolkit] fast chain import patch skipped: {e}")
+        return None
+
+    if n:
+        print(f"[Modding-Toolkit] fast chain import patch applied to {n} binding(s)")
+        return None
+
+    _chain_patch_retries -= 1
+    if _chain_patch_retries > 0:
+        return 0.5      # timer: RE Chain Editor may still be loading
+    print("[Modding-Toolkit] RE Chain Editor not found; its chain import stays "
+          "unpatched (imports of large chain files will be very slow)")
+    return None
+
+
+def _start_chain_patch_timer():
+    global _chain_patch_retries
+    _chain_patch_retries = 20
+    if _patch_chain_import() is not None and not bpy.app.timers.is_registered(
+            _patch_chain_import):
+        bpy.app.timers.register(_patch_chain_import, first_interval=0.5,
+                                persistent=True)
 
 def unregister():
     addon_updater_ops.unregister()
     bpy.utils.unregister_class(MT_Preferences)
 
+    if bpy.app.timers.is_registered(_patch_chain_import):
+        bpy.app.timers.unregister(_patch_chain_import)
     try:
         from .core.re_chain_utils import uninstall_fast_chain_import
         uninstall_fast_chain_import()
