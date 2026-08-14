@@ -8,10 +8,88 @@ NSA-Cloud/AsteriskAmpersand's RE-Mesh-Editor texconv.py wrapper (MIT).
 
 import ctypes
 import os
+import struct
+import tempfile
+import zlib
 
 from . import dxgi_format as dxgi
 
 _DLL = None
+
+# PNG colour-space chunks that make WIC report the image as sRGB-encoded, which
+# in turn makes DirectXTex gamma-convert the pixels on load.  See
+# _sanitize_png_color_metadata.
+_PNG_COLOR_CHUNKS = (b'sRGB', b'cHRM', b'iCCP', b'gAMA')
+_PNG_SIGNATURE = b'\x89PNG\r\n\x1a\n'
+#: gAMA is stored as gamma * 100000, so this is gamma 1.0 -- "these bytes are
+#: already in their final encoding".  Written explicitly rather than left absent
+#: because it is exactly what texconv's own PNG writer emits, and that output is
+#: known to round-trip through this function unchanged.
+_GAMA_UNITY = struct.pack('>I', 100000)
+
+
+def _png_chunks(raw):
+    """Yield ``(type, payload)`` for each chunk in a PNG byte string."""
+    i = len(_PNG_SIGNATURE)
+    while i + 8 <= len(raw):
+        length, ctype = struct.unpack('>I4s', raw[i:i + 8])
+        yield ctype, raw[i + 8:i + 8 + length]
+        i += 12 + length  # length + type + payload + CRC
+
+
+def _png_chunk(ctype, payload):
+    return (struct.pack('>I', len(payload)) + ctype + payload
+            + struct.pack('>I', zlib.crc32(ctype + payload) & 0xFFFFFFFF))
+
+
+def _sanitize_png_color_metadata(filepath, work_dir):
+    """A copy of *filepath* with its colour-space chunks replaced by gamma 1.0.
+
+    Blender's PNG writer always tags its output ``sRGB`` + ``gAMA`` 1/2.2 +
+    ``cHRM``, no matter what the image datablock's colorspace is set to -- so a
+    ``Non-Color`` composed slot map still comes out of ``Image.save()`` claiming
+    to be sRGB-encoded.  texconv reads PNGs through WIC, which honours that
+    claim, and DirectXTex then *linearises* the pixels on load: every composed
+    map came out darkened by a full sRGB->linear curve, colour and packed data
+    alike.
+
+    That silently contradicted this module's whole contract (sRGB is a tag, the
+    bytes pass through untouched), and it was invisible in the composed PNG --
+    the file on disk had the right bytes all along, only the metadata lied.
+
+    Returns the original path unchanged for anything that is not a PNG, and for
+    a PNG that carries no such chunks.
+    """
+    if not filepath.lower().endswith('.png'):
+        return filepath
+    try:
+        with open(filepath, 'rb') as f:
+            raw = f.read()
+    except OSError:
+        return filepath
+    if not raw.startswith(_PNG_SIGNATURE):
+        return filepath
+    if not any(ctype in _PNG_COLOR_CHUNKS for ctype, _ in _png_chunks(raw)):
+        return filepath
+
+    out = [_PNG_SIGNATURE]
+    gama_written = False
+    for ctype, payload in _png_chunks(raw):
+        if ctype in _PNG_COLOR_CHUNKS:
+            continue
+        if ctype == b'IDAT' and not gama_written:
+            # Ancillary chunks must precede IDAT; this is the last legal spot.
+            out.append(_png_chunk(b'gAMA', _GAMA_UNITY))
+            gama_written = True
+        out.append(_png_chunk(ctype, payload))
+
+    # Same basename: texconv names its output after the input stem, and callers
+    # (slot_resolver.write_slot_tex) then look for that exact name.
+    dst_dir = tempfile.mkdtemp(prefix='png_srgb_', dir=work_dir or None)
+    dst = os.path.join(dst_dir, os.path.basename(filepath))
+    with open(dst, 'wb') as f:
+        f.write(b''.join(out))
+    return dst
 
 
 def _bin_dir():
@@ -98,6 +176,12 @@ def convert_to_dds(filepath, dxgi_format_name, out_dir, generate_mips=True,
 
     _ensure_com_initialized()
     dll = _load_dll()
+
+    # Must happen before texconv sees the file: a PNG claiming to be sRGB gets
+    # gamma-decoded on load, which is precisely what this function promises not
+    # to do.  Applies to every source, not just Blender's own -- a PNG exported
+    # from Photoshop carries the same tags.
+    filepath = _sanitize_png_color_metadata(filepath, out_dir)
 
     args = ['-f', dxgi_format_name, '-sepalpha']  # -sepalpha: without it, alpha gets mangled by mip generation
     if not generate_mips:
