@@ -585,15 +585,15 @@
         },
         {
             "Texture Type": "NormalRoughnessOcclusionMap",
-            "Texture Path": "MK_MODS/Eku/Public/nrro180.tex"
+            "Texture Path": "systems/rendering/NullNormalRoughnessOcclusion.tex"
         },
         {
             "Texture Type": "BaseAlphaMap",
-            "Texture Path": "MK_MODS/Eku/Base/hair_albd.tex"
+            "Texture Path": "systems/rendering/NullWhite.tex"
         },
         {
             "Texture Type": "AlphaTranslucentOcclusionSSSMap",
-            "Texture Path": "MK_MODS/Eku/Public/atos.tex"
+            "Texture Path": "systems/rendering/NullATOS.tex"
         },
         {
             "Texture Type": "noisemap",

@@ -1271,15 +1271,15 @@
         },
         {
             "Texture Type": "BaseDielectricMap",
-            "Texture Path": "MK_MODS/Eku/EFRE/main_albd.tex"
+            "Texture Path": "systems/rendering/NullWhite.tex"
         },
         {
             "Texture Type": "NormalRoughnessOcclusionMap",
-            "Texture Path": "MK_MODS/Eku/EFRE/main_nrro.tex"
+            "Texture Path": "systems/rendering/NullNormalRoughnessOcclusion.tex"
         },
         {
             "Texture Type": "EmissiveMap",
-            "Texture Path": "MK_MODS/Eku/EFRE/main_em.tex"
+            "Texture Path": "MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex"
         },
         {
             "Texture Type": "FxMap",
@@ -1287,7 +1287,7 @@
         },
         {
             "Texture Type": "AlphaTranslucentOcclusionSSSMap",
-            "Texture Path": "MK_MODS/Eku/Public/atos.tex"
+            "Texture Path": "systems/rendering/NullATOS.tex"
         },
         {
             "Texture Type": "noisemap",

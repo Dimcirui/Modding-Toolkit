@@ -516,15 +516,15 @@
         },
         {
             "Texture Type": "BaseDielectricMap",
-            "Texture Path": "MK_MODS/Eku/Base/body_albd.tex"
+            "Texture Path": "systems/rendering/NullWhite.tex"
         },
         {
             "Texture Type": "NormalRoughnessOcclusionMap",
-            "Texture Path": "MK_MODS/Eku/Public/nrro180.tex"
+            "Texture Path": "systems/rendering/NullNormalRoughnessOcclusion.tex"
         },
         {
             "Texture Type": "AlphaTranslucentOcclusionSSSMap",
-            "Texture Path": "MK_MODS/Eku/Public/atos.tex"
+            "Texture Path": "systems/rendering/NullATOS.tex"
         },
         {
             "Texture Type": "noisemap",
