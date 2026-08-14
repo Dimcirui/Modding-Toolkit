@@ -322,21 +322,22 @@ def duplicate_chain_collection(collection, name, link_into=None):
     and the ``Chain Links - ...`` / ``Chain Collisions - ...`` sub-collections are
     recreated as sub-collections rather than flattened into one level.
 
-    The collision shapes are treated as **one** set that gets re-homed to wherever
-    the *target* format actually uses them, rather than copied structure-for-structure:
+    The collision shapes are treated as **one** set, gathered from wherever the
+    source keeps them -- its sibling .clsp when it has one, else inside the chain
+    collection itself.  Never both: a .chain2 may carry internal collisions *and*
+    have a .clsp, but the two are unrelated (shapes are authored inside the .chain2
+    and exported as a .clsp, which is why they look alike), and copying both would
+    double every capsule.
 
-    * Taken from the source's sibling .clsp when it has one, else from inside the
-      chain collection itself.  Never both -- a .chain2 may carry its own internal
-      collisions *and* have a .clsp, but the two are unrelated (the user authors
-      shapes inside the .chain2 and exports them as a .clsp, which is why they look
-      alike), and copying both would double every capsule.
-    * ``.chain`` is chain2+clsp in one format and has no companion .clsp at all, so
-      they go inline, into this copy's own ``Chain Collisions - ...``.
-    * ``.chain2`` gets a sibling .clsp instead, stem-matched to this copy so
-      re-porting cannot confuse it with the original's (see
-      _sibling_clsp_collection).  Not its internal collisions: RE-Chain-Editor's
-      .chain2 export drops their parameters, so shapes left there are close to
-      useless, while a .clsp works directly in most cases.
+    They always land *inside* this copy, in its own ``Chain Collisions - ...``,
+    parented to its chain header -- for both target formats.  A standalone .clsp
+    collection is what *import* produces, not something to build: RE-Chain-Editor
+    exports a .clsp from a collection carrying a chain header, and its own
+    clspErrorCheck rejects a header-less one outright ("No Chain Header object in
+    collection") -- confirmed against a natively imported .clsp, which fails it
+    too.  So a .chain2 target gets its colliders inline exactly like .chain does,
+    which is also how RE9's own shipped .chain2 holds them, and the .clsp is
+    exported from there.
     """
     parent = link_into
     if parent is None:
@@ -385,17 +386,10 @@ def duplicate_chain_collection(collection, name, link_into=None):
 
     clsp = _sibling_clsp_collection(collection)
     colliders = _collision_objects(clsp if clsp is not None else collection)
-    inline_colliders = name.endswith(".chain")
     if colliders:
-        if inline_colliders:
-            container = bpy.data.collections.new(f"Chain Collisions - {name}")
-            container["TYPE"] = CHAIN_COLLISION_COLLECTION_TYPE
-            new_col.children.link(container)
-        else:
-            container = bpy.data.collections.new(f"{chain_stem(name)}.clsp")
-            container.color_tag = CHAIN_COLOR_TAG
-            container["~TYPE"] = CLSP_COLLECTION_TYPE
-            parent.children.link(container)
+        container = bpy.data.collections.new(f"Chain Collisions - {name}")
+        container["TYPE"] = CHAIN_COLLISION_COLLECTION_TYPE
+        new_col.children.link(container)
         copy_objects(colliders, container)
 
     # parents second: the whole set has to exist before it can be rewired, and a
@@ -406,22 +400,20 @@ def duplicate_chain_collection(collection, name, link_into=None):
             copy.parent = mapping.get(obj.parent.name, obj.parent)
             copy.matrix_parent_inverse = obj.matrix_parent_inverse.copy()
 
-    # Collider parenting is decided by the target format, not inherited: a .chain's
-    # collision roots hang off the chain header (blender_re_chain.py:830,866) while
-    # a .clsp's are created parentless (blender_re_clsp.py:400,434).  Carrying the
-    # source's own answer across is what made every capsule of a .clsp -> .chain
+    # Collision roots hang off the chain header, and that is not inherited: a
+    # .chain/.chain2 creates them parented to it (blender_re_chain.py:830,866)
+    # while a .clsp creates them parentless (blender_re_clsp.py:400,434).  Carrying
+    # the source's own answer across is what made every capsule of a .clsp-sourced
     # port fail RE-Chain-Editor's export check with "object must be parented to a
     # chain header object".  Only the roots move; the capsule endpoints stay
     # parented to their own root either way.
     header = next((mapping[o.name] for o in originals
                    if o.get("TYPE") == "RE_CHAIN_HEADER"), None)
-    for src in colliders:
-        if src.get("TYPE") not in COLLIDER_TYPES:
-            continue
-        copy = mapping[src.name]
-        if not inline_colliders:
-            copy.parent = None
-        elif header is not None:
+    if header is not None:
+        for src in colliders:
+            if src.get("TYPE") not in COLLIDER_TYPES:
+                continue
+            copy = mapping[src.name]
             copy.parent = header
             copy.matrix_parent_inverse.identity()
 
