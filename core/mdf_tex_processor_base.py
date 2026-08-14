@@ -410,7 +410,8 @@ def channel_maps_consume_ao(channel_maps):
 
 def _compose_channels(slot_type, pbr_paths, pbr_channels, temp_dir, tex_name, pbr_inv=None,
                        channel_maps=None, normal_flip_g=False,
-                       bake_ao_into_color=False, ao_strength=1.0):
+                       bake_ao_into_color=False, ao_strength=1.0,
+                       pbr_arrays=None):
     """Compose a packed texture from PBR inputs for the given slot type.
     channel_maps: optional override; defaults to BASE_SLOT_CHANNEL_MAPS.
     Channel map values: tuple (pbr_type, ch_idx[, True]) | None (=0.0) | float (constant).
@@ -419,6 +420,12 @@ def _compose_channels(slot_type, pbr_paths, pbr_channels, temp_dir, tex_name, pb
         a game with no AO slot that is the only way to keep an AO map at all --
         see channel_maps_consume_ao.  ao_strength lerps white -> map, matching
         the packed shader's AO Strength so preview and export agree.
+    pbr_arrays: ``{pbr_type: (h, w, 4) float32}`` supplied in process, used instead
+        of loading *pbr_paths* from disk.  For a caller that just produced the
+        planes itself (the cross-game port) this skips writing each one to an
+        8-bit PNG and reading it back -- which is not only the slower path but a
+        lossier one, since values that are genuinely continuous (a decoded
+        octahedral normal) get quantised on the way through.
     """
     if pbr_inv is None:
         pbr_inv = {}
@@ -439,39 +446,53 @@ def _compose_channels(slot_type, pbr_paths, pbr_channels, temp_dir, tex_name, pb
         needed_types.add('ao')
     loaded = {}
 
-    # First pass: load all images and determine the largest size as reference.
-    # Using the largest (not the first) avoids 256×256 SOLID images accidentally
-    # shrinking larger baked or source textures due to non-deterministic set order.
-    raw_imgs = {}
-    ref_w = ref_h = 0
-    for pbr_type in needed_types:
-        img_path = pbr_paths.get(pbr_type, '')
-        if not img_path or not os.path.isfile(img_path):
-            continue
-        tmp_name = f"__mdf_compose_tmp_{pbr_type}"
-        if tmp_name in bpy.data.images:
-            bpy.data.images.remove(bpy.data.images[tmp_name])
-        img = bpy.data.images.load(img_path, check_existing=False)
-        img.name = tmp_name
-        img.colorspace_settings.name = 'Non-Color'
-        iw, ih = img.size
-        if iw > ref_w:
-            ref_w, ref_h = iw, ih
-        raw_imgs[pbr_type] = img
+    if pbr_arrays:
+        # Handed straight over in memory. These planes came from one decoded
+        # image, so they already agree on size and need no loading or scaling;
+        # anything that does not match the largest is dropped rather than
+        # silently resized, and falls back to its PBR default below.
+        for pbr_type in needed_types:
+            arr = pbr_arrays.get(pbr_type)
+            if arr is not None:
+                loaded[pbr_type] = arr
+        if not loaded:
+            return None
+        ref_h, ref_w = max((a.shape[:2] for a in loaded.values()), key=lambda hw: hw[1])
+        loaded = {k: a for k, a in loaded.items() if a.shape[:2] == (ref_h, ref_w)}
+    else:
+        # First pass: load all images and determine the largest size as reference.
+        # Using the largest (not the first) avoids 256×256 SOLID images accidentally
+        # shrinking larger baked or source textures due to non-deterministic set order.
+        raw_imgs = {}
+        ref_w = ref_h = 0
+        for pbr_type in needed_types:
+            img_path = pbr_paths.get(pbr_type, '')
+            if not img_path or not os.path.isfile(img_path):
+                continue
+            tmp_name = f"__mdf_compose_tmp_{pbr_type}"
+            if tmp_name in bpy.data.images:
+                bpy.data.images.remove(bpy.data.images[tmp_name])
+            img = bpy.data.images.load(img_path, check_existing=False)
+            img.name = tmp_name
+            img.colorspace_settings.name = 'Non-Color'
+            iw, ih = img.size
+            if iw > ref_w:
+                ref_w, ref_h = iw, ih
+            raw_imgs[pbr_type] = img
 
-    if not raw_imgs:
-        return None
+        if not raw_imgs:
+            return None
 
-    if ref_w == 0:
-        ref_w = ref_h = 1024
+        if ref_w == 0:
+            ref_w = ref_h = 1024
 
-    # Second pass: scale down any smaller images and convert to numpy arrays.
-    for pbr_type, img in raw_imgs.items():
-        iw, ih = img.size
-        if iw != ref_w or ih != ref_h:
-            img.scale(ref_w, ref_h)
-        loaded[pbr_type] = image_to_array(img)
-        bpy.data.images.remove(img)
+        # Second pass: scale down any smaller images and convert to numpy arrays.
+        for pbr_type, img in raw_imgs.items():
+            iw, ih = img.size
+            if iw != ref_w or ih != ref_h:
+                img.scale(ref_w, ref_h)
+            loaded[pbr_type] = image_to_array(img)
+            bpy.data.images.remove(img)
 
     result = np.zeros((ref_h, ref_w, 4), dtype=np.float32)
 

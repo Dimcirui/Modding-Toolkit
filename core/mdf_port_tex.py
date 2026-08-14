@@ -137,17 +137,22 @@ def decode_tex_to_png(tex_path, temp_dir):
 
 # ── Channel unpack (inverse of _compose_channels) ───────────────────────────
 
-def unpack_channels(png_path, slot_type, temp_dir, tex_name, channel_maps=None):
-    """A decoded slot PNG -> ``{pbr_type: png_path}`` intermediate files, one per
+def unpack_channels(png_path, slot_type, channel_maps=None):
+    """A decoded slot PNG -> ``{pbr_type: (h, w, 4) float32}``, one plane per
     semantic channel group the slot actually carries. Mirrors
     mdf_tex_processor_base._compose_channels in reverse, including the
     octahedral normal decode for the 3-in-1 normal slots.
+
+    Returned in memory rather than as PNGs on disk: _compose_channels takes
+    these straight back (``pbr_arrays=``), so a round trip through 8-bit files
+    would only cost time and precision -- the octahedral decode produces
+    genuinely continuous values that a PNG would quantise.
     """
     import bpy
     import numpy as np
 
     from .mdf_tex_processor_base import (BASE_SLOT_CHANNEL_MAPS, NORMAL_OCTAHEDRAL_SLOT_TYPES,
-                                         _CH, array_to_image, image_to_array)
+                                         _CH, image_to_array)
     from .re_normal_pack import decode_normal_ga
 
     if channel_maps is None:
@@ -191,21 +196,7 @@ def unpack_channels(png_path, slot_type, temp_dir, tex_name, channel_maps=None):
             data = 1.0 - data
         _plane(pbr_type)[:, :, ch_idx] = data
 
-    out_paths = {}
-    for pbr_type, arr in pbr_arrays.items():
-        tmp_out = f"__mdf_port_unpack_{pbr_type}"
-        if tmp_out in bpy.data.images:
-            bpy.data.images.remove(bpy.data.images[tmp_out])
-        out_img = bpy.data.images.new(tmp_out, width=w, height=h, alpha=True)
-        out_img.colorspace_settings.name = 'Non-Color'
-        array_to_image(out_img, arr)
-        out_path = os.path.join(temp_dir, f"{tex_name}_{pbr_type}_unpacked.png")
-        out_img.filepath_raw = out_path
-        out_img.file_format = 'PNG'
-        out_img.save()
-        bpy.data.images.remove(out_img)
-        out_paths[pbr_type] = out_path
-    return out_paths
+    return pbr_arrays
 
 
 # ── Orchestration ────────────────────────────────────────────────────────────
@@ -234,9 +225,9 @@ def repack_slot(src_tex_path, src_slot_type, dst_slot_type, temp_dir, tex_name,
         return "tex", src_tex_path
 
     png_path = decode_tex_to_png(src_tex_path, temp_dir)
-    pbr_paths = unpack_channels(png_path, src_slot_type, temp_dir, tex_name, channel_maps=src_maps)
-    composed = _compose_channels(dst_slot_type, pbr_paths, {}, temp_dir, tex_name,
-                                 channel_maps=dst_maps)
+    planes = unpack_channels(png_path, src_slot_type, channel_maps=src_maps)
+    composed = _compose_channels(dst_slot_type, {}, {}, temp_dir, tex_name,
+                                 channel_maps=dst_maps, pbr_arrays=planes)
     if composed is None:
         raise ValueError(f"no channel map for destination slot type: {dst_slot_type}")
     return "png", composed
