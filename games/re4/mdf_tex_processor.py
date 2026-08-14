@@ -147,9 +147,23 @@ def register():
         bpy.utils.register_class(cls)
     bpy.types.Scene.re4_mdf_tex_processor = bpy.props.PointerProperty(
         type=RE4MdfTexProcessorSettings)
+    from ...core.mdf_port_tex import register_game_tex_config
+    register_game_tex_config(
+        "RE4",
+        abbrev_map=RE4_TEXTURE_TYPE_ABBREV,
+        channel_maps=RE4_SLOT_CHANNEL_MAPS,
+        tex_version=RE4_TEX_VERSION,
+        use_art_prefix=False,
+        path_fixed_prefix="_Chainsaw/Character/ch",
+        null_tex_by_type=RE4_NULL_TEX_BY_TYPE,
+        natives_root_key="re4_natives_root",
+        vanilla_asset_rel="assets/re4/vanilla_tex_paths.txt",
+    )
 
 
 def unregister():
+    from ...core.mdf_port_tex import unregister_game_tex_config
+    unregister_game_tex_config("RE4")
     del bpy.types.Scene.re4_mdf_tex_processor
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

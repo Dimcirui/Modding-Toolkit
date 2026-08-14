@@ -467,6 +467,41 @@ STRINGS = {
         "EN": "Done: {done} succeeded, {failed} failed (see console)", "ZH": "完成: 成功 {done}, 失败 {failed} (详见控制台)"},
 
     # ══════════════════════════════════════════════════════════════════════
+    # core/mdf_port_ops.py
+    # ══════════════════════════════════════════════════════════════════════
+
+    "core.mdf_port_ops.desc": {
+        "EN": "Port this MDF material (and its custom textures) to a different RE Engine game, "
+              "rebuilding it from that game's nearest equivalent prefab material",
+        "ZH": "将该 MDF 材质 (及其自定义贴图) 移植到另一款 RE Engine 游戏, 基于该游戏最接近的预设材质重建"},
+
+    "core.mdf_port_ops.target_game_label": {"EN": "Target Game", "ZH": "目标游戏"},
+    "core.mdf_port_ops.dest_base_path_label": {"EN": "Destination Base Path", "ZH": "目标路径"},
+    "core.mdf_port_ops.delete_original_label": {"EN": "Delete Original Material", "ZH": "删除原材质"},
+
+    "core.mdf_port_ops.no_target_selected": {
+        "EN": "No target game selected", "ZH": "未选择目标游戏"},
+    "core.mdf_port_ops.missing_tex_config": {
+        "EN": "Missing texture pipeline config for the source or target game",
+        "ZH": "源游戏或目标游戏缺少贴图处理配置"},
+    "core.mdf_port_ops.no_targets": {
+        "EN": "Select one or more MDF material objects first", "ZH": "请先选中一个或多个 MDF 材质物体"},
+    "core.mdf_port_ops.cannot_load_preset_tool": {
+        "EN": "Cannot load the RE Mesh Editor preset tool", "ZH": "无法加载 RE Mesh Editor Preset 工具"},
+    "core.mdf_port_ops.done_with_fail": {
+        "EN": "Ported {done} material(s), {failed} failed (see console)",
+        "ZH": "已移植 {done} 个材质, 失败 {failed} 个 (详见控制台)"},
+    "core.mdf_port_ops.done": {
+        "EN": "Ported {done} material(s) ({unsupported} unsupported shader fallback); "
+              "textures: {tex} written, {placeholder} placeholder (no vanilla default exists), "
+              "{pending} pending (no destination mod root set), "
+              "{vskip} vanilla skipped, {noslot} no matching destination slot, {nosrc} source texture not found",
+        "ZH": "已移植 {done} 个材质 (其中 {unsupported} 个材质着色器未识别, 已回退); "
+              "贴图: 已写出 {tex}, 占位 {placeholder} 张 (无原版默认可用), "
+              "待写出 {pending} (未设置目标 Mod 根目录), "
+              "原版跳过 {vskip}, 无对应槛位跳过 {noslot}, 未找到源贴图 {nosrc}"},
+
+    # ══════════════════════════════════════════════════════════════════════
     # core/update_ops.py
     # ══════════════════════════════════════════════════════════════════════
 

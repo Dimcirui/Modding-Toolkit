@@ -146,9 +146,23 @@ def register():
         bpy.utils.register_class(cls)
     bpy.types.Scene.re9_mdf_tex_processor = bpy.props.PointerProperty(
         type=RE9MdfTexProcessorSettings)
+    from ...core.mdf_port_tex import register_game_tex_config
+    register_game_tex_config(
+        "RE9",
+        abbrev_map=RE9_TEXTURE_TYPE_ABBREV,
+        channel_maps=RE9_SLOT_CHANNEL_MAPS,
+        tex_version=RE9_TEX_VERSION,
+        use_art_prefix=False,
+        path_fixed_prefix="",
+        null_tex_by_type=RE9_NULL_TEX_BY_TYPE,
+        natives_root_key="re9_natives_root",
+        vanilla_asset_rel="assets/re9/vanilla_tex_paths.txt",
+    )
 
 
 def unregister():
+    from ...core.mdf_port_tex import unregister_game_tex_config
+    unregister_game_tex_config("RE9")
     del bpy.types.Scene.re9_mdf_tex_processor
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

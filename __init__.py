@@ -27,6 +27,7 @@ from .core import tex_convert_base
 from .core import shader_ops
 from .core import chain_convert_ops
 from .core import mesh_port_ops
+from .core import mdf_port_ops
 from .core import ref_model_ops
 from . import ui, games
 
@@ -92,6 +93,7 @@ modules = [
     shader_ops,
     chain_convert_ops,
     mesh_port_ops,
+    mdf_port_ops,
     ref_model_ops,
     games,
     ui,

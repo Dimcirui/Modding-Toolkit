@@ -91,7 +91,10 @@ def _port(game_code):
                props={'source_game': game_code}),
             op("modder.convert_chain_cross_game",
                "ui.main_panel.btn_convert_chain_cross_game", 'UV_SYNC_SELECT',
-               needs='re_chain', props={'source_game': game_code})]
+               needs='re_chain', props={'source_game': game_code}),
+            op("modder.port_mdf_material_cross_game",
+               "ui.main_panel.btn_port_mdf_material_cross_game", 'MATERIAL',
+               props={'source_game': game_code})]
 
 
 def _mdf_pair(prefix):

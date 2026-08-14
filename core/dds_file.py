@@ -77,3 +77,36 @@ def read_dds(filepath):
         h >>= 1
 
     return dds
+
+
+# DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT | DDSD_MIPMAPCOUNT
+_DDSD_FLAGS = 0x1 | 0x2 | 0x4 | 0x1000 | 0x20000
+_DDPF_FOURCC = 0x4
+_DDSCAPS_TEXTURE = 0x1000
+_DDSCAPS_COMPLEX = 0x8
+_DDSCAPS_MIPMAP = 0x400000
+_DDS_DIMENSION_TEXTURE2D = 3
+
+
+def write_dds(dds, filepath):
+    """Write a DDSFile (DX10-header) to *filepath*. Inverse of read_dds -- same
+    field layout, built fresh rather than round-tripped, since a .tex-derived
+    DDSFile never went through read_dds itself."""
+    pixel_format = struct.pack('<8I', 32, _DDPF_FOURCC, DX10_FOURCC, 0, 0, 0, 0, 0)
+    caps1 = _DDSCAPS_TEXTURE
+    if len(dds.mips) > 1:
+        caps1 |= _DDSCAPS_COMPLEX | _DDSCAPS_MIPMAP
+
+    header = _HEADER_STRUCT.pack(
+        124, _DDSD_FLAGS, dds.height, dds.width, 0, 0, len(dds.mips),
+        b'\x00' * 44, pixel_format, caps1, 0, 0, 0, 0,
+    )
+    dx10 = _DX10_STRUCT.pack(dds.dxgi_format, _DDS_DIMENSION_TEXTURE2D, 0, 1, 0)
+
+    with open(filepath, 'wb') as f:
+        f.write(struct.pack('<I', DDS_MAGIC))
+        f.write(header)
+        f.write(dx10)
+        for mip in dds.mips:
+            f.write(mip)
+    return filepath

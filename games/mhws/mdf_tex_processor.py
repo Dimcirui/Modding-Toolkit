@@ -122,9 +122,23 @@ def register():
         bpy.utils.register_class(cls)
     bpy.types.Scene.mdf_tex_processor = bpy.props.PointerProperty(
         type=MdfTexProcessorSettings)
+    from ...core.mdf_port_tex import register_game_tex_config
+    register_game_tex_config(
+        "MHWS",
+        abbrev_map=TEXTURE_TYPE_ABBREV,
+        channel_maps=BASE_SLOT_CHANNEL_MAPS,
+        tex_version=MHWS_TEX_VERSION,
+        use_art_prefix=True,
+        path_fixed_prefix="",
+        null_tex_by_type=NULL_TEX_BY_TYPE,
+        natives_root_key="mhws_natives_root",
+        vanilla_asset_rel="assets/mhws/vanilla_tex_paths.txt",
+    )
 
 
 def unregister():
+    from ...core.mdf_port_tex import unregister_game_tex_config
+    unregister_game_tex_config("MHWS")
     del bpy.types.Scene.mdf_tex_processor
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
