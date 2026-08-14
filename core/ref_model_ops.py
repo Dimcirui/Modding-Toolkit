@@ -57,15 +57,20 @@ def _repo_path(rel):
     return os.path.join(root, rel.replace("/", os.sep))
 
 
-def _mbt_available(op_id):
-    """MBT registers ``mhw.import_*_mesh``; probe with ``dir()``, since attribute
-    access on ``bpy.ops`` is lazy and answers True for anything."""
+def _op_available(op_id):
+    """Probe an operator with ``dir()``, since attribute access on ``bpy.ops`` is
+    lazy and answers True for anything -- the trap ``ui/game_sections.py``'s GUARDS
+    and ``core/re_mesh_compat.py`` both document."""
     category, _, name = op_id.partition(".")
     ns = getattr(bpy.ops, category, None)
     try:
         return ns is not None and name in dir(ns)
     except Exception:
         return False
+
+
+#: MHW Model Editor's MOD3 importer, which reads the bundled MHWI bodies.
+_MOD3_IMPORT_OP = "mhw_mod3.import_mhw_mod3"
 
 
 def model_available(game, ident):
@@ -84,8 +89,14 @@ def model_available(game, ident):
         if not re_mesh_op_available("importfile"):
             return False, "ui.main_panel.label_need_re_mesh_editor"
         return True, None
+    if kind == "mod3":
+        if not os.path.isfile(_repo_path(payload)):
+            return False, "core.ref_model_ops.file_missing"
+        if not _op_available(_MOD3_IMPORT_OP):
+            return False, "ui.main_panel.label_need_mhw_model_editor"
+        return True, None
     if kind == "mbt":
-        return (True, None) if _mbt_available(payload) else (False, "core.ref_model_ops.need_mbt")
+        return (True, None) if _op_available(payload) else (False, "core.ref_model_ops.need_mbt")
     return False, "core.ref_model_ops.no_model"
 
 
@@ -123,6 +134,23 @@ def import_model(game, ident):
                         directory=os.path.dirname(path) + os.sep,
                         files=[{"name": os.path.basename(path)}],
                         loadMaterials=False)
+    elif kind == "mod3":
+        path = _repo_path(payload)
+        if not os.path.isfile(path):
+            return None
+        # directory + files, not filepath: the importer iterates self.files, so a
+        # filepath on its own imports nothing and still reports success -- the same
+        # reason the remesh branch above is written this way.
+        # clearScene stays off: this button adds a reference next to whatever the
+        # user is working on, it does not take the file over.
+        # Materials off, like the remesh branch: a reference body is imported to
+        # measure and rig against, and leaving them on makes the importer warn about
+        # the .mrl3 that deliberately is not shipped beside it.
+        bpy.ops.mhw_mod3.import_mhw_mod3(
+            'EXEC_DEFAULT',
+            directory=os.path.dirname(path) + os.sep,
+            files=[{"name": os.path.basename(path)}],
+            clearScene=False, loadMrl3Data=False, loadMaterials=False)
     elif kind == "mbt":
         category, _, name = payload.partition(".")
         getattr(getattr(bpy.ops, category), name)('EXEC_DEFAULT')

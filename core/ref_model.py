@@ -7,14 +7,26 @@ so the table below is the single place that knows where:
 ===== ====================================== ===========================================
 game  source                                 how it is read
 ===== ====================================== ===========================================
-MHWI  Modder Batch Tool's own bundled MOD3   MBT's operator (needs MHW Model Editor too)
+MHWI  assets/mhwi/body/                      MHW Model Editor's MOD3 importer
 MHWS  assets/reference_skeletons/mhws/       Blender's FBX importer
 MHRS  assets/mhrs/shadow/                    RE Mesh Editor's mesh importer
 RE4   assets/reference_skeletons/re4/        Blender's FBX importer
 RE9   assets/reference_skeletons/re9/        Blender's FBX importer
 ===== ====================================== ===========================================
 
-MHWI is the odd one: its model is not in this repo, so the import is delegated to MBT.
+Only MHWS/RE4/RE9 are FBX.  MHWI and MHRS are the games' own native model files,
+bundled as-is and read by the addon that understands them, because FBX cannot carry
+them intact: Blender's FBX exporter serialises an *array* custom property to a
+string, and MOD3 keeps one (``Mod3_Mesh_Unkn``, an int array).  Measured on the
+bundled body -- the three scalar ``Mod3_Mesh_*`` properties and both per-bone
+properties survive a round trip, but that one comes back as ``"[0, 0, 0, 48]"``, and
+MHW Model Editor's exporter then dies writing it (``struct.error: required argument
+is not an integer``).  Bone lengths are lost too, which does *not* matter: MOD3
+export never reads them, and the importer synthesises the tail from the head.
+
+So the dependency for these two is on the *importer*, never on another addon for
+the model itself.  MHWI users already need MHW Model Editor to export their mods,
+so this costs them nothing and drops the previous dependency on Modder Batch Tool.
 
 MHWI and MHRS get no post-import options: their bodies have no facial rig and no
 auxiliary bones, and both ship in T-pose, so every switch below would be a no-op.
@@ -59,11 +71,14 @@ import os
 #:
 #: kind ``fbx``    -- payload is ``(reference_skeletons subdir, filename)``
 #: kind ``remesh`` -- payload is a repo-relative path, imported through RE Mesh Editor
-#: kind ``mbt``    -- payload is a Modder Batch Tool operator id
+#: kind ``mod3``   -- payload is a repo-relative path, imported through MHW Model Editor
+#: kind ``mbt``    -- payload is a Modder Batch Tool operator id.  Unused since MHWI's
+#:                    bodies were bundled; kept because it is the only way to reach a
+#:                    model this repo cannot ship.
 MODELS = {
     "MHWI": [
-        ("female", "core.ref_model.female", "mbt", "mhw.import_female_mesh"),
-        ("male", "core.ref_model.male", "mbt", "mhw.import_male_mesh"),
+        ("female", "core.ref_model.female", "mod3", "assets/mhwi/body/f_mesh.mod3"),
+        ("male", "core.ref_model.male", "mod3", "assets/mhwi/body/m_mesh.mod3"),
     ],
     "MHWS": [
         ("female", "core.ref_model.female", "fbx", ("mhws", "MHWilds_Female.fbx")),
