@@ -1038,7 +1038,7 @@
         },
         {
             "Texture Type": "NormalRoughnessMap",
-            "Texture Path": "systems/rendering/NullNormalRoughnessOcclusion.tex"
+            "Texture Path": "systems/rendering/NullNormalRoughness.tex"
         },
         {
             "Texture Type": "AlphaCavityOcclusionTranslucentMap",

@@ -305,7 +305,12 @@ BASE_NULL_TEX_BY_TYPE = {
     'NormalRoughnessOcclusionMap':   'systems/rendering/NullNormalRoughnessOcclusion.tex',
     'NormalRoughnessCavityMap':      'systems/rendering/NullNormalRoughnessOcclusion.tex',
     'NormalRoughnessTranslucentMap': 'systems/rendering/NullNormalRoughnessOcclusion.tex',
-    'NormalRoughnessMap':            'systems/rendering/NullNormalRoughnessOcclusion.tex',
+    # NRMR, not NRRO. Two different slots with two different channel layouts,
+    # so the NRRO null is the wrong texture here even though every game ships
+    # it (checked against assets/<game>/vanilla_tex_paths.txt, which is the
+    # authoritative list -- a pak extract on disk can be partial and is not).
+    # Reported from a MHWS -> RE4 port that would not load in game.
+    'NormalRoughnessMap':            'systems/rendering/NullNormalRoughness.tex',
     'EmissiveMap':                   'systems/rendering/NullBlack.tex',
     'Emissive_ColorMap':             'systems/rendering/NullBlack.tex',
     'FxMap':                         'MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex',
