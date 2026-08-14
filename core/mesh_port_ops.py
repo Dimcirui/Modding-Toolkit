@@ -99,6 +99,41 @@ def _preset_main_names(fname):
     return {n for entry in mgr.mapping_data.values() for n in entry.get("main", ())}
 
 
+def duplicate_mesh_collection(col, arm_obj, suffix):
+    """Copy a whole .mesh collection, and return the copy's armature.
+
+    A ported model is a *second model*, so it belongs in its own collection sitting
+    next to the original -- that is how the importers deliver them and how the
+    exporters expect to find them.  Dropping the copies into the original's
+    collection instead leaves two rigs and two bodies in the one place that is
+    supposed to hold exactly one of each, which the port itself then refuses to read.
+
+    Named ``<original>_<GAME>.mesh`` so it still reads as a mesh collection, and
+    linked under the same parents as the original.
+    """
+    stem = col.name[:-5] if col.name.endswith(".mesh") else col.name
+    new_col = bpy.data.collections.new(f"{stem}_{suffix}.mesh")
+    if col.get("~TYPE") is not None:
+        new_col["~TYPE"] = col["~TYPE"]
+    new_col.color_tag = col.color_tag
+
+    parents = [c for c in bpy.data.collections if col.name in c.children]
+    if not parents:
+        parents = [bpy.context.scene.collection]
+    for parent in parents:
+        parent.children.link(new_col)
+
+    new_arm = bone_utils.duplicate_armature_with_meshes(
+        arm_obj, f"{arm_obj.name}_{suffix}")
+    copies = [new_arm] + [o for o in bpy.data.objects
+                          if o.type == 'MESH' and o.find_armature() is new_arm]
+    for obj in copies:
+        for c in list(obj.users_collection):
+            c.objects.unlink(obj)
+        new_col.objects.link(obj)
+    return new_arm
+
+
 def _armature_only_copy(arm_obj):
     """A linked-into-the-scene copy of just the armature, for measuring on.
 
@@ -593,8 +628,12 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
                 arm.name = f"{arm.name.replace('_probe', '')}_{self.target_game}"
                 arm.data.name = arm.name
             else:
-                arm = bone_utils.duplicate_armature_with_meshes(
-                    arm, f"{arm.name}_{self.target_game}")
+                col = bpy.data.collections.get(self.source_collection)
+                if col is not None:
+                    arm = duplicate_mesh_collection(col, arm, self.target_game)
+                else:
+                    arm = bone_utils.duplicate_armature_with_meshes(
+                        arm, f"{arm.name}_{self.target_game}")
 
         ref_arm = None
         if self.reference_skeleton and self.reference_skeleton != "NONE":
