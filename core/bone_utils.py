@@ -140,6 +140,42 @@ def align_armatures_by_name(source_arm, target_arm, mode='POS_ONLY', skip_fn=Non
 _armature_enum_cache = []
 
 
+def duplicate_armature_with_meshes(arm_obj, name=None):
+    """Deep-copy an armature and every mesh bound to it. Returns the new armature.
+
+    The meshes have to come along: a cross-game port merges supernumerary bones, and
+    merging moves vertex groups, which live on the mesh. Copying the armature alone
+    would leave nothing to transfer the weights on.
+
+    Copied by hand rather than through ``bpy.ops.object.duplicate()`` because the
+    operator needs the objects visible and selectable -- collections hidden in the
+    viewport make ``select_set()`` a silent no-op -- and because the armature modifier
+    on each copied mesh has to be repointed at the copied armature, not the original.
+    """
+    new_arm = arm_obj.copy()
+    new_arm.data = arm_obj.data.copy()
+    new_arm.name = name or f"{arm_obj.name}_copy"
+    new_arm.data.name = new_arm.name
+    for coll in arm_obj.users_collection:
+        coll.objects.link(new_arm)
+
+    for mesh_obj in [o for o in bpy.data.objects if o.type == 'MESH']:
+        mods = [m for m in mesh_obj.modifiers
+                if m.type == 'ARMATURE' and m.object == arm_obj]
+        if not mods:
+            continue
+        new_mesh = mesh_obj.copy()
+        new_mesh.data = mesh_obj.data.copy()
+        for m in new_mesh.modifiers:
+            if m.type == 'ARMATURE' and m.object == arm_obj:
+                m.object = new_arm
+        if new_mesh.parent == arm_obj:
+            new_mesh.parent = new_arm
+        for coll in mesh_obj.users_collection:
+            coll.objects.link(new_mesh)
+    return new_arm
+
+
 def get_armature_enum_items(self, context):
     """通用骨架下拉框回调：列出场景中所有骨架物体。
     保留全局引用防止 Blender 因 GC 出现野指针崩溃。"""

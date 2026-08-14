@@ -16,7 +16,8 @@ import os
 import bpy
 
 from .bone_mapper import BoneMapManager, auto_detect_preset, build_cross_game_map
-from .chain_convert import iter_collider_bindings, remap_collider_attachments
+from .chain_convert import (duplicate_chain_collection, iter_collider_bindings,
+                            remap_collider_attachments)
 from .i18n import T
 
 #: Games this is offered for, keyed by the ``game_code`` in the bone preset -- which
@@ -129,6 +130,9 @@ class MODDER_OT_ConvertChainCrossGame(bpy.types.Operator):
     target_game: bpy.props.EnumProperty(name="Target Game", items=_target_game_items)
     target_armature: bpy.props.EnumProperty(
         name="Target Armature", items=_armature_items)
+    replace_original: bpy.props.BoolProperty(
+        name="Replace the Original", default=False,
+        description="Convert the original in place instead of converting a copy")
 
     @classmethod
     def description(cls, context, properties):
@@ -159,6 +163,8 @@ class MODDER_OT_ConvertChainCrossGame(bpy.types.Operator):
         layout.prop(self, "target_game", text=T("core.chain_convert_ops.target_game"))
         layout.prop(self, "target_armature",
                     text=T("core.chain_convert_ops.target_armature"))
+        layout.prop(self, "replace_original",
+                    text=T("core.port.replace_original"))
 
         if not getattr(self, "_lines", None):
             self._preflight()
@@ -244,6 +250,10 @@ class MODDER_OT_ConvertChainCrossGame(bpy.types.Operator):
         if err is not None or cross_map is None:
             self.report({'ERROR'}, err[1] if err else T("core.chain_convert_ops.blocked"))
             return {'CANCELLED'}
+
+        if not self.replace_original:
+            col, _mapping = duplicate_chain_collection(
+                col, f"{col.name}_{self.target_game}")
 
         rep = remap_collider_attachments(col, cross_map, target_armature=arm)
         self.report({'INFO'}, T("core.chain_convert_ops.done").format(

@@ -26,6 +26,7 @@ from .core import mdf_tex_processor_base
 from .core import tex_convert_base
 from .core import shader_ops
 from .core import chain_convert_ops
+from .core import mesh_port_ops
 from . import ui, games
 
 class MT_Preferences(AddonPreferences):
@@ -89,6 +90,7 @@ modules = [
     tex_convert_base,
     shader_ops,
     chain_convert_ops,
+    mesh_port_ops,
     games,
     ui,
 ]

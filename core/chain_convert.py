@@ -160,6 +160,74 @@ def remap_collider_attachments(collection, cross_map, target_armature=None,
     return report
 
 
+#: Chain properties that hold an *object name* and therefore need remapping when a
+#: chain collection is duplicated.  Audited against RE-Chain-Editor's property groups:
+#: these two are the only object references in the whole chain data model.  Everything
+#: else that is a string there is a bone name (``constraintJntName``, ``jointHash``),
+#: a file path (``colliderFilterInfoPath``), a UI label or a type marker -- bone names
+#: must follow the new armature, so they are deliberately left alone.
+LINK_GROUP_REFS = ("chainGroupAObject", "chainGroupBObject")
+
+
+def duplicate_chain_collection(collection, name, link_into=None):
+    """Deep-copy a chain collection and return ``(new_collection, {old: new})``.
+
+    Blender's own duplicate is not enough on its own: it remaps *pointer* references
+    (constraint targets, parents) but cannot touch ``chainGroupAObject`` /
+    ``chainGroupBObject``, which are object **names** in a StringProperty. It has no
+    way to know those strings denote objects, so a naive duplicate silently leaves the
+    copy's links bound to the *original* collection's groups.
+
+    Objects are copied by hand rather than through ``bpy.ops.object.duplicate()`` so
+    the old->new mapping is exact; the operator version only leaves ``.001`` suffixes
+    to guess from.
+    """
+    new_col = bpy.data.collections.new(name)
+    (link_into or bpy.context.scene.collection).children.link(new_col)
+
+    originals = list(collection.all_objects)
+    mapping = {}
+    for obj in originals:
+        copy = obj.copy()
+        if obj.data is not None:
+            copy.data = obj.data.copy()
+        mapping[obj.name] = copy
+        new_col.objects.link(copy)
+
+    # parents second: the whole set has to exist before it can be rewired, and a
+    # parent outside the collection (the armature) is left pointing where it was
+    for obj in originals:
+        copy = mapping[obj.name]
+        if obj.parent is not None:
+            copy.parent = mapping.get(obj.parent.name, obj.parent)
+            copy.matrix_parent_inverse = obj.matrix_parent_inverse.copy()
+
+    remap_link_group_refs(new_col, {k: v.name for k, v in mapping.items()})
+    return new_col, mapping
+
+
+def remap_link_group_refs(collection, name_map):
+    """Point every chain link in *collection* at the copied groups, not the originals.
+
+    Returns the number of properties rewritten.  Values that are not object names are
+    left alone: RE-Chain-Editor falls back to storing a raw hash as a digit string
+    when it cannot find the group object, and that must survive untouched.
+    """
+    fixed = 0
+    for obj in collection.all_objects:
+        if obj.get("TYPE") != "RE_CHAIN_LINK":
+            continue
+        pg = getattr(obj, "re_chain_chainlink", None)
+        if pg is None:
+            continue
+        for attr in LINK_GROUP_REFS:
+            old = getattr(pg, attr, "")
+            if old and old in name_map:
+                setattr(pg, attr, name_map[old])
+                fixed += 1
+    return fixed
+
+
 def collider_attach_bones(collection):
     """The distinct bone names every collider in *collection* is bound to.
 

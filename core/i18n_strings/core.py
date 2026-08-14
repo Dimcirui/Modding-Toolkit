@@ -928,6 +928,13 @@ STRINGS = {
     "core.chain_convert_ops.target_game": {"EN": "Target Game", "ZH": "目标游戏"},
     "core.chain_convert_ops.target_armature": {
         "EN": "Target Armature", "ZH": "目标骨架"},
+    # Shared by both cross-game ports (chain and mesh): off by default, so the
+    # destructive choice is the one that needs an explicit tick.
+    "core.port.replace_original": {
+        "EN": "Replace the Original", "ZH": "替换原目标"},
+    "core.port.replace_original_desc": {
+        "EN": "Convert the original in place instead of converting a copy",
+        "ZH": "就地转换原对象，而不是转换一份副本"},
     "core.chain_convert_ops.no_chain_collection": {
         "EN": "No chain collection found. Import a .chain/.chain2 first",
         "ZH": "未找到物理链集合，请先导入 .chain/.chain2"},
@@ -959,4 +966,67 @@ STRINGS = {
     "core.chain_convert_ops.blocked": {
         "EN": "Cannot convert: some colliders would end up bound to nothing",
         "ZH": "无法转换：部分碰撞体会绑到不存在的骨骼上"},
+
+    # --- mesh_port_ops: cross-game rig port -------------------------------------
+    "core.mesh_port_ops.desc": {
+        "EN": "Port a model to another RE Engine game by converting its skeleton: "
+              "rename the bones, merge the ones the target game does not have "
+              "(moving their weights), add the ones it needs, and re-express bone "
+              "axes in the target's convention. Always works on a copy of the "
+              "armature and its meshes. Port the skeleton first, then its chain",
+        "ZH": "把模型移植到另一个 RE Engine 游戏 —— 转换它的骨架：重命名骨骼、"
+              "合并目标游戏没有的骨（连同权重）、补上它需要的骨、并把骨骼轴向"
+              "改写成目标游戏的约定。始终在骨架与其网格的副本上操作。"
+              "先移植骨架，再移植物理链"},
+    "core.mesh_port_ops.source_armature": {
+        "EN": "Source Armature", "ZH": "源骨架"},
+    "core.mesh_port_ops.target_game": {"EN": "Target Game", "ZH": "目标游戏"},
+    "core.mesh_port_ops.reference_skeleton": {
+        "EN": "Reference Skeleton", "ZH": "参考骨架"},
+    "core.mesh_port_ops.pick_target": {
+        "EN": "Pick a source armature and target game",
+        "ZH": "请选择源骨架与目标游戏"},
+    "core.mesh_port_ops.wrong_source_game": {
+        "EN": "This armature looks like {found}, not {expected}. "
+              "Use the {found} section instead",
+        "ZH": "该骨架看起来是 {found}，不是 {expected}。请改用 {found} 板块"},
+    "core.mesh_port_ops.stat_plan": {
+        "EN": "{renamed} renamed, {merged} merged, {inserted} inserted, {kept} kept",
+        "ZH": "{renamed} 根重命名，{merged} 根合并，{inserted} 根新增，{kept} 根保持"},
+    "core.mesh_port_ops.name_clash": {
+        "EN": "{n} bone(s) collide with a renamed bone and are merged into it, "
+              "weights included: {names}",
+        "ZH": "{n} 根骨骼与重命名后的骨撞名，已连同权重合并进去：{names}"},
+    "core.mesh_port_ops.unplaceable": {
+        "EN": "{n} bone(s) the target game needs have no placement rule: {names}",
+        "ZH": "{n} 根目标游戏需要的骨骼没有放置规则：{names}"},
+    "core.mesh_port_ops.needs_correction": {
+        "EN": "Crosses axis conventions: a reference skeleton is required, and both "
+              "rigs must be in the same pose (run REE to T-Pose on both)",
+        "ZH": "跨轴向约定：必须提供参考骨架，且两套骨架需处于同一姿态"
+              "（对两者各跑一次「REE 转 T-Pose」）"},
+    "core.mesh_port_ops.all_resolved": {
+        "EN": "Every bone has a destination", "ZH": "每根骨骼都有去处"},
+    "core.mesh_port_ops.need_reference": {
+        "EN": "This direction needs a reference skeleton to derive the axis "
+              "correction from",
+        "ZH": "该方向需要参考骨架来推导轴向修正矩阵"},
+    "core.mesh_port_ops.pose_mismatch": {
+        "EN": "{rejected} bones failed the axis check — the two rigs are not in the "
+              "same pose. Run REE to T-Pose on both, then retry",
+        "ZH": "{rejected} 根骨骼未通过轴向检验 —— 两套骨架姿态不一致。"
+              "请对两者各跑一次「REE 转 T-Pose」后重试"},
+    "core.mesh_port_ops.copy_failed": {
+        "EN": "Could not copy the armature", "ZH": "复制骨架失败"},
+    "core.mesh_port_ops.blocked": {
+        "EN": "Cannot port: {detail}", "ZH": "无法移植：{detail}"},
+    "core.mesh_port_ops.done": {
+        "EN": "Ported to {game} as {name}: {renamed} renamed, {merged} merged, "
+              "{inserted} inserted, {corrected} re-oriented",
+        "ZH": "已移植到 {game}，产出 {name}：{renamed} 根重命名，{merged} 根合并，"
+              "{inserted} 根新增，{corrected} 根改轴"},
+    "core.mesh_port_ops.rejected": {
+        "EN": "{n} bone(s) kept the source convention (no trustworthy correction): "
+              "{names}",
+        "ZH": "{n} 根骨骼保留了源约定（没有可信的修正矩阵）：{names}"},
 }

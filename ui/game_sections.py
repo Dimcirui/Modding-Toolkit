@@ -86,7 +86,10 @@ def _port(game_code):
     The section fixes the source game; the dialog picks the target.  MHWI gets no
     'port' group -- it is not RE Engine and its physics goes through mhw_ctc.
     """
-    return [op("modder.convert_chain_cross_game",
+    return [op("modder.port_mesh_cross_game",
+               "ui.main_panel.btn_port_mesh_cross_game", 'ARMATURE_DATA',
+               props={'source_game': game_code}),
+            op("modder.convert_chain_cross_game",
                "ui.main_panel.btn_convert_chain_cross_game", 'UV_SYNC_SELECT',
                needs='re_chain', props={'source_game': game_code})]
 

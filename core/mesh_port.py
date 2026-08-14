@@ -1,0 +1,300 @@
+"""RE Mesh port, planning layer: what has to happen to a rig to make it another
+game's rig.
+
+Named after the mesh rather than the skeleton on purpose: across RE Engine games the
+mesh itself needs nothing -- same naming system, same data -- so "porting a mesh"
+*is* porting its rig.  ``core/chain_convert.py`` is the physics half and depends on
+this one: a chain can only be ported onto a rig that has already been ported, and
+**both must consume the same rename map** (``core.bone_mapper.build_cross_game_map``).
+Two copies of that mapping drifting apart puts a collider on the wrong bone, and per
+memory ``reference_mhwmodfixer`` broken chain physics fails *at boot only* -- nothing
+static catches it.
+
+Four things happen to a source bone, and the split is not symmetric:
+
+* **rename** -- the mapping gives a target name nothing else claims.
+* **merge** -- several source bones map to one target bone (MHWilds' ``_HJ_`` helpers
+  collapsing onto their base, ``L_Knee`` onto ``L_Shin``).  They must be *merged*, not
+  kept and not dropped: keeping an extra joint between two base bones breaks animation
+  (channels are resolved by name hash, so an unreferenced link in the middle drives
+  the tip to the wrong place), while dropping one throws away vertex weights.  Only
+  leaf bones -- hair, cloth -- can multiply freely, because nothing animates them.
+* **pass through** -- no mapping at all.  This is the *correct* outcome for the
+  per-asset hair/cloth/prop bones: they travel with the model, so their names, and
+  therefore their hashes, already match in the target game.
+* **insert** -- the reverse direction's problem: the target game has a base bone the
+  source rig lacks.  Same animation argument in reverse, so it has to be synthesised.
+
+Insertion is deliberately limited to the curated table below rather than "every bone
+the reference rig has".  The bundled reference models are whole characters, so their
+bone lists include that character's own hair and cloth; inserting those into someone
+else's model would be nonsense.  Anything a target rig wants that is not in the table
+is *reported*, never guessed -- the same rule ``chain_convert`` follows for unmapped
+collider attach points.
+
+Placement rules come from measurement, not intuition:
+
+* ``Palm`` sits **at** ``Hand``, not at the midpoint between ``Hand`` and the finger
+  roots it parents.  Measured against the real bone on four rigs (mm off): RE9 Leon
+  33.6 vs 36.4, RE9 Grace 25.4 vs 31.7, MHWS 12.0 vs 47.0, RE4 Leon 27.9 vs 27.5.
+  Co-locating on ``Hand`` wins or ties everywhere, and it is what the existing MHWS
+  rule ``{s}_Palm -> {s}_Hand`` already does.
+* End and attachment bones (``ToesEnd``, ``Wep``, ``Prop``, ``GroundAngle``,
+  ``Null_Offset``) carry no joint semantics, so they are placed at the reference
+  model's own parent-relative offset, unscaled.
+* Never walk up the parent chain looking for somewhere to hang a bone.  That was
+  proposed and the data refused it: ``L_Knee``'s parent ``L_Thigh`` is 400 mm away at
+  the hip, and "distance to parent" does not separate helpers from real joints either
+  (of MHWilds' 137 ``_HJ_`` bones, 118 sit >5 mm from their parent).
+
+This module is free of ``bpy`` so the plan can be unit-tested offline; geometry and
+weight transfer live in ``core/mesh_port_ops.py``.
+"""
+
+#: Placement rules for a bone the target game has and the source rig lacks.
+#:
+#: ``("colocate", anchor)``   -- head goes exactly where *anchor*'s head is, so the
+#:                               bone inherits the target model's own proportions.
+#: ``("midpoint", (a, b))``   -- head goes midway between two joints; this is what
+#:                               MHWilds' twist helpers need, and the rules for those
+#:                               come in through *extra_rules* from the existing
+#:                               ``MHWS_OT_OptimizeAuxBones`` tables.
+#: ``("ref_offset", None)``   -- head goes at the offset from its parent that the
+#:                               bundled reference model has, unscaled.
+#:
+#: ``{s}`` expands to ``L`` and ``R``.  Keys are target-game bone names.
+_INSERT_RULES = {
+    "RE9": {
+        # RE9 splits the ankle into two joints; the extra one rides on the ankle.
+        "{s}_Leg_Foot": ("colocate", "{s}_Leg_Ankle"),
+        "{s}_Hand_Palm": ("colocate", "{s}_Arm_Hand"),
+        "Spine_0": ("colocate", "Hip"),
+        "Neck_0": ("colocate", "Neck_1"),
+        "{s}_Leg_ToesEnd": ("ref_offset", None),
+        "{s}_Wep": ("ref_offset", None),
+        "GroundAngle": ("ref_offset", None),
+        "R_Prop_Hip_A": ("ref_offset", None),
+        "C_Prop_Spine_A": ("ref_offset", None),
+        "C_Prop_Spine_B": ("ref_offset", None),
+        "C_Prop_Spine_C": ("ref_offset", None),
+        "C_Prop_Hip_A": ("ref_offset", None),
+        "C_Prop_Hip_B": ("ref_offset", None),
+    },
+    "RE4": {
+        "{s}_Palm": ("colocate", "{s}_Hand"),
+        "Spine_0": ("colocate", "Hip"),
+        "Neck_0": ("colocate", "Neck_1"),
+        "{s}_ToeEnd": ("ref_offset", None),
+        "{s}_Wep": ("ref_offset", None),
+        "Null_Offset": ("ref_offset", None),
+    },
+    # MHWilds' helper system is large but already solved: MHWS_OT_OptimizeAuxBones
+    # holds the placement tables, and mesh_port_ops feeds them in through
+    # *extra_rules* rather than restating 39 bones here.
+    "MHWS": {
+        "{s}_Knee": ("colocate", "{s}_Shin"),
+        "COG": ("colocate", "Hip"),
+        "{s}_Palm": ("colocate", "{s}_Hand"),
+        "{s}_Instep": ("ref_offset", None),
+    },
+}
+
+#: Bones that exist on every rig as scene plumbing rather than anatomy.  They are
+#: never renamed (no preset registers them) and never inserted; same name in every
+#: game means pass-through is already correct.
+PLUMBING_BONES = frozenset({"root", "Root"})
+
+
+def insert_rules_for(game_code, extra_rules=None):
+    """``{bone_name: (rule, anchor_or_None)}`` for *game_code*, ``{s}`` expanded."""
+    out = {}
+    for template, (rule, anchor) in (_INSERT_RULES.get(game_code) or {}).items():
+        if "{s}" in template:
+            for side in ("L", "R"):
+                out[template.format(s=side)] = (
+                    rule, anchor.format(s=side) if anchor else None)
+        else:
+            out[template] = (rule, anchor)
+    if extra_rules:
+        out.update(extra_rules)
+    return out
+
+
+class PortPlan:
+    """What a port would do to one rig.
+
+    renames      : [(src, dst)] -- bone keeps its identity under a new name
+    merges       : [(src, into)] -- src disappears, its weights move to *into*
+    passthrough  : [src] -- no mapping, kept verbatim (hair/cloth/props/plumbing)
+    inserts      : [(name, rule, anchor)] -- target base bone the source rig lacks
+    uninsertable : [name] -- target wants it, no rule covers it.  **Reported, never
+                   guessed**: a base bone placed by intuition is a skinning bug that
+                   only shows up in motion.
+    collisions   : {dst: [src, ...]} -- the many-to-one groups behind *merges*,
+                   kept for reporting.
+    clashes      : [(src, into)] -- a pass-through bone whose name is also produced by
+                   a rename, so it is merged into the bone taking that name.  These
+                   are in *merges* too; the separate list exists to report them,
+                   because they are the one merge the mapping did not ask for.
+
+                   The case is real and symmetric.  Every one of these games runs
+                   ``Hip -> Spine_0 -> Spine_1 -> Spine_2 -> Neck_0 -> Neck_1 ->
+                   Head``, measured on three shipped rigs along the Hip->Neck_0 axis:
+
+                       t         Spine_0  Spine_1  Spine_2  Neck_0  Neck_1
+                       MHWS        0.002    0.273    0.548   0.638   0.810
+                       RE4         0.000    0.333    0.666   0.494   0.739
+                       RE9         0.000    0.342    0.683   0.501   0.745
+
+                   Same names, same order, same parents.  What differs is which
+                   member each *preset* assigns to the ``spine_01`` / ``neck``
+                   standard slot -- mhws.json says ``Spine_0`` and ``Neck_0``,
+                   re4.json says ``Spine_1`` and ``Neck_1``.  The preset table is the
+                   authority here by decision, so the port shifts the chain by one
+                   and the source's own top neck bone is left without a slot.
+                   Merging it into its neighbour keeps its weights and keeps the
+                   target's joint count right; keeping it would leave two bones
+                   fighting for one name, which Blender resolves by appending
+                   ``.001`` and the game resolves by hashing a name no rig has.
+    """
+
+    def __init__(self, src_game, dst_game):
+        self.src_game = src_game
+        self.dst_game = dst_game
+        self.renames = []
+        self.merges = []
+        self.passthrough = []
+        self.inserts = []
+        self.uninsertable = []
+        self.collisions = {}
+        self.clashes = []
+
+    @property
+    def ok(self):
+        return not self.uninsertable
+
+    def summary(self):
+        parts = [f"{self.src_game}->{self.dst_game}",
+                 f"{len(self.renames)} renamed",
+                 f"{len(self.merges)} merged",
+                 f"{len(self.inserts)} inserted",
+                 f"{len(self.passthrough)} kept"]
+        if self.uninsertable:
+            parts.append(f"{len(self.uninsertable)} UNPLACEABLE")
+        if self.clashes:
+            parts.append(f"{len(self.clashes)} name clash merged")
+        return ", ".join(parts)
+
+
+def _pick_primary(dst_name, src_names, src_main_names):
+    """Which of several source bones mapping to *dst_name* survives as that bone.
+
+    Preference order, most specific first: the bone already called *dst_name* (the
+    two games share the name in the same slot), then the source preset's ``main``
+    bone for its slot (the anatomical joint, e.g. ``L_Thigh`` when helpers collapse
+    with it), then alphabetical so the result is at least deterministic.
+    """
+    if dst_name in src_names:
+        return dst_name
+    for name in sorted(src_names):
+        if name in src_main_names:
+            return name
+    return sorted(src_names)[0]
+
+
+def build_port_plan(src_bones, cross_map, dst_game=None, src_main_names=(),
+                    dst_bones=None, extra_rules=None):
+    """Plan the rig half of a cross-game mesh port.
+
+    *src_bones*      : the source rig's bone names.
+    *cross_map*      : ``CrossGameBoneMap`` from ``build_cross_game_map`` -- the same
+                       object the chain port consumes, not a second copy.
+    *dst_bones*      : the target reference rig's bone names, when one is available.
+                       Without it, insertions can still be planned from the rule table
+                       but nothing can be checked against a real target rig.
+    *src_main_names* : the source preset's ``main`` bones, used to break merge ties.
+    *extra_rules*    : extra ``{name: (rule, anchor)}`` entries, e.g. MHWilds' helper
+                       placement tables.
+    """
+    plan = PortPlan(getattr(cross_map, "src_game", None),
+                    dst_game or getattr(cross_map, "dst_game", None))
+    src_bones = list(src_bones)
+    src_main_names = set(src_main_names)
+
+    # 1. group by destination, so many-to-one shows up before anything is decided
+    by_dst = {}
+    for name in src_bones:
+        dst = cross_map.get(name)
+        if dst is None:
+            plan.passthrough.append(name)
+            continue
+        by_dst.setdefault(dst, []).append(name)
+
+    produced = set()
+    for dst, srcs in sorted(by_dst.items()):
+        primary = _pick_primary(dst, srcs, src_main_names)
+        produced.add(dst)
+        if primary != dst:
+            plan.renames.append((primary, dst))
+        for name in sorted(srcs):
+            if name != primary:
+                plan.merges.append((name, dst))
+        if len(srcs) > 1:
+            plan.collisions[dst] = sorted(srcs)
+
+    # 2. what the target game has that the port has not produced.  Only bones the
+    #    rule table covers are candidates -- see the module docstring on why the
+    #    reference rig's full bone list is not the right set.
+    rules = insert_rules_for(plan.dst_game, extra_rules)
+    kept = set(plan.passthrough)
+    for name, (rule, anchor) in sorted(rules.items()):
+        if name in produced or name in kept:
+            continue
+        if dst_bones is not None and name not in dst_bones:
+            continue        # this particular target rig does not have it either
+        plan.inserts.append((name, rule, anchor))
+
+    # 3. an insertion is only placeable if its anchor will actually be there.  A
+    #    co-located bone whose anchor is missing has nowhere to go, and the fallback
+    #    everyone reaches for -- walk up to the nearest mappable ancestor -- was
+    #    refuted by measurement, so it becomes a report instead.
+    available = produced | set(plan.passthrough) | {n for n, _r, _a in plan.inserts}
+    placeable = []
+    for name, rule, anchor in plan.inserts:
+        needed = () if anchor is None else (
+            anchor if isinstance(anchor, (tuple, list)) else (anchor,))
+        if any(a not in available for a in needed):
+            plan.uninsertable.append(name)
+        else:
+            placeable.append((name, rule, anchor))
+    plan.inserts = placeable
+
+    # 4. a bone kept verbatim must not land on a name the port is also producing --
+    #    Blender would silently suffix it and the game would hash a name no rig has.
+    #    It merges into whatever takes the name, weights and all.
+    #    The survivor is named by *its own* source name, because merges run before
+    #    renames: at that point the bone taking over the name is still called
+    #    whatever it was called in the source game.
+    inserted = {n for n, _r, _a in plan.inserts}
+    taken_by = {dst: src for src, dst in plan.renames}
+    for name in list(plan.passthrough):
+        if name not in produced and name not in inserted:
+            continue
+        into = taken_by.get(name)
+        if into is None:                # the name survives under itself; no clash
+            continue
+        plan.passthrough.remove(name)
+        plan.clashes.append((name, into))
+        plan.merges.append((name, into))
+
+    # 5. anything the target rig has, the port did not produce, and no rule places.
+    #    Custom bones of the reference character are excluded by only counting bones
+    #    the preset knows about -- those are the base skeleton.
+    if dst_bones is not None:
+        placed = produced | kept | inserted | PLUMBING_BONES
+        known_targets = {cross_map.get(n) for n in getattr(cross_map, "mapping", {})}
+        plan.uninsertable.extend(
+            n for n in dst_bones if n in known_targets and n not in placed)
+    plan.uninsertable = sorted(set(plan.uninsertable))
+
+    return plan
