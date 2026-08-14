@@ -99,36 +99,6 @@ def _preset_main_names(fname):
     return {n for entry in mgr.mapping_data.values() for n in entry.get("main", ())}
 
 
-# ── rig duplication ─────────────────────────────────────────────────────────────
-
-def duplicate_rig(arm_obj, suffix):
-    """Copy *arm_obj* together with every mesh it drives; return the new armature.
-
-    Both are duplicated in one operator call so Blender re-points the copies' armature
-    modifiers and parenting at the copied armature; duplicating them separately would
-    leave the new meshes deformed by the original rig.
-    """
-    meshes = [o for o in bpy.data.objects
-              if o.type == 'MESH' and (o.find_armature() == arm_obj
-                                       or o.parent == arm_obj)]
-    if bpy.context.mode != 'OBJECT':
-        bpy.ops.object.mode_set(mode='OBJECT')
-    bpy.ops.object.select_all(action='DESELECT')
-    for o in (arm_obj, *meshes):
-        o.hide_set(False)
-        o.select_set(True)
-    bpy.context.view_layer.objects.active = arm_obj
-    bpy.ops.object.duplicate(linked=False)
-
-    new_arm = bpy.context.view_layer.objects.active
-    if new_arm is None or new_arm.type != 'ARMATURE':
-        new_arm = next((o for o in bpy.context.selected_objects
-                        if o.type == 'ARMATURE'), None)
-    if new_arm is not None:
-        new_arm.name = f"{arm_obj.name}_{suffix}"
-    return new_arm
-
-
 # ── plan execution ──────────────────────────────────────────────────────────────
 
 def _rename_bones(arm_obj, pairs):
@@ -203,6 +173,26 @@ def _insert_bones(arm_obj, inserts, ref_arm):
                 new.tail = head + Vector((0.0, 0.0, 0.01))
             new.parent = parent if parent is not None else None
             new.use_connect = False
+
+            # A base bone inserted mid-chain has to take over its children, or it
+            # ends up a dangling sibling: measured on a real MHWS -> RE4 run, the
+            # inserted Neck_0 sat under Spine_2 next to Neck_1 instead of between
+            # them, so RE4's Neck_0 animation channel would have driven nothing.
+            # Which bones are its children is read from the reference rig, and only
+            # bones currently parented to the *same* parent are moved -- so this
+            # re-links the chain without re-shaping anything else.
+            #
+            # Compared by name, not by identity: Blender hands out a fresh Python
+            # wrapper on each RNA access, so ``child.parent is parent`` is False even
+            # for the same bone, which silently skipped every re-parent (that is how
+            # the dangling Neck_0 survived the first attempt at this fix).
+            if ref is not None and parent is not None:
+                for child_ref in ref.children:
+                    child = eb.get(child_ref.name)
+                    if (child is not None and child.name != name
+                            and child.parent is not None
+                            and child.parent.name == parent.name):
+                        child.parent = new
             made += 1
     finally:
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -286,14 +276,6 @@ def _cached(key, items):
     return cache
 
 
-def _armature_items(self, context):
-    items = [(o.name, f"{o.name}  ({len(o.data.bones)})", "", 'ARMATURE_DATA', i)
-             for i, o in enumerate(o for o in bpy.data.objects if o.type == 'ARMATURE')]
-    if not items:
-        items = [("NONE", "-", "", 'ERROR', 0)]
-    return _cached("armature", items)
-
-
 def _target_game_items(self, context):
     presets = _preset_by_game()
     items = [(c, c, "", i) for i, c in enumerate(
@@ -311,11 +293,18 @@ def _reference_items(self, context):
 class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
     bl_idname = "modder.port_mesh_cross_game"
     bl_label = "Port Mesh to Another Game"
-    bl_options = {'REGISTER', 'UNDO'}
+    #: No 'UNDO', which would put this in the redo panel where adjusting a property
+    #: re-runs the operator.  The port is not idempotent -- a second run would port
+    #: the copy it just made -- and it writes through bpy.data, so the undo stack
+    #: cannot take the result back either.  It must run exactly once per click.
+    bl_options = {'REGISTER'}
 
     source_game: bpy.props.StringProperty(options={'HIDDEN'})
-    source_armature: bpy.props.EnumProperty(
-        name="Source Armature", items=_armature_items)
+    #: A name, not an EnumProperty.  A dynamic enum's stored value is an index into a
+    #: list rebuilt on every access, and this operator grows the object list mid-run by
+    #: importing the reference skeleton -- so the safe thing is a value that cannot be
+    #: re-resolved at all.  ``prop_search`` gives the same picker in the dialog.
+    source_armature: bpy.props.StringProperty(name="Source Armature")
     target_game: bpy.props.EnumProperty(name="Target Game", items=_target_game_items)
     reference_skeleton: bpy.props.EnumProperty(
         name="Reference Skeleton", items=_reference_items)
@@ -342,7 +331,8 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "source_armature", text=T("core.mesh_port_ops.source_armature"))
+        layout.prop_search(self, "source_armature", bpy.data, "objects",
+                           text=T("core.mesh_port_ops.source_armature"))
         layout.prop(self, "target_game", text=T("core.mesh_port_ops.target_game"))
         layout.prop(self, "reference_skeleton",
                     text=T("core.mesh_port_ops.reference_skeleton"))
@@ -463,17 +453,13 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
                         rejected=len(correction_set.rejected)))
                     return {'CANCELLED'}
 
-            new_arm = duplicate_rig(arm, self.target_game)
-            if new_arm is None:
-                self.report({'ERROR'}, T("core.mesh_port_ops.copy_failed"))
-                return {'CANCELLED'}
-            counts = execute_port(new_arm, plan, ref_arm, correction_set)
+            counts = execute_port(arm, plan, ref_arm, correction_set)
         finally:
             if ref_arm is not None:
                 bpy.data.objects.remove(ref_arm, do_unlink=True)
 
         msg = T("core.mesh_port_ops.done").format(
-            game=self.target_game, name=new_arm.name, **counts)
+            game=self.target_game, name=arm.name, **counts)
         if correction_set is not None and correction_set.rejected:
             msg += " " + T("core.mesh_port_ops.rejected").format(
                 n=len(correction_set.rejected),
