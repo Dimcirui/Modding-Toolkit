@@ -385,8 +385,9 @@ def duplicate_chain_collection(collection, name, link_into=None):
 
     clsp = _sibling_clsp_collection(collection)
     colliders = _collision_objects(clsp if clsp is not None else collection)
+    inline_colliders = name.endswith(".chain")
     if colliders:
-        if name.endswith(".chain"):
+        if inline_colliders:
             container = bpy.data.collections.new(f"Chain Collisions - {name}")
             container["TYPE"] = CHAIN_COLLISION_COLLECTION_TYPE
             new_col.children.link(container)
@@ -404,6 +405,31 @@ def duplicate_chain_collection(collection, name, link_into=None):
         if obj.parent is not None:
             copy.parent = mapping.get(obj.parent.name, obj.parent)
             copy.matrix_parent_inverse = obj.matrix_parent_inverse.copy()
+
+    # Collider parenting is decided by the target format, not inherited: a .chain's
+    # collision roots hang off the chain header (blender_re_chain.py:830,866) while
+    # a .clsp's are created parentless (blender_re_clsp.py:400,434).  Carrying the
+    # source's own answer across is what made every capsule of a .clsp -> .chain
+    # port fail RE-Chain-Editor's export check with "object must be parented to a
+    # chain header object".  Only the roots move; the capsule endpoints stay
+    # parented to their own root either way.
+    header = next((mapping[o.name] for o in originals
+                   if o.get("TYPE") == "RE_CHAIN_HEADER"), None)
+    for src in colliders:
+        if src.get("TYPE") not in COLLIDER_TYPES:
+            continue
+        copy = mapping[src.name]
+        if not inline_colliders:
+            copy.parent = None
+        elif header is not None:
+            copy.parent = header
+            copy.matrix_parent_inverse.identity()
+
+    # The header is named after its own collection on import, so a copy that keeps
+    # the source's name reads as the wrong format ("CHAIN_HEADER foo.chain2" sitting
+    # in a .chain).  Nothing resolves it by name, so this is purely legibility.
+    if header is not None:
+        header.name = f"CHAIN_HEADER {name}"
 
     remap_link_group_refs(new_col, {k: v.name for k, v in mapping.items()})
     return new_col, mapping
