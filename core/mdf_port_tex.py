@@ -146,7 +146,8 @@ def unpack_channels(png_path, slot_type, temp_dir, tex_name, channel_maps=None):
     import bpy
     import numpy as np
 
-    from .mdf_tex_processor_base import BASE_SLOT_CHANNEL_MAPS, NORMAL_OCTAHEDRAL_SLOT_TYPES, _CH
+    from .mdf_tex_processor_base import (BASE_SLOT_CHANNEL_MAPS, NORMAL_OCTAHEDRAL_SLOT_TYPES,
+                                         _CH, array_to_image, image_to_array)
     from .re_normal_pack import decode_normal_ga
 
     if channel_maps is None:
@@ -162,7 +163,7 @@ def unpack_channels(png_path, slot_type, temp_dir, tex_name, channel_maps=None):
     img.name = tmp_name
     img.colorspace_settings.name = 'Non-Color'
     w, h = img.size
-    pix = np.array(img.pixels[:], dtype=np.float32).reshape(h, w, 4)
+    pix = image_to_array(img)
     bpy.data.images.remove(img)
 
     pbr_arrays = {}
@@ -197,7 +198,7 @@ def unpack_channels(png_path, slot_type, temp_dir, tex_name, channel_maps=None):
             bpy.data.images.remove(bpy.data.images[tmp_out])
         out_img = bpy.data.images.new(tmp_out, width=w, height=h, alpha=True)
         out_img.colorspace_settings.name = 'Non-Color'
-        out_img.pixels[:] = arr.flatten().tolist()
+        array_to_image(out_img, arr)
         out_path = os.path.join(temp_dir, f"{tex_name}_{pbr_type}_unpacked.png")
         out_img.filepath_raw = out_path
         out_img.file_format = 'PNG'

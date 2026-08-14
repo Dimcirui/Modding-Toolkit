@@ -369,6 +369,28 @@ def _import_tex_utils():
     return _ImageListToDDS, _DDSToTex
 
 
+# ── Pixel buffer transfer ──────────────────────────────────────────────────────
+# bpy's pixel access has one fast path and one very slow one, and the difference
+# dominates every compose.  ``img.pixels[:]`` materialises one Python float per
+# channel -- 67 million objects for a 4K texture -- and ``pixels[:] = arr.tolist()``
+# builds the same list in reverse.  foreach_get/foreach_set move the identical
+# bytes through a preallocated buffer in C instead.
+
+def image_to_array(img):
+    """An image's pixels as an ``(h, w, 4)`` float32 array."""
+    import numpy as np
+    w, h = img.size
+    buf = np.empty(w * h * 4, dtype=np.float32)
+    img.pixels.foreach_get(buf)
+    return buf.reshape(h, w, 4)
+
+
+def array_to_image(img, arr):
+    """Write an ``(h, w, 4)`` array back into *img*."""
+    import numpy as np
+    img.pixels.foreach_set(np.ascontiguousarray(arr, dtype=np.float32).ravel())
+
+
 # ── Channel composition ────────────────────────────────────────────────────────
 
 def channel_maps_consume_ao(channel_maps):
@@ -448,7 +470,7 @@ def _compose_channels(slot_type, pbr_paths, pbr_channels, temp_dir, tex_name, pb
         iw, ih = img.size
         if iw != ref_w or ih != ref_h:
             img.scale(ref_w, ref_h)
-        loaded[pbr_type] = np.array(img.pixels[:], dtype=np.float32).reshape(ref_h, ref_w, 4)
+        loaded[pbr_type] = image_to_array(img)
         bpy.data.images.remove(img)
 
     result = np.zeros((ref_h, ref_w, 4), dtype=np.float32)
@@ -530,7 +552,7 @@ def _compose_channels(slot_type, pbr_paths, pbr_channels, temp_dir, tex_name, pb
         bpy.data.images.remove(bpy.data.images[tmp_out])
     out_img = bpy.data.images.new(tmp_out, width=ref_w, height=ref_h, alpha=True)
     out_img.colorspace_settings.name = 'Non-Color'
-    out_img.pixels[:] = result.flatten().tolist()
+    array_to_image(out_img, result)
     out_img.filepath_raw = out_path
     out_img.file_format = 'PNG'
     out_img.save()
