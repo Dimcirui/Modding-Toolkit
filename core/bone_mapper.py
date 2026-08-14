@@ -147,6 +147,112 @@ class BoneMapManager:
         """输入 MhBone_013 -> 返回 pelvis"""
         return self.reverse_mapping.get(game_bone_name, None)
 
+    def standard_from_any(self, game_bone_name):
+        """比 get_standard_from_game 宽：main 的**全部**候选 + aux 都能反查到标准键。
+        reverse_mapping 只收每个标准键 main 列表的第一个，够导出用，但跨游戏映射需要
+        认出备选主骨和辅助骨（碰撞体就会挂在 aux 上，如 Hip_HJ_00）。"""
+        for std_key, entry in self.mapping_data.items():
+            if game_bone_name in entry.get("main", ()):
+                return std_key
+        for std_key, entry in self.mapping_data.items():
+            if game_bone_name in entry.get("aux", ()):
+                return std_key
+        return None
+
+
+# --- 跨游戏骨名映射（由两份预设经标准键组合而来）---
+#
+# 51 个标准键在各游戏预设里是同一套，所以「源预设反查 → 标准键 → 目标预设正查」就得到
+# 任意游戏对的重命名表，不需要另建映射表。物理链转换与骨架转换**必须共用这一份**，
+# 各存一份会漂移成"碰撞体挂错骨"（且 chain 物理只在开局时失败，静态检查看不出来）。
+
+# 预设覆盖 51 个标准槽，槽外的骨它不管。下表补的是**确认存在于真实骨架、但预设里查不到**
+# 的骨，值为它应归入的标准键。只收录已验证条目，别凭猜测扩表。
+_PRESET_GAP_FILL = {
+    # MHWilds 腿链比 family A 多一节：L_Thigh → L_Knee → L_Shin → L_Foot。
+    # L_Knee 在 mhws.json 里既非 main 也非任何 aux，但碰撞体会挂它（实测样本 chain2 里
+    # 有 L_Thigh→L_Knee 这对锥形胶囊）。归入 shin_* 有依据：MHWS_OT_OptimizeSkeleton
+    # 本就把 L_Knee 吸附到 L_Shin 的头（两者共位），且它在参考骨架与原始资产上都零权重。
+    "MHWS": {"L_Knee": "shin_L", "R_Knee": "shin_R"},
+    # RE4R 脚尖末端，re4.json 只到 L_Toe。RE9 没有 ToesEnd（参考脚本 CORRECTION_DATA
+    # 58 条里唯二解析不了的就是这对），跨到 RE9 时必须能收敛到 toe_*。
+    "RE4": {"L_ToeEnd": "toe_L", "R_ToeEnd": "toe_R"},
+}
+
+
+class CrossGameBoneMap:
+    """源游戏骨名 -> 目标游戏骨名。
+
+    mapping    : {源骨名: 目标骨名}，含恒等项（两边同名时）
+    collapsed  : {目标骨名: [塌进它的源骨名…]}，仅列真正多对一的项。
+                 多对一意味着**几何上不同的挂点被合并**，碰撞体的局部偏移可能需要补偿
+                 （实测 MHWilds L_Knee/L_Shin 塌成一个时残差约 28mm，占胶囊半径约 40%）。
+                 补偿量必须从实际源资产上量 —— 方向会随资产翻转，不能建表。
+    dropped    : 源侧有、目标侧该标准键无主骨的标准键（目标缺这个槽位）
+    """
+
+    def __init__(self, src_game, dst_game):
+        self.src_game = src_game
+        self.dst_game = dst_game
+        self.mapping = {}
+        self.collapsed = {}
+        self.dropped = []
+
+    def __len__(self):
+        return len(self.mapping)
+
+    def get(self, bone_name, default=None):
+        """查不到返回 default —— 自带的头发/布料骨走这条路，应当原样透传。"""
+        return self.mapping.get(bone_name, default)
+
+
+def build_cross_game_map(src_preset, dst_preset):
+    """组合两份骨骼预设，返回 CrossGameBoneMap。
+
+    src_preset / dst_preset 是 assets/presets/bone/ 下的文件名（如 "mhws.json"）。
+    载入失败返回 None。
+    """
+    src = BoneMapManager()
+    dst = BoneMapManager()
+    if not src.load_preset(src_preset) or not dst.load_preset(dst_preset):
+        return None
+
+    result = CrossGameBoneMap(src.preset_info.get("game_code"),
+                              dst.preset_info.get("game_code"))
+
+    src_extra = _PRESET_GAP_FILL.get(result.src_game, {})
+
+    # 源骨名 -> 标准键：main 全部候选 + aux + 补漏表
+    src_to_std = {}
+    for std_key, entry in src.mapping_data.items():
+        for name in entry.get("main", ()):
+            src_to_std.setdefault(name, std_key)
+    for std_key, entry in src.mapping_data.items():
+        for name in entry.get("aux", ()):
+            src_to_std.setdefault(name, std_key)
+    for name, std_key in src_extra.items():
+        src_to_std.setdefault(name, std_key)
+
+    for src_name, std_key in src_to_std.items():
+        dst_entry = dst.mapping_data.get(std_key)
+        dst_main = (dst_entry or {}).get("main", ())
+        if not dst_main:
+            if std_key not in result.dropped:
+                result.dropped.append(std_key)
+            continue
+
+        # 同名骨在目标预设的同一标准键下也存在时保留原名，别无谓塌到主骨上
+        # （辅助骨系统各游戏不同名，但偶有共享名，如脚背/掌心一类）
+        dst_names = set(dst_main) | set(dst_entry.get("aux", ()))
+        result.mapping[src_name] = src_name if src_name in dst_names else dst_main[0]
+
+    for src_name, dst_name in result.mapping.items():
+        result.collapsed.setdefault(dst_name, []).append(src_name)
+    result.collapsed = {d: sorted(s) for d, s in result.collapsed.items()
+                        if len(s) > 1}
+
+    return result
+
 
 def _list_preset_files(is_import_x):
     """返回预设目录下所有 .json 文件名列表"""

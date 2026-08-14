@@ -150,6 +150,8 @@ STRINGS = {
     "ui.main_panel.btn_refresh_bone_colors":      {"EN": "Refresh Bone Colors", "ZH": "刷新骨骼颜色"},
     "ui.main_panel.btn_mmd_a_to_tpose":           {"EN": "MMD A to T-Pose", "ZH": "MMD A转Tpose"},
     "ui.main_panel.btn_ree_to_tpose":             {"EN": "REE to T-Pose", "ZH": "REE转Tpose"},
+    "ui.main_panel.btn_convert_chain_cross_game": {
+        "EN": "Port RE Chain", "ZH": "RE Chain 移植"},
     "ui.main_panel.btn_record_transform":         {"EN": "Record Transform (select two armatures)", "ZH": "录制变换 (选两个骨架)"},
     "ui.main_panel.btn_apply_forward":            {"EN": "▶ Forward (A→B)", "ZH": "▶ 正向 (A→B)"},
     "ui.main_panel.btn_apply_inverse":            {"EN": "◀ Inverse (B→A)", "ZH": "◀ 逆向 (B→A)"},
@@ -183,6 +185,7 @@ STRINGS = {
     "ui.game_sections.group_rig":      {"EN": "Skeleton & Mesh",          "ZH": "骨架 & 网格处理"},
     "ui.game_sections.group_material": {"EN": "Material & Texture",       "ZH": "材质 & 贴图处理"},
     "ui.game_sections.group_physics":  {"EN": "Physics",                  "ZH": "物理处理"},
+    "ui.game_sections.group_port":     {"EN": "Cross-Game Port",          "ZH": "跨游戏移植"},
     "ui.game_sections.btn_batch_export_re4":  {"EN": "RE4 Batch Exporter",  "ZH": "RE4 批量导出"},
     "ui.game_sections.btn_batch_export_mhrs": {"EN": "MHRS Batch Exporter", "ZH": "MHRS 批量导出"},
     "ui.game_sections.btn_batch_export_re9":  {"EN": "RE9 Batch Exporter",  "ZH": "RE9 批量导出"},

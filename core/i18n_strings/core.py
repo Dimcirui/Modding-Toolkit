@@ -910,4 +910,53 @@ STRINGS = {
     "core.shader_pack.panel_slots_standard": {"EN": "Game Slots (packed) — Standard", "ZH": "游戏槽位 (打包) — 标准"},
     "core.shader_pack.pbr_ao_strength": {"EN": "AO strength: 0 = off, 1 = the full map", "ZH": "AO 强度：0 为关闭，1 为完整应用"},
     "core.shader_pack.pbr_emission_strength": {"EN": "Emission strength", "ZH": "自发光强度"},
+
+    # --- chain_convert_ops: cross-game chain port -------------------------------
+    "core.chain_convert_ops.desc": {
+        "EN": "Re-bind an imported chain collection's colliders to another game's "
+              "skeleton, in place. Only the bone each collider hangs off changes; "
+              "offsets, radii and the chain nodes themselves are kept as authored. "
+              "The target should be a skeleton produced by the RE Mesh port. Merging "
+              "two source bones onto one target bone is lossy and cannot be undone "
+              "by converting back",
+        "ZH": "把已导入的物理链集合的碰撞体改绑到另一个游戏的骨架上，就地修改。"
+              "只改碰撞体挂的骨骼，偏移、半径与链节点本身原样保留。目标骨架应当是"
+              "「RE Mesh 移植」产出的那一份。两根源骨合并到同一根目标骨是有损的，"
+              "反向转换无法还原"},
+    "core.chain_convert_ops.source_collection": {
+        "EN": "Chain Collection", "ZH": "物理链集合"},
+    "core.chain_convert_ops.target_game": {"EN": "Target Game", "ZH": "目标游戏"},
+    "core.chain_convert_ops.target_armature": {
+        "EN": "Target Armature", "ZH": "目标骨架"},
+    "core.chain_convert_ops.no_chain_collection": {
+        "EN": "No chain collection found. Import a .chain/.chain2 first",
+        "ZH": "未找到物理链集合，请先导入 .chain/.chain2"},
+    "core.chain_convert_ops.pick_target": {
+        "EN": "Pick a target armature to check the result",
+        "ZH": "选择目标骨架后即可查看预检结果"},
+    "core.chain_convert_ops.wrong_source_game": {
+        "EN": "This collection's armature looks like {found}, not {expected}. "
+              "Use the {found} section instead",
+        "ZH": "该集合的骨架看起来是 {found}，不是 {expected}。请改用 {found} 板块"},
+    "core.chain_convert_ops.stat_bindings": {
+        "EN": "{total} collider binding(s): {remapped} re-bound, {kept} unchanged",
+        "ZH": "{total} 个碰撞体绑定：{remapped} 个重绑，{kept} 个保持"},
+    "core.chain_convert_ops.all_resolved": {
+        "EN": "All land on bones the target armature has",
+        "ZH": "全部落在目标骨架真实存在的骨骼上"},
+    "core.chain_convert_ops.unmapped": {
+        "EN": "{n} bone(s) have no mapping: {names}",
+        "ZH": "{n} 根骨骼没有映射：{names}"},
+    "core.chain_convert_ops.missing": {
+        "EN": "{n} bone(s) absent from this armature: {names}. Wrong body part?",
+        "ZH": "{n} 根骨骼在此骨架上不存在：{names}。是否选错了部位？"},
+    "core.chain_convert_ops.merged": {
+        "EN": "{n} target bone(s) merged, e.g. {example} — lossy, not reversible",
+        "ZH": "{n} 根目标骨发生合并，例如 {example} —— 有损，不可逆"},
+    "core.chain_convert_ops.done": {
+        "EN": "Chain ported to {game}: {remapped} collider(s) re-bound, {kept} unchanged",
+        "ZH": "物理链已移植到 {game}：{remapped} 个碰撞体重绑，{kept} 个保持"},
+    "core.chain_convert_ops.blocked": {
+        "EN": "Cannot convert: some colliders would end up bound to nothing",
+        "ZH": "无法转换：部分碰撞体会绑到不存在的骨骼上"},
 }

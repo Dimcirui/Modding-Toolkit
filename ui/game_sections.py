@@ -69,14 +69,26 @@ def op(idname, text_key, icon, *, needs=None, props=None, only_if=None):
 
 
 #: Groups, in the order every game draws them.
-GROUP_ORDER = ('io', 'rig', 'material', 'physics')
+GROUP_ORDER = ('io', 'rig', 'material', 'physics', 'port')
 
 GROUP_LABELS = {
     'io':       ("ui.game_sections.group_io",       'FILE'),
     'rig':      ("ui.game_sections.group_rig",      'ARMATURE_DATA'),
     'material': ("ui.game_sections.group_material", 'MATERIAL'),
     'physics':  ("ui.game_sections.group_physics",  'PHYSICS'),
+    'port':     ("ui.game_sections.group_port",     'UV_SYNC_SELECT'),
 }
+
+
+def _port(game_code):
+    """The cross-game port entries, identical for every RE Engine game.
+
+    The section fixes the source game; the dialog picks the target.  MHWI gets no
+    'port' group -- it is not RE Engine and its physics goes through mhw_ctc.
+    """
+    return [op("modder.convert_chain_cross_game",
+               "ui.main_panel.btn_convert_chain_cross_game", 'UV_SYNC_SELECT',
+               needs='re_chain', props={'source_game': game_code})]
 
 
 def _mdf_pair(prefix):
@@ -176,6 +188,7 @@ SECTIONS = {
                "ui.game_sections.btn_mdf_convert_material", 'FILE_REFRESH'),
         ],
         'physics': [_re_chain('mhws')],
+        'port': _port('MHWS'),
     },
     're4': {
         'label': "RE4 Tools", 'icon': 'GHOST_ENABLED',
@@ -200,6 +213,7 @@ SECTIONS = {
             _mdf_pair('re4'),
         ],
         'physics': [_re_chain('re4')],
+        'port': _port('RE4'),
     },
     'mhrs': {
         'label': "MHRS Tools", 'icon': 'GHOST_ENABLED',
@@ -237,6 +251,7 @@ SECTIONS = {
             _mdf_pair('re9'),
         ],
         'physics': [_re_chain('re9')],
+        'port': _port('RE9'),
     },
 }
 

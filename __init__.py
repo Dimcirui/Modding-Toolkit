@@ -25,6 +25,7 @@ from .core import editor_ops
 from .core import mdf_tex_processor_base
 from .core import tex_convert_base
 from .core import shader_ops
+from .core import chain_convert_ops
 from . import ui, games
 
 class MT_Preferences(AddonPreferences):
@@ -87,6 +88,7 @@ modules = [
     mdf_tex_processor_base,
     tex_convert_base,
     shader_ops,
+    chain_convert_ops,
     games,
     ui,
 ]
@@ -100,10 +102,35 @@ def register():
     for mod in modules:
         mod.register()
 
+    _patch_chain_import()
+
+def _patch_chain_import():
+    """给 RE-Chain-Editor 的 chain/chain2 导入打上快速补丁。
+
+    上游把 alignChains() 放在链组循环内部，而它扫全场景 + 每节点做一次全量依赖图求值，
+    导入代价是 O(G²·m)。实测导入 196 组需约 78 分钟（因此容易被误当成卡死而中断，
+    留下静态看不出异常的残缺数据）；补丁后约 32 秒。细节见 core/re_chain_utils.py。
+
+    RE-Chain-Editor 未安装时静默跳过；任何异常都不能影响本插件注册。
+    """
+    try:
+        from .core.re_chain_utils import install_fast_chain_import
+        n = install_fast_chain_import()
+        if n:
+            print(f"[Modding-Toolkit] fast chain import patch applied to {n} binding(s)")
+    except Exception as e:
+        print(f"[Modding-Toolkit] fast chain import patch skipped: {e}")
+
 def unregister():
     addon_updater_ops.unregister()
     bpy.utils.unregister_class(MT_Preferences)
-    
+
+    try:
+        from .core.re_chain_utils import uninstall_fast_chain_import
+        uninstall_fast_chain_import()
+    except Exception:
+        pass
+
     for mod in reversed(modules):
         mod.unregister()
 
