@@ -157,7 +157,7 @@ STRINGS = {
     "ui.main_panel.btn_convert_chain_cross_game": {
         "EN": "Port RE Chain", "ZH": "RE Chain 移植"},
     "ui.main_panel.btn_port_mdf_material_cross_game": {
-        "EN": "Port MDF Material", "ZH": "MDF 材质移植"},
+        "EN": "Port RE MDF", "ZH": "RE MDF 移植"},
     "ui.main_panel.btn_record_transform":         {"EN": "Record Transform (select two armatures)", "ZH": "录制变换 (选两个骨架)"},
     "ui.main_panel.btn_apply_forward":            {"EN": "▶ Forward (A→B)", "ZH": "▶ 正向 (A→B)"},
     "ui.main_panel.btn_apply_inverse":            {"EN": "◀ Inverse (B→A)", "ZH": "◀ 逆向 (B→A)"},

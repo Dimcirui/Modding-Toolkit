@@ -21,6 +21,7 @@ overhead and a needless second lossy round trip -- so ``layouts_equal`` gates a
 plain passthrough (format conversion only) before any channel math runs.
 """
 
+import glob
 import os
 
 
@@ -223,9 +224,25 @@ def resolve_source_disk_path(natives_root, mdf_path, tex_version):
     """Absolute path of a binding's on-disk .tex. Bindings store the mdf path
     with no natives/STM/ prefix and no version suffix (confirmed in
     mdf_material_convert_base.is_custom_tex_path's docstring) -- the inverse
-    of make_disk_path, but from the stored string rather than its parts."""
+    of make_disk_path, but from the stored string rather than its parts.
+
+    Prefers the addon's own known tex_version for this game, but falls back
+    to whatever version suffix is actually on disk when that exact file isn't
+    there -- a game patch can bump the serializer version, or a file can have
+    been written by an older/newer export tool, and a mod's natives/STM tree
+    can genuinely carry more than one version side by side (confirmed on a
+    real install: BaseName.tex.241106027 next to BaseName.tex.250813143).
+    Insisting on the one version this addon happens to know about would
+    report "not found" for a texture that is right there under a different
+    number.
+    """
     rel = mdf_path.strip('/\\').replace('\\', '/')
-    return os.path.join(natives_root, 'natives', 'STM', *rel.split('/')) + f'.{tex_version}'
+    base = os.path.join(natives_root, 'natives', 'STM', *rel.split('/'))
+    exact = f"{base}.{tex_version}"
+    if os.path.isfile(exact):
+        return exact
+    candidates = sorted(glob.glob(f"{base}.*"))
+    return candidates[0] if candidates else exact
 
 
 def write_ported_tex(png_path, dst_slot_type, dst_cfg, tex_name, dst_natives_root,

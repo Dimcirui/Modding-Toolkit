@@ -475,10 +475,30 @@ STRINGS = {
               "rebuilding it from that game's nearest equivalent prefab material",
         "ZH": "将该 MDF 材质 (及其自定义贴图) 移植到另一款 RE Engine 游戏, 基于该游戏最接近的预设材质重建"},
 
+    "core.mdf_port_ops.source_collection_label": {"EN": "MDF Collection", "ZH": "MDF 集合"},
+    "core.mdf_port_ops.source_game_label": {"EN": "Source Game: {game}", "ZH": "源游戏: {game}"},
     "core.mdf_port_ops.target_game_label": {"EN": "Target Game", "ZH": "目标游戏"},
+    "core.mdf_port_ops.target_game_label_plain": {"EN": "Target Game: {game}", "ZH": "目标游戏: {game}"},
+    "core.mdf_port_ops.convert_textures_label": {"EN": "Convert Textures", "ZH": "贴图转换"},
+    "core.mdf_port_ops.mod_root_label": {"EN": "Mod Root", "ZH": "Mod 根目录"},
     "core.mdf_port_ops.dest_base_path_label": {"EN": "Destination Base Path", "ZH": "目标路径"},
     "core.mdf_port_ops.delete_original_label": {"EN": "Delete Original Material", "ZH": "删除原材质"},
 
+    "core.mdf_port_ops.no_mdf_collection": {
+        "EN": "No MDF collection found in this file", "ZH": "文件中没有找到 MDF 集合"},
+    "core.mdf_port_ops.source_root_missing_warning": {
+        "EN": "Please set the source mod root, or the source textures cannot be found!",
+        "ZH": "请设置来源 Mod 根目录，否则无法寻找贴图！"},
+    "core.mdf_port_ops.dest_root_missing_warning": {
+        "EN": "Please set the destination mod root, or the textures cannot be written!",
+        "ZH": "请设置目标 Mod 根目录，否则无法放置贴图！"},
+    "core.mdf_port_ops.no_source_tex_found_error": {
+        "EN": "No source textures found at all -- check the mod root is correct and not still packed as .pak",
+        "ZH": "找不到来源贴图，请确认目录选择正确，且不是 .pak 打包格式！"},
+    "core.mdf_port_ops.partial_missing_tex_warning": {
+        "EN": "Texture(s) not found, fell back to the destination default -- please check and fill in yourself: {paths}",
+        "ZH": "未找到贴图，回退默认路径，请自行检查并补充：{paths}"},
+    "core.mdf_port_ops.and_n_more": {"EN": " (+{n} more)", "ZH": "（及其他 {n} 个）"},
     "core.mdf_port_ops.no_target_selected": {
         "EN": "No target game selected", "ZH": "未选择目标游戏"},
     "core.mdf_port_ops.missing_tex_config": {
