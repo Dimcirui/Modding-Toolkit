@@ -132,9 +132,29 @@ def register():
         bpy.utils.register_class(cls)
     bpy.types.Scene.mhrs_mdf_tex_processor = bpy.props.PointerProperty(
         type=MHRSMdfTexProcessorSettings)
+    # MHRS is not in PORTABLE_GAMES and has no cross-game port, so this registry
+    # entry is not about porting -- it is how any tool asks "what is this game's
+    # mod root / texture version / shipped asset list" from one place. The
+    # pre-export check's texture pass needs exactly that, and without the entry
+    # it would have to skip MHRS entirely (every vanilla path would classify as
+    # a missing custom one).
+    from ...core.mdf_port_tex import register_game_tex_config
+    register_game_tex_config(
+        "MHRS",
+        abbrev_map=MHRS_TEXTURE_TYPE_ABBREV,
+        channel_maps=MHRS_SLOT_CHANNEL_MAPS,
+        tex_version=MHRS_TEX_VERSION,
+        use_art_prefix=False,
+        path_fixed_prefix="",
+        null_tex_by_type=MHRS_NULL_TEX_BY_TYPE,
+        natives_root_key="mhrs_natives_root",
+        vanilla_asset_rel="assets/mhrs/vanilla_tex_paths.txt",
+    )
 
 
 def unregister():
+    from ...core.mdf_port_tex import unregister_game_tex_config
+    unregister_game_tex_config("MHRS")
     del bpy.types.Scene.mhrs_mdf_tex_processor
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

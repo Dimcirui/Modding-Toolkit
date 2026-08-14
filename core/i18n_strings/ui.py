@@ -202,6 +202,7 @@ STRINGS = {
     "ui.main_panel.btn_create_chain":             {"EN": "One-Click Create Chain", "ZH": "一键创建 Chain"},
     "ui.main_panel.btn_mmd_face_weights":         {"EN": "MMD Shape Key to Face Weights", "ZH": "MMD 形态键转表情权重"},
     "ui.main_panel.btn_batch_export":             {"EN": "Batch Export", "ZH": "批量导出"},
+    "ui.main_panel.btn_pre_export_check":         {"EN": "Pre-export Check", "ZH": "导出前检查"},
     "ui.main_panel.btn_batch_import":             {"EN": "Batch Import", "ZH": "批量导入"},
     "ui.main_panel.btn_mhws_preprocess":          {"EN": "One-Click Import & Align Wilds Model", "ZH": "一键导入并对齐荒野模型"},
     "ui.main_panel.btn_mhws_optimize_skeleton":   {"EN": "Optimize Wilds Skeleton", "ZH": "优化荒野骨架"},

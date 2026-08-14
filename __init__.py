@@ -28,6 +28,7 @@ from .core import shader_ops
 from .core import chain_convert_ops
 from .core import mesh_port_ops
 from .core import mdf_port_ops
+from .core import pre_export_check_ops
 from .core import ref_model_ops
 from . import ui, games
 
@@ -94,6 +95,9 @@ modules = [
     chain_convert_ops,
     mesh_port_ops,
     mdf_port_ops,
+    # After mdf_port_ops: it imports that module's collection picker and shared
+    # "Mod Root" row rather than restating either.
+    pre_export_check_ops,
     ref_model_ops,
     games,
     ui,

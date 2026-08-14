@@ -7,6 +7,11 @@ docs/superpowers/
 tests/
 
 docs/
+# Local working data, not addon content: the chain/chain2 settings presets are
+# still reference material for the chain conversion work rather than something
+# the addon reads at runtime. Track it deliberately if that changes.
+datas/
+
 # Working data files (armor list source / generation scripts)
 armor_list_summary.md
 *.csv
@@ -19,4 +24,9 @@ mdf_unique_material_collecter/
 plan.md
 manual.md
 CLAUDE.md
-datas/dist/
+# Build output: scripts/build_release.py writes to <repo root>/dist by default,
+# so the path has to be anchored -- an unanchored "dist/" would also swallow any
+# future datas/dist, and the previous "datas/dist/" matched a directory that
+# does not exist while leaving the real build output untracked (which is what
+# made build_release.py refuse to run on a dirty tree).
+/dist/

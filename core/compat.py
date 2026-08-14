@@ -31,6 +31,14 @@ HAS_NODE_INTERFACE = _V >= (4, 0, 0)
 # variants legacy.
 HAS_SEPARATE_COLOR = _V >= (3, 3, 0)
 
+# invoke_props_dialog(title=, confirm_text=).  Without it a popup's heading is
+# the operator's static English bl_label, which this addon's own T() can never
+# reach -- Blender's auto-translate is off by user preference, and bl_label is
+# resolved at registration anyway, before the language is known.  This is a read
+# path in the sense that matters: the dialog still opens without it, just with an
+# English heading, so the call sites pass the kwargs only when they exist.
+HAS_DIALOG_TITLE = _V >= (4, 1, 0)
+
 # ── Feature gates ─────────────────────────────────────────────────────────────
 
 # The packed ("打包") shader node group.

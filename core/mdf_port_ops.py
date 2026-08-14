@@ -169,13 +169,21 @@ def _stm_prefix_label(dst_cfg):
     return "natives/STM/"
 
 
-def _draw_mod_root_row(layout, context, game_code, cfg):
+def _draw_mod_root_row(layout, context, game_code, cfg, show_hint=False):
     """"Mod Root" button + current path (or a "not set" warning) -- same
     layout the generator/processor panels use for the same scene key.
 
     *game_code* is folded into the button's own text -- the source and
     destination rows would otherwise be two identical "Mod Root" buttons
-    with nothing on screen saying which game each belongs to."""
+    with nothing on screen saying which game each belongs to.
+
+    *show_hint* prepends the one line saying what the directory actually is.
+    Off by default because this dialog draws the row twice and the sentence
+    only needs saying once; the pre-export check, which draws it once, asks
+    for it. Sharing the row is what keeps the two dialogs' wording identical.
+    """
+    if show_hint:
+        layout.label(text=T("core.mdf_port_ops.mod_root_hint"), icon='INFO')
     row = layout.row(align=True)
     row.operator(f"{game_code.lower()}.set_natives_root",
                 text=f"{game_code} " + T("core.mdf_port_ops.mod_root_label"), icon='FILEBROWSER')
@@ -336,7 +344,9 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
             box.label(text=T("core.mdf_port_ops.source_game_label").format(game=self.source_game))
             src_cfg = mdf_port_tex.get_game_tex_config(self.source_game)
             if src_cfg is not None:
-                _draw_mod_root_row(box, context, self.source_game, src_cfg)
+                # The hint rides on the source row only: it explains what a mod
+                # root *is*, which is the same sentence for both rows below.
+                _draw_mod_root_row(box, context, self.source_game, src_cfg, show_hint=True)
 
             # target_game repeated as a plain label, not a second EnumProperty
             # -- it only ever reflects the choice above, never sets it.

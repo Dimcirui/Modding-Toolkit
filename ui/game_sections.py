@@ -119,6 +119,19 @@ def _batch_export(prefix, label_key, needs='re_mesh'):
     return op(f"{prefix}.batch_export_dialog", label_key, 'EXPORT', needs=needs)
 
 
+def _pre_export_check(game_code):
+    """Directly above batch export, because that is the order it is used in:
+    check first, then export.
+
+    No dependency guard: the check reads the mdf/mesh collections that are
+    already in the file rather than calling into either external addon, so it
+    still works on a .blend opened without them installed. Its own poll (is
+    there an .mdf2 collection at all) is the real gate.
+    """
+    return op("modder.pre_export_check", "ui.main_panel.btn_pre_export_check",
+              'CHECKMARK', props={'source_game': game_code})
+
+
 def _ref_model(game_code):
     """Import the game's vanilla reference body -- first in the group, because it is
     where a port or a rig job starts.  Where the model comes from and which of the
@@ -176,6 +189,7 @@ SECTIONS = {
             _ref_model('MHWS'),
             op("mhws.batch_import_dialog", "ui.main_panel.btn_batch_import",
                'IMPORT', needs='re_mesh_import'),
+            _pre_export_check('MHWS'),
             _batch_export('mhws', "ui.main_panel.btn_batch_export"),
         ],
         'rig': [
@@ -210,7 +224,8 @@ SECTIONS = {
     },
     're4': {
         'label': "RE4 Tools", 'icon': 'GHOST_ENABLED',
-        'io': [_ref_model('RE4'), _batch_export('re4', "ui.game_sections.btn_batch_export_re4")],
+        'io': [_ref_model('RE4'), _pre_export_check('RE4'),
+               _batch_export('re4', "ui.game_sections.btn_batch_export_re4")],
         'rig': [
             op("re4.fakebone_one_click", "ui.main_panel.btn_gen_fakebone",
                'ARMATURE_DATA', needs='re_fbxskel'),
@@ -240,7 +255,8 @@ SECTIONS = {
     },
     'mhrs': {
         'label': "MHRS Tools", 'icon': 'GHOST_ENABLED',
-        'io': [_ref_model('MHRS'), _batch_export('mhrs', "ui.game_sections.btn_batch_export_mhrs")],
+        'io': [_ref_model('MHRS'), _pre_export_check('MHRS'),
+               _batch_export('mhrs', "ui.game_sections.btn_batch_export_mhrs")],
         'rig': [],
         'material': [
             # MHRS has only one archetype (see games/mhrs/shader_defs.py's
@@ -256,7 +272,8 @@ SECTIONS = {
     },
     're9': {
         'label': "RE9 Tools", 'icon': 'GHOST_ENABLED',
-        'io': [_ref_model('RE9'), _batch_export('re9', "ui.game_sections.btn_batch_export_re9")],
+        'io': [_ref_model('RE9'), _pre_export_check('RE9'),
+               _batch_export('re9', "ui.game_sections.btn_batch_export_re9")],
         'rig': [
             op("re9.sync_child_orientation",
                "ui.main_panel.btn_sync_child_orientation", 'CON_ROTLIKE'),

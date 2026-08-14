@@ -1166,4 +1166,159 @@ STRINGS = {
     "core.ref_model_ops.done": {
         "EN": "Imported {name}: {facial} facial bone(s) merged, {aux} auxiliary, {pose}",
         "ZH": "已导入 {name}：合并面部骨 {facial} 根，辅助骨 {aux} 根，{pose}"},
+
+    # ══════════════════════════════════════════════════════════════════════
+    # core/pre_export_check_ops.py
+    # ══════════════════════════════════════════════════════════════════════
+
+    # ── Dialog headings. Passed as invoke_props_dialog(title=...) rather than
+    #    left to bl_label, which is static English and resolved before the
+    #    language is known (Blender 4.1+; older builds keep the bl_label).
+    "core.pre_export_check_ops.title": {
+        "EN": "Pre-export Check", "ZH": "导出前检查"},
+    "core.pre_export_check_ops.confirm_run": {
+        "EN": "Run Check", "ZH": "开始检查"},
+    "core.pre_export_check_ops.report_title": {
+        "EN": "Pre-export Check Result", "ZH": "导出前检查结果"},
+    "core.pre_export_check_ops.confirm_done": {
+        "EN": "Done", "ZH": "完成"},
+
+    # ── Input dialog ───────────────────────────────────────────────────────
+    "core.pre_export_check_ops.desc": {
+        "EN": "Check the mdf materials and their meshes for the problems that break an "
+              "export: missing textures, dangling materials, illegal names",
+        "ZH": "检查 mdf 材质与对应网格中会导致导出失败的问题：贴图缺失、悬空材质、命名不合法"},
+    "core.pre_export_check_ops.label_mdf_collection": {
+        "EN": "MDF Collection", "ZH": "MDF 集合"},
+    "core.pre_export_check_ops.label_mesh_collection": {
+        "EN": "Mesh Collection", "ZH": "Mesh 集合"},
+    "core.pre_export_check_ops.mesh_collection_none": {
+        "EN": "— skip material matching —", "ZH": "— 跳过材质匹配 —"},
+    "core.pre_export_check_ops.no_mdf_collection": {
+        "EN": "No .mdf2 collection found", "ZH": "未找到 .mdf2 集合"},
+
+    # ── "what this run will do", recomputed live as the inputs change ──────
+    "core.pre_export_check_ops.will_run": {
+        "EN": "This run will:", "ZH": "本次将执行："},
+    "core.pre_export_check_ops.run_tex": {
+        "EN": "Check for missing textures", "ZH": "检查贴图缺失"},
+    "core.pre_export_check_ops.run_match": {
+        "EN": "Check that meshes and materials match", "ZH": "检查网格与材质是否匹配"},
+    "core.pre_export_check_ops.run_names": {
+        "EN": "Check naming, duplicate materials and multi-material meshes",
+        "ZH": "检查命名、重复材质与多材质网格"},
+    "core.pre_export_check_ops.skip_tex_no_root": {
+        "EN": "Skip the texture check — Mod Root is not set",
+        "ZH": "跳过贴图检查 —— 未设置 Mod 根目录"},
+    "core.pre_export_check_ops.skip_tex_no_config": {
+        "EN": "Skip the texture check — no vanilla texture list is bundled for {game}",
+        "ZH": "跳过贴图检查 —— {game} 未内置原版贴图清单"},
+    "core.pre_export_check_ops.skip_match_no_mesh": {
+        "EN": "Skip material matching — no Mesh collection chosen",
+        "ZH": "跳过材质匹配 —— 未选择 Mesh 集合"},
+
+    # ── Category headings (the scrollable left column) ─────────────────────
+    "core.pre_export_check_ops.cat_tex_missing": {
+        "EN": "Missing Textures", "ZH": "贴图缺失"},
+    "core.pre_export_check_ops.cat_tex_root_wrong": {
+        "EN": "No Texture Found At All", "ZH": "找不到任何贴图"},
+    "core.pre_export_check_ops.cat_tex_empty": {
+        "EN": "Empty Texture Path", "ZH": "贴图路径为空"},
+    "core.pre_export_check_ops.cat_mesh_unmatched": {
+        "EN": "Dangling Meshes", "ZH": "悬空网格"},
+    "core.pre_export_check_ops.cat_mat_unmatched": {
+        "EN": "Dangling Materials", "ZH": "悬空材质"},
+    "core.pre_export_check_ops.cat_mat_duplicate": {
+        "EN": "Duplicate Materials", "ZH": "重复材质"},
+    "core.pre_export_check_ops.cat_name_illegal": {
+        "EN": "Illegal Names", "ZH": "命名不合法"},
+    "core.pre_export_check_ops.cat_mesh_multi": {
+        "EN": "Multi-material Meshes", "ZH": "多材质网格"},
+
+    # ── Category detail (the right column) ────────────────────────────────
+    "core.pre_export_check_ops.desc_tex_missing": {
+        "EN": "These texture paths are neither vanilla assets nor present under the Mod "
+              "Root. The game cannot load them.",
+        "ZH": "以下贴图路径既不是原版资源，也不在 Mod 根目录下，游戏无法加载。"},
+    "core.pre_export_check_ops.desc_tex_root_wrong": {
+        "EN": "None of the {n} custom texture path(s) could be found under:\n{root}\n"
+              "Either the Mod Root points at the wrong folder, or the textures have not "
+              "been built yet. They are not listed one by one because every one of them "
+              "is failing for the same single reason.",
+        "ZH": "全部 {n} 条自定义贴图路径都无法在下面的目录中找到：\n{root}\n"
+              "要么是 Mod 根目录选错了位置，要么是贴图还没做好。"
+              "因为它们失败的原因完全相同，这里不逐条列出。"},
+    "core.pre_export_check_ops.desc_tex_empty": {
+        "EN": "These texture slots have no path filled in at all.",
+        "ZH": "以下贴图槽位没有填写任何路径。"},
+    "core.pre_export_check_ops.desc_mesh_unmatched": {
+        "EN": "These meshes derive a material name that no material in the mdf "
+              "collection provides, so they will not export correctly.",
+        "ZH": "以下网格推导出的材质名，在 mdf 集合中找不到对应材质，导出会出问题。"},
+    "core.pre_export_check_ops.desc_mat_unmatched": {
+        "EN": "No mesh asks for these materials. Usually this is a rename that only got "
+              "done on one side.",
+        "ZH": "没有任何网格使用这些材质，通常是改名只改了一侧。"},
+    "core.pre_export_check_ops.desc_mat_duplicate": {
+        "EN": "{n} material name(s) appear more than once in this mdf collection.",
+        "ZH": "本 mdf 集合中有 {n} 个材质名重复出现。"},
+    "core.pre_export_check_ops.desc_name_illegal": {
+        "EN": "Spaces, dots and a leading underscore all break the export. The fix "
+              "button corrects the mdf material and its meshes together, so a name that "
+              "matched before still matches afterwards.",
+        "ZH": "空格、点号、开头的下划线都会导致导出出错。"
+              "修复按钮会同时修正 mdf 材质和对应网格，原本匹配的名字修完仍然匹配。"},
+    "core.pre_export_check_ops.desc_mesh_multi": {
+        "EN": "These meshes carry more than one material. Only the first is exported, so "
+              "the result may look wrong in game.",
+        "ZH": "以下网格存在多材质，导出只取第一个，实际表现可能会出现异常。"},
+
+    # ── Reason codes from core/pre_export_check.py ────────────────────────
+    "core.pre_export_check_ops.reason_space": {
+        "EN": "contains a space", "ZH": "含空格"},
+    "core.pre_export_check_ops.reason_dot": {
+        "EN": "contains a dot", "ZH": "含点号"},
+    "core.pre_export_check_ops.reason_leading_underscore": {
+        "EN": "starts with an underscore", "ZH": "以下划线开头"},
+    "core.pre_export_check_ops.reason_empty": {
+        "EN": "the name is empty", "ZH": "名称为空"},
+    "core.pre_export_check_ops.reason_single_underscore": {
+        "EN": "the material name should be preceded by a double underscore",
+        "ZH": "材质名前应为双下划线"},
+    "core.pre_export_check_ops.side_mdf": {"EN": "[MDF]", "ZH": "[MDF]"},
+    "core.pre_export_check_ops.side_mesh": {"EN": "[Mesh]", "ZH": "[网格]"},
+    "core.pre_export_check_ops.no_name": {"EN": "(no name)", "ZH": "（无名称）"},
+
+    # ── Report dialog ─────────────────────────────────────────────────────
+    "core.pre_export_check_ops.report_desc": {
+        "EN": "Result of the pre-export check", "ZH": "导出前检查的结果"},
+    "core.pre_export_check_ops.n_issues": {
+        "EN": "Found {n} issue(s) to deal with before exporting",
+        "ZH": "发现 {n} 处需要在导出前处理的问题"},
+    "core.pre_export_check_ops.all_clear": {
+        "EN": "No problems found", "ZH": "未发现问题"},
+    "core.pre_export_check_ops.btn_fix": {
+        "EN": "Fix Illegal Names", "ZH": "修复不合法命名"},
+    "core.pre_export_check_ops.fix_datablock_note": {
+        "EN": "A mesh with no Group_x_Sub_y__ name falls back to its Blender material, so "
+              "fixing that one renames the material datablock — which can affect objects "
+              "outside this check.",
+        "ZH": "没有 Group_x_Sub_y__ 命名的网格会回退到 Blender 材质名，"
+              "修复这类命名会改动材质数据块，可能影响本次检查范围之外的物体。"},
+    "core.pre_export_check_ops.chk_select": {
+        "EN": "Select all problem objects", "ZH": "选中所有有问题的对象"},
+    "core.pre_export_check_ops.selected_n": {
+        "EN": "Selected {n} object(s)", "ZH": "已选中 {n} 个对象"},
+    "core.pre_export_check_ops.fix_desc": {
+        "EN": "Correct the illegal names on the mdf materials and their meshes together, "
+              "then run the check again",
+        "ZH": "同时修正 mdf 材质与对应网格的不合法命名，然后重新检查"},
+    "core.pre_export_check_ops.fix_done": {
+        "EN": "Fixed {mat} material(s), {obj} mesh object(s), {data} material datablock(s)",
+        "ZH": "已修复：材质 {mat} 个，网格物体 {obj} 个，材质数据块 {data} 个"},
+
+    # ── Shared with the RE Mdf port dialog, which draws the same row ───────
+    "core.mdf_port_ops.mod_root_hint": {
+        "EN": "Choose the natives root directory the textures live under",
+        "ZH": "选择贴图所在的 natives 根目录"},
 }
