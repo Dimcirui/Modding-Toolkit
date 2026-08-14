@@ -169,11 +169,6 @@ class BoneMapManager:
 # 预设覆盖 51 个标准槽，槽外的骨它不管。下表补的是**确认存在于真实骨架、但预设里查不到**
 # 的骨，值为它应归入的标准键。只收录已验证条目，别凭猜测扩表。
 _PRESET_GAP_FILL = {
-    # MHWilds 腿链比 family A 多一节：L_Thigh → L_Knee → L_Shin → L_Foot。
-    # L_Knee 在 mhws.json 里既非 main 也非任何 aux，但碰撞体会挂它（实测样本 chain2 里
-    # 有 L_Thigh→L_Knee 这对锥形胶囊）。归入 shin_* 有依据：MHWS_OT_OptimizeSkeleton
-    # 本就把 L_Knee 吸附到 L_Shin 的头（两者共位），且它在参考骨架与原始资产上都零权重。
-    "MHWS": {"L_Knee": "shin_L", "R_Knee": "shin_R"},
     # RE4R 脚尖末端，re4.json 只到 L_Toe。RE9 没有 ToesEnd（参考脚本 CORRECTION_DATA
     # 58 条里唯二解析不了的就是这对），跨到 RE9 时必须能收敛到 toe_*。
     "RE4": {"L_ToeEnd": "toe_L", "R_ToeEnd": "toe_R"},

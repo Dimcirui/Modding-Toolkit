@@ -138,6 +138,7 @@
         "L_Shin"
       ],
       "aux": [
+        "L_Knee",
         "L_Calf_HJ_00",
         "L_Shin_HJ_00",
         "L_Shin_HJ_01"
@@ -173,6 +174,7 @@
         "R_Shin"
       ],
       "aux": [
+        "R_Knee",
         "R_Calf_HJ_00",
         "R_Shin_HJ_00",
         "R_Shin_HJ_01"

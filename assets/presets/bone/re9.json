@@ -118,7 +118,9 @@
       "main": [
         "L_Leg_Toes"
       ],
-      "aux": []
+      "aux": [
+        "L_Leg_ToesEnd"
+      ]
     },
     "thigh_R": {
       "main": [
@@ -144,7 +146,9 @@
       "main": [
         "R_Leg_Toes"
       ],
-      "aux": []
+      "aux": [
+        "R_Leg_ToesEnd"
+      ]
     },
     "thumb_01_L": {
       "main": [

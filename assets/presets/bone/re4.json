@@ -62,7 +62,9 @@
       "main": [
         "L_Hand"
       ],
-      "aux": []
+      "aux": [
+        "L_Palm"
+      ]
     },
     "clavicle_R": {
       "main": [
@@ -86,7 +88,9 @@
       "main": [
         "R_Hand"
       ],
-      "aux": []
+      "aux": [
+        "R_Palm"
+      ]
     },
     "thigh_L": {
       "main": [
