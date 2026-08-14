@@ -387,28 +387,48 @@ def zero_pose_bone_rotations(arm_obj, bone_names, corrections=None):
     """将 bone_names 中每根骨骼的姿态旋转矩阵强制设为归零朝向（保留原有位置不变）。
 
     corrections 给出逐骨骼的轴向修正矩阵 C，目标为 _REE_ZERO_BASIS @ C；缺省或某根骨骼
-    不在其中时直接用 _REE_ZERO_BASIS（family A 的行为）。bone_names 必须父骨在前，因为
-    每根骨骼的位置读的是父骨摆正之后的结果。调用方自行处理模式切换；返回处理的骨骼数。
+    不在其中时直接用 _REE_ZERO_BASIS（family A 的行为）。调用方自行处理模式切换；返回
+    处理的骨骼数。
+
+    **按骨骼深度分批求值**，而不是每根骨写完就求值一次。每根骨的位置要读父骨摆正之后的
+    结果，所以父子之间必须有一次依赖图求值——但同一深度的骨彼此不是祖先关系，它们的父骨
+    在上一批就已经就位，因此一层只需要一次。写姿态会让骨架及其依赖项一起失效重算，代价
+    远高于一次空求值：实测（RE9 骨架 190 根骨，场景里挂着上千个 CHILD_OF 到这些骨的链
+    物件）单次空求值 0.7 ms，而逐骨求值下每根骨要 24 ms、整体 4.5 秒；分批后求值次数从
+    骨骼数降到骨架深度（十几次）。
     """
     bpy.ops.object.mode_set(mode='POSE')
     bpy.ops.pose.select_all(action='DESELECT')
     pose_bones = arm_obj.pose.bones
-    count = 0
+    data_bones = arm_obj.data.bones
+
+    def depth(name):
+        n, bone = 0, data_bones.get(name)
+        while bone is not None and bone.parent is not None:
+            n, bone = n + 1, bone.parent
+        return n
+
+    levels = {}
     for bone_name in bone_names:
-        if bone_name not in pose_bones:
-            continue
-        correction = None if corrections is None else corrections.get(bone_name)
-        basis = (_REE_ZERO_BASIS if correction is None
-                 else _REE_ZERO_BASIS @ mathutils.Matrix(correction))
-        pb = pose_bones[bone_name]
-        zero = copy.deepcopy(pb.matrix)
-        for row in range(3):
-            for col in range(3):
-                zero[row][col] = basis[row][col]
-        zero[3][0] = 0.0;  zero[3][1] = 0.0;  zero[3][2] = 0.0;  zero[3][3] = 1.0
-        pb.matrix = zero
-        bpy.context.view_layer.update()
-        count += 1
+        if bone_name in pose_bones:
+            levels.setdefault(depth(bone_name), []).append(bone_name)
+
+    count = 0
+    for level in sorted(levels):
+        bpy.context.view_layer.update()     # parents of this level are now in place
+        for bone_name in levels[level]:
+            correction = None if corrections is None else corrections.get(bone_name)
+            basis = (_REE_ZERO_BASIS if correction is None
+                     else _REE_ZERO_BASIS @ mathutils.Matrix(correction))
+            pb = pose_bones[bone_name]
+            zero = pb.matrix.copy()
+            for row in range(3):
+                for col in range(3):
+                    zero[row][col] = basis[row][col]
+            zero[3][0] = 0.0;  zero[3][1] = 0.0;  zero[3][2] = 0.0;  zero[3][3] = 1.0
+            pb.matrix = zero
+            count += 1
+    bpy.context.view_layer.update()
     return count
 
 
