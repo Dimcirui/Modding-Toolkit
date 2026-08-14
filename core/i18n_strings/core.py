@@ -498,6 +498,7 @@ STRINGS = {
         "EN": "Also migrate every remaining param the two shaders happen to share by name, "
               "including shader-internal and runtime gameplay values",
         "ZH": "额外迁移两个 shader 中所有同名同类型的参数，包括 shader 内部常量与游戏运行时状态值"},
+    "core.mdf_port_ops.migrate_flags_label": {"EN": "Migrate Flags", "ZH": "迁移 Flags"},
     "core.mdf_port_ops.done_params": {
         "EN": ", params {migrated} migrated / {skipped} skipped",
         "ZH": "，参数 {migrated} 项已迁移 / {skipped} 项跳过"},

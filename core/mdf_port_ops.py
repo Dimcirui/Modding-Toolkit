@@ -56,6 +56,26 @@ def _target_game_items(self, context):
     return _cached("mdf_port_target_game", items)
 
 
+def _copy_material_flags(dst_flags, src_flags):
+    """Carry the source material's bit flags onto the ported one.
+
+    Only ``flagIntValue``/``flagIntValueB`` are written: every checkbox in the
+    Flags panel (BaseTwoSideEnable, SSSProfileUsed, ...) and every small numeric
+    in among them (TessFactor, PhongFactor, TransparentPriorityBias) is a bitfield
+    *inside* those two int32s, and RE Mesh Editor's own ``update_FlagsFromInt``
+    handler expands them back out on assignment.  Setting the expanded fields
+    one by one instead would be the same write done twice, through a handler
+    that suppresses itself midway.
+
+    ``shaderLODNum`` and ``bakeTextureArraySize`` sit next to them in the panel
+    but are their own fields, not part of either int -- and they describe the
+    asset's LOD/bake setup rather than its material features, so they stay at
+    the target preset's value.
+    """
+    dst_flags.flagIntValue = src_flags.flagIntValue
+    dst_flags.flagIntValueB = src_flags.flagIntValueB
+
+
 def _migrate_params_items(self, context):
     # BASIC first: it is the default by being first (see the property's comment).
     return _cached("mdf_port_migrate_params", [
@@ -235,6 +255,16 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
     #: and the first item is BASIC anyway -- same shape as the same-game convert's
     #: `migrate_mode`.
     migrate_params: EnumProperty(name="Migrate Params", items=_migrate_params_items)
+    #: Off by default, unlike the params above: the target preset's flags are a
+    #: deliberate choice by whoever authored it, so overwriting them is opt-in.
+    #: Offered here and *not* on the same-game convert for the same reason --
+    #: there the preset is the point, here the source material is.
+    migrate_flags: BoolProperty(
+        name="Migrate Flags",
+        description="Carry the source material's bit flags (two-sided, alpha test, SSS profile, ...) "
+                    "onto the ported material instead of keeping the target preset's",
+        default=False,
+    )
     delete_original: BoolProperty(name="Delete Original Material", default=False)
 
     @classmethod
@@ -312,6 +342,7 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
 
         col.separator()
         col.prop(self, "migrate_params", text=T("core.mdf_port_ops.migrate_params_label"))
+        col.prop(self, "migrate_flags", text=T("core.mdf_port_ops.migrate_flags_label"))
 
         col.separator()
         col.prop(self, "delete_original", text=T("core.mdf_port_ops.delete_original_label"))
@@ -417,6 +448,9 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
                     # prefabs: the source may be an unsupported shader with no
                     # prefab at all, and the target's list is what actually has to
                     # accept the write.
+                    if self.migrate_flags:
+                        _copy_material_flags(new_data.flags, old_data.flags)
+
                     src_items = {p.prop_name: p for p in old_data.propertyList_items}
                     dst_items = {p.prop_name: p for p in new_data.propertyList_items}
                     for src_name, dst_name in mdf_port_params.migration_pairs(
