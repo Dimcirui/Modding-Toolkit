@@ -164,13 +164,32 @@ BASE_SLOT_CHANNEL_MAPS = {
         'B': ('ao',        0),
         'A': ('normal',    0),
     },
-    # B is the normal's Z component. A tangent-space normal map has no use for
-    # it (Z is reconstructed from X/Y), so the slot is not *unused* -- it must be
-    # left **white**, per Capcom's own texture documentation. Writing 0 there,
-    # which is what `None` means in this table, hands the shader a normal lying
-    # flat in the tangent plane and the whole model renders as grey metal.
-    # Confirmed against the user's hand-authored working textures: their NRMR B
-    # is 1.0 where the port wrote 0.0, and every other channel matched exactly.
+    # B is **not** the normal's Z component; it is normally just white. The
+    # shader does read it -- writing 0, which is what `None` means in this
+    # table, renders the whole model as grey metal -- so it cannot be left to a
+    # default either.
+    #
+    # Both of the more "correct-sounding" alternatives were measured against
+    # vanilla textures from three games and rejected:
+    #
+    # * *Reconstruct Z from X/Y.* Vanilla does not do this. RE9's B is flat
+    #   white (std 0.0016), RE4's is 97% white; MHRS varies most, but its B
+    #   histogram is bimodal (12% at 0.2-0.3, 82% at 0.9-1.0), which sqrt(1 -
+    #   x^2 - y^2) cannot produce -- that tapers smoothly from 1. Among the
+    #   pixels that are not white, B does not track z at all (mean|B - z| 0.19
+    #   for RE4, 0.30 for MHRS). Reconstructing would write a third thing that
+    #   matches neither white nor whatever those pixels really are.
+    # * *Carry the source slot's own B across.* Actively dangerous: in NRRO
+    #   that channel is AO. It only appears to work when the AO map is near
+    #   white, and puts dark values into B wherever the AO has real creases --
+    #   a localised failure that reads as "shadows look a bit heavy" rather
+    #   than an obvious break.
+    #
+    # White matches vanilla RE9 to 0.0002 and RE4 to 0.013, is what Capcom's
+    # texture documentation says to do, and is what the reporter's own working
+    # RE4 mod ships across a whole character. The minority of non-white pixels
+    # in vanilla MHRS/RE4 is unexplained; it is a minority, and guessing at it
+    # with z would not reproduce it anyway.
     'NormalRoughness': {
         'R': ('normal',    0),
         'G': ('normal',    1),
