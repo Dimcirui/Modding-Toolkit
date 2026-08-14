@@ -346,4 +346,13 @@ STRINGS = {
               "calculation; carried for export, not used by the preview",
         "ZH": "RimLight_FakeNormalMap — 用于边缘光计算的替代法线；仅为导出保留，"
               "预览不使用"},
+
+    # ══════════════════════════════════════════════════════════════════════
+    # games/re9/mdf_material_convert.py
+    # ══════════════════════════════════════════════════════════════════════
+
+    "re9.mdf_material_convert.dialog_desc": {
+        "EN": "Convert the selected MDF material object(s) to a different RE Mesh Editor preset material, "
+              "migrating custom texture paths (and optionally params)",
+        "ZH": "将选中的 MDF 材质物体转换为另一个 RE Mesh Editor 预设材质，迁移自定义贴图路径 (可选连带参数)"},
 }

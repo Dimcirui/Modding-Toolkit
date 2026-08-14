@@ -229,6 +229,11 @@ SECTIONS = {
                props={'scope': 'SELECTED', 'family': 'RE4'},
                only_if=lambda: MTK_SHADER_AVAILABLE),
             _mdf_pair('re4'),
+            # Below the processor/generator pair, same placement and same
+            # shared label as MHWS: convert an existing MDF material to a
+            # different preset, migrating custom textures.
+            op("re4.mdf_convert_material_dialog",
+               "ui.game_sections.btn_mdf_convert_material", 'FILE_REFRESH'),
         ],
         'physics': [_re_chain('re4')],
         'port': _port('RE4'),
@@ -267,6 +272,11 @@ SECTIONS = {
                props={'scope': 'SELECTED', 'family': 'RE9'},
                only_if=lambda: MTK_SHADER_AVAILABLE),
             _mdf_pair('re9'),
+            # Below the processor/generator pair, same placement and same
+            # shared label as MHWS: convert an existing MDF material to a
+            # different preset, migrating custom textures.
+            op("re9.mdf_convert_material_dialog",
+               "ui.game_sections.btn_mdf_convert_material", 'FILE_REFRESH'),
         ],
         'physics': [_re_chain('re9')],
         'port': _port('RE9'),
