@@ -151,6 +151,19 @@ def _build_re9_correction():
     for suffix in ("Arm_Upper", "Arm_Lower", "Arm_Hand", "Hand_Palm") + fingers:
         out["L_" + suffix] = _C_IDENTITY
         out["R_" + suffix] = _C_FLIP_X
+    # 锁骨与拇指原先不在表里，跨游戏移植就没有可信的 C 可用 —— 右锁骨因此整根差 180°。
+    # 下面这两组是从「同一个模型手工做成 MHWS/RE9 两版」的对照资产上实测反解的（两边都
+    # 先跑 ree_to_tpose 归一化姿态），取最近的带符号置换阵：
+    #   L_Shoulder→L_Arm_Clavicle 单位阵、R_Shoulder→R_Arm_Clavicle 绕 X 翻 180°
+    #   （与手臂链同规律，偏差 19.5°）
+    #   L_Thumb*→L_Hand_ThumbF_* 绕 X 转 90°、右侧镜像（偏差 27–29°）
+    # 拇指残留偏差大是它本来就非轴对齐（memory project_skeleton_convention_families 已记），
+    # 但用了这条后误差从 89–106° 降到 27–29°，比不修正好得多。
+    out["L_Arm_Clavicle"] = _C_IDENTITY
+    out["R_Arm_Clavicle"] = _C_FLIP_X
+    for i in (1, 2, 3):
+        out[f"L_Hand_ThumbF_{i}"] = ((1.0, 0.0, 0.0), (0.0, 0.0, -1.0), (0.0, 1.0, 0.0))
+        out[f"R_Hand_ThumbF_{i}"] = ((1.0, 0.0, 0.0), (0.0, 0.0, 1.0), (0.0, -1.0, 0.0))
     for suffix in ("Leg_Upper", "Leg_Lower", "Leg_Ankle"):
         out["L_" + suffix] = _C_LEG_L
         out["R_" + suffix] = _C_LEG_R
