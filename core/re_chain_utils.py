@@ -39,6 +39,114 @@ def _patch_chain_cleanup(disable=True):
     return saved
 
 
+# ============================================================
+# 加速 RE-Chain-Editor 的 chain/chain2 导入
+# ============================================================
+#
+# 上游 importChainFile() 把 alignChains() 放在**链组循环内部**（每导入一个组调一次），
+# 而 alignChains() 自身扫描**全场景**所有 RE_CHAIN_CHAINGROUP，并在其内层循环里调用
+# bpy.context.view_layer.update() —— 那是一次全量依赖图求值。于是导入 G 个组的代价是
+# O(G²·m) 次全量求值，且场景里已有的链也每次重扫。
+#
+# 实测（Blender 5.1，MHWilds_Chain_Editor 分支，196 组 / 820 节点的场景，
+# 脏图后 19ms/次求值）：
+#     一次 alignChains()            = 820 次求值 ≈ 15.8 s
+#     导入 196 组                    ≈ 241,000 次求值 ≈ 78 分钟
+#     提到循环外只调一次             ≈ 1,639 次求值 ≈ 32 s   （147×）
+# 这不是理论问题：一次被 Ctrl+C 打断的 RE9 导入只建出 53 组里的前 43 组，links 全丢
+# （links 在组循环之后才导入），静态看毫无异常。
+#
+# 补丁方式：不改上游源码（它已 archived，且分支众多 —— 见 CLAUDE.md）。
+# alignChains() 在 importChainFile 函数体内是**运行时解析的模块全局**，所以把
+# 模块属性换成 no-op 就能拦下；导入结束后恢复并只调用一次。
+# 但 __init__.py 是 `from .modules.blender_re_chain import importChainFile`，算子持有
+# 自己的绑定，所以 importChainFile 必须在**每个持有该属性的模块**上都包一层。
+
+_FAST_IMPORT_MARK = "_mtk_fast_chain_import"
+
+
+def _modules_with_attr(attr):
+    """所有把 attr 作为可调用属性暴露出来的已加载模块。"""
+    for mod in list(sys.modules.values()):
+        if mod is None:
+            continue
+        try:
+            if callable(getattr(mod, attr, None)):
+                yield mod
+        except Exception:
+            continue
+
+
+def _make_fast_import(original, align_hosts):
+    def fast_import(*args, **kwargs):
+        saved = []
+        for host in align_hosts:
+            try:
+                saved.append((host, host.alignChains))
+                host.alignChains = lambda: None
+            except Exception:
+                pass
+        try:
+            return original(*args, **kwargs)
+        finally:
+            for host, fn in saved:
+                try:
+                    host.alignChains = fn
+                except Exception:
+                    pass
+            # 循环外补一次：最后一次 per-group 调用本来就会扫全场景，
+            # 所以只调一次的终态与逐组调用的终态相同
+            for _host, fn in saved[:1]:
+                try:
+                    t = time.perf_counter()
+                    fn()
+                    print(f"[ChainImport] alignChains once: "
+                          f"{time.perf_counter() - t:.2f}s", file=sys.stderr)
+                except Exception as e:
+                    print(f"[ChainImport] alignChains failed: {e}", file=sys.stderr)
+
+    setattr(fast_import, _FAST_IMPORT_MARK, True)
+    fast_import._mtk_original = original
+    return fast_import
+
+
+def install_fast_chain_import():
+    """给 RE-Chain-Editor 的 chain/chain2 导入打上快速补丁。返回被打补丁的绑定数。
+
+    幂等；找不到 RE-Chain-Editor 时返回 0（不报错）。"""
+    align_hosts = [m for m in _modules_with_attr("alignChains")
+                   if getattr(m, "importChainFile", None) is not None]
+    if not align_hosts:
+        return 0
+
+    patched = 0
+    for mod in _modules_with_attr("importChainFile"):
+        fn = mod.importChainFile
+        if getattr(fn, _FAST_IMPORT_MARK, False):
+            continue
+        try:
+            mod.importChainFile = _make_fast_import(fn, align_hosts)
+            patched += 1
+        except Exception:
+            continue
+    return patched
+
+
+def uninstall_fast_chain_import():
+    """撤销补丁，恢复上游原始行为。返回恢复的绑定数。"""
+    restored = 0
+    for mod in _modules_with_attr("importChainFile"):
+        fn = mod.importChainFile
+        if not getattr(fn, _FAST_IMPORT_MARK, False):
+            continue
+        try:
+            mod.importChainFile = fn._mtk_original
+            restored += 1
+        except Exception:
+            continue
+    return restored
+
+
 def _decompose_chains(head_pb, armature, physics_bones):
     """将以 head_pb 为根的物理链递归分解为多条线性路径。"""
     paths = []
