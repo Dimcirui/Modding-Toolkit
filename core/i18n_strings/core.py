@@ -978,6 +978,22 @@ STRINGS = {
               "合并目标游戏没有的骨（连同权重）、补上它需要的骨、并把骨骼轴向"
               "改写成目标游戏的约定。始终在骨架与其网格的副本上操作。"
               "先移植骨架，再移植物理链"},
+    "core.mesh_port_ops.skeleton_only": {
+        "EN": "Skeleton Only", "ZH": "仅转换骨架"},
+    "core.mesh_port_ops.source_collection": {
+        "EN": "Mesh Collection", "ZH": "网格集合"},
+    "core.mesh_port_ops.no_mesh_collection": {
+        "EN": "No .mesh collection in the scene", "ZH": "场景里没有 .mesh 集合"},
+    "core.mesh_port_ops.pick_collection": {
+        "EN": "Pick the .mesh collection to port", "ZH": "请选择要移植的 .mesh 集合"},
+    "core.mesh_port_ops.collection_no_armature": {
+        "EN": "This collection holds no armature",
+        "ZH": "该集合里没有骨架"},
+    "core.mesh_port_ops.collection_many_armatures": {
+        "EN": "This collection holds {n} armatures ({names}) -- a .mesh collection "
+              "should hold exactly one, so the port would have to guess",
+        "ZH": "该集合里有 {n} 个骨架（{names}）—— 正常的 .mesh 集合只应有一个，"
+              "否则移植只能靠猜"},
     "core.mesh_port_ops.source_armature": {
         "EN": "Source Armature", "ZH": "源骨架"},
     "core.mesh_port_ops.target_game": {"EN": "Target Game", "ZH": "目标游戏"},
@@ -1022,9 +1038,9 @@ STRINGS = {
         "EN": "Cannot port: {detail}", "ZH": "无法移植：{detail}"},
     "core.mesh_port_ops.done": {
         "EN": "Ported to {game} as {name}: {renamed} renamed, {merged} merged, "
-              "{inserted} inserted, {corrected} re-oriented",
+              "{inserted} inserted, {corrected} re-oriented, {synced} synced to parent",
         "ZH": "已移植到 {game}，产出 {name}：{renamed} 根重命名，{merged} 根合并，"
-              "{inserted} 根新增，{corrected} 根改轴"},
+              "{inserted} 根新增，{corrected} 根改轴，{synced} 根同步父骨朝向"},
     "core.mesh_port_ops.rejected": {
         "EN": "{n} bone(s) kept the source convention (no trustworthy correction): "
               "{names}",

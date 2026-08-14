@@ -28,7 +28,7 @@ convention with nothing to show for it until an animation twists it in-game.
 import bpy
 from mathutils import Matrix, Vector
 
-from . import bone_utils
+from . import bone_utils, ref_model
 from .bone_correction import (DEFAULT_TOLERANCE_DEG, derive_bone_correction,
                               expand_corrections, same_convention_set)
 from .bone_mapper import BoneMapManager, auto_detect_preset, build_cross_game_map
@@ -230,6 +230,49 @@ def _insert_bones(arm_obj, inserts, ref_arm):
     return made
 
 
+def sync_child_orientation(arm_obj, base_names):
+    """Give every non-base bone its parent's direction and roll, recursively.
+
+    RE9 is the reason this exists: its bones are **not** all oriented the same way --
+    each region has its own default orientation, and every bone in that region, base
+    or auxiliary or physics, has to share it.  That is what
+    ``re9.sync_child_orientation`` is for, and a port has to do the same thing: once
+    the base bones are re-expressed in the target convention, their non-base children
+    are left pointing the source game's way, and so is everything below them.
+
+    Deciding per bone whether it "rides" on its parent was the wrong model and is
+    gone.  The source rig has already been put in its correct pose by ree_to_tpose --
+    every bone, base, auxiliary and physics alike, is where it belongs -- so the only
+    thing a port changes is the base bones, and everything hanging off them simply
+    follows.  Hair and cloth included: in RE9 they must match their region too.
+
+    Heads never move; only direction and roll change, and edit bones are absolute, so
+    this is again a rest-only edit that leaves the mesh untouched.
+    """
+    if bpy.context.mode != 'OBJECT':
+        bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.context.view_layer.objects.active = arm_obj
+    bpy.ops.object.mode_set(mode='EDIT')
+    synced = 0
+    try:
+        def walk(bone):
+            nonlocal synced
+            parent = bone.parent
+            if parent is not None and bone.name not in base_names:
+                direction = (parent.tail - parent.head).normalized()
+                bone.tail = bone.head + direction * bone.length
+                bone.roll = parent.roll
+                synced += 1
+            for child in bone.children:
+                walk(child)
+
+        for root in [b for b in arm_obj.data.edit_bones if b.parent is None]:
+            walk(root)
+    finally:
+        bpy.ops.object.mode_set(mode='OBJECT')
+    return synced
+
+
 def apply_corrections(arm_obj, correction_set):
     """Re-express corrected bones' rest orientation in the target's convention.
 
@@ -279,9 +322,9 @@ def apply_corrections(arm_obj, correction_set):
     return changed
 
 
-def execute_port(arm_obj, plan, ref_arm=None, correction_set=None):
+def execute_port(arm_obj, plan, ref_arm=None, correction_set=None, base_names=None):
     """Run *plan* on *arm_obj* (already a copy).  Returns a counts dict."""
-    counts = {"merged": 0, "renamed": 0, "inserted": 0, "corrected": 0}
+    counts = {"merged": 0, "renamed": 0, "inserted": 0, "corrected": 0, "synced": 0}
 
     if plan.merges:
         # (keep, delete) is the order merge_weights_and_delete_bones expects; it also
@@ -300,6 +343,12 @@ def execute_port(arm_obj, plan, ref_arm=None, correction_set=None):
     # Insertion comes last because its rules are written in target-game names, and
     # the bones it copies orientation from are already in the target convention.
     counts["inserted"] = _insert_bones(arm_obj, plan.inserts, ref_arm)
+
+    # Last, and only when the convention actually changed: the non-base bones follow
+    # the base bones they hang off.  Runs after the renames so *base_names* -- which
+    # is in target-game naming -- matches what the bones are called by now.
+    if correction_set is not None and base_names:
+        counts["synced"] = sync_child_orientation(arm_obj, base_names)
     return counts
 
 
@@ -324,6 +373,32 @@ def _target_game_items(self, context):
     return _cached("target_game", items)
 
 
+def is_mesh_collection(col):
+    """A collection holding an imported RE mesh.
+
+    Same test the MDF tools use (``core/mdf_generator_base.py``): the importers tag
+    the collection with ``~TYPE``, and the naming convention is the fallback for
+    collections made by hand.
+    """
+    return col.get("~TYPE") == "RE_MESH_COLLECTION" or col.name.endswith(".mesh")
+
+
+def mesh_collections():
+    return [c for c in bpy.data.collections if is_mesh_collection(c)]
+
+
+def collection_armatures(col):
+    return [o for o in col.all_objects if o.type == 'ARMATURE']
+
+
+def _collection_items(self, context):
+    items = [(c.name, f"{c.name}  ({len(collection_armatures(c))})", "",
+              'OUTLINER_COLLECTION', i) for i, c in enumerate(mesh_collections())]
+    if not items:
+        items = [("NONE", T("core.mesh_port_ops.no_mesh_collection"), "", 'ERROR', 0)]
+    return _cached("collection", items)
+
+
 def _reference_items(self, context):
     game = _REF_DIRS.get(self.target_game, "")
     return _cached("reference", list(get_reference_skeleton_items(game)))
@@ -344,6 +419,14 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
     #: importing the reference skeleton -- so the safe thing is a value that cannot be
     #: re-resolved at all.  ``prop_search`` gives the same picker in the dialog.
     source_armature: bpy.props.StringProperty(name="Source Armature")
+    #: The normal way in: a .mesh collection holds exactly one rig and all the meshes
+    #: bound to it, which is the unit a port actually operates on.  Picking the
+    #: armature by hand means remembering which meshes belong to it.
+    source_collection: bpy.props.EnumProperty(
+        name="Mesh Collection", items=_collection_items)
+    skeleton_only: bpy.props.BoolProperty(
+        name="Skeleton Only", default=False,
+        description="Convert an armature on its own, without its meshes")
     target_game: bpy.props.EnumProperty(name="Target Game", items=_target_game_items)
     reference_skeleton: bpy.props.EnumProperty(
         name="Reference Skeleton", items=_reference_items)
@@ -362,7 +445,27 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
     def invoke(self, context, event):
         self._lines = []
         self._blocked = True
+        self._prefill(context)
         return context.window_manager.invoke_props_dialog(self, width=480)
+
+    def _prefill(self, context):
+        """Fill in what the selection already says, so the usual case needs no picking.
+
+        Whatever is active decides: an object inside a .mesh collection names that
+        collection, and an active armature names itself for the skeleton-only path.
+        """
+        obj = context.active_object
+        if obj is None:
+            return
+        for col in obj.users_collection:
+            if is_mesh_collection(col):
+                try:
+                    self.source_collection = col.name
+                except (TypeError, ValueError):
+                    pass
+                break
+        if obj.type == 'ARMATURE':
+            self.source_armature = obj.name
 
     def check(self, context):
         self._preflight(context)
@@ -370,8 +473,13 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop_search(self, "source_armature", bpy.data, "objects",
-                           text=T("core.mesh_port_ops.source_armature"))
+        layout.prop(self, "skeleton_only", text=T("core.mesh_port_ops.skeleton_only"))
+        if self.skeleton_only:
+            layout.prop_search(self, "source_armature", bpy.data, "objects",
+                               text=T("core.mesh_port_ops.source_armature"))
+        else:
+            layout.prop(self, "source_collection",
+                        text=T("core.mesh_port_ops.source_collection"))
         layout.prop(self, "target_game", text=T("core.mesh_port_ops.target_game"))
         layout.prop(self, "reference_skeleton",
                     text=T("core.mesh_port_ops.reference_skeleton"))
@@ -399,15 +507,42 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
             src_main_names=_preset_main_names(src),
             dst_bones=({b.name for b in ref_arm.data.bones}
                        if ref_arm is not None else None),
-            extra_rules=extra)
+            extra_rules=extra,
+            src_parents={b.name: (b.parent.name if b.parent else None)
+                         for b in arm.data.bones},
+            src_native_bones=ref_model.load_base_bones(self.source_game))
         return plan, cross
+
+    def _source_armature(self):
+        """``(armature, error_line)`` for whichever way the source was chosen.
+
+        A .mesh collection is expected to hold exactly one rig.  Two means the
+        collection is not what it claims -- several models merged into one, most
+        likely -- and porting would silently pick one of them, so it is refused.
+        """
+        if self.skeleton_only:
+            arm = bpy.data.objects.get(self.source_armature)
+            if arm is None or arm.type != 'ARMATURE':
+                return None, ('INFO', T("core.mesh_port_ops.pick_target"))
+            return arm, None
+
+        col = bpy.data.collections.get(self.source_collection)
+        if col is None:
+            return None, ('INFO', T("core.mesh_port_ops.pick_collection"))
+        arms = collection_armatures(col)
+        if not arms:
+            return None, ('ERROR', T("core.mesh_port_ops.collection_no_armature"))
+        if len(arms) > 1:
+            return None, ('ERROR', T("core.mesh_port_ops.collection_many_armatures")
+                          .format(n=len(arms), names=", ".join(a.name for a in arms[:3])))
+        return arms[0], None
 
     def _preflight(self, context):
         self._lines = []
         self._blocked = True
-        arm = bpy.data.objects.get(self.source_armature)
-        if arm is None or arm.type != 'ARMATURE':
-            self._lines = [('INFO', T("core.mesh_port_ops.pick_target"))]
+        arm, err = self._source_armature()
+        if err is not None:
+            self._lines = [err]
             return
 
         detected = auto_detect_preset(arm, False)
@@ -444,17 +579,22 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
     # ── execute ────────────────────────────────────────────────────────────────
 
     def execute(self, context):
-        arm = bpy.data.objects.get(self.source_armature)
-        if arm is None or arm.type != 'ARMATURE':
-            self.report({'ERROR'}, T("core.mesh_port_ops.pick_target"))
+        arm, err = self._source_armature()
+        if err is not None:
+            self.report({'ERROR'}, err[1])
             return {'CANCELLED'}
 
         # Copy unless told otherwise. The meshes come too: merging supernumerary
         # bones moves vertex groups, which live on the mesh, so an armature-only
         # copy would have nothing to transfer the weights on.
         if not self.replace_original:
-            arm = bone_utils.duplicate_armature_with_meshes(
-                arm, f"{arm.name}_{self.target_game}")
+            if self.skeleton_only:
+                arm = _armature_only_copy(arm)
+                arm.name = f"{arm.name.replace('_probe', '')}_{self.target_game}"
+                arm.data.name = arm.name
+            else:
+                arm = bone_utils.duplicate_armature_with_meshes(
+                    arm, f"{arm.name}_{self.target_game}")
 
         ref_arm = None
         if self.reference_skeleton and self.reference_skeleton != "NONE":
@@ -513,7 +653,8 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
                         rejected=len(correction_set.rejected)))
                     return {'CANCELLED'}
 
-            counts = execute_port(arm, plan, ref_arm, correction_set)
+            base_names = set(cross.mapping.values()) | {n for n, _r, _a in plan.inserts}
+            counts = execute_port(arm, plan, ref_arm, correction_set, base_names)
         finally:
             if ref_arm is not None:
                 bpy.data.objects.remove(ref_arm, do_unlink=True)

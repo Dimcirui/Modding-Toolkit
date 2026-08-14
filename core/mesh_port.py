@@ -19,9 +19,18 @@ Four things happen to a source bone, and the split is not symmetric:
   (channels are resolved by name hash, so an unreferenced link in the middle drives
   the tip to the wrong place), while dropping one throws away vertex weights.  Only
   leaf bones -- hair, cloth -- can multiply freely, because nothing animates them.
-* **pass through** -- no mapping at all.  This is the *correct* outcome for the
-  per-asset hair/cloth/prop bones: they travel with the model, so their names, and
-  therefore their hashes, already match in the target game.
+* **pass through** -- no mapping at all *and* not part of the source game's own
+  skeleton.  This is the correct outcome for per-asset hair/cloth/prop bones: they
+  travel with the model, so their names, and therefore their hashes, already match in
+  the target game.
+
+  Rig furniture is the opposite case and used to be lumped in here, wrongly.  A bone
+  like ``L_Elbow_HJ_00`` belongs to *MHWilds' skeleton*, not to the model: the target
+  game has no such bone, nothing will ever animate it, and keeping it just inflates
+  the rig -- while the helpers that happen to be registered in the preset were being
+  merged, so half the same family survived and half did not, for no reason a user
+  could see.  A source bone that is in the source game's **native** skeleton but has
+  no mapping now merges into its nearest mapped ancestor, weights included.
 * **insert** -- the reverse direction's problem: the target game has a base bone the
   source rig lacks.  Same animation argument in reverse, so it has to be synthesised.
 
@@ -186,6 +195,11 @@ class PortPlan:
         return ", ".join(parts)
 
 
+def by_dst_sources(by_dst):
+    """Every source bone that has a mapping, from the grouped-by-destination dict."""
+    return {name for names in by_dst.values() for name in names}
+
+
 def _pick_primary(dst_name, src_names, src_main_names):
     """Which of several source bones mapping to *dst_name* survives as that bone.
 
@@ -203,7 +217,8 @@ def _pick_primary(dst_name, src_names, src_main_names):
 
 
 def build_port_plan(src_bones, cross_map, dst_game=None, src_main_names=(),
-                    dst_bones=None, extra_rules=None):
+                    dst_bones=None, extra_rules=None, src_parents=None,
+                    src_native_bones=None):
     """Plan the rig half of a cross-game mesh port.
 
     *src_bones*      : the source rig's bone names.
@@ -215,6 +230,11 @@ def build_port_plan(src_bones, cross_map, dst_game=None, src_main_names=(),
     *src_main_names* : the source preset's ``main`` bones, used to break merge ties.
     *extra_rules*    : extra ``{name: (rule, anchor)}`` entries, e.g. MHWilds' helper
                        placement tables.
+    *src_parents* / *src_native_bones* : together these separate the source game's own
+                       rig furniture from the model's own bones -- see "pass through"
+                       in the module docstring.  Without them every unmapped bone is
+                       kept, which leaves the target rig carrying helpers it has no
+                       use for.
     """
     plan = PortPlan(getattr(cross_map, "src_game", None),
                     dst_game or getattr(cross_map, "dst_game", None))
@@ -229,6 +249,22 @@ def build_port_plan(src_bones, cross_map, dst_game=None, src_main_names=(),
             plan.passthrough.append(name)
             continue
         by_dst.setdefault(dst, []).append(name)
+
+    # Unmapped bones that belong to the source game's *skeleton* are furniture, not
+    # model data: merge them into the nearest mapped ancestor.  Done before the
+    # per-destination pass so they join the normal merge machinery.
+    if src_parents and src_native_bones:
+        mapped = set(by_dst_sources(by_dst))
+        for name in list(plan.passthrough):
+            if name not in src_native_bones:
+                continue
+            ancestor = src_parents.get(name)
+            while ancestor is not None and ancestor not in mapped:
+                ancestor = src_parents.get(ancestor)
+            if ancestor is None:
+                continue
+            plan.passthrough.remove(name)
+            plan.merges.append((name, ancestor))
 
     produced = set()
     for dst, srcs in sorted(by_dst.items()):
