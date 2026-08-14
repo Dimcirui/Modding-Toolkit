@@ -981,8 +981,13 @@ STRINGS = {
     "core.chain_convert_ops.source_collection": {
         "EN": "Chain Collection", "ZH": "物理链集合"},
     "core.chain_convert_ops.target_game": {"EN": "Target Game", "ZH": "目标游戏"},
-    "core.chain_convert_ops.target_armature": {
-        "EN": "Target Armature", "ZH": "目标骨架"},
+    "core.chain_convert_ops.target_mesh_collection": {
+        "EN": "Target Mesh Collection", "ZH": "目标 Mesh 集合"},
+    "core.chain_convert_ops.target_no_armature": {
+        "EN": "That mesh collection has no armature", "ZH": "该 Mesh 集合没有骨架"},
+    "core.chain_convert_ops.target_many_armatures": {
+        "EN": "That mesh collection holds {n} armatures ({names}), expected exactly one",
+        "ZH": "该 Mesh 集合里有 {n} 个骨架 ({names})，应该只有一个"},
     # Shared by both cross-game ports (chain and mesh): off by default, so the
     # destructive choice is the one that needs an explicit tick.
     "core.port.replace_original": {
@@ -994,8 +999,8 @@ STRINGS = {
         "EN": "No chain collection found. Import a .chain/.chain2 first",
         "ZH": "未找到物理链集合，请先导入 .chain/.chain2"},
     "core.chain_convert_ops.pick_target": {
-        "EN": "Pick a target armature to check the result",
-        "ZH": "选择目标骨架后即可查看预检结果"},
+        "EN": "Pick a target mesh collection to check the result",
+        "ZH": "选择目标 Mesh 集合后即可查看预检结果"},
     "core.chain_convert_ops.wrong_source_game": {
         "EN": "This collection's armature looks like {found}, not {expected}. "
               "Use the {found} section instead",

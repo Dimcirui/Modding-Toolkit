@@ -17,8 +17,9 @@ import bpy
 
 from .bone_mapper import BoneMapManager, auto_detect_preset, build_cross_game_map
 from .chain_convert import (duplicate_chain_collection, iter_collider_bindings,
-                            remap_collider_attachments)
+                            ported_chain_collection_name, remap_collider_attachments)
 from .i18n import T
+from .mesh_port_ops import collection_armatures, is_mesh_collection, mesh_collections
 
 #: Games this is offered for, keyed by the ``game_code`` in the bone preset -- which
 #: is **not** always the section key: MH Rise's section is ``mhrs`` but its preset
@@ -74,9 +75,20 @@ def _preset_by_game():
 
 
 def _chain_collections():
-    """Collections holding an imported chain -- identified by their header object."""
+    """Collections holding an imported chain -- identified by their header object.
+
+    Direct membership only (c.objects, not all_objects). A chain's header always
+    sits at the collection's own level -- confirmed live: CHAIN_HEADER's own
+    users_collection is exactly the leaf .chain/.chain2 collection, never a
+    parent. Recursing into all_objects instead also matches every *ancestor*
+    "master" collection that merely nests this one alongside completely
+    unrelated siblings (.mesh, .mdf2, .sfur, .clsp) -- confirmed 2026-08-14 as a
+    real incident, not a hypothetical: duplicate_chain_collection ran against
+    one of those masters and copied its *entire* contents (mesh, armature, MDF
+    materials, everything) into what should have been a chain-only collection.
+    """
     return [c for c in bpy.data.collections
-            if any(o.get("TYPE") == "RE_CHAIN_HEADER" for o in c.all_objects)]
+            if any(o.get("TYPE") == "RE_CHAIN_HEADER" for o in c.objects)]
 
 
 def _collection_items(self, context):
@@ -99,12 +111,16 @@ def _target_game_items(self, context):
     return _cached("target_game", items)
 
 
-def _armature_items(self, context):
-    items = [(o.name, f"{o.name}  ({len(o.data.bones)})", "", 'ARMATURE_DATA', i)
-             for i, o in enumerate(o for o in bpy.data.objects if o.type == 'ARMATURE')]
+def _target_mesh_collection_items(self, context):
+    # Same picker mesh_port_ops.MODDER_OT_PortMeshCrossGame itself offers for
+    # its own source_collection -- a .mesh collection is the unit a rig and
+    # its meshes come as, and it is what a chain's colliders actually need to
+    # be re-bound onto, not a bare armature name with no context.
+    items = [(c.name, f"{c.name}  ({len(collection_armatures(c))})", "",
+              'OUTLINER_COLLECTION', i) for i, c in enumerate(mesh_collections())]
     if not items:
         items = [("NONE", "-", "", 'ERROR', 0)]
-    return _cached("armature", items)
+    return _cached("target_mesh_collection", items)
 
 
 def _collection_armature(collection):
@@ -119,6 +135,21 @@ def _collection_armature(collection):
     return None
 
 
+def _collection_game_code(collection):
+    """Game code detected from the armature *collection*'s colliders are
+    bound to, or None when there's no armature or no matching preset."""
+    arm = _collection_armature(collection)
+    if arm is None:
+        return None
+    detected = auto_detect_preset(arm, False)
+    if not detected:
+        return None
+    mgr = BoneMapManager()
+    if not mgr.load_preset(detected):
+        return None
+    return mgr.preset_info.get("game_code")
+
+
 class MODDER_OT_ConvertChainCrossGame(bpy.types.Operator):
     bl_idname = "modder.convert_chain_cross_game"
     bl_label = "Port Chain to Another Game"
@@ -128,8 +159,8 @@ class MODDER_OT_ConvertChainCrossGame(bpy.types.Operator):
     source_collection: bpy.props.EnumProperty(
         name="Chain Collection", items=_collection_items)
     target_game: bpy.props.EnumProperty(name="Target Game", items=_target_game_items)
-    target_armature: bpy.props.EnumProperty(
-        name="Target Armature", items=_armature_items)
+    target_mesh_collection: bpy.props.EnumProperty(
+        name="Target Mesh Collection", items=_target_mesh_collection_items)
     replace_original: bpy.props.BoolProperty(
         name="Replace the Original", default=False,
         description="Convert the original in place instead of converting a copy")
@@ -142,9 +173,66 @@ class MODDER_OT_ConvertChainCrossGame(bpy.types.Operator):
     def poll(cls, context):
         return bool(_chain_collections())
 
+    def _prefill(self, context):
+        """Default source_collection off the active object, and
+        target_mesh_collection off whatever RE Mesh port would have produced
+        for it.
+
+        source_collection: same shape as modder.port_mesh_cross_game/
+        port_mdf_material_cross_game's own _prefill -- whichever chain
+        collection the active object belongs to. Walks all_objects (not just
+        users_collection) purely because the active object may itself be a
+        collider one level under the chain collection, not the header; the
+        candidate list itself is already narrowed to real leaf chain
+        collections by _chain_collections()'s own direct-membership check,
+        so this can't re-widen back onto an ancestor "master" collection.
+        Skipped when the collection's own detected game doesn't match
+        source_game, so a wrong-game collection (most likely one this same
+        operator just produced) is left alone rather than guessed into place.
+
+        target_mesh_collection: mesh_port_ops.duplicate_mesh_collection names
+        its output "<stem>_<GAME>.mesh" -- if the chain's own armature lives
+        in a .mesh collection and that naming convention already produced a
+        <stem>_<target_game>.mesh collection (i.e. the mesh side of this same
+        character was already ported), that is almost certainly what the
+        colliders should be re-bound onto.
+        """
+        obj = context.active_object
+        source_col = None
+        if obj is not None:
+            for col in _chain_collections():
+                if any(o == obj for o in col.all_objects):
+                    code = _collection_game_code(col)
+                    if code is None or code == self.source_game:
+                        source_col = col
+                        try:
+                            self.source_collection = col.name
+                        except (TypeError, ValueError):
+                            pass
+                    break
+
+        if source_col is None:
+            source_col = bpy.data.collections.get(self.source_collection)
+        if source_col is None or self.target_game in ('', 'NONE'):
+            return
+        src_arm = _collection_armature(source_col)
+        if src_arm is None:
+            return
+        mesh_col = next((c for c in src_arm.users_collection if is_mesh_collection(c)), None)
+        if mesh_col is None:
+            return
+        stem = mesh_col.name[:-5] if mesh_col.name.endswith(".mesh") else mesh_col.name
+        guess = bpy.data.collections.get(f"{stem}_{self.target_game}.mesh")
+        if guess is not None:
+            try:
+                self.target_mesh_collection = guess.name
+            except (TypeError, ValueError):
+                pass
+
     def invoke(self, context, event):
         self._lines = []
         self._blocked = True
+        self._prefill(context)
         return context.window_manager.invoke_props_dialog(self, width=460)
 
     def check(self, context):
@@ -161,8 +249,8 @@ class MODDER_OT_ConvertChainCrossGame(bpy.types.Operator):
         layout.prop(self, "source_collection",
                     text=T("core.chain_convert_ops.source_collection"))
         layout.prop(self, "target_game", text=T("core.chain_convert_ops.target_game"))
-        layout.prop(self, "target_armature",
-                    text=T("core.chain_convert_ops.target_armature"))
+        layout.prop(self, "target_mesh_collection",
+                    text=T("core.chain_convert_ops.target_mesh_collection"))
         layout.prop(self, "replace_original",
                     text=T("core.port.replace_original"))
 
@@ -179,24 +267,29 @@ class MODDER_OT_ConvertChainCrossGame(bpy.types.Operator):
         """``(collection, armature, cross_map, error_line)``; any may be None."""
         presets = _preset_by_game()
         col = bpy.data.collections.get(self.source_collection)
-        arm = bpy.data.objects.get(self.target_armature)
-        if col is None or arm is None or arm.type != 'ARMATURE':
+        mesh_col = bpy.data.collections.get(self.target_mesh_collection)
+        if col is None or mesh_col is None:
             return None, None, None, ('INFO', T("core.chain_convert_ops.pick_target"))
+
+        # A .mesh collection is expected to hold exactly one rig, same
+        # constraint mesh_port_ops.MODDER_OT_PortMeshCrossGame enforces on its
+        # own source_collection -- two would mean the colliders' new home is
+        # ambiguous, not a choice this operator should make for the user.
+        arms = collection_armatures(mesh_col)
+        if not arms:
+            return None, None, None, ('ERROR', T("core.chain_convert_ops.target_no_armature"))
+        if len(arms) > 1:
+            return None, None, None, ('ERROR', T("core.chain_convert_ops.target_many_armatures").format(
+                n=len(arms), names=", ".join(a.name for a in arms[:3])))
+        arm = arms[0]
 
         # The section fixed the source game, so make sure the collection agrees --
         # otherwise clicking this in the wrong section converts the wrong direction.
-        src_arm = _collection_armature(col)
-        if src_arm is not None:
-            detected = auto_detect_preset(src_arm, False)
-            code = None
-            if detected:
-                mgr = BoneMapManager()
-                if mgr.load_preset(detected):
-                    code = mgr.preset_info.get("game_code")
-            if code and self.source_game and code != self.source_game:
-                return None, None, None, ('ERROR', T(
-                    "core.chain_convert_ops.wrong_source_game").format(
-                        found=code, expected=self.source_game))
+        code = _collection_game_code(col)
+        if code and self.source_game and code != self.source_game:
+            return None, None, None, ('ERROR', T(
+                "core.chain_convert_ops.wrong_source_game").format(
+                    found=code, expected=self.source_game))
 
         src = presets.get(self.source_game)
         dst = presets.get(self.target_game)
@@ -253,7 +346,7 @@ class MODDER_OT_ConvertChainCrossGame(bpy.types.Operator):
 
         if not self.replace_original:
             col, _mapping = duplicate_chain_collection(
-                col, f"{col.name}_{self.target_game}")
+                col, ported_chain_collection_name(col.name, self.target_game))
 
         rep = remap_collider_attachments(col, cross_map, target_armature=arm)
         self.report({'INFO'}, T("core.chain_convert_ops.done").format(
