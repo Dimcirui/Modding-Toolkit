@@ -16,9 +16,10 @@ Mirrors two existing patterns rather than inventing a third:
   copy": the target's slot vocabulary and channel packing can differ (see
   ``core/mdf_port_tex.py``), so a straight ``old_path`` copy is not enough here.
 
-Params are not migrated, unlike the same-game convert's ``ALL_TEX_PARAMS`` mode --
-the shader's Property List is itself game-specific, not just a same-shape table
-with different defaults.
+Params are migrated selectively, not wholesale: the shader's Property List is
+game-specific, so which entries mean the same thing on both sides is its own
+question -- ``core/mdf_port_params.py`` answers it, and ``migrate_params`` picks
+how far to take the answer.
 """
 
 import os
@@ -30,8 +31,10 @@ from bpy.props import BoolProperty, EnumProperty, StringProperty
 
 from .i18n import T
 from . import mdf_port
+from . import mdf_port_params
 from . import mdf_port_tex
-from .mdf_material_convert_base import _load_vanilla_art_paths, is_custom_tex_path
+from .mdf_material_convert_base import (
+    _load_vanilla_art_paths, is_custom_tex_path, migrate_property_value)
 from .mdf_tex_processor_base import mdf_collection_poll, _import_tex_utils
 from .mdf_generator_base import (
     import_read_preset_json, PLACEHOLDER_SLOT_TYPES, _resolve_placeholder_slot)
@@ -51,6 +54,16 @@ def _target_game_items(self, context):
     if not items:
         items = [("NONE", "-", "")]
     return _cached("mdf_port_target_game", items)
+
+
+def _migrate_params_items(self, context):
+    # BASIC first: it is the default by being first (see the property's comment).
+    return _cached("mdf_port_migrate_params", [
+        ('BASIC', T("core.mdf_port_ops.params_basic"),
+                  T("core.mdf_port_ops.params_basic_desc")),
+        ('ALL', T("core.mdf_port_ops.params_all"),
+                T("core.mdf_port_ops.params_all_desc")),
+    ])
 
 
 def mdf_material_collections():
@@ -215,6 +228,13 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
         description="Path under the target game's own natives/STM convention, e.g. Author/Name",
         default="",
     )
+    #: Defaults to BASIC rather than ALL: 'all' includes entries that line up by
+    #: name but are not the authored look (see mdf_port_params.BASIC_EXCLUDE_*),
+    #: and a wrong param value is the kind of bug that renders plausibly.
+    #: No `default=`: with a callback items list that would have to be an index,
+    #: and the first item is BASIC anyway -- same shape as the same-game convert's
+    #: `migrate_mode`.
+    migrate_params: EnumProperty(name="Migrate Params", items=_migrate_params_items)
     delete_original: BoolProperty(name="Delete Original Material", default=False)
 
     @classmethod
@@ -291,6 +311,9 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
                 row.prop(self, "dest_base_path", text="")
 
         col.separator()
+        col.prop(self, "migrate_params", text=T("core.mdf_port_ops.migrate_params_label"))
+
+        col.separator()
         col.prop(self, "delete_original", text=T("core.mdf_port_ops.delete_original_label"))
 
     def execute(self, context):
@@ -361,6 +384,7 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
         converted = failed = unsupported = 0
         tex_ported = tex_skipped_vanilla = tex_skipped_no_slot = tex_skipped_no_source = 0
         tex_pending_write = tex_placeholder = 0
+        params_migrated = params_skipped = 0
 
         try:
             for obj in targets:
@@ -388,6 +412,21 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
                     new_data = new_obj.re_mdf_material
                     new_data.materialName = old_name
                     tex_name = old_name.removesuffix('_UseSC')
+
+                    # Read both Property Lists off the live materials, not off the
+                    # prefabs: the source may be an unsupported shader with no
+                    # prefab at all, and the target's list is what actually has to
+                    # accept the write.
+                    src_items = {p.prop_name: p for p in old_data.propertyList_items}
+                    dst_items = {p.prop_name: p for p in new_data.propertyList_items}
+                    for src_name, dst_name in mdf_port_params.migration_pairs(
+                            src_game, {n: p.data_type for n, p in src_items.items()},
+                            dst_game, {n: p.data_type for n, p in dst_items.items()},
+                            self.migrate_params):
+                        if migrate_property_value(dst_items[dst_name], src_items[src_name]):
+                            params_migrated += 1
+                        else:
+                            params_skipped += 1
 
                     if convert_textures:
                         dst_binding_types = {b.textureType: b for b in new_data.textureBindingList_items}
@@ -473,7 +512,9 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
             self.report({'INFO'}, T("core.mdf_port_ops.done").format(
                 done=converted, unsupported=unsupported, tex=tex_ported,
                 placeholder=tex_placeholder, pending=tex_pending_write, vskip=tex_skipped_vanilla,
-                noslot=tex_skipped_no_slot, nosrc=tex_skipped_no_source))
+                noslot=tex_skipped_no_slot, nosrc=tex_skipped_no_source)
+                + T("core.mdf_port_ops.done_params").format(
+                    migrated=params_migrated, skipped=params_skipped))
 
         # Some (not all -- that case already returned CANCELLED above), so the
         # batch went ahead; call out exactly which ones by full path rather

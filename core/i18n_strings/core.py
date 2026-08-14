@@ -484,6 +484,24 @@ STRINGS = {
     "core.mdf_port_ops.dest_base_path_label": {"EN": "Destination Base Path", "ZH": "目标路径"},
     "core.mdf_port_ops.delete_original_label": {"EN": "Delete Original Material", "ZH": "删除原材质"},
 
+    # ── migrate_params EnumProperty items (_migrate_params_items callback) ──
+    "core.mdf_port_ops.migrate_params_label": {"EN": "Migrate Params", "ZH": "参数迁移"},
+    "core.mdf_port_ops.params_basic": {
+        "EN": "Basic Params", "ZH": "迁移基础属性"},
+    "core.mdf_port_ops.params_basic_desc": {
+        "EN": "Migrate the material's authored look: base color, roughness, metallic, "
+              "translucency and the like, matched across the two games' different names",
+        "ZH": "迁移材质的外观参数：基础色、粗糙度、金属度、透光等，已跨两个游戏的不同命名对齐"},
+    "core.mdf_port_ops.params_all": {
+        "EN": "All Params", "ZH": "迁移全部属性"},
+    "core.mdf_port_ops.params_all_desc": {
+        "EN": "Also migrate every remaining param the two shaders happen to share by name, "
+              "including shader-internal and runtime gameplay values",
+        "ZH": "额外迁移两个 shader 中所有同名同类型的参数，包括 shader 内部常量与游戏运行时状态值"},
+    "core.mdf_port_ops.done_params": {
+        "EN": ", params {migrated} migrated / {skipped} skipped",
+        "ZH": "，参数 {migrated} 项已迁移 / {skipped} 项跳过"},
+
     "core.mdf_port_ops.no_mdf_collection": {
         "EN": "No MDF collection found in this file", "ZH": "文件中没有找到 MDF 集合"},
     "core.mdf_port_ops.source_root_missing_warning": {
