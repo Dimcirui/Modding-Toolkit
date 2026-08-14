@@ -582,6 +582,14 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
                 + T("core.mdf_port_ops.done_params").format(
                     migrated=params_migrated, skipped=params_skipped))
 
+        # Its own WARNING rather than a count folded into the line above: a
+        # pallid-white skin is the kind of result the user would otherwise put
+        # down to their own textures being wrong, and the fix (set a mod root,
+        # turn texture conversion on) is not something they would guess at.
+        if tex_null_fallback:
+            self.report({'WARNING'}, T("core.mdf_port_ops.null_fallback_warning").format(
+                n=tex_null_fallback))
+
         # Some (not all -- that case already returned CANCELLED above), so the
         # batch went ahead; call out exactly which ones by full path rather
         # than leaving it to the "nosrc" count above, which doesn't say which.

@@ -520,6 +520,12 @@ STRINGS = {
         "EN": "Texture(s) not found, fell back to the destination default -- please check and fill in yourself: {paths}",
         "ZH": "未找到贴图，回退默认路径，请自行检查并补充：{paths}"},
     "core.mdf_port_ops.and_n_more": {"EN": " (+{n} more)", "ZH": "（及其他 {n} 个）"},
+    "core.mdf_port_ops.null_fallback_warning": {
+        "EN": "{n} slot(s) with no vanilla default fell back to a null texture (skin will look "
+              "pallid). Set the destination Mod Root and enable texture conversion to write the "
+              "real placeholder instead",
+        "ZH": "{n} 个无原版默认贴图的槽位已回退为空贴图（皮肤会显得惨白）。"
+              "设置目标 Mod 根目录并开启「贴图转换」即可改为写出真正的占位贴图"},
     "core.mdf_port_ops.no_target_selected": {
         "EN": "No target game selected", "ZH": "未选择目标游戏"},
     "core.mdf_port_ops.missing_tex_config": {
