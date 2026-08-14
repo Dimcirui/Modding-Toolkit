@@ -223,20 +223,16 @@ class MODDER_OT_ImportReferenceModel(bpy.types.Operator):
         if len(ref_model.MODELS.get(game, ())) > 1:
             layout.prop(self, "model", text=T("core.ref_model_ops.model"))
 
-        na_key = ref_model.UNSUPPORTED.get(game)
-        col = layout.column(align=True)
-        col.enabled = na_key is None
-        col.prop(self, "to_tpose", text=T("core.ref_model_ops.to_tpose"))
-        col.prop(self, "merge_facial", text=T("core.ref_model_ops.merge_facial"))
+        if game not in ref_model.OPTIONLESS_GAMES:
+            col = layout.column(align=True)
+            col.prop(self, "to_tpose", text=T("core.ref_model_ops.to_tpose"))
+            col.prop(self, "merge_facial", text=T("core.ref_model_ops.merge_facial"))
 
-        aux = layout.row()
-        aux.enabled = na_key is None and ref_model.load_base_bones(game) is not None
-        aux.prop(self, "merge_aux", text=T("core.ref_model_ops.merge_aux"))
-
-        if na_key:
-            layout.label(text=T(na_key), icon='INFO')
-        elif ref_model.load_base_bones(game) is None:
-            layout.label(text=T("core.ref_model_ops.no_native_skeleton"), icon='INFO')
+            aux = layout.row()
+            aux.enabled = ref_model.load_base_bones(game) is not None
+            aux.prop(self, "merge_aux", text=T("core.ref_model_ops.merge_aux"))
+            if not aux.enabled:
+                layout.label(text=T("core.ref_model_ops.no_native_skeleton"), icon='INFO')
 
         ok, reason = model_available(game, self._valid_model())
         if not ok:
@@ -257,7 +253,7 @@ class MODDER_OT_ImportReferenceModel(bpy.types.Operator):
 
         facial = aux = 0
         posed = False
-        if game not in ref_model.UNSUPPORTED:
+        if game not in ref_model.OPTIONLESS_GAMES:
             facial, aux = apply_merges(arm, game, self.merge_facial, self.merge_aux)
             if self.to_tpose:
                 bpy.ops.object.mode_set(mode='OBJECT')

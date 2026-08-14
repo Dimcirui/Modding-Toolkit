@@ -102,7 +102,6 @@ class MHWS_OT_BatchImportDialog(bpy.types.Operator):
             return
 
         layout.separator()
-        layout.label(text=T("mhws.batch_import_ui.chain2_slow_hint"), icon='INFO')
 
         # ── 全局选择栏 ──
         enabled_count = sum(1 for it in items if it.enabled)

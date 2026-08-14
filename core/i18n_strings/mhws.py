@@ -265,10 +265,6 @@ STRINGS = {
     "mhws.batch_import_ui.deselect_all": {"EN": "Deselect All", "ZH": "取消全选"},
     "mhws.batch_import_ui.selected_count": {
         "EN": "{enabled}/{total} selected", "ZH": "已选 {enabled}/{total}"},
-    "mhws.batch_import_ui.chain2_slow_hint": {
-        "EN": "Importing chain2 is slow; only check it manually if you actually need it",
-        "ZH": "导入 chain2 速度很慢，如有需要请手动选择导入"},
-
     # ══════════════════════════════════════════════════════════════════════
     # games/mhws/mdf_generator.py
     # ══════════════════════════════════════════════════════════════════════

@@ -99,6 +99,24 @@ def _preset_main_names(fname):
     return {n for entry in mgr.mapping_data.values() for n in entry.get("main", ())}
 
 
+def _tpose(context, arm_obj):
+    """Run the rest-level T-pose conversion on one rig.
+
+    Both rigs have to go through it, not just the reference: C is
+    ``R_src^-1 . R_dst``, so any pose difference between them is absorbed into C 1:1.
+    Zeroing both to the same physical pose is what makes M0 cancel and leaves the
+    pure convention difference (measured on the RE4R/RE9 pair: 11 bones derived
+    before, 39 after).
+    """
+    if bpy.context.mode != 'OBJECT':
+        bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.ops.object.select_all(action='DESELECT')
+    arm_obj.hide_set(False)
+    arm_obj.select_set(True)
+    context.view_layer.objects.active = arm_obj
+    bpy.ops.modder.ree_to_tpose()
+
+
 # ── plan execution ──────────────────────────────────────────────────────────────
 
 def _rename_bones(arm_obj, pairs):
@@ -257,10 +275,17 @@ def execute_port(arm_obj, plan, ref_arm=None, correction_set=None):
         merge_weights_and_delete_bones(arm_obj, [(into, src) for src, into in plan.merges])
         counts["merged"] = len(plan.merges)
 
-    counts["renamed"] = _rename_bones(arm_obj, plan.renames)
-    counts["inserted"] = _insert_bones(arm_obj, plan.inserts, ref_arm)
+    # Corrections go on **before** the renames: a CorrectionSet is keyed by source
+    # bone name, and once a bone is called L_Leg_Upper there is nothing left to match
+    # L_Thigh against.  Measured before this was fixed: 72 corrections derived, 1
+    # applied -- the one bone (Hip) whose name is the same in both games.
     if correction_set is not None:
         counts["corrected"] = apply_corrections(arm_obj, correction_set)
+
+    counts["renamed"] = _rename_bones(arm_obj, plan.renames)
+    # Insertion comes last because its rules are written in target-game names, and
+    # the bones it copies orientation from are already in the target convention.
+    counts["inserted"] = _insert_bones(arm_obj, plan.inserts, ref_arm)
     return counts
 
 
@@ -308,6 +333,14 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
     target_game: bpy.props.EnumProperty(name="Target Game", items=_target_game_items)
     reference_skeleton: bpy.props.EnumProperty(
         name="Reference Skeleton", items=_reference_items)
+    #: Only meaningful when the port crosses axis conventions, which is the only case
+    #: that derives C -- and C's precondition is that both rigs sit in the same
+    #: physical pose.  The reference skeleton is imported here, in its native pose, so
+    #: the user cannot satisfy that precondition from outside: the port has to do it.
+    #: modder.ree_to_tpose is a rest-level conversion (it ends in armature_apply and
+    #: rebinds the meshes), and a T-posed rig is shippable -- RE Engine resolves bones
+    #: by name hash and only relative transforms matter.
+    tpose_first: bpy.props.BoolProperty(name="T-Pose Both Rigs First", default=True)
     replace_original: bpy.props.BoolProperty(
         name="Replace the Original", default=False,
         description="Convert the original in place instead of converting a copy")
@@ -336,6 +369,9 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
         layout.prop(self, "target_game", text=T("core.mesh_port_ops.target_game"))
         layout.prop(self, "reference_skeleton",
                     text=T("core.mesh_port_ops.reference_skeleton"))
+        if (self.source_game in FAMILY_A) != (self.target_game in FAMILY_A):
+            layout.prop(self, "tpose_first",
+                        text=T("core.mesh_port_ops.tpose_first"))
         layout.prop(self, "replace_original",
                     text=T("core.port.replace_original"))
         if not getattr(self, "_lines", None):
@@ -439,6 +475,9 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
                 if ref_arm is None:
                     self.report({'ERROR'}, T("core.mesh_port_ops.need_reference"))
                     return {'CANCELLED'}
+                if self.tpose_first:
+                    for rig in (ref_arm, arm):
+                        _tpose(context, rig)
                 correction_set = derive_bone_correction(
                     arm, ref_arm, cross,
                     table=_REE_BONE_CORRECTION.get(self.target_game),

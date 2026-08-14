@@ -14,9 +14,10 @@ RE4   assets/reference_skeletons/re4/        Blender's FBX importer
 RE9   assets/reference_skeletons/re9/        Blender's FBX importer
 ===== ====================================== ===========================================
 
-MHWI is the odd one: its model is not in this repo, so the import is delegated to MBT
-and the three post-import options do not apply (MHWI is not RE Engine -- its T-pose
-path and its physics are different systems entirely).
+MHWI is the odd one: its model is not in this repo, so the import is delegated to MBT.
+
+MHWI and MHRS get no post-import options: their bodies have no facial rig and no
+auxiliary bones, and both ship in T-pose, so every switch below would be a no-op.
 
 **The two merges.**  Both answer "collapse these bones into the nearest bone that
 survives, taking their weights with them", which is the algorithm MBT uses on MHWilds
@@ -45,8 +46,8 @@ already registers under ``aux``, so that list is added for MHWS -- and only for 
 because elsewhere ``aux`` holds genuine native joints (RE9's ``L_Leg_Foot`` and
 ``L_Hand_Palm`` are real bones; merging them would break the rig).
 
-MHRS and MHWI have no native skeleton file here, so auxiliary merging is unavailable
-for them rather than guessed at.
+MHRS and MHWI have no native skeleton file here either, which is consistent with them
+having no auxiliary bones to merge in the first place.
 
 This module holds no ``bpy`` so the merge planning is unit-testable offline.
 """
@@ -89,13 +90,12 @@ MODELS = {
 FACIAL_ROOTS = {
     "RE4": "FacialDef_Face",
     "RE9": "FacialJnt_Face",
-    "MHRS": "Face_Parts",
 }
 
-#: Games whose post-import options are unavailable, and why (i18n key).
-UNSUPPORTED = {
-    "MHWI": "core.ref_model.mhwi_options_na",
-}
+#: Games whose reference model needs no post-import options at all, so the dialog
+#: shows none.  MHWI's and MHRS's bodies carry no facial rig and no auxiliary bones,
+#: and both are authored in T-pose already -- all three switches would be no-ops.
+OPTIONLESS_GAMES = frozenset({"MHWI", "MHRS"})
 
 
 def _assets_dir():

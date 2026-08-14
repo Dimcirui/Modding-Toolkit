@@ -88,8 +88,8 @@ def scan_mhws_catalog(natives_root, scheme_filename, scene):
                     item.variant_armor_id = variant_armor_id
                     item.part             = part_id
                     item.filetype         = filetype
-                    # chain2 导入很慢，默认不勾选，需要的话手动选
-                    item.enabled          = filetype not in ("chain2", "clsp")
+                    # chain2/clsp 导入瓶颈已修复，默认全部勾选
+                    item.enabled          = True
 
     if len(groups) == 1:
         groups[0].expanded = True

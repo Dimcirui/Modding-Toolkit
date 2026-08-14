@@ -1007,6 +1007,8 @@ STRINGS = {
               "（对两者各跑一次「REE 转 T-Pose」）"},
     "core.mesh_port_ops.all_resolved": {
         "EN": "Every bone has a destination", "ZH": "每根骨骼都有去处"},
+    "core.mesh_port_ops.tpose_first": {
+        "EN": "T-Pose Both Rigs First", "ZH": "先把两套骨架都转 T-Pose"},
     "core.mesh_port_ops.need_reference": {
         "EN": "This direction needs a reference skeleton to derive the axis "
               "correction from",
@@ -1033,10 +1035,6 @@ STRINGS = {
     # --- ref_model / ref_model_ops: import a vanilla reference body ---------------
     "core.ref_model.female": {"EN": "Female", "ZH": "女性"},
     "core.ref_model.male": {"EN": "Male", "ZH": "男性"},
-    "core.ref_model.mhwi_options_na": {
-        "EN": "MHWI's model is imported by Modder Batch Tool, which handles it its "
-              "own way; these options do not apply",
-        "ZH": "世界的模型由 Modder Batch Tool 导入，由它自己处理，这几项不适用"},
     "core.ref_model_ops.desc": {
         "EN": "Import the game's vanilla reference body. Optionally simplify it "
               "first: merge the facial rig and the auxiliary bones into the bones "
