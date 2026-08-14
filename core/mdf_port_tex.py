@@ -49,6 +49,20 @@ def get_game_tex_config(game_code):
     return _GAME_TEX_CONFIG.get(game_code)
 
 
+def full_base_path(cfg, base_path):
+    """*base_path* with the game's own fixed path segment in front of it.
+
+    RE4 keeps character textures under ``_Chainsaw/Character/ch/``, which the user
+    is not asked to type -- MdfTexProcessBase.execute prepends it the same way
+    (mdf_tex_processor_base.py:913).  Without this the port wrote to
+    ``natives/STM/<base>`` while telling the user, correctly, that it writes to
+    ``natives/STM/_Chainsaw/Character/ch/<base>``.
+    """
+    prefix = (cfg.get("path_fixed_prefix") or "").strip('/')
+    base = (base_path or "").strip('/')
+    return f"{prefix}/{base}" if prefix and base else (base or prefix)
+
+
 # ── Cross-game slot correspondence ──────────────────────────────────────────
 # Which destination slot a source slot's *texture* becomes -- a different question
 # from plan_material's archetype mapping. Some slot type strings are shared

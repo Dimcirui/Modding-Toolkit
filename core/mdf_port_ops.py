@@ -325,7 +325,10 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
         vanilla_set = _load_vanilla_art_paths(src_cfg.get("vanilla_asset_rel", ""))
         src_natives_root = context.scene.get(src_cfg["natives_root_key"], "")
         dst_natives_root = context.scene.get(dst_cfg["natives_root_key"], "")
-        dst_base_path = self.dest_base_path.strip()
+        # The game's own fixed segment goes on here, once, so every path built
+        # below (textures and placeholders alike) agrees with the prefix the
+        # dialog showed next to the field.
+        dst_base_path = mdf_port_tex.full_base_path(dst_cfg, self.dest_base_path.strip())
         convert_textures = self.convert_textures
         no_source_root = not src_natives_root
 
