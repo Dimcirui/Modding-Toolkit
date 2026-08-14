@@ -116,14 +116,25 @@ def _batch_export(prefix, label_key, needs='re_mesh'):
     return op(f"{prefix}.batch_export_dialog", label_key, 'EXPORT', needs=needs)
 
 
+def _ref_model(game_code):
+    """Import the game's vanilla reference body -- first in the group, because it is
+    where a port or a rig job starts.  Where the model comes from and which of the
+    three post-import options a game supports is ``core/ref_model.py``'s business, so
+    every game gets the same entry here."""
+    return op("modder.import_reference_model",
+              "ui.main_panel.btn_import_reference_model", 'OUTLINER_OB_ARMATURE',
+              props={'source_game': game_code})
+
+
 SECTIONS = {
     'mhwi': {
         'label': "MHWI Tools", 'icon': 'ARMATURE_DATA',
         'io': [
-            op("mhwi.batch_export_dialog", "ui.main_panel.btn_batch_export",
-               'EXPORT', needs='mhw_model'),
+            _ref_model('MHWI'),
             op("mhwi.batch_import_dialog", "ui.main_panel.btn_batch_import",
                'IMPORT', needs='mhw_model'),
+            op("mhwi.batch_export_dialog", "ui.main_panel.btn_batch_export",
+               'EXPORT', needs='mhw_model'),
         ],
         'rig': [
             op("mhwi.align_non_physics", "ui.main_panel.btn_align_non_physics",
@@ -159,9 +170,10 @@ SECTIONS = {
     'mhws': {
         'label': "MHWS Tools", 'icon': 'WORLD',
         'io': [
-            _batch_export('mhws', "ui.main_panel.btn_batch_export"),
+            _ref_model('MHWS'),
             op("mhws.batch_import_dialog", "ui.main_panel.btn_batch_import",
                'IMPORT', needs='re_mesh_import'),
+            _batch_export('mhws', "ui.main_panel.btn_batch_export"),
         ],
         'rig': [
             op("mhws.preprocess_model", "ui.main_panel.btn_mhws_preprocess",
@@ -195,7 +207,7 @@ SECTIONS = {
     },
     're4': {
         'label': "RE4 Tools", 'icon': 'GHOST_ENABLED',
-        'io': [_batch_export('re4', "ui.game_sections.btn_batch_export_re4")],
+        'io': [_ref_model('RE4'), _batch_export('re4', "ui.game_sections.btn_batch_export_re4")],
         'rig': [
             op("re4.fakebone_one_click", "ui.main_panel.btn_gen_fakebone",
                'ARMATURE_DATA', needs='re_fbxskel'),
@@ -220,7 +232,7 @@ SECTIONS = {
     },
     'mhrs': {
         'label': "MHRS Tools", 'icon': 'GHOST_ENABLED',
-        'io': [_batch_export('mhrs', "ui.game_sections.btn_batch_export_mhrs")],
+        'io': [_ref_model('MHRS'), _batch_export('mhrs', "ui.game_sections.btn_batch_export_mhrs")],
         'rig': [],
         'material': [
             # MHRS has only one archetype (see games/mhrs/shader_defs.py's
@@ -236,7 +248,7 @@ SECTIONS = {
     },
     're9': {
         'label': "RE9 Tools", 'icon': 'GHOST_ENABLED',
-        'io': [_batch_export('re9', "ui.game_sections.btn_batch_export_re9")],
+        'io': [_ref_model('RE9'), _batch_export('re9', "ui.game_sections.btn_batch_export_re9")],
         'rig': [
             op("re9.sync_child_orientation",
                "ui.main_panel.btn_sync_child_orientation", 'CON_ROTLIKE'),

@@ -150,6 +150,8 @@ STRINGS = {
     "ui.main_panel.btn_refresh_bone_colors":      {"EN": "Refresh Bone Colors", "ZH": "刷新骨骼颜色"},
     "ui.main_panel.btn_mmd_a_to_tpose":           {"EN": "MMD A to T-Pose", "ZH": "MMD A转Tpose"},
     "ui.main_panel.btn_ree_to_tpose":             {"EN": "REE to T-Pose", "ZH": "REE转Tpose"},
+    "ui.main_panel.btn_import_reference_model": {
+        "EN": "Import Reference Model", "ZH": "导入参考模型"},
     "ui.main_panel.btn_port_mesh_cross_game": {
         "EN": "Port RE Mesh", "ZH": "RE Mesh 移植"},
     "ui.main_panel.btn_convert_chain_cross_game": {

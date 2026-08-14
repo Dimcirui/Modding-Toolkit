@@ -1029,4 +1029,42 @@ STRINGS = {
         "EN": "{n} bone(s) kept the source convention (no trustworthy correction): "
               "{names}",
         "ZH": "{n} 根骨骼保留了源约定（没有可信的修正矩阵）：{names}"},
+
+    # --- ref_model / ref_model_ops: import a vanilla reference body ---------------
+    "core.ref_model.female": {"EN": "Female", "ZH": "女性"},
+    "core.ref_model.male": {"EN": "Male", "ZH": "男性"},
+    "core.ref_model.mhwi_options_na": {
+        "EN": "MHWI's model is imported by Modder Batch Tool, which handles it its "
+              "own way; these options do not apply",
+        "ZH": "世界的模型由 Modder Batch Tool 导入，由它自己处理，这几项不适用"},
+    "core.ref_model_ops.desc": {
+        "EN": "Import the game's vanilla reference body. Optionally simplify it "
+              "first: merge the facial rig and the auxiliary bones into the bones "
+              "that carry them, then convert to T-pose",
+        "ZH": "导入本游戏的原版参考模型。可选先做简化："
+              "把脸部骨骼与辅助骨骼连同权重合并到承载它们的骨上，再转成 T-Pose"},
+    "core.ref_model_ops.model": {"EN": "Model", "ZH": "模型"},
+    "core.ref_model_ops.to_tpose": {"EN": "Convert to T-Pose", "ZH": "转 T-Pose"},
+    "core.ref_model_ops.merge_facial": {
+        "EN": "Merge Facial Bones", "ZH": "合并面部骨骼"},
+    "core.ref_model_ops.merge_aux": {
+        "EN": "Merge Auxiliary Bones", "ZH": "合并辅助骨骼"},
+    "core.ref_model_ops.no_native_skeleton": {
+        "EN": "No native skeleton is bundled for this game, so auxiliary bones "
+              "cannot be told apart from base ones",
+        "ZH": "本游戏未内置原生骨架，无法区分辅助骨与基础骨"},
+    "core.ref_model_ops.no_model": {
+        "EN": "No reference model registered for this game",
+        "ZH": "本游戏未登记参考模型"},
+    "core.ref_model_ops.file_missing": {
+        "EN": "The bundled model file is missing", "ZH": "内置模型文件缺失"},
+    "core.ref_model_ops.need_mbt": {
+        "EN": "Needs Modder Batch Tool (and MHW Model Editor) installed and enabled",
+        "ZH": "需要安装并启用 Modder Batch Tool（以及 MHW Model Editor）"},
+    "core.ref_model_ops.import_failed": {
+        "EN": "Import produced no armature", "ZH": "导入后未得到骨架"},
+    "core.ref_model_ops.posed": {"EN": "T-posed", "ZH": "已转 T-Pose"},
+    "core.ref_model_ops.done": {
+        "EN": "Imported {name}: {facial} facial bone(s) merged, {aux} auxiliary, {pose}",
+        "ZH": "已导入 {name}：合并面部骨 {facial} 根，辅助骨 {aux} 根，{pose}"},
 }
