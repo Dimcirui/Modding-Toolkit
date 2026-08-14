@@ -213,24 +213,51 @@ def unpack_channels(png_path, slot_type, temp_dir, tex_name, channel_maps=None):
 def repack_slot(src_tex_path, src_slot_type, dst_slot_type, temp_dir, tex_name,
                 src_channel_maps=None, dst_channel_maps=None):
     """A source .tex, ported onto a (possibly different) destination slot type.
-    Returns a PNG path ready for slot_resolver.write_slot_tex. Passthrough
-    when the two slots already share a channel layout; a full unpack/repack
-    through semantic channels otherwise."""
+
+    Returns ``(kind, payload)``:
+
+    * ``("tex", src_path)`` -- the two slots pack the same quantities into the
+      same channels, so the pixels do not change at all and only the container
+      has to.  Going through the codec anyway would spend a BC7 decode and a
+      slower BC7 encode to arrive at *worse* data: block compression is lossy,
+      so re-encoding an already-compressed texture loses a second generation
+      for nothing.
+    * ``("png", composed_path)`` -- layouts differ, so the channels genuinely
+      have to be taken apart and rebuilt, and the result must be encoded.
+    """
     from .mdf_tex_processor_base import BASE_SLOT_CHANNEL_MAPS, _compose_channels
 
     src_maps = src_channel_maps or BASE_SLOT_CHANNEL_MAPS
     dst_maps = dst_channel_maps or BASE_SLOT_CHANNEL_MAPS
 
-    png_path = decode_tex_to_png(src_tex_path, temp_dir)
     if layouts_equal(src_slot_type, dst_slot_type, src_maps, dst_maps):
-        return png_path
+        return "tex", src_tex_path
 
+    png_path = decode_tex_to_png(src_tex_path, temp_dir)
     pbr_paths = unpack_channels(png_path, src_slot_type, temp_dir, tex_name, channel_maps=src_maps)
     composed = _compose_channels(dst_slot_type, pbr_paths, {}, temp_dir, tex_name,
                                  channel_maps=dst_maps)
     if composed is None:
         raise ValueError(f"no channel map for destination slot type: {dst_slot_type}")
-    return composed
+    return "png", composed
+
+
+def rewrite_tex_container(src_tex_path, dst_tex_version, out_path):
+    """Copy a .tex across to another game's container, pixels untouched.
+
+    The two games' containers differ in version and in whether the mip data is
+    GDeflate-compressed, but the compressed *pixel* payload is the same bytes,
+    so this reads every mip and rewrites the wrapper.  All mips are carried:
+    re-deriving them from mip 0 would quietly replace the ones the author
+    shipped.
+    """
+    from . import tex_file
+
+    dds = tex_file.read_tex_to_dds(src_tex_path, all_mips=True)
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    with open(out_path, 'wb') as f:
+        f.write(tex_file.build_tex_from_dds(dds, dst_tex_version))
+    return out_path
 
 
 # ── Path resolution + write-out ──────────────────────────────────────────────
@@ -260,15 +287,18 @@ def resolve_source_disk_path(natives_root, mdf_path, tex_version):
     return candidates[0] if candidates else exact
 
 
-def write_ported_tex(png_path, dst_slot_type, dst_cfg, tex_name, dst_natives_root,
+def write_ported_tex(source, dst_slot_type, dst_cfg, tex_name, dst_natives_root,
                      dst_base_path, temp_dir):
-    """Write the repacked PNG out under the destination game's own on-disk
-    convention. Returns (mdf_path, written) -- mdf_path is set (and the
-    binding can point at it) even when dst_natives_root is empty; only the
-    on-disk .tex write is skipped, per the "mod root is optional" decision."""
+    """Write a ported slot out under the destination game's own on-disk
+    convention.  *source* is repack_slot's ``(kind, payload)``.
+
+    Returns (mdf_path, written) -- mdf_path is set (and the binding can point
+    at it) even when dst_natives_root is empty; only the on-disk .tex write is
+    skipped, per the "mod root is optional" decision."""
     from .mdf_tex_processor_base import make_mdf_path, make_disk_path, SRGB_SLOT_TYPES, _import_tex_utils
     from .slot_resolver import resolve_dds_format, write_slot_tex
 
+    kind, payload = source
     mdf_path = make_mdf_path(dst_base_path, tex_name, dst_slot_type,
                              dst_cfg['abbrev_map'], dst_cfg['use_art_prefix'])
     if not dst_natives_root:
@@ -276,8 +306,14 @@ def write_ported_tex(png_path, dst_slot_type, dst_cfg, tex_name, dst_natives_roo
 
     disk_path = make_disk_path(dst_natives_root, dst_base_path, tex_name, dst_slot_type,
                                dst_cfg['abbrev_map'], dst_cfg['tex_version'], dst_cfg['use_art_prefix'])
-    image_to_dds, dds_to_tex = _import_tex_utils()
     tex_version = dst_cfg['tex_version']
+
+    if kind == "tex":
+        rewrite_tex_container(payload, tex_version, disk_path)
+        return mdf_path, True
+
+    png_path = payload
+    image_to_dds, dds_to_tex = _import_tex_utils()
     write_slot_tex(
         png_path, disk_path, temp_dir,
         dds_fmt=resolve_dds_format(dst_slot_type, SRGB_SLOT_TYPES),

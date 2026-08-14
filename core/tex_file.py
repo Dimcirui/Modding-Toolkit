@@ -133,15 +133,20 @@ def write_tex_from_dds(dds_filepath, tex_version, out_path):
     return out_path
 
 
-def read_tex_to_dds(filepath):
-    """Read an RE Engine .tex file's mip 0 into a dds_file.DDSFile.
+def read_tex_to_dds(filepath, all_mips=False):
+    """Read an RE Engine .tex file into a dds_file.DDSFile.
 
-    Only mip 0 -- the port's texture repack works at full resolution and
+    Mip 0 only by default -- the texture repack works at full resolution and
     regenerates mips on write, same as the existing compose path
-    (mdf_tex_processor_base._compose_channels + write_slot_tex). Inverse of
-    build_tex_from_dds, but not a strict mirror of it: build_tex_from_dds
-    starts from a dds_file.DDSFile, this starts from raw container bytes, so
-    it has to parse the header instead of assuming the layout it just wrote.
+    (mdf_tex_processor_base._compose_channels + write_slot_tex), so reading the
+    rest would only be thrown away.  ``all_mips=True`` reads the whole chain,
+    which is what carrying a texture across unchanged needs: re-deriving mips
+    from mip 0 would replace the ones the author shipped.
+
+    Inverse of build_tex_from_dds, but not a strict mirror of it:
+    build_tex_from_dds starts from a dds_file.DDSFile, this starts from raw
+    container bytes, so it has to parse the header instead of assuming the
+    layout it just wrote.
     """
     from . import dds_file
 
@@ -159,33 +164,41 @@ def read_tex_to_dds(filepath):
     if mip_count < 1:
         raise ValueError(f".tex file has no mips: {filepath}")
 
-    mip0_offset, mip0_pitch, mip0_size = _MIP_HEADER_STRUCT.unpack_from(data, header_size)
     data_start = header_size + mip_header_size
+    gdeflate = version in GDEFLATE_VERSIONS
+    chunk_start = data_start + mip_count * _COMPRESSED_MIP_HEADER_STRUCT.size
 
-    if version in GDEFLATE_VERSIONS:
-        comp_size0, comp_off0 = _COMPRESSED_MIP_HEADER_STRUCT.unpack_from(data, data_start)
-        chunk_start = data_start + mip_count * _COMPRESSED_MIP_HEADER_STRUCT.size
-        comp_chunk = data[chunk_start + comp_off0: chunk_start + comp_off0 + comp_size0]
-        try:
-            raw = gdeflate_native.decompress(comp_chunk)
-        except Exception:
-            # compress() stores a mip raw when GDeflate saves nothing (common for
-            # already-compressed BC7 data) -- comp_size0 then equals the raw
-            # padded mip size and comp_chunk already *is* the mip.
-            raw = comp_chunk
-    else:
-        raw = data[mip0_offset: mip0_offset + mip0_size]
+    def read_mip(level):
+        offset, pitch, size = _MIP_HEADER_STRUCT.unpack_from(
+            data, header_size + level * MIP_HEADER_SIZE)
+        if gdeflate:
+            comp_size, comp_off = _COMPRESSED_MIP_HEADER_STRUCT.unpack_from(
+                data, data_start + level * _COMPRESSED_MIP_HEADER_STRUCT.size)
+            chunk = data[chunk_start + comp_off: chunk_start + comp_off + comp_size]
+            try:
+                raw = gdeflate_native.decompress(chunk)
+            except Exception:
+                # compress() stores a mip raw when GDeflate saves nothing (common
+                # for already-compressed BC7 data) -- comp_size then equals the raw
+                # padded mip size and chunk already *is* the mip.
+                raw = chunk
+        else:
+            raw = data[offset: offset + size]
 
-    # Strip the 256-byte row padding _build_uncompressed added on write.
-    real_pitch = dxgi.get_pitch(dxgi_fmt, width)
-    if mip0_pitch != real_pitch:
-        rows = len(raw) // mip0_pitch
-        raw = b''.join(raw[r * mip0_pitch: r * mip0_pitch + real_pitch] for r in range(rows))
+        # Strip the 256-byte row padding _build_uncompressed added on write.
+        real_pitch = dxgi.get_pitch(dxgi_fmt, max(1, width >> level))
+        if pitch != real_pitch:
+            rows = len(raw) // pitch
+            raw = b''.join(raw[r * pitch: r * pitch + real_pitch] for r in range(rows))
+        return raw
+
+    levels = range(mip_count) if all_mips else range(1)
+    mips = [read_mip(i) for i in levels]
 
     dds = dds_file.DDSFile()
     dds.width = width
     dds.height = height
-    dds.mip_count = 1
+    dds.mip_count = len(mips)
     dds.dxgi_format = dxgi_fmt
-    dds.mips = [raw]
+    dds.mips = mips
     return dds

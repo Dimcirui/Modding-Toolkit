@@ -420,12 +420,12 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
                                 tex_pending_write += 1
                                 continue
 
-                            png_path = mdf_port_tex.repack_slot(
+                            ported = mdf_port_tex.repack_slot(
                                 src_disk_path, tex_type, dst_slot_type, temp_dir, tex_name,
                                 src_channel_maps=src_cfg["channel_maps"],
                                 dst_channel_maps=dst_cfg["channel_maps"])
                             mdf_path, written = mdf_port_tex.write_ported_tex(
-                                png_path, dst_slot_type, dst_cfg, tex_name,
+                                ported, dst_slot_type, dst_cfg, tex_name,
                                 dst_natives_root, dst_base_path, temp_dir)
                             dst_binding.path = mdf_path
                             handled_dst_slots.add(dst_slot_type)
