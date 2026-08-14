@@ -66,6 +66,50 @@ BONE_CONSTRAINT = "BoneName"
 #: against all three reference characters in the project's own scene.
 CHAIN_EXT_BY_GAME = {"MHWS": ".chain2", "RE4": ".chain", "RE9": ".chain2"}
 
+#: File version each game's exporter writes, from RE-Chain-Editor's own export
+#: dropdowns (``__init__.py`` ``ExportREChain.filename_ext`` /
+#: ``ExportREChain2.filename_ext``).  These are the numbers the *game* validates
+#: against ``supportedVersionSet``, so they are not cosmetic.
+CHAIN_VERSION_BY_GAME = {"MHWS": 14, "RE4": 53, "RE9": 15}
+
+#: ``colliderFilterInfoPath`` is a **path into the game's own files**, so it can
+#: only ever be correct for the game it names.  MHWilds is the only supported
+#: game that uses one; RE4R and RE9 must have it empty, and a path that does not
+#: resolve in the target game stops the model loading correctly.
+#:
+#: Absent means empty, deliberately: a game added later is far safer defaulting
+#: to "no filter" than inheriting MHWilds' path because nobody updated a table.
+COLLIDER_FILTER_BY_GAME = {
+    "MHWS": "System/Collision/Filter/Character/Character_Chain.cfil",
+    "RE4": "",
+    "RE9": "",
+}
+
+#: What RE-Chain-Editor writes into an empty chain2 ``subDataList`` (see
+#: ``blender_re_chain.py::exportChainFile``).  Its own fix-up only fires when the
+#: export version is **12** -- the MHWilds *beta* number -- so a released MHWilds
+#: file (13/14) with an empty list gets no subdata at all.  A chain ported *from*
+#: a ``.chain`` game has no subdata to carry over, which is exactly that case.
+CHAIN2_SUBDATA_DEFAULT = ((0, 1, 0, 0, 0, 0, 0), (0, 1, 0, 0, 77, 0, 0))
+
+
+def is_chain2(game_code):
+    """True when *game_code*'s physics file is a ``.chain2`` container."""
+    return CHAIN_EXT_BY_GAME.get(game_code, ".chain2") == ".chain2"
+
+
+def export_operator_for(game_code):
+    """``(idname, version)`` the user must export a port with.
+
+    The two containers are *separate operators* -- ``re_chain.exportfile`` and
+    ``re_chain2.exportfile`` -- and which one is called is the only thing that
+    decides the output format.  Nothing about the objects in the scene selects
+    it, which is why this has to be reported rather than inferred.
+    """
+    chain2 = is_chain2(game_code)
+    return ("re_chain2.exportfile" if chain2 else "re_chain.exportfile",
+            CHAIN_VERSION_BY_GAME.get(game_code, 14 if chain2 else 53))
+
 #: Extensions a chain-side collection name can carry, longest first so ``.chain2``
 #: is never mistaken for ``.chain`` + a stray ``2``.
 _CHAIN_EXTS = (".chain2", ".chain", ".clsp")
@@ -122,6 +166,78 @@ def ported_chain_collection_name(source_name, target_game):
     """
     ext = CHAIN_EXT_BY_GAME.get(target_game, ".chain2")
     return f"{chain_stem(source_name)}_{target_game}{ext}"
+
+
+#: RE-Chain-Editor's own type marker for a ChainSettings object.  Note the key is
+#: ``TYPE``, not ``~TYPE`` -- the tilde form tags *collections*; objects carry the
+#: bare name (``blender_re_chain.py::exportChainFile`` reads ``obj.get("TYPE")``).
+_SETTINGS_TYPE = "RE_CHAIN_CHAINSETTINGS"
+
+
+def apply_target_game_settings(collection, target_game):
+    """Make a ported collection say what the *target* game needs, not the source's.
+
+    Two things do not survive a port on their own, and neither is visible in the
+    outliner -- both surface only when the game refuses to load the model:
+
+    ``colliderFilterInfoPath``
+        A path into the source game's files.  Carried across verbatim it names an
+        asset the target game does not have.  See COLLIDER_FILTER_BY_GAME.
+
+        The two directions are **not** symmetric.  Porting to a game that uses no
+        filter clears every entry, unconditionally -- any value at all is wrong
+        there.  Porting to a game that does use one only fills the entries that
+        are *empty*, because the game's own assets do not all share one path:
+        a real MHWilds chain uses ``Character_Chain.cfil`` for most settings and
+        ``Character_Chain_Player.cfil`` for others, and overwriting would flatten
+        a distinction the author made.  Only MHWilds writes these paths at all,
+        so any non-empty value already came from it and is worth keeping.
+    chain2 ``subDataList``
+        Only exists in the ``.chain2`` container, so a port from a ``.chain`` game
+        has none -- and RE-Chain-Editor's own backfill only runs at version 12.
+
+    Returns ``{'filter_set': n, 'subdata_added': n, 'filter_path': str}``.
+
+    Note there is deliberately no "convert the objects to chain2 types" step: there
+    are no such types.  Every object carries a format-neutral ``RE_CHAIN_*`` marker
+    and both containers read the same property groups; ``isChain2`` only selects
+    which *subset of fields* the exporter reads.  So the container is chosen by
+    which export operator runs, not by anything stored here.
+    """
+    path = COLLIDER_FILTER_BY_GAME.get(target_game, "")
+    want_subdata = is_chain2(target_game)
+
+    filter_set = subdata_added = 0
+    for obj in collection.all_objects:
+        if obj.get("TYPE") != _SETTINGS_TYPE:
+            continue
+        pg = getattr(obj, "re_chain_chainsettings", None)
+        if pg is None:
+            continue
+        current = getattr(pg, "colliderFilterInfoPath", "") or ""
+        # Clearing is unconditional; filling never overwrites -- see the docstring.
+        if not path or not current:
+            try:
+                if current != path:
+                    pg.colliderFilterInfoPath = path
+                    filter_set += 1
+            except (AttributeError, TypeError, ValueError):
+                pass
+
+        if not want_subdata:
+            continue
+        items = getattr(pg, "subDataList_items", None)
+        if items is None or len(items):
+            continue
+        try:
+            for values in CHAIN2_SUBDATA_DEFAULT:
+                items.add().values = values
+            subdata_added += 1
+        except (AttributeError, TypeError, ValueError):
+            pass
+
+    return {'filter_set': filter_set, 'subdata_added': subdata_added,
+            'filter_path': path}
 
 
 class RemapReport:

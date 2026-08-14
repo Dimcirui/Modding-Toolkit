@@ -16,7 +16,8 @@ import os
 import bpy
 
 from .bone_mapper import BoneMapManager, auto_detect_preset, build_cross_game_map
-from .chain_convert import (duplicate_chain_collection, iter_collider_bindings,
+from .chain_convert import (apply_target_game_settings, duplicate_chain_collection,
+                            export_operator_for, is_chain2, iter_collider_bindings,
                             ported_chain_collection_name, remap_collider_attachments)
 from .i18n import T
 from .mesh_port_ops import collection_armatures, is_mesh_collection, mesh_collections
@@ -349,8 +350,34 @@ class MODDER_OT_ConvertChainCrossGame(bpy.types.Operator):
                 col, ported_chain_collection_name(col.name, self.target_game))
 
         rep = remap_collider_attachments(col, cross_map, target_armature=arm)
+
+        # Bone re-binding is only half a port: the collider filter path and the
+        # chain2 subdata are per-game and invisible in the outliner, so a port
+        # without them looks finished and fails at load time.
+        applied = apply_target_game_settings(col, self.target_game)
+
+        # RE-Chain-Editor's export dialog preselects its version from the *last
+        # imported* file (scene["REChainLastImportedChain(2)Version"]), which
+        # after a port is the source game's. Point it at the target instead --
+        # otherwise the obvious next click writes the source game's format.
+        idname, version = export_operator_for(self.target_game)
+        key = ("REChainLastImportedChain2Version" if is_chain2(self.target_game)
+               else "REChainLastImportedChainVersion")
+        context.scene[key] = version
+
         self.report({'INFO'}, T("core.chain_convert_ops.done").format(
             game=self.target_game, remapped=len(rep.remapped), kept=rep.unchanged))
+        if applied['filter_set']:
+            self.report({'INFO'}, T("core.chain_convert_ops.filter_applied").format(
+                n=applied['filter_set'],
+                path=applied['filter_path'] or T("core.chain_convert_ops.filter_empty")))
+        if applied['subdata_added']:
+            self.report({'INFO'}, T("core.chain_convert_ops.subdata_added").format(
+                n=applied['subdata_added']))
+        # The container is chosen by which operator the user runs, and nothing in
+        # the scene decides it -- so saying which one is part of the result.
+        self.report({'INFO'}, T("core.chain_convert_ops.export_with").format(
+            op=idname, version=version))
         return {'FINISHED'}
 
 

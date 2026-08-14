@@ -1050,6 +1050,17 @@ STRINGS = {
     "core.chain_convert_ops.done": {
         "EN": "Chain ported to {game}: {remapped} collider(s) re-bound, {kept} unchanged",
         "ZH": "物理链已移植到 {game}：{remapped} 个碰撞体重绑，{kept} 个保持"},
+    "core.chain_convert_ops.filter_applied": {
+        "EN": "Collider Filter Info set on {n} chain setting(s): {path}",
+        "ZH": "已为 {n} 个 Chain Settings 设定 Collider Filter Info：{path}"},
+    "core.chain_convert_ops.filter_empty": {
+        "EN": "(empty, as this game requires)", "ZH": "（按本游戏要求留空）"},
+    "core.chain_convert_ops.subdata_added": {
+        "EN": "Added the missing chain2 subdata to {n} chain setting(s)",
+        "ZH": "已为 {n} 个 Chain Settings 补上缺失的 chain2 subdata"},
+    "core.chain_convert_ops.export_with": {
+        "EN": "Export with {op}, version {version}",
+        "ZH": "请用 {op} 导出，版本 {version}"},
     "core.chain_convert_ops.blocked": {
         "EN": "Cannot convert: some colliders would end up bound to nothing",
         "ZH": "无法转换：部分碰撞体会绑到不存在的骨骼上"},
