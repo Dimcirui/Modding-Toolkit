@@ -35,7 +35,8 @@ from . import mdf_port_params
 from . import mdf_port_tex
 from .mdf_material_convert_base import (
     _load_vanilla_art_paths, is_custom_tex_path, migrate_property_value)
-from .mdf_tex_processor_base import mdf_collection_poll, _import_tex_utils
+from .mdf_tex_processor_base import (
+    mdf_collection_poll, _import_tex_utils, octahedral_normals_prop)
 from .mdf_generator_base import (
     import_read_preset_json, PLACEHOLDER_SLOT_TYPES, _resolve_placeholder_slot)
 
@@ -255,6 +256,9 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
     #: and the first item is BASIC anyway -- same shape as the same-game convert's
     #: `migrate_mode`.
     migrate_params: EnumProperty(name="Migrate Params", items=_migrate_params_items)
+    #: Same opt-in as the processors and generators carry, and off for the same
+    #: reason -- see octahedral_normals_prop.
+    octahedral_normals: octahedral_normals_prop()
     #: Off by default, unlike the params above: the target preset's flags are a
     #: deliberate choice by whoever authored it, so overwriting them is opt-in.
     #: Offered here and *not* on the same-game convert for the same reason --
@@ -319,6 +323,7 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
             # source_game has no picker anywhere in this dialog (it's a HIDDEN
             # prop, fixed by which UI section opened this dialog) -- label it
             # here or this row reads as belonging to nothing in particular.
+            box.prop(self, "octahedral_normals", text=T("core.octahedral_normals.label"))
             box.label(text=T("core.mdf_port_ops.source_game_label").format(game=self.source_game))
             src_cfg = mdf_port_tex.get_game_tex_config(self.source_game)
             if src_cfg is not None:
@@ -496,7 +501,8 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
                             ported = mdf_port_tex.repack_slot(
                                 src_disk_path, tex_type, dst_slot_type, temp_dir, tex_name,
                                 src_channel_maps=src_cfg["channel_maps"],
-                                dst_channel_maps=dst_cfg["channel_maps"])
+                                dst_channel_maps=dst_cfg["channel_maps"],
+                                octahedral=self.octahedral_normals)
                             mdf_path, written = mdf_port_tex.write_ported_tex(
                                 ported, dst_slot_type, dst_cfg, tex_name,
                                 dst_natives_root, dst_base_path, temp_dir)

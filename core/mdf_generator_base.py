@@ -2311,6 +2311,7 @@ class MdfGenProcessBase(bpy.types.Operator):
                 normal_flip_g=normal_flip_g,
                 bake_ao_into_color=bake_ao,
                 ao_strength=getattr(mat_entry, 'ao_strength', 1.0),
+                octahedral=getattr(settings, 'octahedral_normals', False),
             )
             # print(f"[{cls._log_tag}]   合成通道 {slot_type}: {time.time() - _t_comp:.2f}s", flush=True)
             if composed:

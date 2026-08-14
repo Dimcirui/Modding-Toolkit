@@ -40,6 +40,10 @@ def encode_normal_ga(green, alpha):
     Returns (new_green, new_alpha), both 0..1.
     """
     x = alpha * 2.0 - 1.0
+    # No sign correction here, deliberately: this function was already the
+    # inverse of *decoding into DirectX*, which is why the fix for the
+    # OpenGL/DirectX mismatch lives in decode_normal_ga alone. Negating here too
+    # would cancel it out and restore the bug.
     y = green * 2.0 - 1.0
 
     nr_x = x * _COS45 - y * _SIN45
@@ -67,4 +71,10 @@ def decode_normal_ga(green, alpha):
 
     x = nx * _COS45 - ny * _SIN45
     y = nx * _SIN45 + ny * _COS45
-    return x, y
+    # RE Mesh Editor's NRRXToNRMR, which this mirrors, exists to feed Blender's
+    # *preview*, so it stops here and hands back an OpenGL-convention normal
+    # (+Y up). Every texture this addon writes is consumed by the game, which is
+    # DirectX (+Y down) -- the two differ in exactly this one sign. Without the
+    # flip, encode_normal_ga is not the inverse of this function: round-tripping
+    # a vanilla MHWS NRRO came back off by 0.280 per channel, and 0.0007 with it.
+    return x, -y

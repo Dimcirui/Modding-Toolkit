@@ -1,7 +1,7 @@
 import bpy
 
 from ...core.i18n import T
-from ...core.mdf_tex_processor_base import _CH_ENUM_ITEMS
+from ...core.mdf_tex_processor_base import _CH_ENUM_ITEMS, octahedral_normals_prop
 from .mdf_tex_processor import (
     RE4_SLOT_CHANNEL_MAPS, RE4_NULL_TEX_BY_TYPE, RE4_TEXTURE_TYPE_ABBREV,
     RE4_TEX_VERSION,
@@ -94,6 +94,7 @@ def _on_re4_mesh_collection_update(self, context):
 
 
 class RE4GenSettings(bpy.types.PropertyGroup):
+    octahedral_normals: octahedral_normals_prop()
     mesh_collection: bpy.props.PointerProperty(
         name="Mesh Collection",
         type=bpy.types.Collection,

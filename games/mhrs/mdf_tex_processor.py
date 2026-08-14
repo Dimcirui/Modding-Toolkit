@@ -11,6 +11,7 @@ from ...core.mdf_tex_processor_base import (
     MdfTexClearPBRBase, MdfTexClearDirectBase,
     MdfTexCopyMaterialBase, MdfTexPasteMaterialBase,
     MdfTexProcessBase,
+    octahedral_normals_prop,
 )
 
 # ── MHRS Constants ─────────────────────────────────────────────────────────────
@@ -37,6 +38,7 @@ _on_mhrs_collection_update  = make_collection_update_cb(_is_null_mhrs)
 # ── Settings PropertyGroup ─────────────────────────────────────────────────────
 
 class MHRSMdfTexProcessorSettings(bpy.types.PropertyGroup):
+    octahedral_normals: octahedral_normals_prop()
     mdf_collection: bpy.props.PointerProperty(
         name="MDF Collection",
         type=bpy.types.Collection,

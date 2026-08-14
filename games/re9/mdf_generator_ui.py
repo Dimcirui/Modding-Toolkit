@@ -84,6 +84,7 @@ class RE9_OT_MdfGeneratorDialog(bpy.types.Operator):
             layout.row().label(text="    e.g. character/cha102_00/", icon='INFO')
 
         layout.prop(settings, "flip_normal_g", text=T("re9.mdf_generator.flip_normal_g"))
+        layout.prop(settings, "octahedral_normals", text=T("core.octahedral_normals.label"))
         row = layout.row(align=True)
         row.prop(settings, "global_disable_mipmaps",
                  text=T("core.mdf_generator_base.global_disable_mipmaps"))

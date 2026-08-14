@@ -80,6 +80,33 @@ SRGB_SLOT_TYPES = {'BaseDielectricMap', 'BaseAlphaMap', 'EmissiveMap', 'Emissive
 NORMAL_OCTAHEDRAL_SLOT_TYPES = {'NormalRoughnessOcclusionMap', 'NormalRoughnessCavityMap',
                                 'NormalRoughnessTranslucentMap'}
 
+
+def octahedral_normals_prop():
+    """The "my normals are hemi-octahedral encoded" opt-in, shared verbatim by
+    every processor, every generator and the MDF port.
+
+    **Default off, and that is the point** (user's decision, 2026-08-15): the
+    encoding is real and the engine does use it, but hardly anyone authoring for
+    these games applies it -- they feed an ordinary normal map into the slot and
+    never notice. Encoding by default would silently mangle that common case,
+    so this is opt-in for the people who know they need it.
+
+    The description carries both languages: a BoolProperty's tooltip is baked at
+    registration, before the UI language is known, so it cannot go through T().
+    """
+    return bpy.props.BoolProperty(
+        name="Hemi-Octahedral Normals",
+        description=(
+            "Do not enable this if you do not know what it is.\n"
+            "From Wilds onward, the non-standard normal slots (NRRO, NRRC, NRRT) hold "
+            "hemi-octahedral encoded normals, which preserve normal detail better.\n"
+            "如果你不知道这是什么，不要勾选。\n"
+            "从荒野起，NRRO、NRRC、NRRT 等非常规法线槽都使用半八面体编码的法线，"
+            "这会让法线的细节表现更好。"
+        ),
+        default=False,
+    )
+
 _CH           = {'R': 0, 'G': 1, 'B': 2, 'A': 3}
 _CH_ENUM_ITEMS = [('R', 'R', ''), ('G', 'G', ''), ('B', 'B', ''), ('A', 'A', '')]
 
@@ -137,22 +164,29 @@ BASE_SLOT_CHANNEL_MAPS = {
         'B': ('ao',        0),
         'A': ('normal',    0),
     },
+    # B is the normal's Z component. A tangent-space normal map has no use for
+    # it (Z is reconstructed from X/Y), so the slot is not *unused* -- it must be
+    # left **white**, per Capcom's own texture documentation. Writing 0 there,
+    # which is what `None` means in this table, hands the shader a normal lying
+    # flat in the tangent plane and the whole model renders as grey metal.
+    # Confirmed against the user's hand-authored working textures: their NRMR B
+    # is 1.0 where the port wrote 0.0, and every other channel matched exactly.
     'NormalRoughness': {
         'R': ('normal',    0),
         'G': ('normal',    1),
-        'B': None,
+        'B': 1.0,
         'A': ('roughness', 0),
     },
     'NormalRoughnessMap': {
         'R': ('normal',    0),
         'G': ('normal',    1),
-        'B': None,
+        'B': 1.0,
         'A': ('roughness', 0),
     },
     'NRMR_NRRTMap': {   # MHRS — same layout as NormalRoughnessMap
         'R': ('normal',    0),
         'G': ('normal',    1),
-        'B': None,
+        'B': 1.0,
         'A': ('roughness', 0),
     },
     # RE4/RE9's NRRC (see games/re4/shader_defs.py's module docstring): B
@@ -411,7 +445,7 @@ def channel_maps_consume_ao(channel_maps):
 def _compose_channels(slot_type, pbr_paths, pbr_channels, temp_dir, tex_name, pbr_inv=None,
                        channel_maps=None, normal_flip_g=False,
                        bake_ao_into_color=False, ao_strength=1.0,
-                       pbr_arrays=None):
+                       pbr_arrays=None, octahedral=True):
     """Compose a packed texture from PBR inputs for the given slot type.
     channel_maps: optional override; defaults to BASE_SLOT_CHANNEL_MAPS.
     Channel map values: tuple (pbr_type, ch_idx[, True]) | None (=0.0) | float (constant).
@@ -529,7 +563,7 @@ def _compose_channels(slot_type, pbr_paths, pbr_channels, temp_dir, tex_name, pb
                 data = 1.0 - data
             result[:, :, out_i] = data
 
-    if slot_type in NORMAL_OCTAHEDRAL_SLOT_TYPES:
+    if octahedral and slot_type in NORMAL_OCTAHEDRAL_SLOT_TYPES:
         # These pack a third quantity (AO/cavity) into B, which a plain
         # two-channel normal has no room for -- see core/re_normal_pack.py.
         # Runs after normal_flip_g above, so that toggle still corrects a
@@ -1039,7 +1073,8 @@ class MdfTexProcessBase(bpy.types.Operator):
                                 slot.texture_type, pbr_paths, pbr_channels,
                                 temp_dir, tex_name, pbr_inv,
                                 channel_maps=cls._channel_maps,
-                                normal_flip_g=normal_flip_g)
+                                normal_flip_g=normal_flip_g,
+                                octahedral=getattr(settings, 'octahedral_normals', False))
                             # print(f"[{cls._log_tag}]   合成通道 {slot.texture_type}: {time.time() - _t_comp:.2f}s", flush=True)
                             if src_img is None:
                                 null_rel = cls._null_tex_by_type.get(slot.texture_type)

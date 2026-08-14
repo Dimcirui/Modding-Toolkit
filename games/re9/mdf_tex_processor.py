@@ -11,6 +11,7 @@ from ...core.mdf_tex_processor_base import (
     MdfTexClearPBRBase, MdfTexClearDirectBase,
     MdfTexCopyMaterialBase, MdfTexPasteMaterialBase,
     MdfTexProcessBase,
+    octahedral_normals_prop,
 )
 
 # ── RE9 Constants ──────────────────────────────────────────────────────────────
@@ -53,6 +54,7 @@ _on_re9_collection_update = make_collection_update_cb(_is_null_re9)
 # ── Settings PropertyGroup ─────────────────────────────────────────────────────
 
 class RE9MdfTexProcessorSettings(bpy.types.PropertyGroup):
+    octahedral_normals: octahedral_normals_prop()
     mdf_collection: bpy.props.PointerProperty(
         name="MDF Collection",
         type=bpy.types.Collection,

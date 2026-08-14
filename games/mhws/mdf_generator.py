@@ -3,6 +3,7 @@ import bpy
 from ...core.mdf_tex_processor_base import (
     BASE_SLOT_CHANNEL_MAPS, BASE_NULL_TEX_BY_TYPE, BASE_TEXTURE_TYPE_ABBREV,
     _CH_ENUM_ITEMS,
+    octahedral_normals_prop,
 )
 from ...core.mdf_generator_base import (
     get_shader_source_items, shader_source_update,
@@ -105,6 +106,7 @@ def _on_mhws_mesh_collection_update(self, context):
 
 
 class MhwsGenSettings(bpy.types.PropertyGroup):
+    octahedral_normals: octahedral_normals_prop()
     mesh_collection: bpy.props.PointerProperty(
         name="Mesh Collection",
         type=bpy.types.Collection,

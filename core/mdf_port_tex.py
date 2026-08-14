@@ -137,7 +137,7 @@ def decode_tex_to_png(tex_path, temp_dir):
 
 # ── Channel unpack (inverse of _compose_channels) ───────────────────────────
 
-def unpack_channels(png_path, slot_type, channel_maps=None):
+def unpack_channels(png_path, slot_type, channel_maps=None, octahedral=False):
     """A decoded slot PNG -> ``{pbr_type: (h, w, 4) float32}``, one plane per
     semantic channel group the slot actually carries. Mirrors
     mdf_tex_processor_base._compose_channels in reverse, including the
@@ -176,7 +176,7 @@ def unpack_channels(png_path, slot_type, channel_maps=None):
     def _plane(pbr_type):
         return pbr_arrays.setdefault(pbr_type, np.zeros((h, w, 4), dtype=np.float32))
 
-    is_octahedral = slot_type in NORMAL_OCTAHEDRAL_SLOT_TYPES
+    is_octahedral = octahedral and slot_type in NORMAL_OCTAHEDRAL_SLOT_TYPES
     if is_octahedral:
         x, y = decode_normal_ga(pix[:, :, _CH['G']], pix[:, :, _CH['A']])
         _plane('normal')[:, :, 0] = np.clip((x + 1.0) * 0.5, 0.0, 1.0)
@@ -202,7 +202,7 @@ def unpack_channels(png_path, slot_type, channel_maps=None):
 # ── Orchestration ────────────────────────────────────────────────────────────
 
 def repack_slot(src_tex_path, src_slot_type, dst_slot_type, temp_dir, tex_name,
-                src_channel_maps=None, dst_channel_maps=None):
+                src_channel_maps=None, dst_channel_maps=None, octahedral=False):
     """A source .tex, ported onto a (possibly different) destination slot type.
 
     Returns ``(kind, payload)``:
@@ -225,9 +225,11 @@ def repack_slot(src_tex_path, src_slot_type, dst_slot_type, temp_dir, tex_name,
         return "tex", src_tex_path
 
     png_path = decode_tex_to_png(src_tex_path, temp_dir)
-    planes = unpack_channels(png_path, src_slot_type, channel_maps=src_maps)
+    planes = unpack_channels(png_path, src_slot_type, channel_maps=src_maps,
+                             octahedral=octahedral)
     composed = _compose_channels(dst_slot_type, {}, {}, temp_dir, tex_name,
-                                 channel_maps=dst_maps, pbr_arrays=planes)
+                                 channel_maps=dst_maps, pbr_arrays=planes,
+                                 octahedral=octahedral)
     if composed is None:
         raise ValueError(f"no channel map for destination slot type: {dst_slot_type}")
     return "png", composed

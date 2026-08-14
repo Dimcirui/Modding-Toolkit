@@ -94,6 +94,12 @@ class MdfTexDialogBase(bpy.types.Operator):
         row = layout.row(align=True)
         row.label(text=cls._path_prefix_label)
         row.prop(settings, "texture_base_path", text="")
+
+        # Global, not per-material: whether a slot's normal is octahedral is a
+        # property of how the whole texture set was authored, not of one entry.
+        if hasattr(settings, "octahedral_normals"):
+            layout.prop(settings, "octahedral_normals",
+                        text=T("core.octahedral_normals.label"))
         if not settings.texture_base_path.strip():
             hint = layout.row()
             hint.label(text=f"    {cls._path_hint}", icon='INFO')

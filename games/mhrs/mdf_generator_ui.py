@@ -86,6 +86,7 @@ class MHRS_OT_MdfGeneratorDialog(bpy.types.Operator):
             layout.row().label(text=T("mhrs.mdf_generator_ui.base_path_hint"), icon='INFO')
 
         layout.prop(settings, "flip_normal_g", text=T("mhrs.mdf_generator.flip_normal_g_label"))
+        layout.prop(settings, "octahedral_normals", text=T("core.octahedral_normals.label"))
         row = layout.row(align=True)
         row.prop(settings, "global_disable_mipmaps",
                  text=T("core.mdf_generator_base.global_disable_mipmaps"))

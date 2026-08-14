@@ -95,6 +95,7 @@ class MHWS_OT_MdfGeneratorDialog(bpy.types.Operator):
             layout.row().label(text="    e.g. Author/CharacterName/", icon='INFO')
 
         layout.prop(settings, "flip_normal_g", text=T("mhws.mdf_generator.flip_normal_g_name"))
+        layout.prop(settings, "octahedral_normals", text=T("core.octahedral_normals.label"))
         row = layout.row(align=True)
         row.prop(settings, "global_disable_mipmaps",
                  text=T("core.mdf_generator_base.global_disable_mipmaps"))
