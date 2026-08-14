@@ -40,6 +40,15 @@ from .mdf_tex_processor_base import (
 from .mdf_generator_base import (
     import_read_preset_json, PLACEHOLDER_SLOT_TYPES, _resolve_placeholder_slot)
 
+#: Fallback for the PLACEHOLDER_SLOT_TYPES slots when the port cannot write a
+#: real placeholder (textures off, or no destination mod root). Values are the
+#: game's own always-present null textures -- see the use site for why the
+#: prefab's own path must not survive here. Choices are the user's, 2026-08-15.
+_PLACEHOLDER_NULL_TEX = {
+    'SkinMap':        'systems/rendering/NullWhite.tex',
+    'BlendNormalMap': 'systems/rendering/NullNormalRoughness.tex',
+}
+
 _enum_cache = {}
 
 
@@ -419,7 +428,7 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
 
         converted = failed = unsupported = 0
         tex_ported = tex_skipped_vanilla = tex_skipped_no_slot = tex_skipped_no_source = 0
-        tex_pending_write = tex_placeholder = 0
+        tex_pending_write = tex_placeholder = tex_null_fallback = 0
         params_migrated = params_skipped = 0
 
         try:
@@ -467,10 +476,10 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
                         else:
                             params_skipped += 1
 
-                    if convert_textures:
-                        dst_binding_types = {b.textureType: b for b in new_data.textureBindingList_items}
-                        handled_dst_slots = set()
+                    dst_binding_types = {b.textureType: b for b in new_data.textureBindingList_items}
+                    handled_dst_slots = set()
 
+                    if convert_textures:
                         for tex_type, old_path in old_bindings.items():
                             if not is_custom_tex_path(old_path, vanilla_set):
                                 if old_path:
@@ -530,7 +539,24 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
                                     image_to_dds, dds_to_tex, placeholder_cache)
                                 if mdf_path:
                                     dst_binding_types[slot_type].path = mdf_path
+                                    handled_dst_slots.add(slot_type)
                                     tex_placeholder += 1
+
+                    # Whatever the branch above did not cover -- textures off, or
+                    # on with no mod root set -- must still not ship the prefab's
+                    # own literal path for these two. Every other slot the port
+                    # leaves alone falls back to a real systems/rendering/Null*
+                    # the game ships, but these two have no vanilla default, so
+                    # the prefab points at the asset it was authored against
+                    # (MK_MODS/Eku/Public/skin.tex): a path that does not exist on
+                    # anyone else's machine. A null texture is wrong-looking --
+                    # NullWhite makes skin render pallid -- but it is a texture
+                    # that resolves, which a dangling path is not.
+                    for slot_type, null_path in _PLACEHOLDER_NULL_TEX.items():
+                        if slot_type in handled_dst_slots or slot_type not in dst_binding_types:
+                            continue
+                        dst_binding_types[slot_type].path = null_path
+                        tex_null_fallback += 1
 
                     if self.delete_original:
                         bpy.data.objects.remove(obj, do_unlink=True)
