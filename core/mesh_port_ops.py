@@ -653,7 +653,7 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
                 self.target_game in FAMILY_A)
             correction_set = None
             if cross_convention:
-                from .pose_ops import _REE_BONE_CORRECTION
+                from .pose_ops import _REE_BONE_CORRECTION, _REE_C_SUPPLEMENT
                 if ref_arm is None:
                     self.report({'ERROR'}, T("core.mesh_port_ops.need_reference"))
                     return {'CANCELLED'}
@@ -668,7 +668,12 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
                 _tpose(context, ref_arm)
                 correction_set = derive_bone_correction(
                     probe, ref_arm, cross,
-                    table=_REE_BONE_CORRECTION.get(self.target_game),
+                    # The supplement carries the bones that must not be in the
+                    # T-pose zeroing list -- clavicles and thumbs -- because zeroing
+                    # a thumb changes where it actually points, and that has to stay
+                    # as authored.  A cross-game port needs their C all the same.
+                    table={**(_REE_BONE_CORRECTION.get(self.target_game) or {}),
+                           **(_REE_C_SUPPLEMENT.get(self.target_game) or {})},
                     tolerance_deg=DEFAULT_TOLERANCE_DEG,
                     src_game=self.source_game, dst_game=self.target_game)
                 # Helpers and torso bones have no trustworthy C of their own; give

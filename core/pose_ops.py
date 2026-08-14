@@ -151,19 +151,7 @@ def _build_re9_correction():
     for suffix in ("Arm_Upper", "Arm_Lower", "Arm_Hand", "Hand_Palm") + fingers:
         out["L_" + suffix] = _C_IDENTITY
         out["R_" + suffix] = _C_FLIP_X
-    # 锁骨与拇指原先不在表里，跨游戏移植就没有可信的 C 可用 —— 右锁骨因此整根差 180°。
-    # 下面这两组是从「同一个模型手工做成 MHWS/RE9 两版」的对照资产上实测反解的（两边都
-    # 先跑 ree_to_tpose 归一化姿态），取最近的带符号置换阵：
-    #   L_Shoulder→L_Arm_Clavicle 单位阵、R_Shoulder→R_Arm_Clavicle 绕 X 翻 180°
-    #   （与手臂链同规律，偏差 19.5°）
-    #   L_Thumb*→L_Hand_ThumbF_* 绕 X 转 90°、右侧镜像（偏差 27–29°）
-    # 拇指残留偏差大是它本来就非轴对齐（memory project_skeleton_convention_families 已记），
-    # 但用了这条后误差从 89–106° 降到 27–29°，比不修正好得多。
-    out["L_Arm_Clavicle"] = _C_IDENTITY
-    out["R_Arm_Clavicle"] = _C_FLIP_X
-    for i in (1, 2, 3):
-        out[f"L_Hand_ThumbF_{i}"] = ((1.0, 0.0, 0.0), (0.0, 0.0, -1.0), (0.0, 1.0, 0.0))
-        out[f"R_Hand_ThumbF_{i}"] = ((1.0, 0.0, 0.0), (0.0, 0.0, 1.0), (0.0, -1.0, 0.0))
+
     for suffix in ("Leg_Upper", "Leg_Lower", "Leg_Ankle"):
         out["L_" + suffix] = _C_LEG_L
         out["R_" + suffix] = _C_LEG_R
@@ -174,6 +162,37 @@ def _build_re9_correction():
 
 # 只有需要逐骨骼修正的游戏在这里出现；没有条目就等于全部用 _REE_ZERO_BASIS。
 _REE_BONE_CORRECTION = {"RE9": _build_re9_correction()}
+
+
+def _build_re9_c_supplement():
+    """跨游戏轴向修正专用的补充条目 —— **刻意不进 T-Pose 归零名单**。
+
+    这两组骨原先两张表里都没有，于是跨游戏移植时没有可信的 C 可用，被原样留在源游戏
+    约定里 —— 右锁骨因此整根差 180°（实测对照手作 RE9 骨架 179.8°，拇指 89–106°）。
+
+    数值是实测反解的，不是猜的：素材是同一个模型由作者手工分别做成 MHWS / RE4R / RE9
+    三版（三版都在游戏里可用），把 MHWS 与 RE9 两具骨架归一化姿态后逐骨反解，取最近的
+    带符号置换阵 —— 锁骨与手臂链同规律（左单位阵、右绕 X 翻 180°），拇指绕 X 转 90°、
+    右侧镜像。
+
+    ⚠ **为什么单独放一张表**：`_REE_TPOSE_BONES["RE9"]` 是直接取 `_REE_BONE_CORRECTION`
+    的键构造的，所以往那张表里加骨等于让 `ree_to_tpose` 去**真的掰动**这些骨。拇指被
+    刻意排除在归零名单之外是有理由的 —— 归零会改变它的实际朝向，而拇指的朝向要尽量
+    保持原样。这里只补 C，不动归零名单。
+
+    ⚠ 拇指仍有 27–29° 无法用置换阵消掉。参考资产的拇指是手工掰到近似朝向的，这个残差
+    大概率就来自那次手工调整，加上拇指本来就非轴对齐（见 memory
+    project_skeleton_convention_families）。
+    """
+    out = {"L_Arm_Clavicle": _C_IDENTITY, "R_Arm_Clavicle": _C_FLIP_X}
+    for i in (1, 2, 3):
+        out[f"L_Hand_ThumbF_{i}"] = ((1.0, 0.0, 0.0), (0.0, 0.0, -1.0), (0.0, 1.0, 0.0))
+        out[f"R_Hand_ThumbF_{i}"] = ((1.0, 0.0, 0.0), (0.0, 0.0, 1.0), (0.0, -1.0, 0.0))
+    return out
+
+
+#: 只供跨游戏移植使用的 C；合并方式见 core/mesh_port_ops.py。
+_REE_C_SUPPLEMENT = {"RE9": _build_re9_c_supplement()}
 
 # RE4R 与 MHWS 同属一个骨骼约定族——56 根基础骨名字完全相同，且在同一物理姿势下轴向
 # 也一致（143 根里 115 根在 1° 内），所以 RE4R 不需要修正矩阵。但辅助骨命名两边不同
