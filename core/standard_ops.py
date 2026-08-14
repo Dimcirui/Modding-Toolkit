@@ -1246,6 +1246,12 @@ class MODDER_OT_ClearChainRole(bpy.types.Operator):
         for pb in selected:
             if "chain_role" in pb:
                 del pb["chain_role"]
+            # The marking operators paint the bone as well as tagging it
+            # (palette = 'CUSTOM' plus three custom colours), so clearing only the
+            # property left the bone still coloured — it looked marked when it was
+            # not, which is worse than either state on its own.
+            if pb.color.palette != 'DEFAULT':
+                pb.color.palette = 'DEFAULT'
         self.report({'INFO'}, T("core.standard_ops.cleared_chain_role").format(n=len(selected)))
         return {'FINISHED'}
 
