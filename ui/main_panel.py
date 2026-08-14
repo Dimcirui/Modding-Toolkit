@@ -412,7 +412,12 @@ class MHW_PT_MainPanel(bpy.types.Panel):
 
             # Bone-level merge on its own row; the two chain-level actions pair up below
             col.label(text=T("ui.main_panel.label_bone_merge"), icon='AUTOMERGE_ON')
-            col.operator("mhw.general_tools", text=T("ui.main_panel.gt_action_merge_to_active")).action = 'MERGE_TO_ACTIVE'
+            # Merging into the parent is the same kind of operation as merging into
+            # the active bone, and needs no preset: the merge itself is preset-free,
+            # and the chain_role refresh it does afterwards is already guarded.
+            row = col.row(align=True)
+            row.operator("mhw.general_tools", text=T("ui.main_panel.gt_action_merge_to_active")).action = 'MERGE_TO_ACTIVE'
+            row.operator("modder.merge_into_parent", text=T("ui.main_panel.btn_merge_into_parent"), icon='SNAP_MIDPOINT')
             row = col.row(align=True)
             row.operator("mhw.general_tools", text=T("ui.main_panel.gt_action_simplify_chain")).action = 'SIMPLIFY_CHAIN'
             row.operator("mhw.general_tools", text=T("ui.main_panel.gt_action_merge_chains")).action = 'MERGE_CHAINS'
@@ -525,9 +530,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
                 if settings.show_physics_chain_tools:
                     pc_col = col.column(align=True)
                     pc_col.operator("modder.smart_graft", text=T("ui.main_panel.btn_smart_graft"), icon='BONE_DATA')
-                    row = pc_col.row(align=True)
-                    row.operator("modder.merge_into_parent", text=T("ui.main_panel.btn_merge_into_parent"), icon='SNAP_MIDPOINT')
-                    row.operator("mhw.general_tools", text=T("ui.main_panel.gt_action_add_tail"), icon='RIGID_BODY').action = 'ADD_TAIL'
+                    pc_col.operator("mhw.general_tools", text=T("ui.main_panel.gt_action_add_tail"), icon='RIGID_BODY').action = 'ADD_TAIL'
                     row = pc_col.row(align=True)
                     row.operator("modder.mark_as_main_continue", text=T("ui.main_panel.btn_mark_main_continue"), icon='HANDLE_ALIGNED')
                     row.operator("modder.clear_chain_role", text=T("ui.main_panel.btn_clear_chain_role"), icon='X')
