@@ -30,7 +30,7 @@ from mathutils import Matrix, Vector
 
 from . import bone_utils
 from .bone_correction import (DEFAULT_TOLERANCE_DEG, derive_bone_correction,
-                              same_convention_set)
+                              expand_corrections, same_convention_set)
 from .bone_mapper import BoneMapManager, auto_detect_preset, build_cross_game_map
 from .i18n import T
 from .mesh_port import build_port_plan
@@ -97,6 +97,19 @@ def _preset_main_names(fname):
     if not mgr.load_preset(fname):
         return set()
     return {n for entry in mgr.mapping_data.values() for n in entry.get("main", ())}
+
+
+def _armature_only_copy(arm_obj):
+    """A linked-into-the-scene copy of just the armature, for measuring on.
+
+    Deliberately without the meshes: this copy gets T-posed, and T-posing rebinds
+    whatever meshes it carries.  Nothing here may touch the user's mesh.
+    """
+    probe = arm_obj.copy()
+    probe.data = arm_obj.data.copy()
+    probe.name = arm_obj.name + "_probe"
+    bpy.context.scene.collection.objects.link(probe)
+    return probe
 
 
 def _tpose(context, arm_obj):
@@ -218,50 +231,51 @@ def _insert_bones(arm_obj, inserts, ref_arm):
 
 
 def apply_corrections(arm_obj, correction_set):
-    """Re-express every mapped bone's rest orientation in the target's convention.
+    """Re-express corrected bones' rest orientation in the target's convention.
 
-    Joint *positions* are held fixed on purpose: a convention change is a relabeling
-    of axes, so no joint may move.  Each bone's world matrix is therefore written
-    explicitly, parent first, with the rotation replaced and the original head kept --
-    including bones with no correction, whose orientation must be pinned back after a
-    corrected parent would otherwise have swung them.  Per-asset hair and cloth bones
-    ride along that way, unchanged in both position and orientation.
+    **Written on edit bones, and the mesh is never touched.**  That is not an
+    optimisation, it is the only correct way: armature deformation is relative to the
+    rest pose, so editing rest bones with the pose left at identity moves no vertex at
+    all.  The previous version posed the rig and baked the pose in through
+    ``_apply_and_rebind()``, which both deformed the mesh and ran
+    ``object.convert(target='MESH')`` on it -- applying its modifiers and wrecking the
+    model.  A cross-game port must change the skeleton and nothing else: the mesh is
+    already correct, only the bone layout differs.
 
-    Ends by baking the pose into the rest skeleton and re-binding the meshes, exactly
-    as ``modder.ree_to_tpose`` does.
+    Joint positions are held fixed (each bone keeps its head); what changes is the
+    bone's axes, which is what a convention relabel *is* -- so bones do re-point, and
+    that is why a ported rig matches the target game's own rig visually.
+
+    Edit bones are stored in absolute armature space, so re-orienting a parent does
+    not drag its children: every bone is written independently and bones with no
+    correction simply stay as they are.
     """
-    from .pose_ops import _apply_and_rebind
-
-    bones = list(arm_obj.data.bones)
-    original = {}
-    for b in bones:
-        original[b.name] = (b.matrix_local.to_3x3().copy(), b.head_local.copy())
-
-    def depth(b):
-        n, p = 0, b.parent
-        while p is not None:
-            n, p = n + 1, p.parent
-        return n
-
-    bpy.context.view_layer.objects.active = arm_obj
-    bpy.ops.object.mode_set(mode='POSE')
-    changed = 0
-    for b in sorted(bones, key=depth):
-        pb = arm_obj.pose.bones.get(b.name)
-        if pb is None:
-            continue
-        rot, head = original[b.name]
+    targets = {}
+    for b in arm_obj.data.bones:
         c = correction_set.get(b.name) if correction_set is not None else None
-        if c is not None and not c.is_identity:
-            rot = rot @ Matrix([list(r) for r in c.matrix])
-            changed += 1
-        m = rot.to_4x4()
-        m.translation = head
-        pb.matrix = m
-        bpy.context.view_layer.update()
-    bpy.ops.object.mode_set(mode='OBJECT')
+        if c is None or c.is_identity:
+            continue
+        targets[b.name] = b.matrix_local.to_3x3() @ Matrix([list(r) for r in c.matrix])
 
-    _apply_and_rebind(arm_obj)
+    if not targets:
+        return 0
+
+    if bpy.context.mode != 'OBJECT':
+        bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.context.view_layer.objects.active = arm_obj
+    bpy.ops.object.mode_set(mode='EDIT')
+    changed = 0
+    try:
+        for name, rot in targets.items():
+            eb = arm_obj.data.edit_bones.get(name)
+            if eb is None:
+                continue
+            m = rot.to_4x4()
+            m.translation = eb.head
+            eb.matrix = m          # keeps the head and the bone length, rewrites axes
+            changed += 1
+    finally:
+        bpy.ops.object.mode_set(mode='OBJECT')
     return changed
 
 
@@ -333,14 +347,6 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
     target_game: bpy.props.EnumProperty(name="Target Game", items=_target_game_items)
     reference_skeleton: bpy.props.EnumProperty(
         name="Reference Skeleton", items=_reference_items)
-    #: Only meaningful when the port crosses axis conventions, which is the only case
-    #: that derives C -- and C's precondition is that both rigs sit in the same
-    #: physical pose.  The reference skeleton is imported here, in its native pose, so
-    #: the user cannot satisfy that precondition from outside: the port has to do it.
-    #: modder.ree_to_tpose is a rest-level conversion (it ends in armature_apply and
-    #: rebinds the meshes), and a T-posed rig is shippable -- RE Engine resolves bones
-    #: by name hash and only relative transforms matter.
-    tpose_first: bpy.props.BoolProperty(name="T-Pose Both Rigs First", default=True)
     replace_original: bpy.props.BoolProperty(
         name="Replace the Original", default=False,
         description="Convert the original in place instead of converting a copy")
@@ -369,9 +375,6 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
         layout.prop(self, "target_game", text=T("core.mesh_port_ops.target_game"))
         layout.prop(self, "reference_skeleton",
                     text=T("core.mesh_port_ops.reference_skeleton"))
-        if (self.source_game in FAMILY_A) != (self.target_game in FAMILY_A):
-            layout.prop(self, "tpose_first",
-                        text=T("core.mesh_port_ops.tpose_first"))
         layout.prop(self, "replace_original",
                     text=T("core.port.replace_original"))
         if not getattr(self, "_lines", None):
@@ -475,14 +478,32 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
                 if ref_arm is None:
                     self.report({'ERROR'}, T("core.mesh_port_ops.need_reference"))
                     return {'CANCELLED'}
-                if self.tpose_first:
-                    for rig in (ref_arm, arm):
-                        _tpose(context, rig)
+                # C is measured on throwaway copies, never on the user's rig.  The
+                # derivation needs both rigs in the same physical pose, and the only
+                # way to arrange that is to T-pose them -- but T-posing re-poses the
+                # mesh, and a port must leave the mesh alone.  C is a local axis
+                # relabel and therefore pose-independent, so measuring it on a T-posed
+                # probe and applying it to the rig as it stands is exact.
+                probe = _armature_only_copy(arm)
+                _tpose(context, probe)
+                _tpose(context, ref_arm)
                 correction_set = derive_bone_correction(
-                    arm, ref_arm, cross,
+                    probe, ref_arm, cross,
                     table=_REE_BONE_CORRECTION.get(self.target_game),
                     tolerance_deg=DEFAULT_TOLERANCE_DEG,
                     src_game=self.source_game, dst_game=self.target_game)
+                # Helpers and torso bones have no trustworthy C of their own; give
+                # them their nearest corrected ancestor's, checked per bone.  Without
+                # this the rig comes out half-converted: MHWilds' _HJ_ helpers keep
+                # pointing the old way while the base bones they ride on re-point.
+                expand_corrections(
+                    correction_set,
+                    {b.name: (b.parent.name if b.parent else None)
+                     for b in probe.data.bones},
+                    {b.name: b.matrix_local.to_3x3() for b in probe.data.bones},
+                    {b.name: b.matrix_local.to_3x3() for b in ref_arm.data.bones},
+                    cross)
+                bpy.data.objects.remove(probe, do_unlink=True)
                 if correction_set.pose_mismatch_suspected:
                     # Over half the bones failed the signed-permutation gate, which
                     # means the two rigs are not in the same physical pose -- the

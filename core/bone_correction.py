@@ -364,6 +364,102 @@ def derive_bone_correction(src_arm, dst_arm, cross_map, table=None,
     return out
 
 
+#: How far a bone may sit from its ancestor's orientation and still count as "riding"
+#: on it.  Rig helpers are rigidly carried by their base bone, so they sit at exactly
+#: the same orientation: measured 0.00 degrees for MHWilds' L_Hip_HJ_00,
+#: L_Elbow_HJ_00 and R_ThighRX_HJ_01 against their parents.  Hair and cloth, which
+#: must *not* inherit, hang at their own angles and fall out on this test.
+#: Same criterion and same tolerance as pose_ops._expand_inchain_helpers.
+RIDE_TOLERANCE_DEG = 0.5
+
+#: How far the inherited C may leave a *mapped* bone from the target rig's own
+#: orientation and still be adopted.  This is measured against the real target bone,
+#: so it is a check, not a guess.  Placed in the gap the measurement showed on the
+#: MHWS/RE9 pair: the torso -- Spine_0/1/2, Neck_0, Head -- lands 2.0-8.2 degrees out,
+#: while the clavicle, which genuinely does *not* share the torso's relabel, lands
+#: 94 degrees out.  The torso residual is the two characters' spines curving
+#: differently, not a convention difference: their own C snaps to exactly the matrix
+#: Hip's does.
+INHERIT_TOLERANCE_DEG = 12.0
+
+
+def expand_corrections(cset, src_parents, src_rots, dst_rots, cross_map,
+                       ride_tol_deg=RIDE_TOLERANCE_DEG,
+                       inherit_tol_deg=INHERIT_TOLERANCE_DEG):
+    """Extend *cset* to bones that have no trustworthy C of their own.
+
+    Two kinds of bone are left behind by a per-bone derivation, and both are wrong to
+    leave in the source convention:
+
+    * **rig helpers** (``L_Hip_HJ_00``, ``L_Elbow_HJ_00``, ...) -- not in any preset,
+      so nothing maps them, yet they are rigidly carried by a base bone and must turn
+      with it.  Leaving them behind is visible immediately: the base bone re-points
+      and its helpers stay pointing the old way.  Corroborated by their orientation
+      matching the ancestor's to within *ride_tol_deg*, which is what "carried by"
+      means geometrically -- this is the criterion ``pose_ops`` already uses.
+    * **torso bones** (spine, neck, head) -- mapped, but their own derived C misses the
+      signed-permutation gate because the two rigs' spines curve differently.  Their C
+      is nonetheless the same relabel their hip uses, so they inherit it, and the
+      claim is *checked* against the target rig: adopt only if the result lands within
+      *inherit_tol_deg* of that rig's own bone.
+
+    The check is what keeps this from being a blanket "children follow parents" rule.
+    The clavicle is mapped, sits 8.6 degrees off its parent, and inheriting the torso
+    relabel would put it 94 degrees from RE9's own clavicle -- so it is refused and
+    stays reported.
+
+    *src_parents* is ``{bone: parent_or_None}``; *src_rots* / *dst_rots* are
+    ``{bone: 3x3}`` in each rig's own naming.  Returns the number of bones added.
+    """
+    def depth(name):
+        n, seen = 0, set()
+        while name is not None and name not in seen:
+            seen.add(name)
+            name = src_parents.get(name)
+            n += 1
+        return n
+
+    added = 0
+    for name in sorted(src_parents, key=depth):
+        if cset.get(name) is not None:
+            continue
+        rot = src_rots.get(name)
+        if rot is None:
+            continue
+
+        ancestor = src_parents.get(name)
+        while ancestor is not None and cset.get(ancestor) is None:
+            ancestor = src_parents.get(ancestor)
+        if ancestor is None:
+            continue
+        inherited = cset.get(ancestor)
+
+        dst_name = cross_map.get(name) if cross_map is not None else None
+        dst_rot = dst_rots.get(dst_name) if dst_name else None
+        if dst_rot is not None:
+            # mapped: check the inherited C against the target rig's actual bone
+            err = angle_between(mat_mul(as_matrix3(rot), inherited.matrix),
+                                as_matrix3(dst_rot))
+            if err > inherit_tol_deg:
+                continue
+            origin, dev = "inherited", err
+        else:
+            # unmapped: the only available check is that it rides on the ancestor
+            anc_rot = src_rots.get(ancestor)
+            if anc_rot is None:
+                continue
+            dev = angle_between(as_matrix3(rot), as_matrix3(anc_rot))
+            if dev > ride_tol_deg:
+                continue
+            origin = "rides"
+
+        cset.corrections[name] = BoneCorrection(
+            name, dst_name or name, inherited.matrix, origin, dev)
+        cset.rejected = [r for r in cset.rejected if r[0] != name]
+        added += 1
+    return added
+
+
 def same_convention_set(cross_map, src_game=None, dst_game=None):
     """Identity corrections for a conversion inside one convention family.
 
