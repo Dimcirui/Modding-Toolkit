@@ -46,7 +46,7 @@ Convert any source model into any target game's format by aligning the skeleton 
 A standalone pose transformation system, independent of the skeleton converter.
 
 * **Direction Calc**: a simple tool that only rotates the upper arms to horizontal, intended for MMD-style models.
-* **RE Engine Matrix Zero**: resets limb bone rotation matrices on RE Engine skeletons (Wilds / SF6 / RE4, etc.).
+* **RE Engine Matrix Zero**: resets limb bone rotation matrices on RE Engine skeletons (Wilds / RE4R / RE9 / SF6 / MHRS / DMC5).
 * **Pose Transform Recorder**: records the relative rotation between two poses of the same skeleton type, then applies it forward (A→B) or inverse (B→A) to any skeleton of that type.
     * Record once, use forever — no need to keep a reference armature in the scene every time.
     * Stored as JSON under `assets/presets/pose/`; addon updates do not remove existing records.
@@ -191,7 +191,7 @@ A built-in GUI editor for creating custom bone mappings without writing code.
 独立于骨架转换器的姿态变换系统。
 
 * **方向计算**: 简易工具，仅将上臂旋转到水平方向，针对MMD类模型使用。
-* **RE Engine 矩阵归零**: 重置 RE Engine 游戏骨架的肢体旋转矩阵（适用于荒野/街霸6/生化4等）。
+* **RE Engine 矩阵归零**: 重置 RE Engine 游戏骨架的肢体旋转矩阵（适用于荒野/生化4重制/生化9/街霸6/崛起/鬼泣5）。
 * **姿态变换记录器**: 录制同类型骨架两个姿态之间的相对旋转变换，之后可正向 (A→B) 或逆向 (B→A) 应用到任何同类型骨架。
     * 录制一次，永久使用——不需要每次都在场景中准备参考骨架。
     * 基于 JSON 文件存储在 `assets/presets/pose/`，插件更新不会删除已有记录。
