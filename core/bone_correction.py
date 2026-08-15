@@ -104,6 +104,38 @@ def mat3_mul(a, b):
                  for r in range(3))
 
 
+def invert_correction_table(table, name_map):
+    """Turn a fallback table for one direction into the table for the other.
+
+    *table* is ``{bone: 3x3}`` in the naming of the game it describes; *name_map* is
+    ``{that game's bone: the other game's bone}``.  Returns ``{other game's bone:
+    3x3}``, ready to hand to ``derive_bone_correction`` as its *table*, which looks
+    entries up by **target** bone name.
+
+    Both halves matter and only one is obvious.  With ``R_dst = R_src . C``, reversing
+    the port needs ``C' = C^-1``, a transpose since C is orthonormal -- that is the
+    obvious half.  The other is the **re-keying**: the shipped table is keyed by the
+    bone names of the game it describes, which are the *target* names going one way
+    and the *source* names coming back, so an untransformed table silently matches
+    nothing in reverse.
+
+    Why this is needed at all: ``core.pose_ops``'s tables describe **RE9's** deviation
+    from the family-A convention.  That is a property of RE9, not of whichever side of
+    a port it happens to be on, but ``mesh_port_ops`` looked it up by target game --
+    so porting *out* of RE9 found no table and fell back to the derivation alone.
+    Measured on the three-game dataset, that is exactly the damage the supplement was
+    written to prevent, reappearing: ``R_Arm_Clavicle`` 179.8 degrees out, thumbs
+    89-106, against 1 rejected bone going the other way and 10 coming back.
+    """
+    out = {}
+    for name, matrix in (table or {}).items():
+        target = (name_map or {}).get(name)
+        if target is None:
+            continue
+        out[target] = mat3_transpose(as_matrix3(matrix))
+    return out
+
+
 def relocalise_frame(node_world_rot, frame_world_rot):
     """The node-local rotation that reproduces *frame_world_rot* on that node.
 

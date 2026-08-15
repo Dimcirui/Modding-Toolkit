@@ -30,7 +30,8 @@ from mathutils import Matrix, Vector
 
 from . import bone_utils, pose_bake, ref_model
 from .bone_correction import (DEFAULT_TOLERANCE_DEG, derive_bone_correction,
-                              expand_corrections, same_convention_set)
+                              expand_corrections, invert_correction_table,
+                              same_convention_set)
 from .bone_mapper import BoneMapManager, auto_detect_preset, build_cross_game_map
 from .i18n import T
 from .mesh_port import build_port_plan
@@ -135,6 +136,32 @@ def duplicate_mesh_collection(col, arm_obj, suffix):
             c.objects.unlink(obj)
         new_col.objects.link(obj)
     return new_arm
+
+
+def _fallback_table(source_game, target_game, cross):
+    """The per-bone C to fall back on when the derivation rejects a bone.
+
+    ``core.pose_ops``'s tables describe **RE9's** deviation from the family-A
+    convention -- a property of RE9, not of which end of the port it is on.  Looking
+    them up by target game alone therefore only worked in one direction: porting *out*
+    of RE9 found nothing and left the derivation to fend for itself, which is how
+    ``R_Arm_Clavicle`` came out 179.8 degrees off and the thumbs 89-106 -- the very
+    numbers ``_build_re9_c_supplement`` was written to eliminate.
+
+    So: use the target's table when there is one, otherwise invert the source's.  The
+    supplement carries the bones that must not be in the T-pose zeroing list --
+    clavicles and thumbs, because zeroing a thumb changes where it actually points --
+    and a cross-game port needs their C all the same.
+    """
+    from .pose_ops import _REE_BONE_CORRECTION, _REE_C_SUPPLEMENT
+
+    forward = {**(_REE_BONE_CORRECTION.get(target_game) or {}),
+               **(_REE_C_SUPPLEMENT.get(target_game) or {})}
+    if forward:
+        return forward
+    backward = {**(_REE_BONE_CORRECTION.get(source_game) or {}),
+                **(_REE_C_SUPPLEMENT.get(source_game) or {})}
+    return invert_correction_table(backward, dict(cross.mapping))
 
 
 def _armature_only_copy(arm_obj):
@@ -691,7 +718,6 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
                 self.target_game in FAMILY_A)
             correction_set = None
             if cross_convention:
-                from .pose_ops import _REE_BONE_CORRECTION, _REE_C_SUPPLEMENT
                 if ref_arm is None:
                     self.report({'ERROR'}, T("core.mesh_port_ops.need_reference"))
                     return {'CANCELLED'}
@@ -706,12 +732,7 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
                 _tpose(context, ref_arm)
                 correction_set = derive_bone_correction(
                     probe, ref_arm, cross,
-                    # The supplement carries the bones that must not be in the
-                    # T-pose zeroing list -- clavicles and thumbs -- because zeroing
-                    # a thumb changes where it actually points, and that has to stay
-                    # as authored.  A cross-game port needs their C all the same.
-                    table={**(_REE_BONE_CORRECTION.get(self.target_game) or {}),
-                           **(_REE_C_SUPPLEMENT.get(self.target_game) or {})},
+                    table=_fallback_table(self.source_game, self.target_game, cross),
                     tolerance_deg=DEFAULT_TOLERANCE_DEG,
                     src_game=self.source_game, dst_game=self.target_game)
                 # Helpers and torso bones have no trustworthy C of their own; give
