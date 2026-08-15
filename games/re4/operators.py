@@ -553,8 +553,13 @@ class RE4_OT_AutoCreateChains(bpy.types.Operator):
 # ============================================================
 
 _RE4_FACIAL_ROOT_BONE = "FacialDef_Face"
-_RE4_BLINK_FAKE_OFFSET_Y = 0.05
-_RE4_BLINK_TARGET_BONES = ("L_U_Eyelid03", "R_U_Eyelid03")
+# L_U_Eyelid3 and L_U_Eyelid03 are one chain's two levels, not two naming schemes:
+# FacialDef_Face > L_U_Eyelid3 (head on the eyeball centre) > L_U_Eyelid03 (lid
+# margin, 16 mm out). The vanilla blink keys both levels, and which one is usable
+# differs per character -- but that only matters for vertex weights. The Fakehead
+# always goes on L_U_Eyelid3: displacing it carries L_U_Eyelid03 with it, so one
+# target covers both cases.
+_RE4_BLINK_TARGET_BONES = ("L_U_Eyelid3", "R_U_Eyelid3")
 
 
 class RE4_OT_AddFacialBones(bpy.types.Operator):
@@ -578,6 +583,14 @@ class RE4_OT_AddFacialBones(bpy.types.Operator):
         name="Increase Blink Amplitude (for anime-style models)",
         description="Use the Fakehead Method on the upper eyelid bones to increase the blink deformation amplitude",
         default=False,
+    )
+    blink_radius_mult: bpy.props.FloatProperty(
+        name="Blink Sweep Radius",
+        description="Blink sweep radius as a multiple of the eyeball radius; 1 is the anatomically natural pivot, higher makes the lid slide further",
+        # The pivot only slides along +/-Y, so it can never get closer to the lid than
+        # the perpendicular distance to the rotation axis -- measured at 0.22-0.32 eyeball
+        # radii across all five reference skeletons. 0.5 keeps the whole range live.
+        default=4.0, min=0.5, max=10.0,
     )
 
     @classmethod
@@ -603,6 +616,9 @@ class RE4_OT_AddFacialBones(bpy.types.Operator):
         layout.prop(self, "target_armature", text=T("re4.operators.target_armature_label"))
         layout.prop(self, "reference_character", text=T("core.re_chain_utils.reference_character"))
         layout.prop(self, "increase_blink_amplitude", text=T("re4.operators.increase_blink_amplitude_label"))
+        if self.increase_blink_amplitude:
+            row = layout.row()
+            row.prop(self, "blink_radius_mult", text=T("core.facial_bones.blink_radius_mult"), slider=True)
 
     def execute(self, context):
         target_arm = bpy.data.objects.get(self.target_armature)
@@ -637,7 +653,7 @@ class RE4_OT_AddFacialBones(bpy.types.Operator):
             fake_count = 0
             if self.increase_blink_amplitude:
                 for bone_name in _RE4_BLINK_TARGET_BONES:
-                    if facial_bones.apply_blink_fake_bone(target_arm, bone_name, _RE4_BLINK_FAKE_OFFSET_Y):
+                    if facial_bones.apply_blink_fake_bone(target_arm, bone_name, self.blink_radius_mult):
                         fake_count += 1
         finally:
             # The reference skeleton is only used to source the graft data; discard it once done

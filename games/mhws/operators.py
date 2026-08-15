@@ -761,7 +761,6 @@ class MHWS_OT_PreprocessModel(bpy.types.Operator):
 # ============================================================
 
 _FACIAL_ROOT_BONE = "HeadAll_SCL"
-_BLINK_FAKE_OFFSET_Y = 0.05
 _BLINK_TARGET_BONES = ("L_UpEyeLidJ_LOD02", "R_UpEyeLidJ_LOD02")
 
 
@@ -785,6 +784,14 @@ class MHWS_OT_AddFacialBones(bpy.types.Operator):
                     "of the eye-closing motion",
         default=False,
     )
+    blink_radius_mult: bpy.props.FloatProperty(
+        name="Blink Sweep Radius",
+        description="Blink sweep radius as a multiple of the eyeball radius; 1 is the anatomically natural pivot, higher makes the lid slide further",
+        # The pivot only slides along +/-Y, so it can never get closer to the lid than
+        # the perpendicular distance to the rotation axis -- measured at 0.22-0.32 eyeball
+        # radii across all five reference skeletons. 0.5 keeps the whole range live.
+        default=4.0, min=0.5, max=10.0,
+    )
 
     @classmethod
     def poll(cls, context):
@@ -804,6 +811,9 @@ class MHWS_OT_AddFacialBones(bpy.types.Operator):
         layout.separator()
         layout.prop(self, "target_armature", text=T("mhws.operators.target_armature_name"))
         layout.prop(self, "increase_blink_amplitude", text=T("mhws.operators.increase_blink_amplitude_name"))
+        if self.increase_blink_amplitude:
+            row = layout.row()
+            row.prop(self, "blink_radius_mult", text=T("core.facial_bones.blink_radius_mult"), slider=True)
 
     def execute(self, context):
         target_arm = bpy.data.objects.get(self.target_armature)
@@ -834,7 +844,7 @@ class MHWS_OT_AddFacialBones(bpy.types.Operator):
             fake_count = 0
             if self.increase_blink_amplitude:
                 for bone_name in _BLINK_TARGET_BONES:
-                    if facial_bones.apply_blink_fake_bone(target_arm, bone_name, _BLINK_FAKE_OFFSET_Y):
+                    if facial_bones.apply_blink_fake_bone(target_arm, bone_name, self.blink_radius_mult):
                         fake_count += 1
         finally:
             # 参考骨架仅用于移植数据，用完即清除，避免残留在场景中

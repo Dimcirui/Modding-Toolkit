@@ -960,6 +960,8 @@ STRINGS = {
     "core.export_prep.select_armor_first": {"EN": "Please select an armor set first", "ZH": "请先选择一套装备"},
     "core.export_prep.set_mod_root_first": {"EN": "Please set the Mod Root directory first (the parent folder of natives)", "ZH": "请先设置 Mod Root 目录（natives 的上级文件夹）"},
     "core.facial_bones.facial_bones_added": {"EN": "Added {n} facial bone(s)", "ZH": "已添加 {n} 根表情骨"},
+    "core.facial_bones.blink_radius_mult": {
+        "EN": "Sweep Radius (eyeball radii)", "ZH": "扫过半径（眼球半径倍数）"},
     "core.mdf_generator_base.active_obj_no_material": {"EN": "The active object has no material", "ZH": "激活物体没有材质"},
     "core.mdf_generator_base.auto": {"EN": "Auto: {name}", "ZH": "自动: {name}"},
     "core.mdf_generator_base.strat_alpha": {"EN": "Alpha", "ZH": "Alpha"},

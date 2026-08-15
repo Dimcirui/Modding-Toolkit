@@ -246,7 +246,6 @@ class RE9_OT_AutoCreateChains(bpy.types.Operator):
 # ============================================================
 
 _RE9_FACIAL_ROOT_BONE = "FacialJnt_Face"
-_RE9_BLINK_FAKE_OFFSET_Y = 0.05
 _RE9_BLINK_TARGET_BONES = ("L_UprLdEdge_02", "R_UprLdEdge_02")
 
 
@@ -275,6 +274,14 @@ class RE9_OT_AddFacialBones(bpy.types.Operator):
                     "deformation amplitude of the blink motion",
         default=False,
     )
+    blink_radius_mult: bpy.props.FloatProperty(
+        name="Blink Sweep Radius",
+        description="Blink sweep radius as a multiple of the eyeball radius; 1 is the anatomically natural pivot, higher makes the lid slide further",
+        # The pivot only slides along +/-Y, so it can never get closer to the lid than
+        # the perpendicular distance to the rotation axis -- measured at 0.22-0.32 eyeball
+        # radii across all five reference skeletons. 0.5 keeps the whole range live.
+        default=4.0, min=0.5, max=10.0,
+    )
 
     @classmethod
     def poll(cls, context):
@@ -295,6 +302,9 @@ class RE9_OT_AddFacialBones(bpy.types.Operator):
         layout.prop(self, "target_armature", text=T("re9.operators.target_armature"))
         layout.prop(self, "reference_character", text=T("core.re_chain_utils.reference_character"))
         layout.prop(self, "increase_blink_amplitude", text=T("re9.operators.increase_blink_amplitude"))
+        if self.increase_blink_amplitude:
+            row = layout.row()
+            row.prop(self, "blink_radius_mult", text=T("core.facial_bones.blink_radius_mult"), slider=True)
 
     def execute(self, context):
         target_arm = bpy.data.objects.get(self.target_armature)
@@ -329,7 +339,7 @@ class RE9_OT_AddFacialBones(bpy.types.Operator):
             fake_count = 0
             if self.increase_blink_amplitude:
                 for bone_name in _RE9_BLINK_TARGET_BONES:
-                    if facial_bones.apply_blink_fake_bone(target_arm, bone_name, _RE9_BLINK_FAKE_OFFSET_Y):
+                    if facial_bones.apply_blink_fake_bone(target_arm, bone_name, self.blink_radius_mult):
                         fake_count += 1
         finally:
             # The reference armature is only used to source the graft data; discard it once done
