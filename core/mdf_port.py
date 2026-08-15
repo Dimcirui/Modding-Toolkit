@@ -23,6 +23,9 @@ The mapping (user's decision, 2026-08-14):
 * ``emissive`` -- RE4R and RE9 correspond exactly; MHWS has no emissive prefab, so it
   falls back to ``basic``.
 * ``weapon`` and ``basic`` are MHWS-only and land on the target's ``standard``.
+* ``transparent`` (user's decision, 2026-08-15) exists in all three and pairs one to
+  one.  Unlike the others it is *two* shaders per game rather than one, and the
+  second one is recognised without being shipped -- see ``_ALSO_CLASSIFIES_AS``.
 * Anything unclassified falls back per game -- MHWS ``basic``, RE4R and RE9
   ``standard`` -- **and is reported**, so the user can check those materials by hand.
 
@@ -43,14 +46,45 @@ _PREFAB_DIRS = {"MHWS": "mhws", "RE4": "re4", "RE9": "re9"}
 #: target has no equivalent and the game's fallback is used.
 _ARCHETYPE_MAP = {
     "MHWS": {"standard": "standard", "hair": "hair", "skin": "skin",
-             "weapon": "standard", "basic": "basic",
+             "weapon": "standard", "basic": "basic", "transparent": "transparent",
              # MHWS ships no emissive prefab; basic is the closest of what it has.
              "emissive": "basic"},
     "RE4": {"standard": "standard", "hair": "hair", "emissive": "emissive",
+            "transparent": "transparent",
             # RE4R has no skin prefab -- its standard doubles as skin.
             "skin": "standard", "weapon": "standard", "basic": "standard"},
     "RE9": {"standard": "standard", "hair": "hair", "skin": "skin",
-            "emissive": "emissive", "weapon": "standard", "basic": "standard"},
+            "emissive": "emissive", "transparent": "transparent",
+            "weapon": "standard", "basic": "standard"},
+}
+
+#: Shaders that *mean* an archetype without being the prefab shipped for it.
+#:
+#: Every other archetype is one shader per game, so the prefab's own
+#: ``Master Material Path`` is the whole classification table.  Transparency is not:
+#: each game has two half-transparent master materials in general use, and porting
+#: has to recognise both while writing only one.  The user picked which one is
+#: written (2026-08-15) -- MHWS ``expTransparent``, RE4R ``Glass_Emissive``, RE9
+#: ``Glass_Transparent_Ch``, all three shipped under ``transparent.json`` -- and the
+#: runner-up is listed here so an incoming material built on it is still classified
+#: as ``transparent`` rather than falling back to ``standard``/``basic``.
+#:
+#: Recognition only, deliberately: shipping the runner-up as a second prefab would
+#: put two files under one archetype key and make ``load_prefabs`` ambiguous about
+#: which is the destination, which is the one thing this table must not be.
+_ALSO_CLASSIFIES_AS = {
+    "MHWS": {
+        # RE Mesh Editor Presets/MHWILDS/roughTransparent.json
+        "materialshader/variation/basealpha_emit_roughtransparent.mmtr": "transparent",
+    },
+    "RE4": {
+        # RE Mesh Editor Presets/RE4/Glass.json
+        "_chainsaw/mastermaterial/master/character_reflectivetransparent.mmtr": "transparent",
+    },
+    "RE9": {
+        # RE Mesh Editor Presets/RE9/Glass_Transparent.json
+        "materialshader/master/glass_transparent.mmtr": "transparent",
+    },
 }
 
 #: Used when the source material's shader matches no known archetype.
@@ -98,9 +132,10 @@ def load_prefabs(game_code):
 def classify(game_code, master_material_path):
     """The source material's archetype, or None when its shader is not one of them.
 
-    Matched on the .mmtr path, case-insensitively and slash-normalised.  None is a
-    real answer, not a failure: it means "this material is outside the prefab range",
-    which the caller must report rather than silently convert.
+    Matched on the .mmtr path, case-insensitively and slash-normalised, against the
+    shipped prefabs first and ``_ALSO_CLASSIFIES_AS`` second.  None is a real answer,
+    not a failure: it means "this material is outside the prefab range", which the
+    caller must report rather than silently convert.
     """
     if not master_material_path:
         return None
@@ -108,7 +143,7 @@ def classify(game_code, master_material_path):
     for archetype, info in load_prefabs(game_code).items():
         if info["mmtr"] and info["mmtr"].lower() == want:
             return archetype
-    return None
+    return _ALSO_CLASSIFIES_AS.get(game_code, {}).get(want)
 
 
 def target_prefab(src_archetype, dst_game):

@@ -1,0 +1,325 @@
+{
+    "presetType": "RE_MDF_MATERIAL",
+    "MDFVersion": "RE4",
+    "presetVersion": 5,
+    "Material Header": {
+        "Material Name": "Transparent",
+        "Master Material Path": "_Chainsaw/MasterMaterial/Master/Glass_ReflectiveTransparent_Emissive.mmtr",
+        "Material Shader Type": "14"
+    },
+    "Flags": {
+        "Ver32Unknown": -1,
+        "Ver32Unknown1": -1,
+        "Ver32Unknown2": -1,
+        "FlagBitFlag": 134217882,
+        "FlagBitFlagB": 2,
+        "ShaderLODNum": 0,
+        "BakeTextureArraySize": 0
+    },
+    "Property List": [
+        {
+            "Property Name": "BaseColor",
+            "Data Type": "COLOR",
+            "Value": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "Padding": 0
+        },
+        {
+            "Property Name": "EmissiveColor",
+            "Data Type": "COLOR",
+            "Value": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "Padding": 0
+        },
+        {
+            "Property Name": "Bulb_Color",
+            "Data Type": "COLOR",
+            "Value": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "Padding": 0
+        },
+        {
+            "Property Name": "LampShade_Color",
+            "Data Type": "COLOR",
+            "Value": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "Padding": 0
+        },
+        {
+            "Property Name": "OcclusionMap_UseSecondaryUV",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Metallic",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Roughness",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Translucency",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Alpha",
+            "Data Type": "FLOAT",
+            "Value": 0.800000011920929,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Fresnel_Intensity",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Enable_FakeSphere",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "FakeSphere_Intensity",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "FakeSphere_DisTransparent",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "FakeSphere_UseAlpha",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "FakeSphere_MultiplyColor",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Enable_OilFilm",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "OilFilm_BlendRate",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "OilFilm_Thickness",
+            "Data Type": "FLOAT",
+            "Value": 0.5,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Wetness",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "RainStreak_Intensity",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "RainDrops_Intensity",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "RainDrops_SampleType",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Rain_Tiling",
+            "Data Type": "FLOAT",
+            "Value": 2.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "RainStreak_Speed",
+            "Data Type": "FLOAT",
+            "Value": 0.800000011920929,
+            "Padding": 0
+        },
+        {
+            "Property Name": "RainDrops_Speed",
+            "Data Type": "FLOAT",
+            "Value": 0.550000011920929,
+            "Padding": 0
+        },
+        {
+            "Property Name": "EmissiveIntensity",
+            "Data Type": "FLOAT",
+            "Value": 10.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "EmissiveRate",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "EmissiveRateGamma",
+            "Data Type": "FLOAT",
+            "Value": 0.05000000074505806,
+            "Padding": 0
+        },
+        {
+            "Property Name": "UV_Select",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "use_Bulb",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Bulb_Intensity",
+            "Data Type": "FLOAT",
+            "Value": 50.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Bulb_Pow_Rate",
+            "Data Type": "FLOAT",
+            "Value": 20.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Bulb_Levels_min",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Bulb_Levels_max",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "use_LampShade",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "LampShade_Intensity",
+            "Data Type": "FLOAT",
+            "Value": 50.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "LampShade_Scale",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "LampShade_Smoothness",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "LampShader_HightOffset",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "UseEmmisiveFade",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "EmmisiveFadeStart",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "EmmisiveFadeRamp",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 8
+        }
+    ],
+    "Texture Bindings": [
+        {
+            "Texture Type": "BaseDielectricMap",
+            "Texture Path": "systems/rendering/NullBlack.tex"
+        },
+        {
+            "Texture Type": "NormalRoughnessCavityMap",
+            "Texture Path": "systems/rendering/NullNormalRoughness.tex"
+        },
+        {
+            "Texture Type": "AlphaTranslucentOcclusionSSSMap",
+            "Texture Path": "systems/rendering/nullatos.tex"
+        },
+        {
+            "Texture Type": "FakeSphereMap",
+            "Texture Path": "systems/rendering/NullBlack.tex"
+        },
+        {
+            "Texture Type": "RainStreakMaskMap",
+            "Texture Path": "systems/rendering/NullNormalRoughness.tex"
+        },
+        {
+            "Texture Type": "RainDropsMaskMap",
+            "Texture Path": "systems/rendering/NullNormalRoughness.tex"
+        },
+        {
+            "Texture Type": "EmissiveMap",
+            "Texture Path": "systems/rendering/NullBlack.tex"
+        }
+    ],
+    "MMTRS Data": [],
+    "GPBF Data": []
+}
