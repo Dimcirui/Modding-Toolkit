@@ -183,9 +183,9 @@ STRINGS = {
               "不需要选择预设。如果无法正确运作，请使用更通用的姿态变换记录器"},
     "core.pose_ops.ree_to_tpose_desc": {
         "EN": "RE Engine only: reset limb bone rotation matrices to T-Pose. Auto-detects the game from a private, "
-              "built-in bone list (currently Wilds only) -- no preset selection needed",
+              "built-in bone list (Wilds / RE4R / RE9 / SF6 / MHRS / DMC5) -- no preset selection needed",
         "ZH": "RE Engine 专用: 重置肢体骨骼旋转矩阵为 T-Pose。从内置的私有骨架名单里自动识别游戏"
-              "（目前仅支持荒野），不需要选择预设"},
+              "（支持荒野/生化4重制/生化9/街霸6/崛起/鬼泣5），不需要选择预设"},
     "core.pose_ops.record_transform_desc": {
         "EN": "Record relative transform: select A-pose armature first, then Ctrl-select B-pose armature, "
               "compute and save A->B transform",
@@ -204,8 +204,9 @@ STRINGS = {
         "EN": "Cannot load armature preset", "ZH": "无法加载骨架预设"},
     "core.pose_ops.upperarm_not_found": {"EN": "Upper arm bones not found", "ZH": "未找到上臂骨骼"},
     "core.pose_ops.ree_game_not_recognized": {
-        "EN": "Could not recognize a supported RE Engine game from this armature's bone names (currently Wilds only)",
-        "ZH": "未能从骨骼名识别出受支持的 RE Engine 游戏（目前仅支持荒野）"},
+        "EN": "Could not recognize a supported RE Engine game from this armature's bone names "
+              "(supports Wilds / RE4R / RE9 / SF6 / MHRS / DMC5)",
+        "ZH": "未能从骨骼名识别出受支持的 RE Engine 游戏（支持荒野/生化4重制/生化9/街霸6/崛起/鬼泣5）"},
     "core.pose_ops.record_name_label": {"EN": "Name", "ZH": "名称"},
     "core.pose_ops.record_name_desc": {
         "EN": "Filename for the saved transform record (e.g. MMD A-Pose to T-Pose)",
@@ -961,7 +962,7 @@ STRINGS = {
     "core.export_prep.set_mod_root_first": {"EN": "Please set the Mod Root directory first (the parent folder of natives)", "ZH": "请先设置 Mod Root 目录（natives 的上级文件夹）"},
     "core.facial_bones.facial_bones_added": {"EN": "Added {n} facial bone(s)", "ZH": "已添加 {n} 根表情骨"},
     "core.facial_bones.blink_radius_mult": {
-        "EN": "Sweep Radius (eyeball radii)", "ZH": "扫过半径（眼球半径倍数）"},
+        "EN": "Blink Amplitude", "ZH": "眨眼幅度倍率"},
     "core.mdf_generator_base.active_obj_no_material": {"EN": "The active object has no material", "ZH": "激活物体没有材质"},
     "core.mdf_generator_base.auto": {"EN": "Auto: {name}", "ZH": "自动: {name}"},
     "core.mdf_generator_base.strat_alpha": {"EN": "Alpha", "ZH": "Alpha"},
@@ -1329,6 +1330,10 @@ STRINGS = {
     "core.pre_export_check_ops.fix_done": {
         "EN": "Fixed {mat} material(s), {obj} mesh object(s), {data} material datablock(s)",
         "ZH": "已修复：材质 {mat} 个，网格物体 {obj} 个，材质数据块 {data} 个"},
+
+    # ── Inline summary row, embedded in the batch export dialogs ───────────
+    "core.pre_export_check_ops.btn_view_details": {
+        "EN": "View Details", "ZH": "查看详情"},
 
     # ── Shared with the RE Mdf port dialog, which draws the same row ───────
     "core.mdf_port_ops.mod_root_hint": {

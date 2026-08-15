@@ -275,8 +275,8 @@ class RE9_OT_AddFacialBones(bpy.types.Operator):
         default=False,
     )
     blink_radius_mult: bpy.props.FloatProperty(
-        name="Blink Sweep Radius",
-        description="Blink sweep radius as a multiple of the eyeball radius; 1 is the anatomically natural pivot, higher makes the lid slide further",
+        name="Blink Amplitude",
+        description="How many times further the eyelid sweeps. 1 leaves the amplitude as authored. Exact on RE4 and MHWS, where the eyelid already pivots on the eyeball centre; on RE9 the lid joints pivot on the lid margin itself, so the same value there means a sweep of that many eyeball radii and 1 is already an increase",
         # The pivot only slides along +/-Y, so it can never get closer to the lid than
         # the perpendicular distance to the rotation axis -- measured at 0.22-0.32 eyeball
         # radii across all five reference skeletons. 0.5 keeps the whole range live.
