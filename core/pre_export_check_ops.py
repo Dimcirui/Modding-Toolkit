@@ -37,7 +37,6 @@ because a check that silently did not run reads exactly like one that passed.
 """
 
 import os
-import textwrap
 
 import bpy
 from bpy.props import (BoolProperty, CollectionProperty, EnumProperty,
@@ -218,13 +217,21 @@ def _check_textures(materials, cfg, natives_root):
     entries = []
     verdict = pc.texture_verdict(n_found, len(missing))
     if verdict == pc.TEXV_ROOT_WRONG:
-        # Deliberately lists no paths: every one of them is wrong for the same
-        # single reason, and forty lines would bury it.
+        # Deduped, not the raw per-material list: every one of them is wrong
+        # for the same single reason, so the same handful of paths would
+        # otherwise repeat once per material that references them. Showing
+        # the unique paths (rather than nothing) also gives the user a way to
+        # tell the two causes apart themselves -- a root that is genuinely
+        # wrong tends to produce paths that look complete and plausible,
+        # while "just didn't build these yet" tends to be a short, specific
+        # list.
+        unique_paths = list(dict.fromkeys(p for _o, _m, _s, p in missing))
         entries.append({
             'code': 'tex_root_wrong',
             'label': T(_K + "cat_tex_root_wrong"),
             'count': len(missing),
-            'detail': T(_K + "desc_tex_root_wrong").format(n=len(missing), root=natives_root),
+            'detail': T(_K + "desc_tex_root_wrong").format(n=len(missing), root=natives_root)
+                      + "\n\n" + "\n".join(unique_paths),
             'objects': [o.name for o, _m, _s, _p in missing],
         })
     elif verdict == pc.TEXV_MISSING:
@@ -282,14 +289,15 @@ def _check_names_and_matching(materials, meshes):
                 'objects': [o.name for n in unused for o in mat_by_name.get(n, [])],
             })
 
-    # ── duplicates: a count only, by decision -- the names add nothing here ──
+    # ── duplicates: each name plus how many times it repeats ──
     dupes = pc.duplicate_material_names(mat_names)
     if dupes:
         entries.append({
             'code': 'mat_duplicate',
             'label': T(_K + "cat_mat_duplicate"),
             'count': len(dupes),
-            'detail': T(_K + "desc_mat_duplicate").format(n=len(dupes)),
+            'detail': T(_K + "desc_mat_duplicate") + "\n\n" + "\n".join(
+                f"{n}  ×{mat_names.count(n)}" for n in dupes),
             'objects': [o.name for n in dupes for o in mat_by_name.get(n, [])],
         })
 
@@ -350,6 +358,136 @@ def run_checks(context, game_code, mdf_col, mesh_col, natives_root):
         skipped.append(T(_K + "skip_match_no_mesh"))
     entries += _check_names_and_matching(materials, meshes)
     return entries, skipped
+
+
+def run_checks_multi(context, game_code, pairs, natives_root):
+    """``(entries, skipped)`` aggregated over several ``(label, mdf_col,
+    mesh_col)`` pairs -- one call per part/entry of a batch export.
+
+    Every entry's label is prefixed with which pair it came from, so two parts
+    both reporting e.g. "Missing Textures" stay distinguishable in the flat
+    report list. ``skipped`` is collected once: which checks run does not vary
+    per pair (it depends on the game and the shared mod root only), so
+    repeating the same reason once per part would just be noise.
+    """
+    all_entries = []
+    skipped = []
+    for label, mdf_col, mesh_col in pairs:
+        entries, pair_skipped = run_checks(context, game_code, mdf_col, mesh_col, natives_root)
+        for e in entries:
+            e = dict(e)
+            e['label'] = f"{label} · {e['label']}"
+            all_entries.append(e)
+        if not skipped:
+            skipped = pair_skipped
+    return all_entries, skipped
+
+
+def gather_and_check(context, game_code, pairs, natives_root):
+    """Run the aggregated check over ``pairs`` and remember enough in
+    ``_LAST_RUN`` -- a plain module dict, not Scene/ID data -- for a later
+    "View Details" click to redo the check and populate the Scene-backed
+    report.
+
+    Deliberately does **not** call ``_store()`` here: this runs from a batch
+    export dialog's ``draw()``, and Blender raises "Writing to ID classes in
+    this context is not allowed" if a draw call writes to a Scene property
+    such as ``scene.mtk_pec_report`` (measured directly -- the standalone
+    check's own input dialog never hit this because it writes from
+    ``execute()``, never from ``draw()``). The write has to wait for an
+    operator's ``execute()``, which is what ``MODDER_OT_PreExportCheckView``
+    is for.
+    """
+    entries, skipped = run_checks_multi(context, game_code, pairs, natives_root)
+    _LAST_RUN.clear()
+    _LAST_RUN.update({
+        'game': game_code,
+        'root': natives_root,
+        'pairs': [(label, mdf_col.name, mesh_col.name if mesh_col else "")
+                  for label, mdf_col, mesh_col in pairs],
+    })
+    return entries, skipped
+
+
+def ensure_checked(op, context, game_code, pairs, natives_root):
+    """Run (or reuse) the aggregated check for ``pairs``, caching the result on
+    ``op`` -- the calling batch export dialog operator, whose instance already
+    lives exactly as long as the popup does -- keyed by a fingerprint of
+    ``(natives_root, pairs)``. Redrawing a dialog happens on far more than
+    property changes (hovering a button is enough on some Blender versions),
+    and the checks underneath do real disk I/O per texture path, so
+    recomputing unconditionally on every draw() would make picking a
+    collection feel laggy on a large batch.
+
+    Returns the entries list, so a caller that wants a per-part breakdown
+    (e.g. an issue icon next to each part in its own list) can inspect it
+    before ``draw_summary_row`` draws the total.
+    """
+    fingerprint = (natives_root, tuple(
+        (label, mdf_col.name, mesh_col.name if mesh_col else "")
+        for label, mdf_col, mesh_col in pairs))
+    if getattr(op, '_pec_fingerprint', None) != fingerprint:
+        entries, skipped = gather_and_check(context, game_code, pairs, natives_root)
+        op._pec_fingerprint = fingerprint
+        op._pec_entries = entries
+        op._pec_total = sum(e['count'] for e in entries)
+        op._pec_has_skips = bool(skipped)
+    return op._pec_entries
+
+
+def draw_summary_row(op, layout):
+    """The one-line summary + "view details" button meant to be the very last
+    thing a batch export dialog draws, right above Blender's own OK/Cancel.
+    Call ``ensure_checked`` first so ``op._pec_total``/``_pec_has_skips`` are
+    current."""
+    layout.separator()
+    row = layout.row(align=True)
+    if op._pec_total:
+        row.label(text=T(_K + "n_issues").format(n=op._pec_total), icon='ERROR')
+        row.operator("modder.pre_export_check_view", text=T(_K + "btn_view_details"))
+    else:
+        row.label(text=T(_K + "all_clear"), icon='CHECKMARK')
+        if op._pec_has_skips:
+            row.operator("modder.pre_export_check_view", text=T(_K + "btn_view_details"))
+
+
+def draw_inline_summary(op, layout, context, game_code, pairs, natives_root):
+    """``ensure_checked`` + ``draw_summary_row``, for dialogs (MHWS, MHRS) that
+    have no per-part list of their own to annotate before the summary line."""
+    ensure_checked(op, context, game_code, pairs, natives_root)
+    draw_summary_row(op, layout)
+
+
+class MODDER_OT_PreExportCheckView(bpy.types.Operator):
+    """The batch export dialogs' "View Details" button.
+
+    ``gather_and_check`` (called from ``draw()``) cannot populate
+    ``scene.mtk_pec_report`` itself -- Blender rejects a Scene write from a
+    draw callback -- so it only leaves ``_LAST_RUN`` with what a real
+    ``execute()`` needs to redo the check and store it properly: the game
+    code, the mod root, and each pair's collections by name.
+    """
+    bl_idname = "modder.pre_export_check_view"
+    bl_label = "View Pre-export Check"
+    bl_options = {'REGISTER'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T(_K + "report_desc")
+
+    def execute(self, context):
+        pairs = []
+        for label, mdf_name, mesh_name in _LAST_RUN.get('pairs', []):
+            mdf_col = bpy.data.collections.get(mdf_name)
+            if mdf_col is None:
+                continue
+            mesh_col = bpy.data.collections.get(mesh_name) or None
+            pairs.append((label, mdf_col, mesh_col))
+        entries, skipped = run_checks_multi(
+            context, _LAST_RUN.get('game', ""), pairs, _LAST_RUN.get('root', ""))
+        _store(context, entries, skipped)
+        bpy.ops.modder.pre_export_check_report('INVOKE_DEFAULT')
+        return {'FINISHED'}
 
 
 def _store(context, entries, skipped):
@@ -467,6 +605,7 @@ class MODDER_OT_PreExportCheck(bpy.types.Operator):
         natives_root = context.scene.get(cfg["natives_root_key"], "") if cfg else ""
 
         entries, skipped = run_checks(context, self.source_game, mdf_col, mesh_col, natives_root)
+        _LAST_RUN.clear()
         _LAST_RUN.update({
             'game': self.source_game,
             'mdf': mdf_col.name,
@@ -480,9 +619,53 @@ class MODDER_OT_PreExportCheck(bpy.types.Operator):
 
 # ── Report dialog ────────────────────────────────────────────────────────────
 
+def _visual_width(ch):
+    """1 column for a normal-width glyph, 2 for CJK/fullwidth ones -- Blender's
+    UI font renders those roughly twice as wide as Latin glyphs. A plain
+    character count under-estimates how much room an all-Chinese line needs
+    (measured: a Chinese explanation with no spaces at all, so textwrap's
+    word-wrap never got a chance to break it, just sliced every N characters
+    regardless of how wide they actually were -- Blender's label widget then
+    silently ellipsis-clipped whatever didn't fit)."""
+    cp = ord(ch)
+    if (0x1100 <= cp <= 0x115F or 0x2E80 <= cp <= 0xA4CF or
+            0xAC00 <= cp <= 0xD7A3 or 0xF900 <= cp <= 0xFAFF or
+            0xFF00 <= cp <= 0xFF60 or 0xFFE0 <= cp <= 0xFFE6):
+        return 2
+    return 1
+
+
+def _wrap_line(line, width):
+    """Word-wrap ``line`` to a visual-width budget rather than a character
+    count -- a plain ``textwrap.wrap`` treats a CJK glyph the same as a Latin
+    one, so a Chinese line reliably overflows the box it was wrapped for."""
+    out = []
+    cur = ""
+    cur_w = 0
+    for ch in line:
+        w = _visual_width(ch)
+        if cur and cur_w + w > width:
+            out.append(cur)
+            cur = ""
+            cur_w = 0
+        cur += ch
+        cur_w += w
+    if cur:
+        out.append(cur)
+    return out or [""]
+
+
 def _wrap_width(context):
+    """Visual-width budget for one wrapped line in the detail box (col2, at
+    ``SPLIT_FACTOR`` of ``WINDOW_SIZE``), in the same units ``_visual_width``
+    counts in. ``PX_PER_UNIT`` is calibrated against Blender's default UI font
+    at 100% scale -- live-verified against a real natives_root path mixed with
+    an all-Chinese explanation line, both of which used to get clipped."""
     ui_scale = context.preferences.view.ui_scale
-    return int((WINDOW_SIZE * (1 - SPLIT_FACTOR) * (2 - SPLIT_FACTOR)) // (9 * ui_scale))
+    box_px = WINDOW_SIZE * (1 - SPLIT_FACTOR)
+    padding_px = 40  # box() margins plus the scrollbar the left column may show
+    px_per_unit = 7.5
+    return max(10, int((box_px - padding_px) / (px_per_unit * ui_scale)))
 
 
 class MODDER_OT_PreExportCheckReport(bpy.types.Operator):
@@ -538,7 +721,7 @@ class MODDER_OT_PreExportCheckReport(bpy.types.Operator):
                 box.separator()
                 row_count += 1
                 continue
-            for chunk in textwrap.wrap(line, width=width) or [""]:
+            for chunk in _wrap_line(line, width):
                 box.label(text=chunk)
                 row_count += 1
 
@@ -579,6 +762,45 @@ class MODDER_OT_PreExportCheckReport(bpy.types.Operator):
 
 # ── Fix ──────────────────────────────────────────────────────────────────────
 
+def _fix_pair(mdf_col, mesh_col):
+    """Correct illegal names on one (mdf_col, mesh_col) pair in place.
+    Returns ``(n_mat, n_obj, n_data)``."""
+    materials = _mdf_materials(mdf_col)
+    meshes = _mesh_objects(mesh_col) if mesh_col is not None else []
+    mesh_entries = [(o, *_derived_material(o)) for o in meshes]
+
+    plan = pc.plan_name_fixes(
+        [o.re_mdf_material.materialName for o in materials],
+        [(o.name, mat, how) for o, mat, how in mesh_entries])
+
+    n_mat = n_obj = n_data = 0
+    for obj in materials:
+        new = plan['materials'].get(obj.re_mdf_material.materialName)
+        if new:
+            obj.re_mdf_material.materialName = new
+            n_mat += 1
+    for obj in meshes:
+        new = plan['objects'].get(obj.name)
+        if new:
+            obj.name = new
+            n_obj += 1
+    # Datablocks are renamed through the meshes that fell back to them
+    # rather than by looking the name up in bpy.data.materials: two
+    # datablocks can share a stripped name, and only the one this mesh
+    # actually uses should move.
+    for obj, mat, how in mesh_entries:
+        if how != 'no_format':
+            continue
+        new = plan['datablocks'].get(mat)
+        if not new:
+            continue
+        slots = [m for m in obj.data.materials if m is not None]
+        if slots and pc.strip_dedup_suffix(slots[0].name) != new:
+            slots[0].name = new
+            n_data += 1
+    return n_mat, n_obj, n_data
+
+
 class MODDER_OT_PreExportCheckFix(bpy.types.Operator):
     bl_idname = "modder.pre_export_check_fix"
     bl_label = "Fix Illegal Names"
@@ -589,51 +811,36 @@ class MODDER_OT_PreExportCheckFix(bpy.types.Operator):
         return T(_K + "fix_desc")
 
     def execute(self, context):
-        mdf_col = bpy.data.collections.get(_LAST_RUN.get('mdf', ""))
-        if mdf_col is None:
-            self.report({'ERROR'}, T(_K + "no_mdf_collection"))
-            return {'CANCELLED'}
-        mesh_col = bpy.data.collections.get(_LAST_RUN.get('mesh', "")) or None
-
-        materials = _mdf_materials(mdf_col)
-        meshes = _mesh_objects(mesh_col) if mesh_col is not None else []
-        mesh_entries = [(o, *_derived_material(o)) for o in meshes]
-
-        plan = pc.plan_name_fixes(
-            [o.re_mdf_material.materialName for o in materials],
-            [(o.name, mat, how) for o, mat, how in mesh_entries])
-
+        batch_pairs = _LAST_RUN.get('pairs')
         n_mat = n_obj = n_data = 0
-        for obj in materials:
-            new = plan['materials'].get(obj.re_mdf_material.materialName)
-            if new:
-                obj.re_mdf_material.materialName = new
-                n_mat += 1
-        for obj in meshes:
-            new = plan['objects'].get(obj.name)
-            if new:
-                obj.name = new
-                n_obj += 1
-        # Datablocks are renamed through the meshes that fell back to them
-        # rather than by looking the name up in bpy.data.materials: two
-        # datablocks can share a stripped name, and only the one this mesh
-        # actually uses should move.
-        for obj, mat, how in mesh_entries:
-            if how != 'no_format':
-                continue
-            new = plan['datablocks'].get(mat)
-            if not new:
-                continue
-            slots = [m for m in obj.data.materials if m is not None]
-            if slots and pc.strip_dedup_suffix(slots[0].name) != new:
-                slots[0].name = new
-                n_data += 1
+
+        if batch_pairs:
+            # Batch mode: fix every pair, then re-check all of them together --
+            # same shape as the single-pair path below, just looped.
+            check_pairs = []
+            for label, mdf_name, mesh_name in batch_pairs:
+                mdf_col = bpy.data.collections.get(mdf_name)
+                if mdf_col is None:
+                    continue
+                mesh_col = bpy.data.collections.get(mesh_name) or None
+                a, b, c = _fix_pair(mdf_col, mesh_col)
+                n_mat += a; n_obj += b; n_data += c
+                check_pairs.append((label, mdf_col, mesh_col))
+            entries, skipped = run_checks_multi(context, _LAST_RUN.get('game', ""), check_pairs,
+                                                _LAST_RUN.get('root', ""))
+        else:
+            mdf_col = bpy.data.collections.get(_LAST_RUN.get('mdf', ""))
+            if mdf_col is None:
+                self.report({'ERROR'}, T(_K + "no_mdf_collection"))
+                return {'CANCELLED'}
+            mesh_col = bpy.data.collections.get(_LAST_RUN.get('mesh', "")) or None
+            n_mat, n_obj, n_data = _fix_pair(mdf_col, mesh_col)
+            entries, skipped = run_checks(context, _LAST_RUN.get('game', ""), mdf_col, mesh_col,
+                                          _LAST_RUN.get('root', ""))
 
         # Re-run in place: the popup is still open (an operator button does not
         # close it), so rewriting the Scene collection is all the refresh the
         # report needs.
-        entries, skipped = run_checks(context, _LAST_RUN.get('game', ""), mdf_col, mesh_col,
-                                      _LAST_RUN.get('root', ""))
         _store(context, entries, skipped)
         _LAST_RUN['skipped'] = skipped
 
@@ -642,7 +849,8 @@ class MODDER_OT_PreExportCheckFix(bpy.types.Operator):
 
 
 classes = [PEC_ReportEntry, MODDER_UL_PreExportCheck, MODDER_OT_PreExportCheck,
-           MODDER_OT_PreExportCheckReport, MODDER_OT_PreExportCheckFix]
+           MODDER_OT_PreExportCheckReport, MODDER_OT_PreExportCheckView,
+           MODDER_OT_PreExportCheckFix]
 
 
 def register():

@@ -120,8 +120,12 @@ def _batch_export(prefix, label_key, needs='re_mesh'):
 
 
 def _pre_export_check(game_code):
-    """Directly above batch export, because that is the order it is used in:
-    check first, then export.
+    """"匹配检查" -- the single-pair, manually-invoked version. Batch export
+    already runs the same checks automatically over every pair it will
+    actually export; this button is for checking one mesh/mdf pair on its
+    own, e.g. before it is even wired into a batch export job. Kept directly
+    above batch export in the panel since that is still a natural place to
+    reach for it.
 
     No dependency guard: the check reads the mdf/mesh collections that are
     already in the file rather than calling into either external addon, so it

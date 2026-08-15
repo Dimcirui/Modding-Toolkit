@@ -1189,7 +1189,7 @@ STRINGS = {
     #    left to bl_label, which is static English and resolved before the
     #    language is known (Blender 4.1+; older builds keep the bl_label).
     "core.pre_export_check_ops.title": {
-        "EN": "Pre-export Check", "ZH": "导出前检查"},
+        "EN": "Matching Check", "ZH": "匹配检查"},
     "core.pre_export_check_ops.confirm_run": {
         "EN": "Run Check", "ZH": "开始检查"},
     "core.pre_export_check_ops.report_title": {
@@ -1199,9 +1199,14 @@ STRINGS = {
 
     # ── Input dialog ───────────────────────────────────────────────────────
     "core.pre_export_check_ops.desc": {
-        "EN": "Check the mdf materials and their meshes for the problems that break an "
-              "export: missing textures, dangling materials, illegal names",
-        "ZH": "检查 mdf 材质与对应网格中会导致导出失败的问题：贴图缺失、悬空材质、命名不合法"},
+        "EN": "Check whether one mesh/mdf pair's meshes, materials, and textures line up: "
+              "missing textures, dangling materials, illegal names, duplicate materials. "
+              "Batch export already runs this automatically over every pair it will "
+              "actually export -- use this to check one pair on its own, e.g. before it is "
+              "even wired into a batch export job.",
+        "ZH": "检查一对 mesh/mdf 集合的模型、材质、贴图是否匹配：贴图缺失、悬空材质、"
+              "命名不合法、材质重复。批量导出内部已经会自动检查这次要导出的全部 mesh/mdf 对，"
+              "这里可以单独挑一对来查——比如资产还没配进批量导出流程时就想先自查一下。"},
     "core.pre_export_check_ops.label_mdf_collection": {
         "EN": "MDF Collection", "ZH": "MDF 集合"},
     "core.pre_export_check_ops.label_mesh_collection": {
@@ -1257,11 +1262,11 @@ STRINGS = {
     "core.pre_export_check_ops.desc_tex_root_wrong": {
         "EN": "None of the {n} custom texture path(s) could be found under:\n{root}\n"
               "Either the Mod Root points at the wrong folder, or the textures have not "
-              "been built yet. They are not listed one by one because every one of them "
-              "is failing for the same single reason.",
+              "been built yet -- every one of them is failing for the same single reason. "
+              "The unique path(s), to help tell the two apart:",
         "ZH": "全部 {n} 条自定义贴图路径都无法在下面的目录中找到：\n{root}\n"
-              "要么是 Mod 根目录选错了位置，要么是贴图还没做好。"
-              "因为它们失败的原因完全相同，这里不逐条列出。"},
+              "要么是 Mod 根目录选错了位置，要么是贴图还没做好——它们失败的原因完全相同。"
+              "去重后的路径，方便自行判断是哪一种："},
     "core.pre_export_check_ops.desc_tex_empty": {
         "EN": "These texture slots have no path filled in at all.",
         "ZH": "以下贴图槽位没有填写任何路径。"},
@@ -1274,8 +1279,8 @@ STRINGS = {
               "done on one side.",
         "ZH": "没有任何网格使用这些材质，通常是改名只改了一侧。"},
     "core.pre_export_check_ops.desc_mat_duplicate": {
-        "EN": "{n} material name(s) appear more than once in this mdf collection.",
-        "ZH": "本 mdf 集合中有 {n} 个材质名重复出现。"},
+        "EN": "These material names appear more than once in this mdf collection:",
+        "ZH": "本 mdf 集合中以下材质名重复出现："},
     "core.pre_export_check_ops.desc_name_illegal": {
         "EN": "Spaces, dots and a leading underscore all break the export. The fix "
               "button corrects the mdf material and its meshes together, so a name that "

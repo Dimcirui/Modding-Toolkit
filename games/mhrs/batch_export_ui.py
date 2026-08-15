@@ -1,6 +1,7 @@
 import bpy
 
 from ...core.i18n import T
+from ...core import pre_export_check_ops as pec
 from .batch_export import (
     MHRS_PARTS, MHRS_PART_LABEL_KEYS,
     _load_scheme, _resolve_part_file_types, _canonical_order_file_types,
@@ -126,6 +127,23 @@ class MHRS_OT_ClearBinding(bpy.types.Operator):
         return {'FINISHED'}
 
 
+def _gather_check_pairs(scene, armor_id, gender, active_parts):
+    """``[(label, mdf_col, mesh_col), ...]`` for every active part that
+    currently has an mdf2 binding -- a part with nothing bound there has
+    nothing the exporter would write either, so it is left out silently
+    rather than reported as "unchecked"."""
+    pairs = []
+    for part_id, part_name in active_parts:
+        mdf_name = get_binding(scene, armor_id, gender, part_id, "mdf2")
+        mdf_col = bpy.data.collections.get(mdf_name) if mdf_name else None
+        if mdf_col is None:
+            continue
+        mesh_name = get_binding(scene, armor_id, gender, part_id, "mesh")
+        mesh_col = bpy.data.collections.get(mesh_name) if mesh_name else None
+        pairs.append((T(MHRS_PART_LABEL_KEYS[part_id]), mdf_col, mesh_col))
+    return pairs
+
+
 # ── Main Dialog ────────────────────────────────────────────────
 
 class MHRS_OT_BatchExportDialog(bpy.types.Operator):
@@ -244,6 +262,9 @@ class MHRS_OT_BatchExportDialog(bpy.types.Operator):
         row.prop(settings, "mhrs_triangulate_face", text=T("ui.prop.triangulate_face"), icon='MOD_TRIANGULATE')
 
         self._draw_shadow(layout, settings, scene, armor_id, gender, parts_mask)
+
+        pairs = _gather_check_pairs(scene, armor_id, gender, active_parts)
+        pec.draw_inline_summary(self, layout, context, 'MHRS', pairs, natives_root)
 
     def _draw_shadow(self, layout, settings, scene=None, armor_id=None, gender=None, parts_mask=None):
         layout.separator()

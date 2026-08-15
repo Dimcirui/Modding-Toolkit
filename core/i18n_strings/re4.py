@@ -146,6 +146,27 @@ STRINGS = {
         "EN": "Preset has no body_groups_for_fbxskel configured",
         "ZH": "预设未配置 body_groups_for_fbxskel",
     },
+    "re4.batch_export_ui.copy_bindings": {"EN": "Copy", "ZH": "复制"},
+    "re4.batch_export_ui.copy_bindings_desc": {
+        "EN": "Copy this group's bound collections (Mesh/MDF2/Chain), so they can be "
+              "pasted onto another group",
+        "ZH": "复制这个部位当前绑定的集合（Mesh/MDF2/Chain），供粘贴到别的部位",
+    },
+    "re4.batch_export_ui.paste_bindings": {"EN": "Paste", "ZH": "粘贴"},
+    "re4.batch_export_ui.paste_bindings_desc": {
+        "EN": "Apply the copied bindings to this group -- only for the slots this group "
+              "actually has; anything else is skipped",
+        "ZH": "把复制的绑定应用到这个部位——只应用这个部位实际存在的槽位，其余的跳过",
+    },
+    "re4.batch_export_ui.copy_done": {
+        "EN": "Copied {n} binding(s) from {group}", "ZH": "已从 {group} 复制 {n} 项绑定"},
+    "re4.batch_export_ui.copy_nothing": {
+        "EN": "Nothing bound in {group} to copy", "ZH": "{group} 没有已绑定的内容可复制"},
+    "re4.batch_export_ui.paste_done": {
+        "EN": "Pasted {n} binding(s) onto {group}", "ZH": "已向 {group} 粘贴 {n} 项绑定"},
+    "re4.batch_export_ui.paste_nothing": {
+        "EN": "Nothing on the clipboard matches a slot {group} has",
+        "ZH": "剪贴板里的内容没有一项对得上 {group} 现有的槽位"},
 
     # ── mdf_generator.py ────────────────────────────────────────────────────
     "re4.mdf_generator.use_toon_label": {

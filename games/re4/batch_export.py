@@ -92,6 +92,37 @@ def _set_simplified_empty_binding(scene, character_id, suffix, value):
     scene[_get_simplified_empty_key(character_id, suffix)] = value
 
 
+def resolve_mesh_mdf2(scene, character_id, group, entry, use_simplified):
+    """``(mesh_col_name, mdf2_col_name)`` this entry currently resolves to
+    under the given mode -- "" for a slot with nothing bound (disabled, or
+    simplified mode has nothing picked yet). The single place that decides
+    "what collection backs this entry's mesh/mdf2 right now", read by both
+    the real export loop (``_run_export``) and the pre-export check, so a
+    future change to the mode-resolution rules can't make them disagree.
+
+    Chain and the "empty"-scheme blank-copy filename overrides are left to
+    the export loop: chain is not part of what pre_export_check inspects, and
+    a blank copy has no Blender data behind it for either caller to read.
+    """
+    if use_simplified:
+        group_name = group["name"]
+        simp = entry.get("simplified", "user")
+        if simp == "user":
+            return (_get_simplified_group_binding(scene, character_id, group_name, "mesh"),
+                    _get_simplified_group_binding(scene, character_id, group_name, "mdf2"))
+        elif simp == "empty":
+            return (_get_simplified_empty_binding(scene, character_id, "mesh"),
+                    _get_simplified_empty_binding(scene, character_id, "mdf2"))
+        return "", ""  # "skip", or any future unknown value
+
+    entry_id = entry["id"]
+    mesh_col = (_get_binding(scene, character_id, entry_id, "mesh")
+                if _get_enabled(scene, character_id, entry_id, "mesh") else "")
+    mdf2_col = (_get_binding(scene, character_id, entry_id, "mdf2")
+                if _get_enabled(scene, character_id, entry_id, "mdf2") else "")
+    return mesh_col, mdf2_col
+
+
 MESH_SETTINGS = {
     "exportAllLODs": True,
     "autoSolveRepeatedUVs": True,
@@ -289,8 +320,7 @@ class RE4_OT_BatchExport(bpy.types.Operator):
                     if simp == "skip":
                         continue
                     elif simp == "user":
-                        mesh_col  = _get_simplified_group_binding(scene, character_id, group_name, "mesh")
-                        mdf2_col  = _get_simplified_group_binding(scene, character_id, group_name, "mdf2")
+                        mesh_col, mdf2_col = resolve_mesh_mdf2(scene, character_id, group, entry, use_simplified)
                         chain_col = _get_simplified_group_binding(scene, character_id, group_name, "chain")
                     elif simp == "empty":
                         if use_blank:
@@ -306,8 +336,7 @@ class RE4_OT_BatchExport(bpy.types.Operator):
                                           entry.get("blank_chain"))
                             continue
                         else:
-                            mesh_col  = _get_simplified_empty_binding(scene, character_id, "mesh")
-                            mdf2_col  = _get_simplified_empty_binding(scene, character_id, "mdf2")
+                            mesh_col, mdf2_col = resolve_mesh_mdf2(scene, character_id, group, entry, use_simplified)
                             chain_col = _get_simplified_empty_binding(scene, character_id, "chain")
                     else:
                         continue
@@ -334,8 +363,9 @@ class RE4_OT_BatchExport(bpy.types.Operator):
 
                 else:
                     # Normal mode: per-entry bindings
+                    mesh_col, mdf2_col = resolve_mesh_mdf2(scene, character_id, group, entry, use_simplified)
+
                     mesh_en  = _get_enabled(scene, character_id, entry_id, "mesh")
-                    mesh_col = _get_binding(scene, character_id, entry_id, "mesh")
                     if entry.get("mesh"):
                         if mesh_en and mesh_col:
                             try_export(_do_export_mesh, make_full(entry["mesh"], grp_bp), mesh_col, f"MESH {entry_id}")
@@ -343,7 +373,6 @@ class RE4_OT_BatchExport(bpy.types.Operator):
                             try_blank("mesh", make_full(entry["mesh"], grp_bp), f"MESH {entry_id}")
 
                     mdf2_en  = _get_enabled(scene, character_id, entry_id, "mdf2")
-                    mdf2_col = _get_binding(scene, character_id, entry_id, "mdf2")
                     if entry.get("mdf2"):
                         if mdf2_en and mdf2_col:
                             for m in entry["mdf2"]:

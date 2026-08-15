@@ -1,18 +1,16 @@
 import bpy
+from bpy.props import BoolProperty, CollectionProperty, IntProperty, StringProperty
 from ...core.i18n import T
+from ...core import pre_export_check_ops as pec
 from .batch_export import (
     _load_scheme, _get_binding, _set_binding,
     _get_enabled, _set_enabled,
     _get_simplified_group_binding, _set_simplified_group_binding,
     _set_simplified_empty_binding,
+    resolve_mesh_mdf2,
 )
 
 EXPORTER_WINDOW_WIDTH = 600
-
-
-def _get_group_toggle_key(character_id, group_name):
-    key = f"re4grp_{character_id}_{group_name}"
-    return key.replace(" ", "_").replace("(", "").replace(")", "").replace("-", "_")
 
 
 def _get_filtered_collections(suffix):
@@ -58,18 +56,6 @@ class RE4_OT_ToggleEntry(bpy.types.Operator):
     def execute(self, context):
         current = _get_enabled(context.scene, self.character_id, self.entry_id, self.suffix)
         _set_enabled(context.scene, self.character_id, self.entry_id, self.suffix, not current)
-        return {'FINISHED'}
-
-
-class RE4_OT_ToggleGroup(bpy.types.Operator):
-    bl_idname = "re4.toggle_group"
-    bl_label = "Toggle Group"
-    bl_options = {'INTERNAL'}
-    character_id: bpy.props.StringProperty()
-    group_name: bpy.props.StringProperty()
-    def execute(self, context):
-        key = _get_group_toggle_key(self.character_id, self.group_name)
-        context.scene[key] = not context.scene.get(key, False)
         return {'FINISHED'}
 
 
@@ -176,6 +162,170 @@ class RE4_OT_ClearSimplifiedEmpty(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# ── Copy/paste a group's bindings ───────────────────────────────────────────
+# The master-detail layout makes this a natural fit: many groups share the
+# same collections (costume variants, LOD-adjacent parts), and re-picking
+# each one by hand is exactly the busywork this addon already avoids
+# elsewhere. Module-level, not Scene data -- it is per-session clipboard
+# state, not part of the .blend, same reasoning as pre_export_check_ops's
+# _LAST_RUN.
+_group_clipboard = {}
+
+
+def _group_supported_slots(scheme, group_name):
+    """Which of mesh/mdf2/chain a group's "user"-tagged entries actually use --
+    the same has_mesh/has_mdf2/has_chain computation _draw_group_detail_simplified
+    draws its pickers from, needed again here so paste can skip a slot the
+    target group has no picker for at all."""
+    group = next((g for g in scheme["groups"] if g["name"] == group_name), None) if scheme else None
+    if group is None:
+        return {}
+    user_entries = [e for e in group["entries"] if e.get("simplified") == "user"]
+    return {
+        "mesh":  any(e.get("mesh")  for e in user_entries),
+        "mdf2":  any(e.get("mdf2")  for e in user_entries),
+        "chain": any(e.get("chain") for e in user_entries),
+    }
+
+
+class RE4_OT_CopyGroupBindings(bpy.types.Operator):
+    bl_idname = "re4.copy_group_bindings"
+    bl_label = "Copy Group Bindings"
+    bl_options = {'INTERNAL'}
+    character_id: bpy.props.StringProperty()
+    group_name: bpy.props.StringProperty()
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("re4.batch_export_ui.copy_bindings_desc")
+
+    def execute(self, context):
+        global _group_clipboard
+        scene = context.scene
+        clip = {}
+        for slot in ("mesh", "mdf2", "chain"):
+            cur = _get_simplified_group_binding(scene, self.character_id, self.group_name, slot)
+            if cur:
+                clip[slot] = cur
+        _group_clipboard = clip
+        if clip:
+            self.report({'INFO'}, T("re4.batch_export_ui.copy_done").format(
+                n=len(clip), group=self.group_name))
+        else:
+            self.report({'WARNING'}, T("re4.batch_export_ui.copy_nothing").format(
+                group=self.group_name))
+        return {'FINISHED'}
+
+
+class RE4_OT_PasteGroupBindings(bpy.types.Operator):
+    bl_idname = "re4.paste_group_bindings"
+    bl_label = "Paste Group Bindings"
+    bl_options = {'INTERNAL', 'UNDO'}
+    character_id: bpy.props.StringProperty()
+    group_name: bpy.props.StringProperty()
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("re4.batch_export_ui.paste_bindings_desc")
+
+    @classmethod
+    def poll(cls, context):
+        return bool(_group_clipboard)
+
+    def execute(self, context):
+        scene = context.scene
+        settings = scene.mhw_suite_settings
+        scheme = _load_scheme(settings.re4_export_scheme)
+        supported = _group_supported_slots(scheme, self.group_name)
+
+        applied = 0
+        for slot, value in _group_clipboard.items():
+            if not supported.get(slot):
+                continue
+            _set_simplified_group_binding(scene, self.character_id, self.group_name, slot, value)
+            applied += 1
+
+        if applied:
+            self.report({'INFO'}, T("re4.batch_export_ui.paste_done").format(
+                n=applied, group=self.group_name))
+        else:
+            self.report({'WARNING'}, T("re4.batch_export_ui.paste_nothing").format(
+                group=self.group_name))
+        return {'FINISHED'}
+
+
+# ============================================================
+# Group list -- left column of the master-detail layout
+# ============================================================
+# A scheme can run to over a dozen groups and 50+ entries (re9's Leon.json is
+# 13/55); drawing every group's entries inline, expanded or not, is what made
+# this dialog outgrow the screen. Only the selected group's detail is drawn
+# now, so the popup's height is bounded by its biggest single group instead of
+# the whole scheme.
+
+class RE4_GroupListItem(bpy.types.PropertyGroup):
+    group_name: StringProperty()
+    entry_count: IntProperty()
+    #: Set from the aggregated pre-export check right before this list draws,
+    #: so a group with a problem is visible without opening the report.
+    has_issues: BoolProperty()
+
+
+class RE4_UL_Groups(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon,
+                  active_data, active_propname, index):
+        layout.label(text=f"{item.group_name} ({item.entry_count})",
+                     icon='ERROR' if item.has_issues else 'FILE_FOLDER')
+
+
+def _gather_check_pairs(scene, character_id, scheme, use_simplified):
+    """``[(label, mdf_col, mesh_col), ...]`` for whatever this batch would
+    actually export -- reads through the same ``resolve_mesh_mdf2`` the real
+    export loop uses, so an entry that resolves to nothing there (skipped,
+    disabled, or a blank-export fallback) contributes nothing to check either.
+
+    Simplified mode checks once per group (the group-level binding covers
+    every "user" entry in it together); normal mode checks once per entry.
+    """
+    pairs = []
+    for group in scheme["groups"]:
+        group_name = group["name"]
+        if use_simplified:
+            user_entries = [e for e in group["entries"] if e.get("simplified") == "user"]
+            if not user_entries or not any(e.get("mdf2") for e in user_entries):
+                continue
+            mesh_name, mdf_name = resolve_mesh_mdf2(
+                scene, character_id, group, {"simplified": "user"}, True)
+            mdf_col = bpy.data.collections.get(mdf_name) if mdf_name else None
+            if mdf_col is None:
+                continue
+            mesh_col = bpy.data.collections.get(mesh_name) if mesh_name else None
+            pairs.append((group_name, mdf_col, mesh_col))
+        else:
+            for entry in group["entries"]:
+                if not entry.get("mdf2"):
+                    continue
+                mesh_name, mdf_name = resolve_mesh_mdf2(scene, character_id, group, entry, False)
+                mdf_col = bpy.data.collections.get(mdf_name) if mdf_name else None
+                if mdf_col is None:
+                    continue
+                mesh_col = bpy.data.collections.get(mesh_name) if mesh_name else None
+                pairs.append((f"{group_name} / {entry['id']}", mdf_col, mesh_col))
+    return pairs
+
+
+def _mark_group_issues(groups, entries):
+    """Set ``has_issues`` on each ``RE4_GroupListItem`` by checking whether any
+    check entry's label was prefixed with that group's pair label -- either
+    the bare group name (simplified) or ``"<group> / <entry>"`` (normal)."""
+    for item in groups:
+        prefix_group = item.group_name + " ·"
+        prefix_entry = item.group_name + " / "
+        item.has_issues = any(
+            e['label'].startswith(prefix_group) or e['label'].startswith(prefix_entry)
+            for e in entries)
+
+
 # ============================================================
 # Main dialog
 # ============================================================
@@ -186,8 +336,26 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
     bl_label = "RE4 Batch Exporter"
     bl_options = {'REGISTER'}
 
+    groups: CollectionProperty(type=RE4_GroupListItem)
+    group_index: IntProperty()
+
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self, width=EXPORTER_WINDOW_WIDTH)
+
+    def _sync_groups(self, scheme, scheme_file):
+        """Repopulate the group list only when the selected character scheme
+        actually changed since the last draw -- rebuilding it every redraw
+        would reset ``group_index`` (and the scroll position with it) on
+        every unrelated property change."""
+        if getattr(self, '_groups_scheme_file', None) == scheme_file:
+            return
+        self._groups_scheme_file = scheme_file
+        self.groups.clear()
+        for group in scheme["groups"]:
+            item = self.groups.add()
+            item.group_name = group["name"]
+            item.entry_count = len(group["entries"])
+        self.group_index = 0
 
     def draw(self, context):
         layout = self.layout
@@ -218,6 +386,7 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
 
         character_id = scheme["character_id"]
         use_simplified = scene.get("re4_use_simplified", True)
+        self._sync_groups(scheme, scheme_file)
 
         # Simplified toggle
         layout.separator()
@@ -268,151 +437,178 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
         layout.prop(settings, "re4_use_blank_export", text=T("ui.prop.use_blank_export"), icon='FILE_BLANK')
         layout.prop(settings, "re4_triangulate_face", text=T("ui.prop.triangulate_face"), icon='MOD_TRIANGULATE')
 
-        if use_simplified:
-            self._draw_simplified(layout, scene, scheme, character_id)
-        else:
-            self._draw_normal(layout, scene, scheme, character_id)
+        # Run the check before the list draws, so each row can carry its own
+        # issue icon; the summary line at the bottom reuses the same result.
+        pairs = _gather_check_pairs(scene, character_id, scheme, use_simplified)
+        entries = pec.ensure_checked(self, context, 'RE4', pairs, natives_root)
+        _mark_group_issues(self.groups, entries)
 
-    def _draw_simplified(self, layout, scene, scheme, character_id):
         layout.separator()
+        split = layout.split(factor=0.35)
+        col1, col2 = split.column(), split.column()
+        col1.template_list("RE4_UL_Groups", "", self, "groups", self, "group_index",
+                           rows=max(4, min(len(self.groups), 10)))
 
-        for group in scheme["groups"]:
-            group_name = group["name"]
-            has_user = any(e.get("simplified") == "user" for e in group["entries"])
-            if not has_user:
-                row = layout.row()
-                row.label(text=f"{group_name}", icon='FILE_FOLDER')
-                empty_count = sum(1 for e in group["entries"] if e.get("simplified") == "empty")
-                skip_count  = sum(1 for e in group["entries"] if e.get("simplified") == "skip")
-                info = []
-                if empty_count: info.append(f"{empty_count} empty")
-                if skip_count:  info.append(f"{skip_count} skip")
-                row.label(text=f"({', '.join(info)})")
-                continue
+        selected_group = None
+        if self.groups and 0 <= self.group_index < len(self.groups):
+            item = self.groups[self.group_index]
+            selected_group = next((g for g in scheme["groups"] if g["name"] == item.group_name), None)
 
-            box = layout.box()
-            box.label(text=f"{group_name}", icon='FILE_FOLDER')
+        # Below the list rather than inside the detail box: sitting next to
+        # the MESH/MDF2/Chain pickers made it easy to mistake for one more
+        # slot rather than an action on the whole group. Simplified-mode
+        # only -- normal mode's bindings are per-entry, not per-group, so
+        # there is nothing group-level here for copy/paste to act on.
+        if use_simplified and selected_group is not None:
+            user_entries = [e for e in selected_group["entries"] if e.get("simplified") == "user"]
+            if user_entries:
+                row = col1.row(align=True)
+                op_copy = row.operator("re4.copy_group_bindings",
+                                       text=T("re4.batch_export_ui.copy_bindings"), icon='COPYDOWN')
+                op_copy.character_id = character_id; op_copy.group_name = selected_group["name"]
+                op_paste = row.operator("re4.paste_group_bindings",
+                                        text=T("re4.batch_export_ui.paste_bindings"), icon='PASTEDOWN')
+                op_paste.character_id = character_id; op_paste.group_name = selected_group["name"]
 
-            # Check which file types appear in "user" entries for this group
-            user_entries = [e for e in group["entries"] if e.get("simplified") == "user"]
-            has_mesh  = any(e.get("mesh")  for e in user_entries)
-            has_mdf2  = any(e.get("mdf2")  for e in user_entries)
-            has_chain = any(e.get("chain") for e in user_entries)
+        if selected_group is not None:
+            box = col2.box()
+            if use_simplified:
+                self._draw_group_detail_simplified(box, scene, character_id, selected_group)
+            else:
+                self._draw_group_detail_normal(box, scene, character_id, selected_group)
 
-            if has_mesh:
-                row = box.row(align=True)
-                row.label(text="MESH:", icon='OUTLINER_OB_MESH')
-                cur = _get_simplified_group_binding(scene, character_id, group_name, "mesh")
-                op = row.operator("re4.pick_binding", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
-                op.scope = "GROUP"; op.slot = "mesh"
-                op.character_id = character_id; op.group_name = group_name
-                if cur:
-                    op_c = row.operator("re4.clear_sg", text="", icon='X')
-                    op_c.character_id = character_id; op_c.group_name = group_name; op_c.suffix = "mesh"
+        pec.draw_summary_row(self, layout)
 
-            if has_mdf2:
-                row = box.row(align=True)
-                row.label(text="MDF2:", icon='MATERIAL')
-                cur = _get_simplified_group_binding(scene, character_id, group_name, "mdf2")
-                op = row.operator("re4.pick_binding", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
-                op.scope = "GROUP"; op.slot = "mdf2"
-                op.character_id = character_id; op.group_name = group_name
-                if cur:
-                    op_c = row.operator("re4.clear_sg", text="", icon='X')
-                    op_c.character_id = character_id; op_c.group_name = group_name; op_c.suffix = "mdf2"
+    def _draw_group_detail_simplified(self, layout, scene, character_id, group):
+        group_name = group["name"]
+        user_entries  = [e for e in group["entries"] if e.get("simplified") == "user"]
+        empty_count = sum(1 for e in group["entries"] if e.get("simplified") == "empty")
+        skip_count  = sum(1 for e in group["entries"] if e.get("simplified") == "skip")
 
-            if has_chain:
-                row = box.row(align=True)
-                row.label(text="Chain:", icon='CONSTRAINT_BONE')
-                cur = _get_simplified_group_binding(scene, character_id, group_name, "chain")
-                op = row.operator("re4.pick_binding", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
-                op.scope = "GROUP"; op.slot = "chain"
-                op.character_id = character_id; op.group_name = group_name
-                if cur:
-                    op_c = row.operator("re4.clear_sg", text="", icon='X')
-                    op_c.character_id = character_id; op_c.group_name = group_name; op_c.suffix = "chain"
+        layout.label(text=group_name, icon='FILE_FOLDER')
 
-            user_count  = sum(1 for e in group["entries"] if e.get("simplified") == "user")
-            empty_count = sum(1 for e in group["entries"] if e.get("simplified") == "empty")
-            skip_count  = sum(1 for e in group["entries"] if e.get("simplified") == "skip")
-            info = [f"{user_count} user"]
+        if not user_entries:
+            info = []
             if empty_count: info.append(f"{empty_count} empty")
             if skip_count:  info.append(f"{skip_count} skip")
-            box.label(text=f"Entries: {', '.join(info)}")
+            layout.label(text=f"({', '.join(info)})" if info else "—")
+            return
 
-    def _draw_normal(self, layout, scene, scheme, character_id):
-        for group in scheme["groups"]:
-            group_name = group["name"]
-            toggle_key = _get_group_toggle_key(character_id, group_name)
-            is_expanded = scene.get(toggle_key, False)
+        has_mesh  = any(e.get("mesh")  for e in user_entries)
+        has_mdf2  = any(e.get("mdf2")  for e in user_entries)
+        has_chain = any(e.get("chain") for e in user_entries)
 
+        # Label above the picker, not beside it: this box is only 35% of the
+        # dialog's width, and a collection name long enough to fill a sibling
+        # row's leftover space gets silently ellipsis-clipped by the button
+        # widget -- measured against a real "ch03_..._RE4.mdf2 hair"-style
+        # name (core/pre_export_check_ops.py's own detail text had the same
+        # problem for a different reason: see _wrap_line there).
+        if has_mesh:
+            layout.label(text="MESH:", icon='OUTLINER_OB_MESH')
             row = layout.row(align=True)
-            op = row.operator("re4.toggle_group", text="",
-                              icon='TRIA_DOWN' if is_expanded else 'TRIA_RIGHT', emboss=False)
+            cur = _get_simplified_group_binding(scene, character_id, group_name, "mesh")
+            op = row.operator("re4.pick_binding", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+            op.scope = "GROUP"; op.slot = "mesh"
             op.character_id = character_id; op.group_name = group_name
-            row.label(text=f"{group_name} ({len(group['entries'])})", icon='FILE_FOLDER')
+            if cur:
+                op_c = row.operator("re4.clear_sg", text="", icon='X')
+                op_c.character_id = character_id; op_c.group_name = group_name; op_c.suffix = "mesh"
 
-            if not is_expanded:
-                continue
+        if has_mdf2:
+            layout.label(text="MDF2:", icon='MATERIAL')
+            row = layout.row(align=True)
+            cur = _get_simplified_group_binding(scene, character_id, group_name, "mdf2")
+            op = row.operator("re4.pick_binding", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+            op.scope = "GROUP"; op.slot = "mdf2"
+            op.character_id = character_id; op.group_name = group_name
+            if cur:
+                op_c = row.operator("re4.clear_sg", text="", icon='X')
+                op_c.character_id = character_id; op_c.group_name = group_name; op_c.suffix = "mdf2"
 
-            group_box = layout.box()
-            for entry in group["entries"]:
-                entry_id = entry["id"]
-                header = entry_id
-                note = entry.get("note", "")
-                if note: header += f"  [{note}]"
-                group_box.label(text=header)
+        if has_chain:
+            layout.label(text="Chain:", icon='CONSTRAINT_BONE')
+            row = layout.row(align=True)
+            cur = _get_simplified_group_binding(scene, character_id, group_name, "chain")
+            op = row.operator("re4.pick_binding", text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+            op.scope = "GROUP"; op.slot = "chain"
+            op.character_id = character_id; op.group_name = group_name
+            if cur:
+                op_c = row.operator("re4.clear_sg", text="", icon='X')
+                op_c.character_id = character_id; op_c.group_name = group_name; op_c.suffix = "chain"
 
-                if entry.get("mesh"):
-                    row = group_box.row(align=True)
-                    en = _get_enabled(scene, character_id, entry_id, "mesh")
-                    op = row.operator("re4.toggle_entry", text="",
-                                      icon='CHECKBOX_HLT' if en else 'CHECKBOX_DEHLT', emboss=False)
-                    op.character_id = character_id; op.entry_id = entry_id; op.suffix = "mesh"
-                    cur = _get_binding(scene, character_id, entry_id, "mesh")
-                    ic = 'OUTLINER_OB_MESH'
-                    if cur and cur in bpy.data.collections:
-                        ct = bpy.data.collections[cur].color_tag
-                        if ct != "NONE": ic = f"COLLECTION_{ct}"
-                    row.label(text="MESH", icon=ic)
-                    op_p = row.operator("re4.pick_binding",
-                                        text=cur if cur else "Select...", icon='DOWNARROW_HLT')
-                    op_p.scope = "ENTRY"; op_p.slot = "mesh"
-                    op_p.character_id = character_id; op_p.entry_id = entry_id
+        info = [f"{len(user_entries)} user"]
+        if empty_count: info.append(f"{empty_count} empty")
+        if skip_count:  info.append(f"{skip_count} skip")
+        layout.separator()
+        layout.label(text=f"Entries: {', '.join(info)}")
 
-                if entry.get("mdf2"):
-                    row = group_box.row(align=True)
-                    en = _get_enabled(scene, character_id, entry_id, "mdf2")
-                    op = row.operator("re4.toggle_entry", text="",
-                                      icon='CHECKBOX_HLT' if en else 'CHECKBOX_DEHLT', emboss=False)
-                    op.character_id = character_id; op.entry_id = entry_id; op.suffix = "mdf2"
-                    cur = _get_binding(scene, character_id, entry_id, "mdf2")
-                    ic = 'MATERIAL'
-                    if cur and cur in bpy.data.collections:
-                        ct = bpy.data.collections[cur].color_tag
-                        if ct != "NONE": ic = f"COLLECTION_{ct}"
-                    row.label(text=f"MDF2 x{len(entry['mdf2'])}", icon=ic)
-                    op_p = row.operator("re4.pick_binding",
-                                        text=cur if cur else "Select...", icon='DOWNARROW_HLT')
-                    op_p.scope = "ENTRY"; op_p.slot = "mdf2"
-                    op_p.character_id = character_id; op_p.entry_id = entry_id
+    def _draw_group_detail_normal(self, layout, scene, character_id, group):
+        layout.label(text=group["name"], icon='FILE_FOLDER')
+        for entry in group["entries"]:
+            entry_id = entry["id"]
+            header = entry_id
+            note = entry.get("note", "")
+            if note: header += f"  [{note}]"
+            entry_box = layout.box()
+            entry_box.label(text=header)
 
-                if entry.get("chain"):
-                    row = group_box.row(align=True)
-                    en = _get_enabled(scene, character_id, entry_id, "chain")
-                    op = row.operator("re4.toggle_entry", text="",
-                                      icon='CHECKBOX_HLT' if en else 'CHECKBOX_DEHLT', emboss=False)
-                    op.character_id = character_id; op.entry_id = entry_id; op.suffix = "chain"
-                    cur = _get_binding(scene, character_id, entry_id, "chain")
-                    ic = 'CONSTRAINT_BONE'
-                    if cur and cur in bpy.data.collections:
-                        ct = bpy.data.collections[cur].color_tag
-                        if ct != "NONE": ic = f"COLLECTION_{ct}"
-                    row.label(text="Chain", icon=ic)
-                    op_p = row.operator("re4.pick_binding",
-                                        text=cur if cur else "Select...", icon='DOWNARROW_HLT')
-                    op_p.scope = "ENTRY"; op_p.slot = "chain"
-                    op_p.character_id = character_id; op_p.entry_id = entry_id
+            # Checkbox+label on their own row, picker+clear on the next: this
+            # box is only 35% of the dialog's width, and a long collection
+            # name sharing a row with them gets silently ellipsis-clipped.
+            if entry.get("mesh"):
+                head = entry_box.row(align=True)
+                en = _get_enabled(scene, character_id, entry_id, "mesh")
+                op = head.operator("re4.toggle_entry", text="",
+                                   icon='CHECKBOX_HLT' if en else 'CHECKBOX_DEHLT', emboss=False)
+                op.character_id = character_id; op.entry_id = entry_id; op.suffix = "mesh"
+                cur = _get_binding(scene, character_id, entry_id, "mesh")
+                ic = 'OUTLINER_OB_MESH'
+                if cur and cur in bpy.data.collections:
+                    ct = bpy.data.collections[cur].color_tag
+                    if ct != "NONE": ic = f"COLLECTION_{ct}"
+                head.label(text="MESH", icon=ic)
+                row = entry_box.row(align=True)
+                op_p = row.operator("re4.pick_binding",
+                                    text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                op_p.scope = "ENTRY"; op_p.slot = "mesh"
+                op_p.character_id = character_id; op_p.entry_id = entry_id
+
+            if entry.get("mdf2"):
+                head = entry_box.row(align=True)
+                en = _get_enabled(scene, character_id, entry_id, "mdf2")
+                op = head.operator("re4.toggle_entry", text="",
+                                   icon='CHECKBOX_HLT' if en else 'CHECKBOX_DEHLT', emboss=False)
+                op.character_id = character_id; op.entry_id = entry_id; op.suffix = "mdf2"
+                cur = _get_binding(scene, character_id, entry_id, "mdf2")
+                ic = 'MATERIAL'
+                if cur and cur in bpy.data.collections:
+                    ct = bpy.data.collections[cur].color_tag
+                    if ct != "NONE": ic = f"COLLECTION_{ct}"
+                head.label(text=f"MDF2 x{len(entry['mdf2'])}", icon=ic)
+                row = entry_box.row(align=True)
+                op_p = row.operator("re4.pick_binding",
+                                    text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                op_p.scope = "ENTRY"; op_p.slot = "mdf2"
+                op_p.character_id = character_id; op_p.entry_id = entry_id
+
+            if entry.get("chain"):
+                head = entry_box.row(align=True)
+                en = _get_enabled(scene, character_id, entry_id, "chain")
+                op = head.operator("re4.toggle_entry", text="",
+                                   icon='CHECKBOX_HLT' if en else 'CHECKBOX_DEHLT', emboss=False)
+                op.character_id = character_id; op.entry_id = entry_id; op.suffix = "chain"
+                cur = _get_binding(scene, character_id, entry_id, "chain")
+                ic = 'CONSTRAINT_BONE'
+                if cur and cur in bpy.data.collections:
+                    ct = bpy.data.collections[cur].color_tag
+                    if ct != "NONE": ic = f"COLLECTION_{ct}"
+                head.label(text="Chain", icon=ic)
+                row = entry_box.row(align=True)
+                op_p = row.operator("re4.pick_binding",
+                                    text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                op_p.scope = "ENTRY"; op_p.slot = "chain"
+                op_p.character_id = character_id; op_p.entry_id = entry_id
 
     def execute(self, context):
         bpy.ops.re4.batch_export()
@@ -420,13 +616,16 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
 
 
 classes = [
+    RE4_GroupListItem,
+    RE4_UL_Groups,
     RE4_OT_PickBinding,
     RE4_OT_ToggleEntry,
-    RE4_OT_ToggleGroup,
     RE4_OT_ToggleSimplified,
     RE4_OT_PickArmature,
     RE4_OT_ClearSimplifiedGroup,
     RE4_OT_ClearSimplifiedEmpty,
+    RE4_OT_CopyGroupBindings,
+    RE4_OT_PasteGroupBindings,
     RE4_OT_BatchExportDialog,
 ]
 

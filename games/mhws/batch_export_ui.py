@@ -7,6 +7,7 @@ from .batch_export import (
     get_mhws_armor_callback,
 )
 from ...core.i18n import T
+from ...core import pre_export_check_ops as pec
 
 EXPORTER_WINDOW_WIDTH = 580
 
@@ -128,6 +129,24 @@ class MHWS_OT_ClearBinding(bpy.types.Operator):
     def execute(self, context):
         set_binding(context.scene, self.armor_id, self.variant, self.part, self.filetype, "")
         return {'FINISHED'}
+
+
+def _gather_check_pairs(scene, armor_id, variant, active_parts):
+    """``[(label, mdf_col, mesh_col), ...]`` for every active part that
+    currently has an mdf2 binding -- the pairs pre_export_check can actually
+    check. A part with no mdf2 bound has nothing the exporter would write
+    either, so it is silently left out rather than reported as "unchecked".
+    """
+    pairs = []
+    for part_id, part_name in active_parts:
+        mdf_name = get_binding(scene, armor_id, variant, part_id, "mdf2")
+        mdf_col = bpy.data.collections.get(mdf_name) if mdf_name else None
+        if mdf_col is None:
+            continue
+        mesh_name = get_binding(scene, armor_id, variant, part_id, "mesh")
+        mesh_col = bpy.data.collections.get(mesh_name) if mesh_name else None
+        pairs.append((T(_PART_LABEL_KEYS.get(part_id, part_name)), mdf_col, mesh_col))
+    return pairs
 
 
 # ── Main Dialog ────────────────────────────────────────────────
@@ -252,6 +271,9 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
         row.prop(settings, "mhws_triangulate_face", text=T("ui.prop.triangulate_face"), icon='MOD_TRIANGULATE')
 
         self._draw_bonesystem(layout, settings)
+
+        pairs = _gather_check_pairs(scene, armor_id, variant, active_parts)
+        pec.draw_inline_summary(self, layout, context, 'MHWS', pairs, natives_root)
 
     def _draw_bonesystem(self, layout, settings):
         layout.separator()
