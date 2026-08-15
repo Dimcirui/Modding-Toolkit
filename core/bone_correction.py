@@ -87,6 +87,54 @@ import math
 
 IDENTITY = ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0))
 
+
+# ── re-expressing a rotation that was stored relative to a bone ─────────────────
+#
+# Free of bpy and mathutils like the rest of this module, so both ports can use it and
+# both can be checked offline.  Rotations are row-major 3x3 nested tuples.
+
+def mat3_transpose(m):
+    """Transpose of a 3x3 given as a row-major nested tuple."""
+    return tuple(tuple(m[r][c] for r in range(3)) for c in range(3))
+
+
+def mat3_mul(a, b):
+    """3x3 matrix product, row-major nested tuples."""
+    return tuple(tuple(sum(a[r][k] * b[k][c] for k in range(3)) for c in range(3))
+                 for r in range(3))
+
+
+def relocalise_frame(node_world_rot, frame_world_rot):
+    """The node-local rotation that reproduces *frame_world_rot* on that node.
+
+    ``frame_local = node_world^-1 @ frame_world``, the inverse taken as a transpose
+    since both are orthonormal rotations.
+
+    **What this is for.**  A chain node's angle-limit direction is stored as a rotation
+    *relative to its bone* -- a matrix in ctc, a quaternion in chain2 -- and the node
+    is constrained to that bone.  So "local" means "relative to the bone's
+    orientation", and the moment a port gives that bone a different orientation, the
+    same local value points somewhere else in the world.  Going through world space
+    cancels the difference, whatever it happens to be.
+
+    Both ports need it, for reasons that look unrelated and are the same one:
+
+    * MHWI stores no per-bone orientation at all (measured: all 86 reference bones
+      share one rest frame) while MHWilds' bones are oriented, and the port re-rolls
+      every physics bone it grafts;
+    * an RE-to-RE port crossing convention families re-expresses the base bones in the
+      target convention and ``mesh_port_ops.sync_child_orientation`` propagates that to
+      every physics bone hanging off them.  Measured MHWS -> RE9 on a real asset: all
+      293 chain bones rotate by exactly 90 degrees, so every angle limit carried
+      verbatim would have been 90 degrees out.
+
+    Note this is *not* the same operation as applying C.  C relabels a bone's axes;
+    this re-expresses a stored rotation so it survives that relabel.  Reaching for C
+    here would need the correction of the bone the frame hangs on -- which is a physics
+    bone, exactly the kind C is never derived for.
+    """
+    return mat3_mul(mat3_transpose(node_world_rot), frame_world_rot)
+
 #: How far from the nearest signed permutation a derived C may sit and still be
 #: trusted, in degrees.  Placed in the gap the live measurement showed: on the RE4R /
 #: RE9 rig pair the 22 genuinely convention-only bones topped out at **1.03°** while

@@ -18,7 +18,8 @@ import bpy
 from .bone_mapper import BoneMapManager, auto_detect_preset, build_cross_game_map
 from .chain_convert import (apply_target_game_settings, duplicate_chain_collection,
                             export_operator_for, is_chain2, iter_collider_bindings,
-                            ported_chain_collection_name, remap_collider_attachments)
+                            ported_chain_collection_name, relocalise_node_frames,
+                            remap_collider_attachments)
 from .i18n import T
 from .mesh_port_ops import collection_armatures, is_mesh_collection, mesh_collections
 
@@ -351,6 +352,14 @@ class MODDER_OT_ConvertChainCrossGame(bpy.types.Operator):
 
         rep = remap_collider_attachments(col, cross_map, target_armature=arm)
 
+        # Colliders are bound by bone *name*; a node's angle limit is a rotation
+        # stored relative to its bone, so it needs the bone's new orientation, not
+        # its new name.  Crossing to or from RE9 moves every physics bone by the
+        # convention relabel (measured: 90 degrees on all 293 chain bones of the
+        # reference asset), and a frame carried verbatim goes with it.  Inside one
+        # family the two orientations are equal and this is an identity.
+        frames = relocalise_node_frames(col, arm)
+
         # Bone re-binding is only half a port: the collider filter path and the
         # chain2 subdata are per-game and invisible in the outliner, so a port
         # without them looks finished and fails at load time.
@@ -367,6 +376,12 @@ class MODDER_OT_ConvertChainCrossGame(bpy.types.Operator):
 
         self.report({'INFO'}, T("core.chain_convert_ops.done").format(
             game=self.target_game, remapped=len(rep.remapped), kept=rep.unchanged))
+        if frames['relocalised']:
+            self.report({'INFO'}, T("core.chain_convert_ops.frames_relocalised").format(
+                n=frames['relocalised'], kept=frames['unchanged']))
+        if frames['missing'] or frames['no_source']:
+            self.report({'WARNING'}, T("core.chain_convert_ops.frames_skipped").format(
+                n=len(frames['missing']) + len(frames['no_source'])))
         if applied['filter_set']:
             self.report({'INFO'}, T("core.chain_convert_ops.filter_applied").format(
                 n=applied['filter_set'],

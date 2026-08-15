@@ -27,9 +27,15 @@ same body part, which is what the mapping above guarantees.  Positions need not 
 a hand-made port exactly; colliders are coarse volumes (measured radii 37-144 mm) and
 the small residual is the user's to nudge if it ever matters.
 
-``core/bone_correction.py`` exists for the cases that *do* need C -- validating a
-reference skeleton's pose, and converting skeletons, where bone orientation drives
-skinning and animation.  It is intentionally not wired in here.
+**That argument covers colliders and nothing else, and reading it as a rule about the
+whole file was a bug** (found 2026-08-16).  A node's *angle limit* is a rotation stored
+**relative to its bone**, so bone orientation is the only thing that decides where it
+ends up pointing.  The mesh port re-expresses base bones in the target convention and
+``mesh_port_ops.sync_child_orientation`` propagates that to every physics bone hanging
+off them -- measured MHWS -> RE9 on the three-game dataset: all 293 chain bones rotate
+by exactly 90 degrees.  Carried verbatim, every angle limit in the file was 90 degrees
+out, in a way nothing static could catch.  ``relocalise_node_frames`` below fixes it,
+and within one convention family it is arithmetically an identity.
 
 Validated against hand-made ground truth (one model shipped as MHWS, RE4R and
 RE9 mods, authored independently per game): mapping the 18 MHWS collider attach
@@ -38,6 +44,8 @@ in either target -- every difference is a collider they chose to add or drop.
 """
 
 import bpy
+
+from .bone_correction import mat3_mul, relocalise_frame
 
 #: Collider object markers RE-Chain-Editor puts in ``obj["TYPE"]``.
 COLLIDER_TYPES = frozenset({
@@ -398,8 +406,14 @@ def remap_collider_attachments(collection, cross_map, target_armature=None,
             report.remapped.append((obj.name, old, new))
             if not dry_run:
                 con.subtarget = new
-                if target_armature is not None:
-                    con.target = target_armature
+
+        # Retargeting is outside the branch on purpose.  It used to sit inside it, so
+        # a collider whose bone is called the same in both games -- ``Hip``, most of
+        # the spine -- kept pointing at the *source* rig: the export is unaffected
+        # (only the name is hashed) but the shape follows the wrong armature in the
+        # viewport and breaks outright if that rig is later deleted.
+        if not dry_run and target_armature is not None:
+            con.target = target_armature
 
         report.collapsed.setdefault(new, [])
         if old not in report.collapsed[new]:
@@ -563,6 +577,110 @@ def remap_link_group_refs(collection, name_map):
                 setattr(pg, attr, name_map[old])
                 fixed += 1
     return fixed
+
+
+#: RE-Chain-Editor's own tags for a chain node and the angle-limit frame under it.
+NODE_TYPE = "RE_CHAIN_NODE"
+NODE_FRAME_TYPE = "RE_CHAIN_NODE_FRAME"
+
+#: The node's two bone constraints.  ``BoneName`` is a COPY_LOCATION and
+#: ``BoneRotation`` a COPY_ROTATION, both onto the same bone.
+NODE_CONSTRAINTS = ("BoneName", "BoneRotation")
+
+
+def _rot3(matrix):
+    """A mathutils matrix's rotation as a row-major nested tuple, scale removed."""
+    m = matrix.to_3x3()
+    m.normalize()
+    return tuple(tuple(m[r][c] for c in range(3)) for r in range(3))
+
+
+def _bone_rot(arm_obj, bone_name):
+    """A bone's world rotation, or None if the rig has no such bone.
+
+    Read off the *pose* bone, since COPY_ROTATION copies the pose -- which for a rig
+    at rest is the rest matrix, and for one that is not is still the right answer.
+    """
+    if arm_obj is None or arm_obj.type != 'ARMATURE':
+        return None
+    pb = arm_obj.pose.bones.get(bone_name)
+    return None if pb is None else _rot3(arm_obj.matrix_world @ pb.matrix)
+
+
+def relocalise_node_frames(collection, target_armature, dry_run=False):
+    """Re-express every node's angle-limit direction against the target rig's bones.
+
+    Returns ``{'relocalised', 'unchanged', 'missing', 'no_source'}`` -- ``missing``
+    lists ``(node, bone)`` the target rig does not have, ``no_source`` the nodes whose
+    constraint names no armature to measure the old orientation on.
+
+    The port carries a frame's rotation as the **local** value RE-Chain-Editor exports,
+    and that value only means the same direction while the bone underneath it means the
+    same axes.  So the direction is re-derived rather than copied::
+
+        frame_local_new = target_bone_rot^-1 @ source_bone_rot @ frame_local_old
+
+    which is ``bone_correction.relocalise_frame`` applied to the frame's world
+    rotation.  Within one convention family the two bone rotations are equal and the
+    product collapses to the original -- that is why this can run unconditionally
+    instead of being gated on a family check that would then have to be kept in step
+    with ``mesh_port_ops.FAMILY_A``.
+
+    **The source rotation comes from the constraint's own target**, not from a
+    parameter: after a port the copied nodes are still constrained to the rig they came
+    from, which is exactly the "before" this needs, and reading it from there means a
+    collection assembled some other way still measures against whatever actually drives
+    it.  The constraints are then repointed at *target_armature*, so what the viewport
+    shows is what will be exported -- leaving them on the old rig would make the scene
+    disagree with the file by the very angle this corrects.
+    """
+    # Imported here rather than at module scope: everything else in this file is
+    # duck-typed, which is what lets tests/test_chain_convert.py cover it with plain
+    # stubs.  Only this one function needs a real rotation type.
+    from mathutils import Matrix
+
+    relocalised = unchanged = 0
+    missing, no_source = [], []
+
+    for obj in list(collection.all_objects):
+        if obj.get("TYPE") != NODE_TYPE:
+            continue
+        con = obj.constraints.get(NODE_CONSTRAINTS[0])
+        bone = getattr(con, "subtarget", "") if con is not None else ""
+        if not bone:
+            continue
+
+        src_rot = _bone_rot(getattr(con, "target", None), bone)
+        dst_rot = _bone_rot(target_armature, bone)
+        if dst_rot is None:
+            missing.append((obj.name, bone))
+            continue
+        if src_rot is None:
+            no_source.append((obj.name, bone))
+            continue
+
+        frame = next((c for c in obj.children
+                      if c.get("TYPE") == NODE_FRAME_TYPE), None)
+        if src_rot == dst_rot:
+            unchanged += 1
+        elif frame is not None:
+            relocalised += 1
+            if not dry_run:
+                world = mat3_mul(src_rot, _rot3(frame.matrix_local))
+                local = relocalise_frame(dst_rot, world)
+                saved = frame.rotation_mode
+                frame.rotation_mode = 'QUATERNION'
+                frame.rotation_quaternion = Matrix(local).to_quaternion()
+                frame.rotation_mode = saved
+
+        if not dry_run:
+            for name in NODE_CONSTRAINTS:
+                c = obj.constraints.get(name)
+                if c is not None and getattr(c, "subtarget", ""):
+                    c.target = target_armature
+
+    return {'relocalised': relocalised, 'unchanged': unchanged,
+            'missing': missing, 'no_source': no_source}
 
 
 def collider_attach_bones(collection):

@@ -369,44 +369,11 @@ FRAME_FORWARD_AXIS = "X"
 TERMINAL_FRAME_IS_DUMMY = True
 
 
-def mat3_transpose(m):
-    """Transpose of a 3x3 given as a row-major nested tuple."""
-    return tuple(tuple(m[r][c] for r in range(3)) for c in range(3))
-
-
-def mat3_mul(a, b):
-    """3x3 matrix product, row-major nested tuples."""
-    return tuple(tuple(sum(a[r][k] * b[k][c] for k in range(3)) for c in range(3))
-                 for r in range(3))
-
-
-def relocalise_frame(node_world_rot, frame_world_rot):
-    """The node-local rotation a chain2 frame needs, from the ctc frame's world one.
-
-    ``frame_local = node_world^-1 @ frame_world``, with the inverse taken as a
-    transpose since both are orthonormal rotations.
-
-    **Why not just copy ``matrix_local`` across.**  The two frames are local to their
-    own node, and a node is COPY_ROTATION-constrained to its bone -- so "local" means
-    "relative to the bone's orientation", and the two games do not give the same bone
-    the same orientation.  MHWI stores no per-bone orientation at all (measured: all
-    86 reference bones share one rest frame), while MHWilds' bones are oriented, and
-    the port's own ``transplant_physics`` re-rolls every physics bone it grafts.
-    Copying the local matrix would therefore carry MHWI's frame into a different
-    reference and rotate every angle limit by whatever the two bones differ by.
-    Going through world space cancels that, whatever it happens to be.
-
-    **Why not let the builder compute it.**  ``chain_from_bone`` derives the frame
-    from the target rig's own joint positions, which for this port are the source's
-    positions, so it lands on the right *direction* for free.  It does not reproduce
-    the *roll*, which it fixes at a constant 90 degrees about X -- and per
-    ``needs_roll`` that is the whole parameter for Hinge and Oval nodes.  Doing this
-    explicitly is exact for every angle mode instead of for two of the four.
-
-    Rotation only: the frame's location and scale come from its COPY_LOCATION and
-    COPY_SCALE constraints on both sides, so there is nothing else to carry.
-    """
-    return mat3_mul(mat3_transpose(node_world_rot), frame_world_rot)
+#: The maths that turns the measurement above into a value lives in
+#: ``core/bone_correction.relocalise_frame`` -- that module is what re-expressing a
+#: rotation from one bone's frame in another's belongs to, it is equally bpy-free, and
+#: the RE-to-RE chain port needs the identical operation for the identical reason.
+#: Not imported here: this module's whole point is that it has no imports at all.
 
 
 # ── defaults for a freshly built chain2 ─────────────────────────────────────────

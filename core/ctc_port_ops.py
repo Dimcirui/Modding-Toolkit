@@ -16,7 +16,7 @@ conclusion the hard way and its docstring records it.
 
 Three things here are not obvious from the code they call:
 
-* **Frame rotations go through world space.**  See ``ctc_port.relocalise_frame``.  The
+* **Frame rotations go through world space.**  See ``bone_correction.relocalise_frame``.  The
   two node rotations that formula needs are read from **pose bones**, not from the node
   objects -- measured, a node's world rotation matches its bound bone's to 1.2e-7, and
   going via the bone means the maths does not depend on a constraint having been
@@ -35,6 +35,7 @@ import bpy
 from mathutils import Matrix
 
 from . import chain_convert, ctc_port, mhwi_port, re_chain_utils
+from .bone_correction import relocalise_frame
 from .bone_mapper import build_cross_game_map
 from .i18n import T
 
@@ -408,7 +409,7 @@ def _apply_frame(arm_obj, node_obj, spec, report):
     dst_rot = _bone_rot(arm_obj, spec["target_bone"])
     if dst_rot is None:
         return
-    local = ctc_port.relocalise_frame(dst_rot, src_rot)
+    local = relocalise_frame(dst_rot, src_rot)
     saved = frame.rotation_mode
     frame.rotation_mode = 'QUATERNION'
     frame.rotation_quaternion = Matrix(local).to_quaternion()

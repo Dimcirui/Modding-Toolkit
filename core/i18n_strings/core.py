@@ -1053,6 +1053,15 @@ STRINGS = {
     "core.chain_convert_ops.done": {
         "EN": "Chain ported to {game}: {remapped} collider(s) re-bound, {kept} unchanged",
         "ZH": "物理链已移植到 {game}：{remapped} 个碰撞体重绑，{kept} 个保持"},
+    "core.chain_convert_ops.frames_relocalised": {
+        "EN": "{n} angle limit direction(s) re-derived for the target rig's bone "
+              "orientation, {kept} needed none",
+        "ZH": "{n} 个角度限制朝向已按目标骨架的骨骼朝向重新推算，{kept} 个无需改动"},
+    "core.chain_convert_ops.frames_skipped": {
+        "EN": "{n} node(s) kept their angle limit as-is: the bone is missing from the "
+              "target rig, or the source rig it was measured on is gone",
+        "ZH": "{n} 个节点的角度限制保持原样：目标骨架上没有对应骨骼，"
+              "或用于测量原朝向的源骨架已不存在"},
     "core.chain_convert_ops.filter_applied": {
         "EN": "Collider Filter Info set on {n} chain setting(s): {path}",
         "ZH": "已为 {n} 个 Chain Settings 设定 Collider Filter Info：{path}"},
