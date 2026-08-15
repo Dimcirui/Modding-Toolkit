@@ -40,17 +40,6 @@
             "Padding": 0
         },
         {
-            "Property Name": "RayTrace_BaseColor",
-            "Data Type": "COLOR",
-            "Value": [
-                1.0,
-                1.0,
-                1.0,
-                1.0
-            ],
-            "Padding": 0
-        },
-        {
             "Property Name": "ObjectOffset",
             "Data Type": "VEC4",
             "Value": [
@@ -58,6 +47,17 @@
                 0.0,
                 0.0,
                 0.0
+            ],
+            "Padding": 0
+        },
+        {
+            "Property Name": "RayTrace_BaseColor",
+            "Data Type": "COLOR",
+            "Value": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
             ],
             "Padding": 0
         },
@@ -521,6 +521,12 @@
             "Padding": 0
         },
         {
+            "Property Name": "AnimEmit_Blend",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
             "Property Name": "Use_WaveMove",
             "Data Type": "BOOL",
             "Value": 0.0,
@@ -703,7 +709,7 @@
         {
             "Property Name": "TranslucentParam",
             "Data Type": "FLOAT",
-            "Value": 1.0,
+            "Value": 0.0,
             "Padding": 0
         },
         {
@@ -727,7 +733,7 @@
         {
             "Property Name": "OcclusionParam",
             "Data Type": "FLOAT",
-            "Value": 1.0,
+            "Value": 0.0,
             "Padding": 0
         },
         {
@@ -752,6 +758,24 @@
             "Property Name": "Fix_BaseColor_to_Emissive",
             "Data Type": "FLOAT",
             "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Use_Basecolor_Mask",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Basecolor_Mask_Min",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "Basecolor_Mask_Max",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
             "Padding": 0
         },
         {
@@ -833,31 +857,25 @@
             "Padding": 0
         },
         {
-            "Property Name": "Use_AntiTranslucent_Diffuse",
-            "Data Type": "BOOL",
-            "Value": 0.0,
-            "Padding": 0
-        },
-        {
-            "Property Name": "PassThrough",
-            "Data Type": "FLOAT",
-            "Value": 0.0,
-            "Padding": 0
-        },
-        {
-            "Property Name": "Dissolve",
-            "Data Type": "FLOAT",
-            "Value": 1.0,
-            "Padding": 0
-        },
-        {
             "Property Name": "WetBlend",
             "Data Type": "FLOAT",
             "Value": 0.0,
             "Padding": 0
         },
         {
+            "Property Name": "Use_AntiTranslucent_Diffuse",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
             "Property Name": "SandBlend",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "PassThrough",
             "Data Type": "FLOAT",
             "Value": 0.0,
             "Padding": 0
@@ -869,13 +887,13 @@
             "Padding": 0
         },
         {
-            "Property Name": "RayTrace_Emissive_Booster",
+            "Property Name": "AnimEmit_Min",
             "Data Type": "FLOAT",
             "Value": 1.0,
             "Padding": 0
         },
         {
-            "Property Name": "AnimEmit_Min",
+            "Property Name": "Dissolve",
             "Data Type": "FLOAT",
             "Value": 1.0,
             "Padding": 0
@@ -900,6 +918,12 @@
         },
         {
             "Property Name": "AnimEmitWave",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0
+        },
+        {
+            "Property Name": "RayTrace_Emissive_Booster",
             "Data Type": "FLOAT",
             "Value": 1.0,
             "Padding": 0

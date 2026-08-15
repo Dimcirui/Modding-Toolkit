@@ -27,7 +27,10 @@ from .core import tex_convert_base
 from .core import shader_ops
 from .core import chain_convert_ops
 from .core import mesh_port_ops
+from .core import mhwi_port_ops
 from .core import mdf_port_ops
+from .core import mrl3_port_ops
+from .core import ctc_port_ops
 from .core import pre_export_check_ops
 from .core import ref_model_ops
 from .core import stale_cleanup_ops
@@ -98,7 +101,16 @@ modules = [
     shader_ops,
     chain_convert_ops,
     mesh_port_ops,
+    # After mesh_port_ops: it reuses that module's plan execution helpers and its
+    # collection picker rather than restating either.
+    mhwi_port_ops,
     mdf_port_ops,
+    # After mdf_port_ops: both reuse its prefab loader and shared "Mod Root" row.
+    mrl3_port_ops,
+    # The third MHWI -> MHWilds rebuild, after the other two for readability only;
+    # it shares no state with them, and drives RE Chain Editor through
+    # core/re_chain_utils.py rather than reimplementing the builders.
+    ctc_port_ops,
     # After mdf_port_ops: it imports that module's collection picker and shared
     # "Mod Root" row rather than restating either.
     pre_export_check_ops,

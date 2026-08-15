@@ -83,8 +83,10 @@ GROUP_LABELS = {
 def _port(game_code):
     """The cross-game port entries, identical for every RE Engine game.
 
-    The section fixes the source game; the dialog picks the target.  MHWI gets no
-    'port' group -- it is not RE Engine and its physics goes through mhw_ctc.
+    The section fixes the source game; the dialog picks the target.  MHWI is not one
+    of these: it is not RE Engine, so it has no target to pick and no shared chain
+    format.  Its one-way rebuild to MHWilds is a separate operator with its own
+    entry, ``mhwi.port_to_mhws``.
     """
     return [op("modder.port_mesh_cross_game",
                "ui.main_panel.btn_port_mesh_cross_game", 'ARMATURE_DATA',
@@ -185,6 +187,25 @@ SECTIONS = {
                "ui.main_panel.btn_batch_rename_physics", 'SORTALPHA'),
             op("mhwi.auto_create_chains", "ui.main_panel.btn_create_chain",
                'LINKED', needs='mhw_ctc'),
+        ],
+        # One-way and one-target, unlike the RE-to-RE ports: crossing engines is a
+        # rebuild, and only MHWilds has the reference data to rebuild against.
+        'port': [
+            op("mhwi.port_to_mhws", "ui.main_panel.btn_port_mhwi_to_mhws",
+               'ARMATURE_DATA'),
+            # Guarded on MHW Model Editor as a whole: the decode goes through its
+            # modules.tex.tex_function, which ships in the same addon as the mod3
+            # and mrl3 support every other MHWI button here needs.
+            op("mhwi.port_mrl3_to_mdf2", "ui.main_panel.btn_port_mrl3_to_mdf2",
+               'MATERIAL', needs='mhw_model'),
+            # Needs *both* companion addons -- it reads MHW Model Editor's ctc/ccl
+            # property groups and builds through RE Chain Editor's operators -- but
+            # ``needs`` takes one guard, so it names the reader like
+            # ``mhwi.auto_create_chains`` above does for the same pair.  Missing
+            # RE Chain Editor is caught at run time instead, with its own message:
+            # without it there is no ``scene.re_chain_toolpanel`` to build into.
+            op("mhwi.port_physics_to_mhws", "ui.main_panel.btn_port_ctc_to_chain2",
+               'PHYSICS', needs='mhw_ctc'),
         ],
     },
     'mhws': {

@@ -158,6 +158,18 @@ STRINGS = {
         "EN": "Port RE Chain", "ZH": "RE Chain 移植"},
     "ui.main_panel.btn_port_mdf_material_cross_game": {
         "EN": "Port RE MDF", "ZH": "RE MDF 移植"},
+    # The three above are "Port <thing>" and pick their target in a dialog; these name
+    # their destination instead, because each is one-way and one-target -- MHWilds is
+    # the only game with the reference data to cross engines into.  That distinction
+    # is what "to Wilds" carries; the earlier "Rebuild as" wording tried to carry the
+    # rebuild-vs-conversion difference too, which is an implementation detail the
+    # button does not need to argue (user, 2026-08-16).
+    "ui.main_panel.btn_port_mhwi_to_mhws": {
+        "EN": "Port Model to Wilds", "ZH": "移植模型到荒野"},
+    "ui.main_panel.btn_port_mrl3_to_mdf2": {
+        "EN": "Port Material to Wilds", "ZH": "移植材质到荒野"},
+    "ui.main_panel.btn_port_ctc_to_chain2": {
+        "EN": "Port Physics to Wilds", "ZH": "移植物理到荒野"},
     "ui.main_panel.btn_record_transform":         {"EN": "Record Transform (select two armatures)", "ZH": "录制变换 (选两个骨架)"},
     "ui.main_panel.btn_apply_forward":            {"EN": "▶ Forward (A→B)", "ZH": "▶ 正向 (A→B)"},
     "ui.main_panel.btn_apply_inverse":            {"EN": "◀ Inverse (B→A)", "ZH": "◀ 逆向 (B→A)"},

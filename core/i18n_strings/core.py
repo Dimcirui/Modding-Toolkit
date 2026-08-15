@@ -1147,6 +1147,221 @@ STRINGS = {
               "{names}",
         "ZH": "{n} 根骨骼保留了源约定（没有可信的修正矩阵）：{names}"},
 
+    # --- mhwi_port_ops: MHWI -> MHWS rebuild --------------------------------------
+    "core.mhwi_port_ops.desc": {
+        "EN": "Convert a .mod3 collection into a .mesh collection",
+        "ZH": "将 mod3 集合转换为 mesh 集合"},
+    "core.mhwi_port_ops.rebuild_note": {
+        "EN": "Wilds' reference model is imported automatically (T-posed, facial "
+              "bones merged) and becomes the output skeleton",
+        "ZH": "会自动导入荒野参考模型（转 T-Pose、合并面部骨），并以它作为产出骨架"},
+    # MHWI's importer produces .mod3 collections, not the .mesh ones every RE-side
+    # tool talks about; saying ".mesh" here sent users looking for the wrong thing.
+    "core.mhwi_port_ops.no_mod3_collection": {
+        "EN": "No .mod3 collection in the scene", "ZH": "场景中没有 .mod3 集合"},
+    "core.mhwi_port_ops.source_collection": {
+        "EN": "Source Collection", "ZH": "源集合"},
+    "core.mhwi_port_ops.reference_skeleton": {
+        "EN": "Wilds Reference", "ZH": "荒野参考骨架"},
+    "core.mhwi_port_ops.tpose_note": {
+        "EN": "The reference is T-posed automatically: MHWI's bind pose is already an "
+              "exact T-pose, while Wilds ships in an A-pose 42 degrees away",
+        "ZH": "参考骨架会自动转 T-Pose：世界的绑定姿势本身就是精确 T-Pose，"
+              "而荒野原生是相差 42° 的 A-Pose"},
+    "core.mhwi_port_ops.pick_collection": {
+        "EN": "Pick a .mod3 collection holding exactly one armature",
+        "ZH": "请选择一个恰好含一具骨架的 .mod3 集合"},
+    "core.mhwi_port_ops.not_mhwi": {
+        "EN": "That rig is not from MHW Model Editor (its bones are not MhBone_NNN)",
+        "ZH": "该骨架不是 MHW Model Editor 导入的（骨骼名不是 MhBone_NNN）"},
+    "core.mhwi_port_ops.need_reference": {
+        "EN": "A Wilds reference skeleton is required: MHWI stores no bone "
+              "orientation at all, so it can only come from the reference",
+        "ZH": "必须提供荒野参考骨架：世界的骨架完全不存骨骼朝向，只能取自参考"},
+    "core.mhwi_port_ops.preset_load_failed": {
+        "EN": "Could not load the MHWI/Wilds bone presets",
+        "ZH": "加载世界／荒野骨骼预设失败"},
+    "core.mhwi_port_ops.stat": {
+        "EN": "Rebuilt as {name}: {bones} bones, {meshes} mesh(es), "
+              "{thumbs} thumb joint(s) swung, {grafted} physics bone(s) grafted",
+        "ZH": "已重建为 {name}：{bones} 根骨骼，{meshes} 个网格，"
+              "{thumbs} 节拇指旋转，{grafted} 根物理骨嫁接"},
+    "core.mhwi_port_ops.physics_orphans": {
+        "EN": "{n} physics bone(s) hang off a bone the new rig has no counterpart "
+              "for and were not grafted: {names}",
+        "ZH": "{n} 根物理骨挂在新骨架没有对应物的骨上，未嫁接：{names}"},
+    "core.mhwi_port_ops.unknown_ids": {
+        "EN": "{n} bone id(s) are neither base skeleton nor a physics id, and were "
+              "kept as-is: {names}",
+        "ZH": "{n} 根骨骼的 ID 既不属于基础骨架也不在物理骨范围内，已原样保留：{names}"},
+    "core.mhwi_port_ops.ref_missing": {
+        "EN": "{n} target bone(s) are absent from the chosen reference and were not "
+              "aligned: {names}",
+        "ZH": "{n} 根目标骨骼在所选参考骨架中不存在，未参与对齐：{names}"},
+
+    # --- ctc_port_ops: MHWI physics -> MHWilds physics ---------------------------
+    "core.ctc_port_ops.desc": {
+        "EN": "Convert a .ctc collection into a .chain2 collection. Collision shapes imported from a .ccl come across into the same collection; that collection can then be exported as a .clsp",
+        "ZH": "将 ctc 集合转换为 chain2 集合。如果 ctc 集合内包含了通过 ccl 导入的碰撞体，也会一并转换到 chain2 集合内，导出时可将包含碰撞体的 chain2 导出为 clsp"},
+    "core.ctc_port_ops.no_ctc_collection": {
+        "EN": "No .ctc collection in the scene", "ZH": "场景中没有 .ctc 集合"},
+    "core.ctc_port_ops.no_armature": {
+        "EN": "No armature in the scene", "ZH": "场景中没有骨架"},
+    "core.ctc_port_ops.source_collection": {
+        "EN": "Source .ctc", "ZH": "源 .ctc 集合"},
+    "core.ctc_port_ops.target_armature": {
+        "EN": "Target Armature", "ZH": "目标骨架"},
+    "core.ctc_port_ops.migrate_flags": {
+        "EN": "Migrate Flags", "ZH": "迁移标志位"},
+    "core.ctc_port_ops.flags_basic": {"EN": "Basic", "ZH": "基础"},
+    "core.ctc_port_ops.flags_basic_desc": {
+        "EN": "Angle limit only -- the one flag measured to behave the same in both "
+              "games. The rest keep MHWilds' own defaults rather than MHWI's values",
+        "ZH": "只迁移角度限制 —— 实测中唯一在两个游戏里行为一致的标志位。"
+              "其余保留荒野自己的默认值，而不是照搬 MHWI 的取值"},
+    "core.ctc_port_ops.flags_all": {"EN": "All", "ZH": "全部"},
+    "core.ctc_port_ops.flags_all_desc": {
+        "EN": "Every flag with a same-named counterpart. Reproduces the source "
+              "exactly, but the names match where the behaviour does not -- expect "
+              "to adjust",
+        "ZH": "迁移所有同名对应的标志位。能精确复现源文件，"
+              "但这些标志位名字相同而行为并不相同，预计需要手动调整"},
+    "core.ctc_port_ops.deferred_flags": {
+        "EN": "{n} flag(s) left at MHWilds' defaults (Basic mode)",
+        "ZH": "{n} 个标志位保留荒野默认值（基础模式）"},
+    "core.ctc_port_ops.rebuild_note": {
+        "EN": "Pick the ported MHWilds rig, not the MHWI one. Physics bones keep "
+              "their names; base bones are remapped with the same table the model "
+              "port used",
+        "ZH": "请选移植后的荒野骨架，而不是 MHWI 的。物理骨保持原名，"
+              "基础骨用与模型移植同一张映射表改名"},
+    "core.ctc_port_ops.pick_inputs": {
+        "EN": "Pick a .ctc collection and a target armature",
+        "ZH": "请选择一个 .ctc 集合和目标骨架"},
+    "core.ctc_port_ops.need_chain_editor": {
+        "EN": "RE Chain Editor is not enabled -- this port is built through its own "
+              "operators",
+        "ZH": "未启用 RE Chain Editor —— 本移植通过它自己的算子构建"},
+    "core.ctc_port_ops.preset_load_failed": {
+        "EN": "Could not load the MHWI/MHWilds bone presets",
+        "ZH": "无法加载 MHWI／荒野骨骼预设"},
+    "core.ctc_port_ops.nothing_to_port": {
+        "EN": "That collection has no chains and no collision shapes",
+        "ZH": "该集合里既没有链条也没有碰撞体"},
+    "core.ctc_port_ops.build_failed": {
+        "EN": "Could not create the chain2 collection",
+        "ZH": "无法创建 chain2 集合"},
+    "core.ctc_port_ops.stat": {
+        "EN": "Built {name}: {settings} settings, {groups} groups, {nodes} nodes, "
+              "{colliders} colliders, {frames} angle limits",
+        "ZH": "已生成 {name}：{settings} 组参数、{groups} 条链、{nodes} 个节点、"
+              "{colliders} 个碰撞体、{frames} 个角度限制朝向"},
+    "core.ctc_port_ops.unresolved_bones": {
+        "EN": "{n} binding(s) landed on no bone of the target rig and will do "
+              "nothing in game: {names}",
+        "ZH": "{n} 处绑定在目标骨架上找不到对应骨骼，进游戏后不会起作用：{names}"},
+    "core.ctc_port_ops.chains_failed": {
+        "EN": "{n} chain(s) could not be built", "ZH": "{n} 条链未能建立"},
+    "core.ctc_port_ops.colliders_failed": {
+        "EN": "{n} collision shape(s) could not be built",
+        "ZH": "{n} 个碰撞体未能建立"},
+    "core.ctc_port_ops.node_mismatch": {
+        "EN": "{n} chain(s) came out with their nodes in an unexpected order -- "
+              "their parameters were left alone rather than written to the wrong node",
+        "ZH": "{n} 条链的节点顺序与源文件不符 —— 其参数已跳过写入，"
+              "以免写到错误的节点上"},
+    "core.ctc_port_ops.unmapped_enums": {
+        "EN": "{n} node(s) use a mode with no MHWilds equivalent and kept the default",
+        "ZH": "{n} 个节点使用了荒野没有对应值的模式，已保留默认值"},
+    "core.ctc_port_ops.dropped": {
+        "EN": "Not carried over (no MHWilds counterpart): {names}",
+        "ZH": "未搬运（荒野无对应）：{names}"},
+
+    # --- mrl3_port_ops: MHWI material -> MHWilds material -------------------------
+    "core.mrl3_port_ops.desc": {
+        "EN": "Convert a .mrl3 collection into a .mdf2 collection. Every material uses the Base_Equip material; to switch one, use \"Convert to another MDF material\" in the MHWS section",
+        "ZH": "将 mrl3 集合转换为 mdf2 集合。所有材质将使用 Base_Equip 材质，如有需求请使用 MHWS 板块的「转换为其他 MDF 材质」来换用其他材质"},
+    "core.mrl3_port_ops.no_mrl3_collection": {
+        "EN": "No .mrl3 collection in the scene", "ZH": "场景中没有 .mrl3 集合"},
+    "core.mrl3_port_ops.source_collection": {
+        "EN": "Source Collection", "ZH": "源集合"},
+    "core.mrl3_port_ops.dest_base_path": {
+        "EN": "Texture Base Path", "ZH": "贴图基础路径"},
+    # An example rather than a description: the field wants the segment between the
+    # game's texture root and the file name, and showing one is shorter than saying it.
+    "core.mrl3_port_ops.base_path_example": {
+        "EN": "Example: Author/Name", "ZH": "路径示例：Author/Name"},
+    "core.mrl3_port_ops.export_root_hint": {
+        "EN": "Where the converted textures are written",
+        "ZH": "导出目录"},
+    "core.mrl3_port_ops.migrate_params": {
+        "EN": "Migrate Params", "ZH": "迁移参数"},
+    "core.mrl3_port_ops.params_basic": {"EN": "Basic", "ZH": "基础"},
+    "core.mrl3_port_ops.params_basic_desc": {
+        "EN": "Metallic, roughness and translucency only -- the three whose meaning "
+              "and 0..1 scale are the same in both engines",
+        "ZH": "只迁移金属度、粗糙度、半透明度 —— 这三个在两个引擎里含义与 0..1 "
+              "量纲都相同"},
+    "core.mrl3_port_ops.params_all": {"EN": "All", "ZH": "全部"},
+    "core.mrl3_port_ops.params_all_desc": {
+        "EN": "Everything that has a counterpart, including base colour and the "
+              "emissive factor split into colour and power. Their scales are not "
+              "calibrated between the engines, so expect to adjust them",
+        "ZH": "迁移所有能对应的参数，包括基础色，以及拆成颜色与强度两项的自发光因子。"
+              "这些量纲在两个引擎间未经标定，预计需要手动调整"},
+    "core.mrl3_port_ops.convert_textures": {
+        "EN": "Convert Textures", "ZH": "转换贴图"},
+    "core.mrl3_port_ops.cull_unused": {
+        "EN": "Cull Unused Materials", "ZH": "剔除未使用材质"},
+    "core.mrl3_port_ops.mod3_collection": {
+        "EN": "Reference .mod3", "ZH": "参考 mod3 集合"},
+    "core.mrl3_port_ops.no_mod3_collection": {
+        "EN": "No .mod3 collection in the scene", "ZH": "场景中没有 .mod3 集合"},
+    "core.mrl3_port_ops.pick_mod3": {
+        "EN": "Pick the .mod3 collection these materials belong to",
+        "ZH": "请选择这些材质所属的 .mod3 集合"},
+    "core.mrl3_port_ops.all_culled": {
+        "EN": "No material matches a mesh in that .mod3 collection -- wrong "
+              "collection picked?",
+        "ZH": "没有任何材质匹配该 .mod3 集合中的网格 —— 是不是选错集合了？"},
+    # Says which collection decides, and nothing else.  The reason the default is on
+    # -- MHWilds refuses to load a model whose .mdf2 carries an unused material, where
+    # MHWI merely ignores it -- lives on the ``cull_unused`` property in
+    # mrl3_port_ops.py; it is a maintainer's fact, not something to re-read on every
+    # run (user, 2026-08-16).
+    "core.mrl3_port_ops.cull_note": {
+        "EN": "Drops materials no mesh in this .mod3 collection uses",
+        "ZH": "剔除 mod3 集合中没有使用到的材质"},
+    "core.mrl3_port_ops.culled": {
+        "EN": "{n} material(s) had no mesh and were dropped: {names}",
+        "ZH": "{n} 个材质没有对应网格，已丢弃：{names}"},
+    "core.mrl3_port_ops.no_targets": {
+        "EN": "That collection holds no mrl3 materials",
+        "ZH": "该集合中没有 mrl3 材质"},
+    "core.mrl3_port_ops.no_prefab": {
+        "EN": "The bundled MHWilds Base_Equip prefab is missing",
+        "ZH": "缺少内置的荒野 Base_Equip 预制材质"},
+    "core.mrl3_port_ops.source_root_missing": {
+        "EN": "MHWI mod root is not set, so no texture could be read; materials were "
+              "built without them",
+        "ZH": "未设置 MHWI 的 Mod 根目录，无法读取任何贴图；材质已建立但不含贴图"},
+    "core.mrl3_port_ops.stat": {
+        "EN": "Built {name}: {built} material(s), {textures} texture(s) written, "
+              "{migrated} param(s) migrated, {skipped} skipped",
+        "ZH": "已生成 {name}：{built} 个材质，写出 {textures} 张贴图，"
+              "迁移 {migrated} 个参数，跳过 {skipped} 个"},
+    "core.mrl3_port_ops.failed": {
+        "EN": "{n} material(s) could not be built", "ZH": "{n} 个材质建立失败"},
+    "core.mrl3_port_ops.missing_tex": {
+        "EN": "{n} source texture(s) could not be read: {names}",
+        "ZH": "{n} 张源贴图无法读取：{names}"},
+    "core.mrl3_port_ops.unportable": {
+        "EN": "Dropped, MHWilds has no counterpart slot: {names}",
+        "ZH": "已丢弃，荒野没有对应的贴图槽：{names}"},
+    "core.mrl3_port_ops.rescaled": {
+        "EN": "{n} texture(s) were rescaled to match the material's largest: {names}",
+        "ZH": "{n} 张贴图被缩放到该材质的最大尺寸：{names}"},
+
     # --- ref_model / ref_model_ops: import a vanilla reference body ---------------
     "core.ref_model.female": {"EN": "Female", "ZH": "女性"},
     "core.ref_model.male": {"EN": "Male", "ZH": "男性"},

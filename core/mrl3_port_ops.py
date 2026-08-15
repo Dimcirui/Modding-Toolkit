@@ -1,0 +1,558 @@
+"""MRL3 -> MDF2 port, execution layer.
+
+One MHWI ``.mrl3`` collection in, one MHWilds ``.mdf2`` collection out, with the
+textures actually recoded rather than left pointing at MT Framework paths.
+
+Three things are borrowed wholesale rather than rebuilt, because the RE-to-RE port
+already does them and a second copy would drift:
+
+* ``re_mdf_presets.readPresetJSON`` builds the destination material from the shipped
+  ``basic`` prefab -- the same call ``core/mdf_port_ops.py`` makes,
+* ``mdf_tex_processor_base._compose_channels`` packs PBR planes into a MHWilds slot,
+* ``mdf_port_tex.write_ported_tex`` puts the result on disk under MHWilds' own naming
+  and container conventions.
+
+What is new here is the front half of the texture path.  The RE-to-RE port unpacks one
+source slot at a time, because RE games' slots correspond one to one; MHWI's do not,
+so a whole material's slots are decoded together and taken apart into PBR planes by
+``core/mrl3_port_tex.py`` before any of them is repacked.  ``RMTMap`` alone feeds three
+different MHWilds slots.
+
+Source textures are read off disk, not out of Blender: MHWI's importer converts to a
+preview format, and porting the preview would ship a re-encoded, sometimes rescaled
+copy of the texture instead of the one the mod actually has.  MHWI's own on-disk
+convention is ``<natives root>/nativePC/<mapList value>.tex`` -- no ``Art/`` prefix and
+no version suffix, both of which the RE side has.
+"""
+
+import os
+import tempfile
+
+import bpy
+
+from . import mdf_port_tex, mrl3_port, mrl3_port_tex
+from .i18n import T
+from .mdf_port_ops import import_read_preset_json
+
+DST_GAME = "MHWS"
+SRC_NATIVES_KEY = "mhwi_natives_root"
+
+#: mrl3 stores a property's value in a field named after its type; so does MDF, with
+#: a different set of names.  Neither exposes a generic "value".
+#:
+#: The vector keys carry brackets -- ``FLOAT[3]``, not ``FLOAT3`` -- because that is
+#: how MHW Model Editor spells the enum, mirroring the type strings in its own
+#: ``property_dict.json``.  Getting this wrong does not raise: the lookup misses, the
+#: field is treated as absent, and the parameter is silently skipped.
+_MRL3_VALUE_ATTR = {
+    "FLOAT": "float_value", "INT": "int_value", "UINT": "uint_value",
+    "BOOL": "bool_value", "FLOAT[2]": "float2_value", "FLOAT[3]": "float3_value",
+    "FLOAT[4]": "float4_value", "COLOR": "color_value",
+}
+_MDF_VALUE_ATTR = {
+    "FLOAT": "float_value", "BOOL": "bool_value", "COLOR": "color_value",
+    "VEC4": "float_vector_value", "FLOAT4": "float_vector_value",
+}
+
+
+# ── source discovery ────────────────────────────────────────────────────────────
+
+def is_mrl3_collection(col):
+    return col.get("~TYPE") == "MHW_MRL3_COLLECTION" or col.name.endswith(".mrl3")
+
+
+def mrl3_materials(col):
+    return [o for o in col.objects
+            if o.get("~TYPE") == "MHW_MRL3_MATERIAL"
+            and getattr(o, "mhw_mrl3_material", None)]
+
+
+def source_tex_path(natives_root, map_value):
+    """``<natives root>/nativePC/<mapList value>.tex``.
+
+    MHWI's binding is a bare backslash path with no extension and no ``nativePC``
+    segment -- ``Dimcirui\\AiriSeraphim\\Body_BML`` -- so both are added back here.
+    Unlike the RE side there is no version suffix on the filename.
+    """
+    rel = (map_value or "").replace("\\", "/").strip("/")
+    if not rel:
+        return ""
+    return os.path.join(natives_root, "nativePC", *rel.split("/")) + ".tex"
+
+
+def _is_null_tex(value):
+    """MHWI's stand-in textures, which exist to fill a slot and mean "nothing here"."""
+    return "null_" in (value or "").lower()
+
+
+# ── MHWI texture decode ─────────────────────────────────────────────────────────
+
+def _mhw_tex_module():
+    """MHW Model Editor's ``modules.tex.tex_function``, or None.
+
+    Found by scanning ``sys.modules`` the same way
+    ``games/mhwi/mrl3_tex_processor._import_mhwtex_convert`` does: the addon is
+    installed under a name we do not control, so it cannot simply be imported.
+    """
+    import sys
+    for key, mod in sys.modules.items():
+        if key.endswith(".modules.tex.tex_function"):
+            return mod
+    return None
+
+
+def decode_mhwi_tex(tex_path, temp_dir):
+    """A MHWI ``.tex`` -> a PNG path, via MHW Model Editor's own decoder.
+
+    Two hops, because neither side speaks the other's container: MT Framework's tex
+    is unwrapped to DDS by the editor that knows its header, and DDS is what texconv
+    turns into something with addressable pixels.
+    """
+    mod = _mhw_tex_module()
+    if mod is None:
+        raise RuntimeError("MHW Model Editor's tex module is not loaded")
+    tex_file_cls = getattr(mod, "MHWTexFile", None)
+    to_dds = getattr(mod, "convertTexFileToDDS", None)
+    if tex_file_cls is None or to_dds is None:
+        raise RuntimeError("MHW Model Editor's tex decoder is missing")
+
+    from . import texconv_native
+
+    tex = tex_file_cls()
+    tex.read(tex_path)
+    stem = os.path.splitext(os.path.basename(tex_path))[0]
+    dds_path = os.path.join(temp_dir, stem + "_mrl3_src.dds")
+    # convertTexFileToDDS takes the *parsed* tex, not the path -- the commented-out
+    # path-taking version above it in tex_function.py is not the live one.
+    to_dds(tex.tex, dds_path)
+    return texconv_native.convert_to_png(dds_path, temp_dir)
+
+
+def _png_to_array(png_path):
+    from .mdf_tex_processor_base import image_to_array
+
+    name = "__mrl3_port_src"
+    if name in bpy.data.images:
+        bpy.data.images.remove(bpy.data.images[name])
+    img = bpy.data.images.load(png_path, check_existing=False)
+    img.name = name
+    img.colorspace_settings.name = 'Non-Color'
+    try:
+        return image_to_array(img)
+    finally:
+        bpy.data.images.remove(img)
+
+
+def load_source_slots(mat_data, natives_root, temp_dir):
+    """``({slot: array}, {slot: png path}, [missing])`` for one mrl3 material.
+
+    The PNGs are kept alongside the arrays because the two slots that cross over
+    unchanged -- masks, which have no PBR reading -- are written from the file rather
+    than rebuilt from planes.
+    """
+    arrays, pngs, missing = {}, {}, []
+    for item in mat_data.mapList_items:
+        slot = item.name
+        if not item.value or _is_null_tex(item.value):
+            continue
+        if slot not in mrl3_port_tex.DECODE_MAP and slot not in mrl3_port_tex.DIRECT_SLOTS:
+            continue
+        path = source_tex_path(natives_root, item.value)
+        if not path or not os.path.isfile(path):
+            missing.append(f"{slot}: {item.value}")
+            continue
+        try:
+            png = decode_mhwi_tex(path, temp_dir)
+            pngs[slot] = png
+            if slot in mrl3_port_tex.DECODE_MAP:
+                arrays[slot] = _png_to_array(png)
+        except Exception as err:
+            missing.append(f"{slot}: {err}")
+    return arrays, pngs, missing
+
+
+# ── material rebuild ────────────────────────────────────────────────────────────
+
+def apply_flags(src_data, dst_data):
+    """Carry MHWI's surface/alpha coefficients over as MDF flags.
+
+    ``alpha_test`` is only ever turned *on*.  The rule behind it is sufficient but not
+    necessary -- see ``mrl3_port.decode_flags`` -- so forcing it off where MHWI calls
+    a material opaque would override the prefab's own, better-informed default.
+    """
+    flags = mrl3_port.decode_flags(list(src_data.surfaceCoef), list(src_data.alphaCoef))
+    dst_data.flags.BaseTwoSideEnable = flags["two_side"]
+    if flags["alpha_test"]:
+        dst_data.flags.BaseAlphaTestEnable = True
+    return flags
+
+
+def _mrl3_values(src_data):
+    """``{ori_name: value}`` across every constant buffer the material carries."""
+    out = {}
+    for block in src_data.propertyBlock_items:
+        for item in block.propertyList_items:
+            attr = _MRL3_VALUE_ATTR.get(item.data_type)
+            if attr is None:
+                continue
+            value = getattr(item, attr, None)
+            if hasattr(value, "__len__") and not isinstance(value, str):
+                value = list(value)
+            out[item.ori_name] = value
+    return out
+
+
+def _set_mdf_prop(dst_data, prop_name, value, converter):
+    """Write one MDF property, converting mrl3's type spelling into MDF's."""
+    item = next((p for p in dst_data.propertyList_items
+                 if p.prop_name == prop_name), None)
+    if item is None:
+        return False
+    attr = _MDF_VALUE_ATTR.get(item.data_type)
+    if attr is None:
+        return False
+
+    if converter == "scalar":
+        setattr(item, attr, float(value))
+    elif converter == "bool":
+        setattr(item, attr, bool(value))
+    elif converter in ("bool_as_float", "uint_as_float"):
+        setattr(item, attr, float(value))
+    elif converter in ("color4", "color3"):
+        rgba = list(value)[:4]
+        while len(rgba) < 4:
+            rgba.append(1.0)
+        target = getattr(item, attr)
+        for i in range(min(len(target), 4)):
+            target[i] = rgba[i]
+    else:
+        return False
+    return True
+
+
+def migrate_params(src_data, dst_data, mode):
+    """Returns ``(migrated, skipped)``."""
+    values = _mrl3_values(src_data)
+    migrated = skipped = 0
+    for src_name, dst_name, converter in mrl3_port.param_pairs(mode):
+        if src_name not in values:
+            skipped += 1
+            continue
+        if _set_mdf_prop(dst_data, dst_name, values[src_name], converter):
+            migrated += 1
+        else:
+            skipped += 1
+
+    if mode == "ALL" and mrl3_port.EMISSIVE_SOURCE in values:
+        rgba, power = mrl3_port.split_emissive(values[mrl3_port.EMISSIVE_SOURCE])
+        colour_ok = _set_mdf_prop(dst_data, "Emissive_Color", rgba, "color4")
+        power_ok = _set_mdf_prop(dst_data, "Emissive_Power", power, "scalar")
+        migrated += int(colour_ok) + int(power_ok)
+        skipped += int(not colour_ok) + int(not power_ok)
+    return migrated, skipped
+
+
+# ── texture rebuild ─────────────────────────────────────────────────────────────
+
+def port_textures(mat_data, dst_data, tex_name, arrays, pngs, dst_cfg,
+                  dst_root, dst_base, temp_dir):
+    """Fill the new material's bindings, writing each texture out.  ``(written, notes)``."""
+    from .mdf_tex_processor_base import BASE_SLOT_CHANNEL_MAPS, _compose_channels
+
+    planes, notes = mrl3_port_tex.decompose(arrays)
+    written = 0
+
+    for binding in dst_data.textureBindingList_items:
+        slot = binding.textureType
+        source = None
+
+        direct_src = next((s for s, d in mrl3_port_tex.DIRECT_SLOTS.items()
+                           if d == slot and s in pngs), None)
+        if direct_src is not None:
+            # A mask has no PBR reading to take apart, so it crosses as pixels.
+            source = ("png", pngs[direct_src])
+        elif planes and slot in BASE_SLOT_CHANNEL_MAPS:
+            needed = {src[0] for src in BASE_SLOT_CHANNEL_MAPS[slot].values()
+                      if isinstance(src, tuple)}
+            # Only rebuild a slot the source actually has something for.  Without
+            # this every slot in the prefab would be written, burying the four real
+            # textures in twenty neutral ones.
+            if not (needed & set(planes)):
+                continue
+            composed = _compose_channels(
+                slot, {}, {}, temp_dir, tex_name,
+                channel_maps=BASE_SLOT_CHANNEL_MAPS, pbr_arrays=planes,
+                octahedral=True)
+            if composed is None:
+                continue
+            source = ("png", composed)
+
+        if source is None:
+            continue
+        mdf_path, on_disk = mdf_port_tex.write_ported_tex(
+            source, slot, dst_cfg, tex_name, dst_root, dst_base, temp_dir)
+        binding.path = mdf_path
+        written += int(on_disk)
+    return written, notes
+
+
+# ── operator ────────────────────────────────────────────────────────────────────
+
+_collection_item_cache = []
+
+
+def _collection_items(self, context):
+    """EnumProperty items must outlive the call: Blender's C side keeps the pointers."""
+    _collection_item_cache.clear()
+    _collection_item_cache.extend(
+        (c.name, c.name, "") for c in bpy.data.collections if is_mrl3_collection(c))
+    if not _collection_item_cache:
+        _collection_item_cache.append(
+            ("NONE", T("core.mrl3_port_ops.no_mrl3_collection"), ""))
+    return _collection_item_cache
+
+
+_mod3_item_cache = []
+
+
+def _mod3_items(self, context):
+    """The ``.mod3`` collections a material set can be checked against."""
+    from .mhwi_port_ops import is_mod3_collection
+
+    _mod3_item_cache.clear()
+    _mod3_item_cache.extend(
+        (c.name, c.name, "") for c in bpy.data.collections if is_mod3_collection(c))
+    if not _mod3_item_cache:
+        _mod3_item_cache.append(
+            ("NONE", T("core.mrl3_port_ops.no_mod3_collection"), ""))
+    return _mod3_item_cache
+
+
+def _new_mdf_collection(src_col):
+    stem = src_col.name
+    if stem.endswith(".mrl3"):
+        stem = stem[:-5]
+    col = bpy.data.collections.new(f"{stem}_{DST_GAME}.mdf2")
+    col["~TYPE"] = "RE_MDF_COLLECTION"
+    # The outliner colour is how a user tells a material collection from a mesh or
+    # chain one at a glance, and every importer sets it -- RE and MHWI both give
+    # material collections COLOR_05.  A collection that carries the right ~TYPE but
+    # no colour reads as "something the addon made wrong".
+    col.color_tag = 'COLOR_05'
+    parents = [c for c in bpy.data.collections if src_col.name in c.children]
+    for parent in (parents or [bpy.context.scene.collection]):
+        parent.children.link(col)
+    return col
+
+
+def used_material_names(mod3_col):
+    """Material names the meshes of a ``.mod3`` collection actually reference.
+
+    Read off the mesh object names -- ``Group_x_Sub_y__<material>`` -- through
+    ``pre_export_check.parse_mesh_name``, so the dedup suffix Blender adds
+    (``__Body.001``) is stripped exactly the way the exporter's own check strips it
+    and a ported material is not culled for a name only Blender invented.
+    """
+    from .pre_export_check import parse_mesh_name
+
+    names = set()
+    for obj in mod3_col.objects:
+        if obj.type != 'MESH':
+            continue
+        mat, how = parse_mesh_name(obj.name)
+        if mat:
+            names.add(mat)
+        elif obj.data.materials:
+            names.add(obj.data.materials[0].name.split(".")[0])
+    return names
+
+
+class MHWI_OT_PortMrl3ToMdf2(bpy.types.Operator):
+    bl_idname = "mhwi.port_mrl3_to_mdf2"
+    bl_label = "MRL3 -> MDF2"
+    #: No 'UNDO': materials and .tex files are created outside the undo stack, so a
+    #: redo-panel re-run would build a second set rather than revise the first.
+    bl_options = {'REGISTER'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.mrl3_port_ops.desc")
+
+    source_collection: bpy.props.EnumProperty(
+        name="Source", items=_collection_items)
+    dest_base_path: bpy.props.StringProperty(name="Base Path", default="")
+    migrate_params: bpy.props.EnumProperty(
+        name="Params",
+        items=lambda self, ctx: [
+            ('BASIC', T("core.mrl3_port_ops.params_basic"),
+             T("core.mrl3_port_ops.params_basic_desc")),
+            ('ALL', T("core.mrl3_port_ops.params_all"),
+             T("core.mrl3_port_ops.params_all_desc"))],
+        default=0)
+    convert_textures: bpy.props.BoolProperty(name="Convert Textures", default=True)
+    #: Default on, because leaving it off is the option that breaks the game.  The
+    #: two engines disagree about an unused material: MHWI ignores it, MHWilds
+    #: refuses to load the model at all -- a mismatch its own pre-export check
+    #: already reports, so a port that produces one has produced a broken mod.
+    cull_unused: bpy.props.BoolProperty(name="Cull Unused", default=True)
+    mod3_collection: bpy.props.EnumProperty(
+        name="Mod3", items=lambda self, ctx: _mod3_items(self, ctx))
+
+    def invoke(self, context, event):
+        if not self.dest_base_path:
+            settings = getattr(context.scene, "mdf_tex_processor", None)
+            self.dest_base_path = getattr(settings, "texture_base_path", "") or ""
+        return context.window_manager.invoke_props_dialog(self, width=460)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "source_collection",
+                    text=T("core.mrl3_port_ops.source_collection"))
+        layout.prop(self, "dest_base_path",
+                    text=T("core.mrl3_port_ops.dest_base_path"))
+        # The field takes the part *between* the game's texture root and the file
+        # name, which the label alone does not convey -- an example says it in fewer
+        # words than a sentence would.
+        layout.label(text=T("core.mrl3_port_ops.base_path_example"))
+        layout.prop(self, "migrate_params",
+                    text=T("core.mrl3_port_ops.migrate_params"))
+        layout.prop(self, "convert_textures",
+                    text=T("core.mrl3_port_ops.convert_textures"))
+        layout.prop(self, "cull_unused",
+                    text=T("core.mrl3_port_ops.cull_unused"))
+        if self.cull_unused:
+            box = layout.box()
+            box.prop(self, "mod3_collection",
+                     text=T("core.mrl3_port_ops.mod3_collection"))
+            box.label(text=T("core.mrl3_port_ops.cull_note"), icon='INFO')
+        if self.convert_textures:
+            from .mdf_port_ops import _draw_mod_root_row
+            box = layout.box()
+            # A label per row, not one above both.  The two rows are a *source* and a
+            # *destination*, and a single "choose the natives root the textures live
+            # under" over the pair reads as though both are places to find textures --
+            # which is what it looked like in use.
+            box.label(text=T("core.mdf_port_ops.mod_root_hint"), icon='INFO')
+            _draw_mod_root_row(box, context, "MHWI",
+                               {"natives_root_key": SRC_NATIVES_KEY})
+            dst_cfg = mdf_port_tex.get_game_tex_config(DST_GAME)
+            if dst_cfg:
+                box.label(text=T("core.mrl3_port_ops.export_root_hint"), icon='EXPORT')
+                _draw_mod_root_row(box, context, DST_GAME, dst_cfg)
+
+    def execute(self, context):
+        src_col = bpy.data.collections.get(self.source_collection)
+        materials = mrl3_materials(src_col) if src_col else []
+        if not materials:
+            self.report({'ERROR'}, T("core.mrl3_port_ops.no_targets"))
+            return {'CANCELLED'}
+
+        # Culled before anything is built, not after: a material that will not
+        # survive should not cost a texture decode, and the count in the report is
+        # then "what was ported", not "what was ported minus what was thrown away".
+        culled = []
+        if self.cull_unused:
+            mod3_col = bpy.data.collections.get(self.mod3_collection)
+            if mod3_col is None:
+                self.report({'ERROR'}, T("core.mrl3_port_ops.pick_mod3"))
+                return {'CANCELLED'}
+            used = used_material_names(mod3_col)
+            keep = []
+            for obj in materials:
+                name = obj.mhw_mrl3_material.materialName or obj.name
+                (keep if name in used else culled).append(obj if name in used else name)
+            materials = keep
+            if not materials:
+                self.report({'ERROR'}, T("core.mrl3_port_ops.all_culled"))
+                return {'CANCELLED'}
+
+        dst_cfg = mdf_port_tex.get_game_tex_config(DST_GAME)
+        if dst_cfg is None:
+            self.report({'ERROR'}, T("core.mdf_port_ops.missing_tex_config"))
+            return {'CANCELLED'}
+
+        read_preset = import_read_preset_json()
+        if read_preset is None:
+            self.report({'ERROR'}, T("core.mdf_port_ops.cannot_load_preset_tool"))
+            return {'CANCELLED'}
+
+        prefab = mrl3_port.prefab_path()
+        if prefab is None:
+            self.report({'ERROR'}, T("core.mrl3_port_ops.no_prefab"))
+            return {'CANCELLED'}
+
+        src_root = context.scene.get(SRC_NATIVES_KEY, "")
+        dst_root = context.scene.get(dst_cfg["natives_root_key"], "")
+        dst_base = mdf_port_tex.full_base_path(dst_cfg, self.dest_base_path.strip())
+        convert = self.convert_textures and bool(src_root)
+        if self.convert_textures and not src_root:
+            self.report({'WARNING'}, T("core.mrl3_port_ops.source_root_missing"))
+
+        temp_dir = tempfile.mkdtemp(prefix="mrl3_port_")
+        new_col = _new_mdf_collection(src_col)
+        built = failed = tex_written = 0
+        params_ok = params_skip = 0
+        missing, notes, unportable = [], [], set()
+
+        try:
+            for obj in materials:
+                src_data = obj.mhw_mrl3_material
+                name = src_data.materialName or obj.name
+                new_obj = read_preset(prefab, new_col)
+                if not new_obj:
+                    failed += 1
+                    continue
+                dst_data = new_obj.re_mdf_material
+                dst_data.materialName = name
+                apply_flags(src_data, dst_data)
+                ok, skip = migrate_params(src_data, dst_data, self.migrate_params)
+                params_ok += ok
+                params_skip += skip
+
+                if convert:
+                    arrays, pngs, gone = load_source_slots(src_data, src_root, temp_dir)
+                    missing.extend(f"{name}/{m}" for m in gone)
+                    unportable.update(mrl3_port_tex.unportable(arrays))
+                    written, size_notes = port_textures(
+                        src_data, dst_data, name.removesuffix('_UseSC'),
+                        arrays, pngs, dst_cfg, dst_root, dst_base, temp_dir)
+                    tex_written += written
+                    notes.extend(f"{name}/{n}" for n in size_notes)
+                built += 1
+        finally:
+            import shutil
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+        parts = [T("core.mrl3_port_ops.stat").format(
+            name=new_col.name, built=built, textures=tex_written,
+            migrated=params_ok, skipped=params_skip)]
+        if culled:
+            parts.append(T("core.mrl3_port_ops.culled").format(
+                n=len(culled), names=", ".join(sorted(culled)[:8])))
+        if failed:
+            parts.append(T("core.mrl3_port_ops.failed").format(n=failed))
+        if missing:
+            parts.append(T("core.mrl3_port_ops.missing_tex").format(
+                n=len(missing), names="; ".join(missing[:4])))
+        if unportable:
+            parts.append(T("core.mrl3_port_ops.unportable").format(
+                names=", ".join(sorted(unportable))))
+        if notes:
+            parts.append(T("core.mrl3_port_ops.rescaled").format(
+                n=len(notes), names="; ".join(notes[:4])))
+        self.report({'WARNING'} if (failed or missing) else {'INFO'},
+                    "  ".join(parts))
+        return {'FINISHED'}
+
+
+classes = [MHWI_OT_PortMrl3ToMdf2]
+
+
+def register():
+    for cls in classes:
+        bpy.utils.register_class(cls)
+
+
+def unregister():
+    for cls in reversed(classes):
+        bpy.utils.unregister_class(cls)

@@ -505,18 +505,31 @@ def _compose_channels(slot_type, pbr_paths, pbr_channels, temp_dir, tex_name, pb
     loaded = {}
 
     if pbr_arrays:
-        # Handed straight over in memory. These planes came from one decoded
-        # image, so they already agree on size and need no loading or scaling;
-        # anything that does not match the largest is dropped rather than
-        # silently resized, and falls back to its PBR default below.
+        # Handed straight over in memory, skipping a round trip through 8-bit PNGs.
+        #
+        # Planes are scaled to the largest, exactly as the disk path below does.
+        # They used to be *dropped* instead, on the grounds that a caller decoding
+        # one image can only produce one size -- true of core/mdf_port_tex.py, and
+        # not true in general: the MRL3 port decodes a material's several packed
+        # slots, and MHWI is free to give a 512px RMT to a 2048px albedo.  Dropping
+        # there costs the material its roughness and metallic with nothing logged,
+        # which is the worst way for this to fail.
         for pbr_type in needed_types:
             arr = pbr_arrays.get(pbr_type)
             if arr is not None:
                 loaded[pbr_type] = arr
         if not loaded:
             return None
-        ref_h, ref_w = max((a.shape[:2] for a in loaded.values()), key=lambda hw: hw[1])
-        loaded = {k: a for k, a in loaded.items() if a.shape[:2] == (ref_h, ref_w)}
+        ref_h, ref_w = max((a.shape[:2] for a in loaded.values()),
+                           key=lambda hw: hw[0] * hw[1])
+        for pbr_type, arr in list(loaded.items()):
+            h, w = arr.shape[:2]
+            if (h, w) == (ref_h, ref_w):
+                continue
+            print(f"[MDF Tex] scaling {pbr_type} plane {w}x{h} -> {ref_w}x{ref_h}")
+            rows = (np.arange(ref_h) * h // ref_h).clip(0, h - 1)
+            cols = (np.arange(ref_w) * w // ref_w).clip(0, w - 1)
+            loaded[pbr_type] = arr[rows[:, None], cols[None, :]]
     else:
         # First pass: load all images and determine the largest size as reference.
         # Using the largest (not the first) avoids 256×256 SOLID images accidentally
