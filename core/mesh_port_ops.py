@@ -28,7 +28,7 @@ convention with nothing to show for it until an animation twists it in-game.
 import bpy
 from mathutils import Matrix, Vector
 
-from . import bone_utils, ref_model
+from . import bone_utils, pose_bake, ref_model
 from .bone_correction import (DEFAULT_TOLERANCE_DEG, derive_bone_correction,
                               expand_corrections, same_convention_set)
 from .bone_mapper import BoneMapManager, auto_detect_preset, build_cross_game_map
@@ -125,8 +125,11 @@ def duplicate_mesh_collection(col, arm_obj, suffix):
 
     new_arm = bone_utils.duplicate_armature_with_meshes(
         arm_obj, f"{arm_obj.name}_{suffix}")
-    copies = [new_arm] + [o for o in bpy.data.objects
-                          if o.type == 'MESH' and o.find_armature() is new_arm]
+    # attached_meshes, not find_armature(): a mesh parented to the rig whose Armature
+    # modifier has an empty target is deformed by nothing, so find_armature() does not
+    # see it -- and it would be copied by the line above but never linked into the new
+    # collection, i.e. dropped from the port with no warning.
+    copies = [new_arm] + pose_bake.attached_meshes(new_arm)
     for obj in copies:
         for c in list(obj.users_collection):
             c.objects.unlink(obj)

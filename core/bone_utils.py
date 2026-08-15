@@ -159,13 +159,21 @@ def duplicate_armature_with_meshes(arm_obj, name=None):
     for coll in arm_obj.users_collection:
         coll.objects.link(new_arm)
 
-    for mesh_obj in [o for o in bpy.data.objects if o.type == 'MESH']:
-        mods = [m for m in mesh_obj.modifiers
-                if m.type == 'ARMATURE' and m.object == arm_obj]
-        if not mods:
-            continue
+    # Which meshes come along is ``pose_bake.attached_meshes``, not "has a modifier
+    # pointing here": a mesh parented to the rig with an empty-target Armature
+    # modifier belongs to it just as much, and testing the modifier target silently
+    # left those behind (measured: 5 of one MHWI model's 19 meshes).
+    from . import pose_bake
+
+    for mesh_obj in pose_bake.attached_meshes(arm_obj):
         new_mesh = mesh_obj.copy()
         new_mesh.data = mesh_obj.data.copy()
+        # An empty target is left empty on purpose.  Duplicating preserves state; it
+        # is the *port* that decides a rescued mesh should end up bound, and it says
+        # so explicitly (``pose_bake.rebind``).  Binding here instead would make the
+        # copy deform where the original does not, which is a different bug in the
+        # same place.  The copy still travels with the rig through its parent, which
+        # is how ``attached_meshes`` finds it again.
         for m in new_mesh.modifiers:
             if m.type == 'ARMATURE' and m.object == arm_obj:
                 m.object = new_arm

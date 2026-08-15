@@ -72,7 +72,15 @@ def is_mod3_collection(col):
 
 
 def bound_meshes(arm_obj):
-    return pose_bake.bound_meshes(arm_obj)
+    """Everything that travels with the rig, which is not the same set as everything
+    it deforms -- see ``pose_bake.attached_meshes``.
+
+    The port carries this set; ``pose_bake.bake_pose_to_rest`` deforms the narrower
+    one on its own.  Getting that backwards in either direction is a real bug: the
+    wide set for baking moves vertices nothing in the viewport moves, and the narrow
+    set for carrying drops meshes out of the output entirely.
+    """
+    return pose_bake.attached_meshes(arm_obj)
 
 
 def _activate(context, obj, *, selected=()):
@@ -249,9 +257,11 @@ def assemble_collection(src_col, ref_arm, meshes):
         mesh.parent = ref_arm
         mesh.matrix_parent_inverse = Matrix.Identity(4)
         mesh.matrix_world = world
-        for mod in mesh.modifiers:
-            if mod.type == 'ARMATURE':
-                mod.object = ref_arm
+        # Binds rather than merely retargets: a mesh that arrived with an empty-target
+        # modifier, or with none at all, is one the port has just rescued from being
+        # dropped -- leaving it unbound would put it in the output looking correct and
+        # deforming with nothing.
+        pose_bake.rebind(mesh, ref_arm)
     return col
 
 

@@ -37,14 +37,65 @@ from mathutils import Matrix
 
 
 def bound_meshes(arm_obj):
-    """Every mesh deformed by *arm_obj*, found through the modifier, not parenting.
+    """Every mesh **deformed** by *arm_obj*.
 
-    ``find_armature()`` reads the Armature modifier, which is what actually decides
-    deformation -- a mesh can be parented to one rig and deformed by another, and it
-    is the deforming one that has to be baked.
+    ``find_armature()`` reads the Armature modifier (or armature parenting), which is
+    what actually decides deformation -- a mesh can be parented to one rig and
+    deformed by another, and it is the deforming one that has to be baked.
+
+    Deliberately narrower than ``attached_meshes``: baking a pose into a mesh the
+    armature does not deform would move vertices that nothing in the viewport moves.
+    Use this to decide what to *deform*, and ``attached_meshes`` to decide what
+    *travels with* the rig.
     """
     return [o for o in bpy.data.objects
             if o.type == 'MESH' and o.find_armature() is arm_obj]
+
+
+def attached_meshes(arm_obj):
+    """Every mesh that belongs to *arm_obj* -- deformed by it, or merely parented.
+
+    A port has to carry the second kind too, and ``find_armature()`` alone does not
+    see them.  Two ways a mesh ends up parented to a rig that does not deform it, both
+    ordinary:
+
+    * its Armature modifier is still in the stack with an **empty target**.  Measured
+      on a real MHWI model: 5 of its 19 meshes were like this, and every one of them
+      was silently dropped by the port -- no warning, they simply were not in the
+      output.  This is what applying the modifier to reposition a piece leaves behind.
+    * it has no Armature modifier at all, having been parented by hand.
+
+    ``find_armature() is None`` is required for the parented case, so a mesh parented
+    to one rig while genuinely deformed by another still belongs to the other -- the
+    same rule ``bound_meshes`` states, read from the other side.
+
+    Order follows ``bpy.data.objects`` so two runs agree.
+    """
+    out = []
+    for obj in bpy.data.objects:
+        if obj.type != 'MESH':
+            continue
+        found = obj.find_armature()
+        if found is arm_obj or (found is None and obj.parent is arm_obj):
+            out.append(obj)
+    return out
+
+
+def rebind(mesh_obj, arm_obj):
+    """Point *mesh_obj*'s Armature modifier at *arm_obj*, adding one if it has none.
+
+    Retargets an existing modifier whatever it pointed at, including nothing, so the
+    empty-target meshes ``attached_meshes`` rescues come out actually bound rather
+    than merely present.  Returns True when the mesh gained a modifier it did not
+    have.
+    """
+    for mod in mesh_obj.modifiers:
+        if mod.type == 'ARMATURE':
+            mod.object = arm_obj
+            return False
+    mod = mesh_obj.modifiers.new(name="Armature", type='ARMATURE')
+    mod.object = arm_obj
+    return True
 
 
 def _skin_matrices(arm_obj, obj):
