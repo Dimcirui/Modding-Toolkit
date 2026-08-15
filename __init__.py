@@ -103,6 +103,7 @@ modules = [
     # "Mod Root" row rather than restating either.
     pre_export_check_ops,
     ref_model_ops,
+    stale_cleanup_ops,
     games,
     ui,
 ]
