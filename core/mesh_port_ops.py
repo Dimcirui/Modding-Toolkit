@@ -260,6 +260,22 @@ def _insert_bones(arm_obj, inserts, ref_arm):
                             and child.parent.name == parent.name):
                         child.parent = new
             made += 1
+
+        # Second pass, for the parent that did not exist yet.  ``inserts`` is in
+        # alphabetical order, not hierarchy order, so an inserted bone whose parent
+        # is *also* being inserted can be created first and come out parentless --
+        # measured on MHWI -> MHWS, where L_Biceps_HJ_00 (position 2) needs
+        # L_UpperArmTwist_HJ_01 (position 47).  Left alone it becomes a second root,
+        # and a bone with no parent inherits no motion at all.
+        #
+        # Only bones that are still parentless are touched, so nothing the first pass
+        # decided is overridden.
+        for name, _rule, _anchor in inserts:
+            new = eb.get(name)
+            ref = ref_bones.get(name) if ref_bones else None
+            if new is None or new.parent is not None or ref is None or ref.parent is None:
+                continue
+            new.parent = eb.get(ref.parent.name)
     finally:
         bpy.ops.object.mode_set(mode='OBJECT')
     return made
@@ -619,6 +635,25 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
             self.report({'ERROR'}, err[1])
             return {'CANCELLED'}
 
+        # Everything below either writes through bpy.data directly (new
+        # collections, duplicated armatures/meshes, the probe's removal) or
+        # calls sub-operators -- mode_set, modder.ree_to_tpose -- that push
+        # their own undo step regardless of this operator's bl_options.  Left
+        # on, a Ctrl+Z after the port lands on one of those mid-run steps: a
+        # half-renamed, half-corrected rig that was never a valid standalone
+        # scene state, and restoring it is what crashes Blender.  Suppressing
+        # global undo for the run makes a later Ctrl+Z skip over the whole
+        # port instead, matching the "runs once, not undoable" contract this
+        # operator already declares by leaving 'UNDO' out of bl_options.
+        prefs = context.preferences.edit
+        undo_was_on = prefs.use_global_undo
+        prefs.use_global_undo = False
+        try:
+            return self._execute_port(context, arm)
+        finally:
+            prefs.use_global_undo = undo_was_on
+
+    def _execute_port(self, context, arm):
         # Copy unless told otherwise. The meshes come too: merging supernumerary
         # bones moves vertex groups, which live on the mesh, so an armature-only
         # copy would have nothing to transfer the weights on.
