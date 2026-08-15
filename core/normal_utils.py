@@ -23,15 +23,22 @@ frontal-cone isoline were all measured against the shipped meshes and all fail
 (the isoline scores well per-loop but cuts across edge loops, so the boundary
 comes out visibly jagged).  It has to be a face selection.
 
-Welding
--------
-Game meshes are split into separate vertices at UV and material borders, so
-plain smooth shading leaves a normal seam wherever an edge loop was cut.
-`weld_coincident_normals` averages those back together.  It only touches
-positions where two *different* vertices coincide, so hard edges inside a
-single vertex fan survive, and it clusters by direction first, so back-to-back
-cards (eyelashes, brows — roughly 180 degrees apart) are not averaged into
-garbage.
+Resetting
+---------
+The game will not take a mesh with welded seams, so a body ships cut into many
+pieces: split vertices, sharp edges and separate objects along every seam.
+`reset_normals` shades that back as if it were one uncut surface — it gathers
+the selected objects into world space, groups every corner by *position*, and
+gives each group the angle-weighted average of the face normals meeting there.
+No shading groups, no sharp-edge splits, no per-vertex fans: the split is
+ignored at calculation time and left completely intact in the mesh, because the
+answer is written as custom split normals, which override sharp edges for
+shading without removing them.
+
+The one thing to know is that averaging across a position is unconditional by
+design, so two coincident surfaces facing opposite ways (eyelash cards) cancel
+out.  Those positions are detected rather than silently emitted as noise, and
+`angle_limit` below 180 is the escape hatch.
 """
 
 import numpy as np
@@ -106,87 +113,251 @@ def slerp(a, b, w):
     return normalize(out)
 
 
-# ── coincident-vertex welding ──────────────────────────────────────────────
+# ── treating a cut-up mesh as one surface ──────────────────────────────────
 
-def weld_coincident_normals(co, lv, base, ang, distance, max_angle):
-    """Average corner normals that share a position and point roughly the same
-    way.  Returns (normals, number of positions touched).
+def face_normals(co, lv, ls, lt):
+    """Unit polygon normal per face, by Newell's method.
 
-    Only positions holding two or more *distinct* vertices are considered, so a
-    vertex split into several fans by sharp edges is left alone.  Within such a
-    position the loops are greedily clustered by direction against
-    ``max_angle`` (degrees) before averaging.
+    Computed from the geometry rather than read back from ``me.polygons`` so the
+    caller can hand in world-space coordinates for several objects at once.  The
+    sum of ``p_i x p_{i+1}`` around the loop is twice the polygon's area vector,
+    which is well behaved on n-gons and on slivers where a single cross product
+    would be noise.
     """
-    if distance <= 0.0 or len(lv) == 0:
-        return base, 0
+    nl = len(lv)
+    lface = np.repeat(np.arange(len(ls)), lt)
+    start = ls[lface]
+    total = lt[lface]
+    k = np.arange(nl) - start
+    nxt = start + (k + 1) % total
+    n = np.zeros((len(ls), 3))
+    np.add.at(n, lface, np.cross(co[lv], co[lv[nxt]]))
+    return normalize(n)
 
-    key = np.round(co / distance).astype(np.int64)[lv]
-    _, gid = np.unique(key, axis=0, return_inverse=True)
-    order = np.argsort(gid, kind="stable")
-    gs = gid[order]
-    cuts = np.flatnonzero(np.diff(gs)) + 1
-    starts = np.concatenate(([0], cuts))
-    ends = np.concatenate((cuts, [len(gs)]))
 
-    out = base.copy()
-    cos_max = np.cos(np.radians(max_angle))
-    touched = 0
-    for s, e in zip(starts, ends):
+# self plus half of the 26 neighbours, so every neighbouring pair of cells is
+# visited exactly once
+_HALF_NEIGHBOURS = (
+    (0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1),
+    (1, 1, 0), (1, -1, 0), (1, 0, 1), (1, 0, -1), (0, 1, 1), (0, 1, -1),
+    (1, 1, 1), (1, 1, -1), (1, -1, 1), (1, -1, -1),
+)
+
+
+def position_clusters(co, distance):
+    """Group vertices by position: two vertices land in the same cluster when
+    they are within ``distance`` of each other.  Returns (cluster id per vertex,
+    cluster count).
+
+    A plain rounded grid key is not enough — two points a hair apart can still
+    straddle a cell boundary and never meet — so this walks the 3x3x3
+    neighbourhood and tests the real distance, the way YAVNE's merge does.  The
+    exact duplicates that a game mesh's cuts produce are collapsed first, which
+    is what keeps the Python part small on a 50k-vertex mesh.
+    """
+    n = len(co)
+    if n == 0:
+        return np.zeros(0, np.int64), 0
+
+    uniq, inv = np.unique(co, axis=0, return_inverse=True)
+    inv = inv.reshape(-1).astype(np.int64)
+    if distance <= 0.0:
+        return inv, len(uniq)
+
+    m = len(uniq)
+    parent = list(range(m))
+
+    def find(x):
+        root = x
+        while parent[root] != root:
+            root = parent[root]
+        while parent[x] != root:
+            parent[x], x = root, parent[x]
+        return root
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[max(ra, rb)] = min(ra, rb)
+
+    cells = {}
+    for i, key in enumerate(map(tuple, np.floor(uniq / distance).astype(np.int64).tolist())):
+        cells.setdefault(key, []).append(i)
+
+    d2 = distance * distance
+    for key, members in cells.items():
+        for off in _HALF_NEIGHBOURS:
+            if off == (0, 0, 0):
+                for a in range(len(members)):
+                    for b in range(a + 1, len(members)):
+                        i, j = members[a], members[b]
+                        if ((uniq[i] - uniq[j]) ** 2).sum() <= d2:
+                            union(i, j)
+                continue
+            other = cells.get((key[0] + off[0], key[1] + off[1], key[2] + off[2]))
+            if not other:
+                continue
+            for i in members:
+                for j in other:
+                    if ((uniq[i] - uniq[j]) ** 2).sum() <= d2:
+                        union(i, j)
+
+    roots = np.array([find(i) for i in range(m)], np.int64)
+    _, cid = np.unique(roots, return_inverse=True)
+    return cid.reshape(-1).astype(np.int64)[inv], int(cid.max()) + 1
+
+
+def integral_normals(co, lv, ls, lt, distance=1e-5, angle_limit=180.0,
+                     face_flip=None):
+    """Corner normals computed as if every coincident vertex were a single one.
+
+    This is the whole point of the reset: the game will not accept a welded
+    mesh, so a body is shipped cut into many pieces with sharp edges and split
+    vertices along every seam.  Shading it as one surface means ignoring that
+    structure at *calculation* time — no shading groups, no sharp-edge splits,
+    no per-vertex fans — while leaving it untouched in the mesh.  Every corner
+    at a shared position gets the same normal, the angle-weighted average of the
+    face normals meeting there, which is exactly what an unsplit mesh would have
+    had.
+
+    ``angle_limit`` (degrees) is an escape hatch, off at 180: below it, corners
+    whose faces disagree by more than the limit are averaged separately, so
+    back-to-back cards such as eyelashes are not cancelled out.
+
+    ``face_flip`` is a per-face +-1 sign applied to the geometric face normals,
+    which is how a negatively scaled object is brought into agreement with the
+    rest of the selection before anything is averaged.
+
+    Returns (corner normals, positions merged, degenerate positions).
+    """
+    ang = corner_angles(co, lv, ls, lt)
+    fn = face_normals(co, lv, ls, lt)
+    if face_flip is not None:
+        fn = fn * np.asarray(face_flip, np.float64)[:, None]
+    lface = np.repeat(np.arange(len(ls)), lt)
+    lfn = fn[lface]
+    cid, ncl = position_clusters(co, distance)
+    lc = cid[lv]
+
+    acc = np.zeros((ncl, 3))
+    np.add.at(acc, lc, ang[:, None] * lfn)
+
+    if angle_limit < 180.0:
+        acc = _split_opposed(acc, lc, ang, lfn, angle_limit)
+        ncl = len(acc)
+
+    # A cluster that cancels out has no meaningful average — two coincident
+    # surfaces pointing opposite ways.  Those corners keep their own face
+    # normal rather than being handed a normalized rounding error.
+    weight = np.zeros(ncl)
+    np.add.at(weight, lc, ang)
+    length = np.linalg.norm(acc, axis=1)
+    degenerate = length < np.maximum(weight, 1e-30) * 1e-6
+
+    out = normalize(acc)[lc]
+    dead = degenerate[lc]
+    out[dead] = lfn[dead]
+
+    sizes = np.bincount(cid, minlength=ncl)
+    return out, int((sizes > 1).sum()), int(degenerate.sum())
+
+
+def _split_opposed(acc, lc, ang, lfn, angle_limit):
+    """Re-accumulate the clusters whose faces disagree by more than
+    ``angle_limit``, splitting each into direction groups.  ``lc`` is modified
+    in place to point at the new cluster ids."""
+    cos_lim = np.cos(np.radians(angle_limit))
+    mean = normalize(acc)
+    bad = np.unique(lc[(lfn * mean[lc]).sum(1) < cos_lim])
+    if not len(bad):
+        return acc
+
+    order = np.argsort(lc, kind="stable")
+    starts = np.searchsorted(lc[order], bad, side="left")
+    ends = np.searchsorted(lc[order], bad, side="right")
+    extra = []
+    for c, s, e in zip(bad, starts, ends):
         idx = order[s:e]
-        if len(idx) < 2 or len(np.unique(lv[idx])) < 2:
-            continue
-        rest = list(idx)
-        merged = False
+        # Seed by descending corner angle so the grouping does not depend on
+        # loop order
+        rest = list(idx[np.argsort(-ang[idx], kind="stable")])
+        first = True
         while rest:
             seed = rest[0]
-            sel = [i for i in rest if float(base[i] @ base[seed]) >= cos_max]
-            rest = [i for i in rest if i not in sel]
-            if len(sel) < 2 or len(np.unique(lv[sel])) < 2:
-                continue
-            n = (base[sel] * ang[sel][:, None]).sum(0)
-            ln = float(np.linalg.norm(n))
-            if ln > 1e-12:
-                out[sel] = n / ln
-                merged = True
-        if merged:
-            touched += 1
-    return out, touched
+            grp = [i for i in rest if float(lfn[i] @ lfn[seed]) >= cos_lim]
+            rest = [i for i in rest if i not in set(grp)]
+            vec = (lfn[grp] * ang[grp][:, None]).sum(0)
+            if first:
+                acc[c] = vec
+                first = False
+            else:
+                lc[grp] = len(acc) + len(extra)
+                extra.append(vec)
+    return np.concatenate([acc, np.array(extra).reshape(-1, 3)]) if extra else acc
 
 
 # ── public operations ──────────────────────────────────────────────────────
 
-def reset_normals(me, weld=True, weld_distance=1e-5, weld_angle=60.0,
-                  clear_sharp=True):
-    """Drop custom split normals, optionally welding coincident vertices back
-    together.  Returns the number of welded positions.
+def reset_normals(objects, distance=1e-5, angle_limit=180.0, shade_smooth=True):
+    """Reshade the given mesh objects as if they were one uncut surface.
 
-    Removing the ``custom_normal`` attribute is not by itself enough to get back
-    to smooth shading: sharp edges and flat-shaded faces split the normals on
-    their own, so the mesh keeps its old faceted look even though the custom
-    normals are gone (measured on a shipped face mesh: up to 107 degrees off per
-    vertex from marked sharp edges, 128 from flat faces).  ``clear_sharp`` also
-    clears those flags, which is what makes the result actually smooth.  It has
-    to happen before the weld step reads the normals back.
+    The objects are gathered into world space and treated as a single mesh, so a
+    body split into a dozen pieces — the shape the game requires — shades across
+    the cuts, including cuts that fall between two separate objects.  Nothing
+    about the split is touched: vertices stay split, sharp edges stay marked,
+    materials stay where they are.  The result is written as custom split
+    normals, which override the sharp edges for shading while leaving them in
+    place for export.
+
+    ``shade_smooth`` sets ``use_smooth`` on the faces.  A flat-shaded face
+    ignores custom normals outright, so without it the result is invisible on
+    exactly the faces that most need it; it is a shading flag only and does not
+    merge or move anything.
+
+    Returns (objects done, positions merged, degenerate positions).
     """
-    co, lv, ls, lt = mesh_arrays(me)
-    if "custom_normal" in me.attributes:
-        me.attributes.remove(me.attributes["custom_normal"])
-    if clear_sharp:
-        if len(me.edges):
-            me.edges.foreach_set("use_edge_sharp", [False] * len(me.edges))
-        if len(me.polygons):
+    parts = []
+    co_all, lv_all, ls_all, lt_all, flip_all = [], [], [], [], []
+    voff = loff = 0
+    for obj in objects:
+        me = obj.data
+        if not me.polygons:
+            continue
+        co, lv, ls, lt = mesh_arrays(me)
+        m = np.array(obj.matrix_world.to_3x3())
+        origin = np.array(obj.matrix_world.translation)
+        # A negatively scaled object draws with its normals flipped, so its
+        # geometry-derived face normals have to be flipped to agree with the
+        # rest of the selection before anything is averaged
+        mirrored = np.linalg.det(m) < 0.0
+        co_all.append(co @ m.T + origin)
+        lv_all.append(lv.astype(np.int64) + voff)
+        ls_all.append(ls.astype(np.int64) + loff)
+        lt_all.append(lt.astype(np.int64))
+        flip_all.append(np.full(len(ls), -1.0 if mirrored else 1.0))
+        parts.append((me, m, loff, loff + len(lv), mirrored))
+        voff += len(co)
+        loff += len(lv)
+
+    if not parts:
+        return 0, 0, 0
+
+    out, merged, degenerate = integral_normals(
+        np.concatenate(co_all), np.concatenate(lv_all),
+        np.concatenate(ls_all), np.concatenate(lt_all),
+        distance, angle_limit, face_flip=np.concatenate(flip_all))
+
+    for me, m, s, e, mirrored in parts:
+        # world -> local for a normal is the transpose of the linear part
+        local = normalize(out[s:e] @ m)
+        if mirrored:
+            local = -local
+        if shade_smooth:
             me.polygons.foreach_set("use_smooth", [True] * len(me.polygons))
+        me.normals_split_custom_set(local.tolist())
         me.update()
-    if not weld:
-        me.update()
-        return 0
-    ang = corner_angles(co, lv, ls, lt)
-    out, touched = weld_coincident_normals(co, lv, corner_normals(me), ang,
-                                           weld_distance, weld_angle)
-    if touched:
-        me.normals_split_custom_set(out.tolist())
-    me.update()
-    return touched
+
+    return len(parts), merged, degenerate
 
 
 def apply_cylindrical(me, axis=2, center=None, face_mask=None,

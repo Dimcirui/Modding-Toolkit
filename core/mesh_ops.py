@@ -176,10 +176,10 @@ class MHW_OT_ShapeKeyToWeights(bpy.types.Operator):
 # part_id is an internal English identifier (translated for display via
 # _MMD_FACE_PART_KEYS below); it used to be the raw Chinese label itself.
 _MMD_FACE_ENTRIES = [
-    ("ウィンク２",  ( 0,  0, -1), "l_upper_eyelid", "MhBone_321", "L_UpEyeLid_LOD01",    "L_U_Eyelid03",  "L_UprLdEdge_02"),
-    ("ウィンク２",  ( 0,  0,  1), "l_lower_eyelid", "MhBone_325", "L_LoEyeLid_LOD01",    "L_D_Eyelid03",  "L_LwrLdEdge_02"),
-    ("ｳｨﾝｸ２右",  ( 0,  0, -1), "r_upper_eyelid", "MhBone_334", "R_UpEyeLid_LOD01",    "R_U_Eyelid03",  "R_UprLdEdge_02"),
-    ("ｳｨﾝｸ２右",  ( 0,  0,  1), "r_lower_eyelid", "MhBone_338", "R_LoEyeLid_LOD01",    "R_D_Eyelid03",  "R_LwrLdEdge_02"),
+    ("ウィンク２",  ( 0,  0, -1), "l_upper_eyelid", "MhBone_321", "L_UpEyeLid_LOD01",    "L_U_Eyelid3",   "L_UprLdEdge_02"),
+    ("ウィンク２",  ( 0,  0,  1), "l_lower_eyelid", "MhBone_325", "L_LoEyeLid_LOD01",    "L_D_Eyelid3",   "L_LwrLdEdge_02"),
+    ("ｳｨﾝｸ２右",  ( 0,  0, -1), "r_upper_eyelid", "MhBone_334", "R_UpEyeLid_LOD01",    "R_U_Eyelid3",   "R_UprLdEdge_02"),
+    ("ｳｨﾝｸ２右",  ( 0,  0,  1), "r_lower_eyelid", "MhBone_338", "R_LoEyeLid_LOD01",    "R_D_Eyelid3",   "R_LwrLdEdge_02"),
     ("あ",          ( 0,  0,  1), "upper_lip",      "MhBone_381", "C_upLip_T_LOD01",     "C_UpperLip",    "C_UprLp_02"),
     ("あ",          ( 0,  0, -1), "lower_lip",      "MhBone_388", "C_loLip_T_LOD01",     "C_LowerLip",    "C_LwrLp_02"),
     ("あ",          ( 1,  0,  0), "l_mouth_corner", "MhBone_384", "L_cornerLip_B_LOD01", "L_MouthCorner", "L_LipCorner_02"),
@@ -407,31 +407,27 @@ Unselected faces keep their own normals; the boundary transitions on its own."""
             if back_to_edit:
                 bpy.ops.object.mode_set(mode='EDIT')
 class MHW_OT_ResetFaceNormals(bpy.types.Operator):
-    """Drop the custom split normals and go back to smooth shading, optionally
-welding the vertices that UV/material borders split apart"""
+    """Reshade the selected meshes as if they were one uncut surface, without
+touching the split vertices, sharp edges or material borders the game needs
+(see core/normal_utils.py)"""
     bl_idname = "mhw.reset_face_normals"
     bl_label = "Reset Face Normals"
     bl_options = {'REGISTER', 'UNDO'}
 
-    clear_sharp: bpy.props.BoolProperty(
-        name="Clear Sharp Edges",
-        default=True,
-        description="Also clear sharp edges and flat shading, which split the normals on their own",
-    )
-    weld: bpy.props.BoolProperty(
-        name="Weld Coincident Vertices",
-        default=True,
-        description="Average normals of vertices split apart at UV/material borders",
-    )
     weld_distance: bpy.props.FloatProperty(
         name="Distance",
         default=1e-5, min=0.0, soft_max=1e-3, precision=6, step=0.01,
-        description="Vertices closer than this count as coincident (mesh-local units)",
+        description="Corners closer together than this count as one position (world units)",
     )
-    weld_angle: bpy.props.FloatProperty(
+    angle_limit: bpy.props.FloatProperty(
         name="Angle Limit",
-        default=60.0, min=0.0, max=180.0,
-        description="Only weld normals closer together than this (degrees)",
+        default=180.0, min=0.0, max=180.0,
+        description="180 averages every corner at a position together; below that, corners facing more than this far apart are kept separate",
+    )
+    shade_smooth: bpy.props.BoolProperty(
+        name="Shade Smooth",
+        default=True,
+        description="Flat-shaded faces ignore custom normals, so the result would not show on them",
     )
 
     @classmethod
@@ -448,30 +444,41 @@ welding the vertices that UV/material borders split apart"""
 
     def draw(self, context):
         col = self.layout.column()
-        col.prop(self, "clear_sharp", text=T("ui.main_panel.fn_field_clear_sharp"))
+        col.prop(self, "weld_distance", text=T("ui.main_panel.fn_field_weld_distance"))
+        col.prop(self, "angle_limit", text=T("ui.main_panel.fn_field_weld_angle"))
         col.separator()
-        col.prop(self, "weld", text=T("ui.main_panel.fn_field_weld"))
-        sub = col.column(align=True)
-        sub.enabled = self.weld
-        sub.prop(self, "weld_distance", text=T("ui.main_panel.fn_field_weld_distance"))
-        sub.prop(self, "weld_angle", text=T("ui.main_panel.fn_field_weld_angle"))
+        col.prop(self, "shade_smooth", text=T("ui.main_panel.fn_field_shade_smooth"))
 
     def execute(self, context):
         from . import normal_utils
 
-        obj = context.active_object
         back_to_edit = context.mode == 'EDIT_MESH'
         if back_to_edit:
             bpy.ops.object.mode_set(mode='OBJECT')
         try:
-            me = obj.data
-            if not me.polygons:
+            # The whole point is to shade across the cuts, and a cut can fall
+            # between two objects, so the operator works on the selection rather
+            # than on the active object alone
+            objects = [o for o in context.selected_objects if o.type == 'MESH']
+            active = context.active_object
+            if active is not None and active.type == 'MESH' and active not in objects:
+                objects.append(active)
+            objects = [o for o in objects if o.data.polygons]
+            if not objects:
                 self.report({'ERROR'}, T("ui.main_panel.fn_err_no_faces"))
                 return {'CANCELLED'}
-            n = normal_utils.reset_normals(
-                me, weld=self.weld, clear_sharp=self.clear_sharp,
-                weld_distance=self.weld_distance, weld_angle=self.weld_angle)
-            self.report({'INFO'}, T("ui.main_panel.fn_info_reset").format(n=n))
+
+            n_obj, merged, degenerate = normal_utils.reset_normals(
+                objects, distance=self.weld_distance,
+                angle_limit=self.angle_limit, shade_smooth=self.shade_smooth)
+            self.report({'INFO'}, T("ui.main_panel.fn_info_reset").format(
+                objs=n_obj, n=merged))
+            # Coincident surfaces facing opposite ways average to nothing.  They
+            # keep their own face normal, but the user should know the setting
+            # that would actually handle them
+            if degenerate:
+                self.report({'WARNING'}, T("ui.main_panel.fn_warn_opposed").format(
+                    n=degenerate))
             return {'FINISHED'}
         finally:
             if back_to_edit:
