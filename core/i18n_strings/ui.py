@@ -234,6 +234,7 @@ STRINGS = {
     "ui.main_panel.mmd_face_weights_tip":         {"EN": "Split MMD eyelid/mouth shape keys by direction into target-game facial vertex groups",
                                                     "ZH": "将 MMD 眼皮/嘴型形态键按方向拆分为目标游戏表情顶点组"},
     "ui.main_panel.mmd_target_game_label":        {"EN": "Target Game",        "ZH": "目标游戏"},
+    "ui.main_panel.mmd_re4_character_label":      {"EN": "Character",          "ZH": "目标角色"},
     "ui.main_panel.mmd_sync_seams_label":         {"EN": "Sync Seam Vertices", "ZH": "缝合重合顶点"},
     "ui.main_panel.mmd_part_l_upper_eyelid":      {"EN": "L Upper Eyelid",  "ZH": "左眼上眼皮"},
     "ui.main_panel.mmd_part_l_lower_eyelid":      {"EN": "L Lower Eyelid",  "ZH": "左眼下眼皮"},

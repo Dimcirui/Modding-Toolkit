@@ -186,6 +186,17 @@ _MMD_FACE_ENTRIES = [
     ("あ",          (-1,  0,  0), "r_mouth_corner", "MhBone_385", "R_cornerLip_B_LOD01", "R_MouthCorner", "R_LipCorner_02"),
 ]
 _MMD_FACE_GAME_COL = {'MHWI': 3, 'MHWS': 4, 'RE4': 5, 'RE9': 6}
+# The RE4 skeleton carries two complete sets of eyelid bones -- L_U_Eyelid01-04
+# and L_U_Eyelid1-4 -- and every reference character has both. Which set the
+# shipped model is actually skinned to differs per character: Leon uses the
+# unpadded names, Ada and Ashley the zero-padded ones. The table above holds the
+# unpadded form; this pads it for the characters that need it.
+_MMD_RE4_PADDED_EYELID_CHARACTERS = {'ADA', 'ASHLEY'}
+
+def _mmd_re4_vg_name(vg_name, character):
+    if character in _MMD_RE4_PADDED_EYELID_CHARACTERS:
+        return re.sub(r"(Eyelid)(\d)$", r"\g<1>0\2", vg_name)
+    return vg_name
 # T() keys for each part_id's display label (used in the done/skipped report message)
 _MMD_FACE_PART_KEYS = {
     "l_upper_eyelid": "ui.main_panel.mmd_part_l_upper_eyelid",
@@ -221,6 +232,16 @@ class MHW_OT_MMDFaceWeights(bpy.types.Operator):
             ('RE9',  "RE9",  ""),
         ],
     )
+    re4_character: bpy.props.EnumProperty(
+        name="Character",
+        description="RE4 only: which character's eyelid naming the mesh uses",
+        items=[
+            ('LEON',   "Leon",   "L_U_Eyelid3"),
+            ('ADA',    "Ada",    "L_U_Eyelid03"),
+            ('ASHLEY', "Ashley", "L_U_Eyelid03"),
+        ],
+        default='LEON',
+    )
     sync_seams: bpy.props.BoolProperty(
         name="Sync Seam Vertices",
         default=True,
@@ -244,6 +265,8 @@ class MHW_OT_MMDFaceWeights(bpy.types.Operator):
         layout = self.layout
         col = layout.column()
         col.prop(self, "target_game", text=T("ui.main_panel.mmd_target_game_label"))
+        if self.target_game == 'RE4':
+            col.prop(self, "re4_character", text=T("ui.main_panel.mmd_re4_character_label"))
         col.separator()
         col.prop(self, "sync_seams", text=T("ui.main_panel.mmd_sync_seams_label"))
 
@@ -263,6 +286,8 @@ class MHW_OT_MMDFaceWeights(bpy.types.Operator):
                 skipped.append(part_id)
                 continue
             target_vg = vg_names[vg_col - 3]
+            if self.target_game == 'RE4':
+                target_vg = _mmd_re4_vg_name(target_vg, self.re4_character)
             params = _MMD_FACE_FIXED_PARAMS[part_id in _MMD_FACE_UPPER_EYELID_LABELS]
 
             result = weight_utils.shape_key_to_weights(
