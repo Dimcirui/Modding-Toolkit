@@ -1332,4 +1332,49 @@ STRINGS = {
     "core.mdf_port_ops.mod_root_hint": {
         "EN": "Choose the natives root directory the textures live under",
         "ZH": "选择贴图所在的 natives 根目录"},
+
+    # ══════════════════════════════════════════════════════════════════════
+    # core/stale_cleanup_ops.py
+    # ══════════════════════════════════════════════════════════════════════
+
+    "core.stale_cleanup_ops.button": {
+        "EN": "Clean Up Leftover Files", "ZH": "清理残留文件"},
+    "core.stale_cleanup_ops.desc": {
+        "EN": "Updates only add and overwrite files, never remove them, so every file "
+              "an older version shipped is still on disk. This finds them by comparing "
+              "the folder against this version's own file list, and deletes them after "
+              "you confirm",
+        "ZH": "更新只会覆盖和新增、从不删除，所以旧版本装过的文件一直留在硬盘上。"
+              "这里通过与本版本自带的文件清单比对找出它们，确认后删除"},
+    "core.stale_cleanup_ops.hint": {
+        "EN": "Updates never delete files, so old versions' files pile up",
+        "ZH": "更新不会删除文件，旧版本的文件会一直堆积"},
+    "core.stale_cleanup_ops.no_manifest": {
+        "EN": "No MANIFEST.txt -- this install predates it, or is a source checkout. "
+              "Reinstall from a release zip first; without the list there is nothing "
+              "safe to compare against",
+        "ZH": "没有 MANIFEST.txt —— 这是清单出现之前的安装，或者是源码检出。"
+              "请先用发布版 zip 重装；没有清单就没有可靠的比对依据，不会删任何东西"},
+    "core.stale_cleanup_ops.none_found": {
+        "EN": "No leftover files -- the install matches this version exactly",
+        "ZH": "没有残留文件 —— 安装目录与本版本完全一致"},
+    "core.stale_cleanup_ops.found": {
+        "EN": "{n} leftover file(s), {mb} MB, plus {pyc} __pycache__ folder(s):",
+        "ZH": "残留 {n} 个文件，共 {mb} MB，另有 {pyc} 个 __pycache__ 目录："},
+    "core.stale_cleanup_ops.and_more": {
+        "EN": "... and {n} more", "ZH": "……另有 {n} 项"},
+    "core.stale_cleanup_ops.kept_note": {
+        "EN": "{n} file(s) under assets/presets/ are left alone -- the preset editor "
+              "writes there, so your own presets look like leftovers too",
+        "ZH": "assets/presets/ 下的 {n} 个文件不会动 —— 预设编辑器往那里写，"
+              "你自建的预设也会被判成残留"},
+    "core.stale_cleanup_ops.confirm": {
+        "EN": "This cannot be undone. The full list is in the system console",
+        "ZH": "此操作不可撤销。完整清单已打印到系统控制台"},
+    "core.stale_cleanup_ops.done": {
+        "EN": "Removed {files} file(s) and {dirs} folder(s), freeing {mb} MB",
+        "ZH": "已删除 {files} 个文件、{dirs} 个目录，释放约 {mb} MB"},
+    "core.stale_cleanup_ops.done_with_errors": {
+        "EN": "Removed {files} file(s), {n} could not be deleted (see the console)",
+        "ZH": "已删除 {files} 个文件，{n} 个删不掉（详见控制台）"},
 }

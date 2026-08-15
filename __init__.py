@@ -30,6 +30,7 @@ from .core import mesh_port_ops
 from .core import mdf_port_ops
 from .core import pre_export_check_ops
 from .core import ref_model_ops
+from .core import stale_cleanup_ops
 from . import ui, games
 
 class MT_Preferences(AddonPreferences):
@@ -76,6 +77,9 @@ class MT_Preferences(AddonPreferences):
         layout = self.layout
         layout.prop(self, "show_console_on_batch_export")
         addon_updater_ops.update_settings_ui(self, context)
+        # Under the updater UI, because it is the updater's merge-never-delete
+        # behaviour that creates the leftovers -- see core/stale_cleanup.py.
+        stale_cleanup_ops.draw_preferences_row(layout)
 
 
 modules = [
