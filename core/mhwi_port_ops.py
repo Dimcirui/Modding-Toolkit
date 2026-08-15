@@ -444,6 +444,18 @@ class MHWI_OT_PortToMHWS(bpy.types.Operator):
             arms[0], arms[0].name + "_port_tmp")
         work_meshes = bound_meshes(work_arm)
 
+        # Bind the copies *before* anything moves, not at assembly time.  A mesh that
+        # arrived with an empty modifier target is deformed by nothing, so the thumb
+        # bake in step 2 would skip it -- and it would then be bound, at the end, to a
+        # rig whose rest pose already carries the rotated thumb, leaving its own thumb
+        # geometry where MHWI had it.  Binding here puts every mesh through every step.
+        #
+        # Only the copy is touched; the user's own model keeps whatever binding state
+        # it had.  Harmless for the meshes that were already bound -- rebind retargets
+        # in place rather than stacking a second modifier.
+        for mesh in work_meshes:
+            pose_bake.rebind(mesh, work_arm)
+
         translate_rig(work_arm, mhwi_port.SOLE_OFFSET_Z)
         thumbs = rotate_thumbs(work_arm, context)
 
