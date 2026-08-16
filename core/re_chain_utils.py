@@ -147,6 +147,118 @@ def uninstall_fast_chain_import():
     return restored
 
 
+# ---------------------------------------------------------------------------
+# 外部补丁 2：让 chainFileType 跟随当前活动集合
+#
+# chainFileType 是 **scene 级** 枚举，RE-Chain-Editor 只在 createChainCollection
+# 里写过一次（blender_re_chain.py:96-100，从集合名后缀推断），此后没有任何东西
+# 会重新推导它。于是场景里同时存在 .chain 和 .chain2 集合时，它永远停留在**最后
+# 一次导入**的值。
+#
+# 这不是显示问题。它决定 Set Attribute Flag 用哪张位表
+# （re_chain_operators.py:2123/2155）、header/settings/group/node 面板画哪些字段
+# （ui_re_chain_panels.py:202/318/452-457/551）、chain2 subdata 面板的 poll(:416)，
+# 以及全部 7 个 create 类算子。停在错误的值上编辑 .chain，写回去的就是 chain2 的
+# 位含义——正是 chain_convert.translate_group_attr 修掉的那个错误，被手工重造。
+#
+# 用 msgbus 订阅"活动物体变化"，而不是 depsgraph handler：回调只在**选择改变**时
+# 触发一次，没有逐帧成本。msgbus 订阅会在读取 .blend 时清空，所以要在 load_post
+# 里重新订阅。
+_SYNC_MARK = "_mtk_chain_type_sync"
+_sync_owner = None
+
+
+def _collection_parent_map():
+    """{子集合名: 父集合}。集合数量是几十的量级，每次选择变化重建一次可以忽略。"""
+    parents = {}
+    for col in bpy.data.collections:
+        for child in col.children:
+            parents[child.name] = col
+    return parents
+
+
+def _owning_chain_collection(obj):
+    """obj 所在的 chain/clsp 集合；碰撞体和 link 住在子集合里，所以要往上找。"""
+    if obj is None:
+        return None
+    parents = _collection_parent_map()
+    for col in obj.users_collection:
+        seen = set()
+        while col is not None and col.name not in seen:
+            seen.add(col.name)
+            if _is_valid_chain_collection(col):
+                return col
+            col = parents.get(col.name)
+    return None
+
+
+def _sync_chain_file_type(*_args):
+    """把 toolpanel 指向活动物体真正所属的那个链集合。
+
+    活动物体不在任何链集合里时**什么都不做**——用户可能只是点了骨架或网格，
+    此时清空指针会比留着旧值更烦人。
+    """
+    try:
+        toolpanel = getattr(bpy.context.scene, "re_chain_toolpanel", None)
+        if toolpanel is None:
+            return
+        col = _owning_chain_collection(getattr(bpy.context, "active_object", None))
+        if col is None:
+            return
+        from ..core.chain_convert import chain_file_type_for
+        # 集合指针和格式一起走：只改其中一个会让 create 类算子把某个格式的对象
+        # 建进另一个格式的集合里，比不改更糟。
+        if toolpanel.chainCollection is not col:
+            toolpanel.chainCollection = col
+        file_type = chain_file_type_for(col.name)
+        if file_type is not None and toolpanel.chainFileType != file_type:
+            toolpanel.chainFileType = file_type
+    except Exception:
+        # msgbus 回调抛异常会污染整个 UI 事件循环，任何情况下都不能往外扔
+        pass
+
+
+@bpy.app.handlers.persistent
+def _resubscribe_chain_type_sync(*_args):
+    install_chain_type_sync()
+
+
+def install_chain_type_sync():
+    """订阅活动物体变化，保持 chainFileType 与所选集合一致。幂等。"""
+    global _sync_owner
+    if bpy.app.background:
+        return 0            # 无 UI，没有"当前选择"可跟随
+    if _sync_owner is None:
+        _sync_owner = object()
+    bpy.msgbus.clear_by_owner(_sync_owner)
+    try:
+        bpy.msgbus.subscribe_rna(
+            key=(bpy.types.LayerObjects, "active"),
+            owner=_sync_owner, args=(), notify=_sync_chain_file_type)
+    except Exception:
+        return 0
+    handlers = bpy.app.handlers.load_post
+    if not any(getattr(h, _SYNC_MARK, False) for h in handlers):
+        setattr(_resubscribe_chain_type_sync, _SYNC_MARK, True)
+        handlers.append(_resubscribe_chain_type_sync)
+    return 1
+
+
+def uninstall_chain_type_sync():
+    """撤销订阅，恢复上游行为。"""
+    global _sync_owner
+    for h in [h for h in bpy.app.handlers.load_post
+              if getattr(h, _SYNC_MARK, False)]:
+        bpy.app.handlers.load_post.remove(h)
+    if _sync_owner is not None:
+        try:
+            bpy.msgbus.clear_by_owner(_sync_owner)
+        except Exception:
+            pass
+        _sync_owner = None
+    return 1
+
+
 def _decompose_chains(head_pb, armature, physics_bones):
     """将以 head_pb 为根的物理链递归分解为多条线性路径。"""
     paths = []

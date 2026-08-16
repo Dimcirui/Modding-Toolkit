@@ -172,6 +172,13 @@ def _patch_chain_import():
 
 def _start_chain_patch_timer():
     global _chain_patch_retries
+    # 与上面的导入补丁无关，也不需要等 RE Chain Editor 加载完：订阅的是 Blender 自己
+    # 的活动物体属性，回调里才去看 re_chain_toolpanel 在不在。
+    try:
+        from .core.re_chain_utils import install_chain_type_sync
+        install_chain_type_sync()
+    except Exception as e:
+        print(f"[Modding-Toolkit] chain file type sync skipped: {e}")
     _chain_patch_retries = 20
     if _patch_chain_import() is not None and not bpy.app.timers.is_registered(
             _patch_chain_import):
@@ -185,8 +192,10 @@ def unregister():
     if bpy.app.timers.is_registered(_patch_chain_import):
         bpy.app.timers.unregister(_patch_chain_import)
     try:
-        from .core.re_chain_utils import uninstall_fast_chain_import
+        from .core.re_chain_utils import (uninstall_fast_chain_import,
+                                          uninstall_chain_type_sync)
         uninstall_fast_chain_import()
+        uninstall_chain_type_sync()
     except Exception:
         pass
 
