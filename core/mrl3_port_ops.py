@@ -34,8 +34,49 @@ from . import mdf_port_tex, mrl3_port, mrl3_port_tex
 from .i18n import T
 from .mdf_port_ops import import_read_preset_json
 
+#: The game this port actually builds against.  It stays MHWilds even when the user
+#: asks for MHRS, because MHWilds is the only game MHWI's material model has been
+#: mapped onto: mrl3_port's 23 parameter destinations are all Base_Equip names.
 DST_GAME = "MHWS"
 SRC_NATIVES_KEY = "mhwi_natives_root"
+
+#: Targets offered to the user.  MHRS is reached by handing the MHWilds result to
+#: the ordinary MHWS -> MHRS material port, not by a second mrl3 table.
+#:
+#: Measured before choosing (2026-08-16).  Of the 23 mrl3 destinations that exist
+#: in Base_Equip, 6 survive the second hop; of the 17 that do not, **15 have no
+#: counterpart in MHRS at all** -- PL_Default is a single shader with no
+#: RoughnessParam, no ColorParam, no SSS and no ColorLayer, so a direct table
+#: could not carry them either.  A whole parallel pipeline would buy 8 of 23
+#: instead of 6.
+#:
+#: Texture quality does not pay for the extra hop either: every one of the 15
+#: MHWS slot types maps to an MHRS slot with an identical channel layout, so
+#: ``mdf_port_tex.repack_slot`` takes its "container rewrite, pixels untouched"
+#: path for all of them.  The one real decode/encode happens in this port, once.
+TARGET_GAMES = ("MHWS", "MHRS")
+
+#: Spelled out rather than built from TARGET_GAMES with an f-string: a key the
+#: table check cannot read as a literal is a key it cannot verify exists.
+_TARGET_ITEMS = (
+    ("MHWS", "core.mrl3_port_ops.target_mhws", "core.mrl3_port_ops.target_mhws_desc"),
+    ("MHRS", "core.mrl3_port_ops.target_mhrs", "core.mrl3_port_ops.target_mhrs_desc"),
+)
+
+#: Persistent backing for the dynamic enum below.  Blender's C side keeps the
+#: pointers to these strings, so a list built fresh inside the callback is freed
+#: the moment Python drops it -- the same trap core/ref_skeleton.py and
+#: core/chain_convert_ops.py both document.  Cleared and refilled rather than
+#: built once, so switching language still re-resolves the labels.
+_target_item_cache = []
+
+
+def _target_game_items(self=None, context=None):
+    _target_item_cache.clear()
+    _target_item_cache.extend((g, T(label), T(desc)) for g, label, desc in _TARGET_ITEMS)
+    return _target_item_cache
+#: Where the second hop's output should end up named, given this port's own output.
+_RELAY_TARGET = "MHRS"
 
 #: mrl3 stores a property's value in a field named after its type; so does MDF, with
 #: a different set of names.  Neither exposes a generic "value".
@@ -380,6 +421,10 @@ class MHWI_OT_PortMrl3ToMdf2(bpy.types.Operator):
 
     source_collection: bpy.props.EnumProperty(
         name="Source", items=_collection_items)
+    #: One click for MHWI -> MHRS, two hops behind it.  See TARGET_GAMES for why
+    #: relaying beats a second mrl3 table.
+    target_game: bpy.props.EnumProperty(
+        name="Target", items=_target_game_items, default=0)
     dest_base_path: bpy.props.StringProperty(name="Base Path", default="")
     migrate_params: bpy.props.EnumProperty(
         name="Params",
@@ -408,6 +453,7 @@ class MHWI_OT_PortMrl3ToMdf2(bpy.types.Operator):
         layout = self.layout
         layout.prop(self, "source_collection",
                     text=T("core.mrl3_port_ops.source_collection"))
+        layout.prop(self, "target_game", text=T("core.mrl3_port_ops.target_label"))
         layout.prop(self, "dest_base_path",
                     text=T("core.mrl3_port_ops.dest_base_path"))
         # The field takes the part *between* the game's texture root and the file
@@ -542,7 +588,53 @@ class MHWI_OT_PortMrl3ToMdf2(bpy.types.Operator):
                 n=len(notes), names="; ".join(notes[:4])))
         self.report({'WARNING'} if (failed or missing) else {'INFO'},
                     "  ".join(parts))
+
+        if self.target_game == _RELAY_TARGET and built:
+            ok, note = self._relay(context, new_col)
+            self.report({'INFO'} if ok else {'WARNING'}, note)
         return {'FINISHED'}
+
+    def _relay(self, context, mhws_col):
+        """Hand the MHWilds result to the ordinary MHWS -> MHRS material port.
+
+        The intermediate is removed on success, so the user is left with the one
+        collection they asked for rather than two -- but only on success: if the
+        second hop fails, the MHWilds materials are a real result and throwing
+        them away would turn a partial port into no port at all.
+
+        Textures are not converted again.  This port has already written them into
+        the destination's own natives tree in the target's container, and the
+        second hop's job here is the material, not the pixels -- re-running it
+        would resolve source paths that no longer describe where anything is.
+        """
+        stem = mhws_col.name
+        for suffix in (f"_{DST_GAME}.mdf2", ".mdf2"):
+            if stem.endswith(suffix):
+                stem = stem[:-len(suffix)]
+                break
+        try:
+            r = bpy.ops.modder.port_mdf_material_cross_game(
+                'EXEC_DEFAULT', source_game=DST_GAME, target_game=_RELAY_TARGET,
+                source_collection=mhws_col.name, convert_textures=False,
+                dest_base_path=self.dest_base_path.strip(),
+                migrate_params=self.migrate_params)
+        except (RuntimeError, TypeError) as e:
+            return False, T("core.mrl3_port_ops.relay_failed").format(err=e)
+        if 'FINISHED' not in r:
+            return False, T("core.mrl3_port_ops.relay_failed").format(err=", ".join(r))
+
+        made = next((c for c in bpy.data.collections
+                     if c.get("~TYPE") == "RE_MDF_COLLECTION"
+                     and c.name.startswith(mhws_col.name.removesuffix(".mdf2"))
+                     and c is not mhws_col), None)
+        if made is None:
+            return False, T("core.mrl3_port_ops.relay_no_result")
+        made.name = f"{stem}_{_RELAY_TARGET}.mdf2"
+        n = len([o for o in made.objects if o.get("~TYPE") == "RE_MDF_MATERIAL"])
+        for obj in list(mhws_col.objects):
+            bpy.data.objects.remove(obj, do_unlink=True)
+        bpy.data.collections.remove(mhws_col)
+        return True, T("core.mrl3_port_ops.relayed").format(name=made.name, n=n)
 
 
 classes = [MHWI_OT_PortMrl3ToMdf2]

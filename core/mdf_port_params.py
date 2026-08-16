@@ -69,6 +69,19 @@ CANON = [
     ("Primary Specular Color", {"MHWS": ["PrimalySpecularColor"], "RE4": ["PrimalySpecularColor"], "RE9": ["Primaly_SpecularColor"], "MHRS": []}),
     ("Specular Shift Offset", {"MHWS": ["Specular_ShiftOffset"], "RE4": ["SpecularShiftOffset"],   "RE9": ["SpecularShiftOffset"], "MHRS": []}),
     ("Wet Roughness",         {"MHWS": ["Wet_Roughness"],        "RE4": [],                        "RE9": ["Wet_Roughness"], "MHRS": []}),
+    # Three spellings of one unambiguous switch -- two of them misspelling it in
+    # different directions ("Filp", "Reverse"). Nothing in these shaders is close
+    # enough to confuse it with, which is what makes it HIGH-confidence despite no
+    # two names matching. Without the row it migrates nowhere, since RE4/RE9 carry
+    # it only on hair, the one archetype whose MHWS counterpart spells it
+    # differently.
+    #
+    # MHRS is left out even though it has the param, because it stores it as BOOL
+    # where the other three store FLOAT, and migration copies a value into a named
+    # field without converting between types -- pairing them would write a float
+    # into a bool. Worth revisiting only if migration grows type coercion; the
+    # concept is right, the representation is not.
+    ("Backface Normal Flip",  {"MHWS": ["BackFaceFlipNormal"],   "RE4": ["BackfaceNormalReverse"], "RE9": ["BackfaceNormalReverse"], "MHRS": []}),
 ]
 
 #: Kept out of 'basic', not out of 'all'.  Each entry is a name or a name prefix,

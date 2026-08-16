@@ -1321,6 +1321,32 @@ STRINGS = {
         "ZH": "导出目录"},
     "core.mrl3_port_ops.migrate_params": {
         "EN": "Migrate Params", "ZH": "迁移参数"},
+    "core.mrl3_port_ops.target_label": {"EN": "Target Game", "ZH": "目标游戏"},
+    "core.mrl3_port_ops.target_mhws": {"EN": "MHWS", "ZH": "怪猎荒野"},
+    "core.mrl3_port_ops.target_mhws_desc": {
+        "EN": "Build MHWilds materials from the MRL3 -- the direct conversion",
+        "ZH": "从 MRL3 直接生成怪猎荒野材质"},
+    "core.mrl3_port_ops.target_mhrs": {"EN": "MHRS", "ZH": "怪猎崛起"},
+    "core.mrl3_port_ops.target_mhrs_desc": {
+        "EN": "Build MHWilds materials, then port those to MHRS in the same click. "
+              "MHRS has one shader with far fewer knobs, so most parameters have "
+              "nowhere to land -- 6 of 23 survive, and a direct conversion could "
+              "only manage 8",
+        "ZH": "先生成怪猎荒野材质，再在同一次操作里转到怪猎崛起。崛起只有一个着色器、"
+              "旋钮少得多，所以多数参数无处可去——23 个里只有 6 个能保留，"
+              "即使做直连转换也只能到 8 个"},
+    "core.mrl3_port_ops.relayed": {
+        "EN": "Then ported to MHRS: {name}, {n} material(s). The MHWilds "
+              "intermediate was removed",
+        "ZH": "已继续转到怪猎崛起：{name}，{n} 个材质。中间的荒野集合已删除"},
+    "core.mrl3_port_ops.relay_failed": {
+        "EN": "The MHWilds materials were built, but the MHRS step failed ({err}). "
+              "The MHWilds collection was kept",
+        "ZH": "荒野材质已生成，但转崛起这一步失败（{err}），荒野集合已保留"},
+    "core.mrl3_port_ops.relay_no_result": {
+        "EN": "The MHRS step reported success but produced no collection; the "
+              "MHWilds collection was kept",
+        "ZH": "转崛起这一步报告成功却没有产出集合，荒野集合已保留"},
     "core.mrl3_port_ops.params_basic": {"EN": "Basic", "ZH": "基础"},
     "core.mrl3_port_ops.params_basic_desc": {
         "EN": "Metallic, roughness and translucency only -- the three whose meaning "
