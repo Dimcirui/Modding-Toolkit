@@ -47,19 +47,28 @@ from . import mdf_port
 #: archetype (RE4's ``SSSChannel`` vs ``SSS_Channel``); the first candidate that
 #: the actual prefab carries wins, so a missing name is a real "this shader has no
 #: such knob" rather than a table bug.
+#:
+#: MHRS is mostly empty and that is the shader, not an unfinished row.  Its one
+#: archetype, ``PL_Default``, drives base colour and roughness from maps
+#: (``BaseDielectricMap``, ``NRMR_NRRTMap``) rather than from scalars, so there is
+#: no Base Color or Roughness param to pair with -- four concepts are all it
+#: exposes.  Filling the blanks with near-misses (``Blend_roughness`` for
+#: Roughness, ``S_col_R`` for Base Color) is exactly the kind of matching this
+#: module's docstring rejects: same family, different meaning, renders subtly
+#: wrong with nothing to trace it to.
 CANON = [
-    ("Base Color",            {"MHWS": ["ColorParam"],           "RE4": ["BaseColor"],             "RE9": ["BaseColor"]}),
-    ("Roughness",             {"MHWS": ["RoughnessParam"],       "RE4": ["Roughness"],             "RE9": ["Roughness"]}),
-    ("Metallic",              {"MHWS": ["MetalParam"],           "RE4": ["Metallic"],              "RE9": ["Metallic"]}),
-    ("Translucency",          {"MHWS": ["TranslucentParam"],     "RE4": ["Translucency"],          "RE9": ["Translucency"]}),
-    ("Occlusion Intensity",   {"MHWS": ["OcclusionParam"],       "RE4": ["OcclusionIntensity"],    "RE9": ["Occlusion_Intensity"]}),
-    ("Alpha Test Ref",        {"MHWS": ["AlphaTest_Ref"],        "RE4": ["AlphaTestRef"],          "RE9": ["AlphaTestRef"]}),
-    ("Emissive Color",        {"MHWS": ["Emissive_Color"],       "RE4": ["EmissiveColor"],         "RE9": ["EmissiveColor"]}),
-    ("Emissive Intensity",    {"MHWS": ["Emissive_Intensity"],   "RE4": ["EmissiveIntensity"],     "RE9": ["EmissiveIntensity"]}),
-    ("SSS Profile",           {"MHWS": ["SSSProfile"],           "RE4": [],                        "RE9": ["SSS_Profile"]}),
-    ("Primary Specular Color", {"MHWS": ["PrimalySpecularColor"], "RE4": ["PrimalySpecularColor"], "RE9": ["Primaly_SpecularColor"]}),
-    ("Specular Shift Offset", {"MHWS": ["Specular_ShiftOffset"], "RE4": ["SpecularShiftOffset"],   "RE9": ["SpecularShiftOffset"]}),
-    ("Wet Roughness",         {"MHWS": ["Wet_Roughness"],        "RE4": [],                        "RE9": ["Wet_Roughness"]}),
+    ("Base Color",            {"MHWS": ["ColorParam"],           "RE4": ["BaseColor"],             "RE9": ["BaseColor"], "MHRS": []}),
+    ("Roughness",             {"MHWS": ["RoughnessParam"],       "RE4": ["Roughness"],             "RE9": ["Roughness"], "MHRS": []}),
+    ("Metallic",              {"MHWS": ["MetalParam"],           "RE4": ["Metallic"],              "RE9": ["Metallic"], "MHRS": ["Metallic_Param"]}),
+    ("Translucency",          {"MHWS": ["TranslucentParam"],     "RE4": ["Translucency"],          "RE9": ["Translucency"], "MHRS": ["Translucency_Param", "NoMap_Translucency_Param"]}),
+    ("Occlusion Intensity",   {"MHWS": ["OcclusionParam"],       "RE4": ["OcclusionIntensity"],    "RE9": ["Occlusion_Intensity"], "MHRS": []}),
+    ("Alpha Test Ref",        {"MHWS": ["AlphaTest_Ref"],        "RE4": ["AlphaTestRef"],          "RE9": ["AlphaTestRef"], "MHRS": []}),
+    ("Emissive Color",        {"MHWS": ["Emissive_Color"],       "RE4": ["EmissiveColor"],         "RE9": ["EmissiveColor"], "MHRS": ["Emissive_color"]}),
+    ("Emissive Intensity",    {"MHWS": ["Emissive_Intensity"],   "RE4": ["EmissiveIntensity"],     "RE9": ["EmissiveIntensity"], "MHRS": ["Emissive_intensity"]}),
+    ("SSS Profile",           {"MHWS": ["SSSProfile"],           "RE4": [],                        "RE9": ["SSS_Profile"], "MHRS": []}),
+    ("Primary Specular Color", {"MHWS": ["PrimalySpecularColor"], "RE4": ["PrimalySpecularColor"], "RE9": ["Primaly_SpecularColor"], "MHRS": []}),
+    ("Specular Shift Offset", {"MHWS": ["Specular_ShiftOffset"], "RE4": ["SpecularShiftOffset"],   "RE9": ["SpecularShiftOffset"], "MHRS": []}),
+    ("Wet Roughness",         {"MHWS": ["Wet_Roughness"],        "RE4": [],                        "RE9": ["Wet_Roughness"], "MHRS": []}),
 ]
 
 #: Kept out of 'basic', not out of 'all'.  Each entry is a name or a name prefix,

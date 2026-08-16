@@ -13,8 +13,15 @@ only: a material whose shader is not one of the archetypes is reported as unsupp
 rather than guessed at from keywords in its name, because a wrong archetype produces a
 material that looks plausible and renders wrong.
 
-**Scope is MHWS / RE4R / RE9.**  MHRS ships a single prefab and no validated pairing,
-so it is not offered; the mesh and chain ports cover the same three games.
+**Scope is MHWS / RE4R / RE9 / MHRS.**
+
+MHRS is the one game with a single archetype, and that is the game rather than a
+gap in what ships (user, 2026-08-16): ``PL_Default`` is the only master material
+worth using there, the same way MHWI has only ``pl_mt`` and MHWS's ``Base_Equip``
+covers the plain case.  So everything lands on ``standard`` in that direction and
+nothing is being flattened that the target could have expressed -- which is why it
+is offered rather than withheld.  Coming *out* of MHRS the source is always
+``standard`` too, and the target's own map decides where that goes.
 
 The mapping (user's decision, 2026-08-14):
 
@@ -36,11 +43,11 @@ checked offline against the assets that actually ship.
 import json
 import os
 
-#: Games this is offered for, same three the mesh and chain ports cover.
-PORTABLE_GAMES = ("MHWS", "RE4", "RE9")
+#: Games this is offered for, same set the mesh and chain ports cover.
+PORTABLE_GAMES = ("MHWS", "RE4", "RE9", "MHRS")
 
 #: Prefab directory per game, under assets/mdf_presets/.
-_PREFAB_DIRS = {"MHWS": "mhws", "RE4": "re4", "RE9": "re9"}
+_PREFAB_DIRS = {"MHWS": "mhws", "RE4": "re4", "RE9": "re9", "MHRS": "mhrs"}
 
 #: Where each source archetype lands, per target game.  A missing entry means the
 #: target has no equivalent and the game's fallback is used.
@@ -56,6 +63,13 @@ _ARCHETYPE_MAP = {
     "RE9": {"standard": "standard", "hair": "hair", "skin": "skin",
             "emissive": "emissive", "transparent": "transparent",
             "weapon": "standard", "basic": "standard"},
+    # MHRS has one archetype, so every source lands on it. Spelled out rather than
+    # left to FALLBACK_ARCHETYPE: the fallback also *reports*, and a hair material
+    # arriving at MHRS's standard is not something the user needs to go check by
+    # hand -- there is nowhere else it could have gone.
+    "MHRS": {"standard": "standard", "hair": "standard", "skin": "standard",
+             "emissive": "standard", "transparent": "standard",
+             "weapon": "standard", "basic": "standard"},
 }
 
 #: Shaders that *mean* an archetype without being the prefab shipped for it.
@@ -88,7 +102,8 @@ _ALSO_CLASSIFIES_AS = {
 }
 
 #: Used when the source material's shader matches no known archetype.
-FALLBACK_ARCHETYPE = {"MHWS": "basic", "RE4": "standard", "RE9": "standard"}
+FALLBACK_ARCHETYPE = {"MHWS": "basic", "RE4": "standard", "RE9": "standard",
+                      "MHRS": "standard"}
 
 
 def _assets_dir():
