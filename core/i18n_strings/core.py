@@ -1070,6 +1070,16 @@ STRINGS = {
     "core.chain_convert_ops.subdata_added": {
         "EN": "Added the missing chain2 subdata to {n} chain setting(s)",
         "ZH": "已为 {n} 个 Chain Settings 补上缺失的 chain2 subdata"},
+    "core.chain_convert_ops.attr_translated": {
+        "EN": "Re-encoded the attribute flags on {n} group/setting(s): .chain and "
+              ".chain2 number these bits differently, so the value changes but the "
+              "meaning is kept",
+        "ZH": "已重新编码 {n} 个 Group/Settings 的属性标记：.chain 与 .chain2 的位定义"
+              "不同，数值会变但含义保持不变"},
+    "core.chain_convert_ops.attr_dropped": {
+        "EN": "Attribute flag(s) the target format has no equivalent for were "
+              "dropped: {names}",
+        "ZH": "目标格式没有对应位的属性标记已被丢弃：{names}"},
     "core.chain_convert_ops.export_with": {
         "EN": "Export with {op}, version {version}",
         "ZH": "请用 {op} 导出，版本 {version}"},

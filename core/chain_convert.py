@@ -100,6 +100,101 @@ COLLIDER_FILTER_BY_GAME = {
 #: a ``.chain`` game has no subdata to carry over, which is exactly that case.
 CHAIN2_SUBDATA_DEFAULT = ((0, 1, 0, 0, 0, 0, 0), (0, 1, 0, 0, 77, 0, 0))
 
+#: The group attribute-flag vocabularies, copied from RE-Chain-Editor's
+#: ``re_chain_operators.chainGroupAttrFlags`` (:1712) and ``chain2GroupAttrFlags``
+#: (:1737).  **The two are not the same numbering**, and this is the one place in
+#: a chain port where a value survives unchanged and still means something else:
+#:
+#: ==================  =========  =======
+#: meaning             ``.chain``  ``.chain2``
+#: ==================  =========  =======
+#: ExtraNode                    4   131072
+#: ScaleAnimation           65536        4
+#: CollisionCharacter      131072    65536
+#: ==================  =========  =======
+#:
+#: Every other bit matches.  RE-Chain-Editor does **not** translate: import and
+#: export copy the integer verbatim (``re_chain_propertyGroups.py:1768`` and
+#: ``:1796``, neither guarded by ``isChain2``).  Its two tables exist only so the
+#: *checkbox dialog* labels the bits right for whichever ``chainFileType`` the
+#: scene last set (``re_chain_operators.py:2123-2127``, ``:2155-2159``).
+#:
+#: So a raw carry costs the most-used bit there is: 65536 is ``CollisionCharacter``
+#: in chain2 and every ``groupDefaultAttr`` in assets/presets/physics/physics_presets.json
+#: carries it.  Ported to RE4R verbatim it reads as ``ScaleAnimation`` -- the chain
+#: stops colliding with the body, the file still loads, and nothing warns.
+#:
+#: Keyed by name, not by bit, because the fix is a *type* conversion: decode to
+#: meanings in the source vocabulary, re-encode in the target's.
+GROUP_ATTR_FLAGS_CHAIN = {
+    "RootRotation": 1, "AngleLimit": 2, "ExtraNode": 4,
+    "CollisionDefault": 8, "CollisionSelf": 16, "CollisionModel": 32,
+    "CollisionVGround": 64, "CollisionCollider": 128, "CollisionGroup": 256,
+    "EnablePartBlend": 512, "WindDefault": 1024, "TransAnimation": 2048,
+    "AngleLimitRestitution": 4096, "StretchBoth": 8192,
+    "EndRotConstraint": 16384, "EnableEnvWind": 32768,
+    "ScaleAnimation": 65536, "CollisionCharacter": 131072,
+}
+GROUP_ATTR_FLAGS_CHAIN2 = {
+    "RootRotation": 1, "AngleLimit": 2, "ScaleAnimation": 4,
+    "CollisionDefault": 8, "CollisionSelf": 16, "CollisionModel": 32,
+    "CollisionVGround": 64, "CollisionCollider": 128, "CollisionGroup": 256,
+    "EnablePartBlend": 512, "WindDefault": 1024, "TransAnimation": 2048,
+    "AngleLimitRestitution": 4096, "StretchBoth": 8192,
+    "EndRotConstraint": 16384, "EnableEnvWind": 32768,
+    "CollisionCharacter": 65536, "ExtraNode": 131072,
+    "UseBitFlag": 262144, "StretchBothAutoScale": 524288,
+}
+
+#: The two fields that speak the vocabulary above.  ``groupDefaultAttr`` lives on
+#: the *settings* and seeds new groups; ``attrFlags`` is the group's own copy.
+#: Both must be translated -- doing only one leaves the pair disagreeing.
+GROUP_ATTR_FIELDS = (
+    ("RE_CHAIN_CHAINSETTINGS", "re_chain_chainsettings", "groupDefaultAttr"),
+    ("RE_CHAIN_CHAINGROUP", "re_chain_chaingroup", "attrFlags"),
+)
+
+#: Only the *group* vocabulary is format-dependent.  RE-Chain-Editor defines a
+#: ``chain2`` variant for exactly one flag class (``chain2GroupAttrFlags``); node,
+#: settings and jiggle flags each have a single shared table, so they cross
+#: formats unchanged and are deliberately left alone here.
+
+
+def translate_group_attr(value, src_chain2, dst_chain2):
+    """Re-encode a group attribute mask from one container's vocabulary to the other.
+
+    Returns ``(new_value, dropped)`` where *dropped* names the meanings the target
+    format has no bit for -- chain2's ``UseBitFlag`` and ``StretchBothAutoScale``
+    going to ``.chain``.  They are dropped rather than mapped: inventing a bit the
+    format does not define would be a corrupt file, and silently keeping the raw
+    value would put those bits on top of nothing.
+
+    Bits outside both vocabularies are passed through untouched.  We do not know
+    what they mean in *either* format, so neither dropping them nor moving them is
+    defensible; carrying them is the only choice that adds no new claim.  Same
+    container in and out is an identity, including for those unknown bits.
+    """
+    value = int(value)
+    if src_chain2 == dst_chain2:
+        return value, []
+    src = GROUP_ATTR_FLAGS_CHAIN2 if src_chain2 else GROUP_ATTR_FLAGS_CHAIN
+    dst = GROUP_ATTR_FLAGS_CHAIN2 if dst_chain2 else GROUP_ATTR_FLAGS_CHAIN
+
+    known = 0
+    for bit in src.values():
+        known |= bit
+    out = value & ~known          # unknown bits ride along unchanged
+    dropped = []
+    for name, bit in src.items():
+        if not value & bit:
+            continue
+        target_bit = dst.get(name)
+        if target_bit is None:
+            dropped.append(name)
+        else:
+            out |= target_bit
+    return out, dropped
+
 
 def is_chain2(game_code):
     """True when *game_code*'s physics file is a ``.chain2`` container."""
@@ -156,6 +251,25 @@ def _copy_collection_props(src, dst):
         dst[key] = src[key]
 
 
+def chain_file_type_for(collection_name):
+    """RE-Chain-Editor's ``chainFileType`` value for a chain collection's name.
+
+    ``None`` means "do not touch it".  That covers ``.clsp``, which is not a
+    container of its own -- a ``.clsp`` sits *beside* a chain of either format,
+    so selecting one says nothing about which vocabulary to edit in.  Upstream's
+    createChainCollection makes the same exception (blender_re_chain.py:96).
+
+    Mirrors upstream's rule exactly, including that anything not ``.chain2`` is
+    treated as ``.chain``: matching its behaviour matters more than being
+    stricter, since the whole point is to agree with what an import would set.
+    """
+    if not collection_name or collection_name.endswith(".clsp"):
+        return None
+    if ".chain" not in collection_name:
+        return None
+    return "chain2" if collection_name.endswith(".chain2") else "chain"
+
+
 def chain_stem(name):
     """``'char'`` from ``'char.chain'`` / ``'char.chain2'`` / ``'char.clsp'``."""
     for ext in _CHAIN_EXTS:
@@ -182,11 +296,12 @@ def ported_chain_collection_name(source_name, target_game):
 _SETTINGS_TYPE = "RE_CHAIN_CHAINSETTINGS"
 
 
-def apply_target_game_settings(collection, target_game):
+def apply_target_game_settings(collection, target_game, source_game=None):
     """Make a ported collection say what the *target* game needs, not the source's.
 
-    Two things do not survive a port on their own, and neither is visible in the
-    outliner -- both surface only when the game refuses to load the model:
+    Three things do not survive a port on their own, and none is visible in the
+    outliner -- the first two surface only when the game refuses to load the
+    model, and the third does not surface at all:
 
     ``colliderFilterInfoPath``
         A path into the source game's files.  Carried across verbatim it names an
@@ -204,7 +319,16 @@ def apply_target_game_settings(collection, target_game):
         Only exists in the ``.chain2`` container, so a port from a ``.chain`` game
         has none -- and RE-Chain-Editor's own backfill only runs at version 12.
 
-    Returns ``{'filter_set': n, 'subdata_added': n, 'filter_path': str}``.
+    group ``attrFlags`` / settings ``groupDefaultAttr``
+        The one field whose *value* means something different in the two
+        containers.  Only translated when the port actually crosses containers;
+        MHWS -> RE9 is chain2 on both sides and leaves it alone.  See
+        GROUP_ATTR_FLAGS_CHAIN for why a raw carry is worse than it looks.
+        Needs *source_game*; without it the translation is skipped, since
+        guessing the source vocabulary would be the same bug in a new place.
+
+    Returns ``{'filter_set': n, 'subdata_added': n, 'filter_path': str,
+    'attr_translated': n, 'attr_dropped': [name, ...]}``.
 
     Note there is deliberately no "convert the objects to chain2 types" step: there
     are no such types.  Every object carries a format-neutral ``RE_CHAIN_*`` marker
@@ -214,6 +338,36 @@ def apply_target_game_settings(collection, target_game):
     """
     path = COLLIDER_FILTER_BY_GAME.get(target_game, "")
     want_subdata = is_chain2(target_game)
+
+    # None means "source unknown" -- distinct from "same container", so the two
+    # cannot collapse into a silent no-op that looks like a handled port.
+    crossing = (source_game is not None
+                and is_chain2(source_game) != is_chain2(target_game))
+    attr_translated = 0
+    attr_dropped = []
+    if crossing:
+        src_chain2, dst_chain2 = is_chain2(source_game), is_chain2(target_game)
+        for type_marker, pg_name, field in GROUP_ATTR_FIELDS:
+            for obj in collection.all_objects:
+                if obj.get("TYPE") != type_marker:
+                    continue
+                pg = getattr(obj, pg_name, None)
+                if pg is None:
+                    continue
+                try:
+                    new, dropped = translate_group_attr(
+                        getattr(pg, field), src_chain2, dst_chain2)
+                except (AttributeError, TypeError, ValueError):
+                    continue
+                for name in dropped:
+                    if name not in attr_dropped:
+                        attr_dropped.append(name)
+                if new != getattr(pg, field):
+                    try:
+                        setattr(pg, field, new)
+                        attr_translated += 1
+                    except (AttributeError, TypeError, ValueError):
+                        pass
 
     filter_set = subdata_added = 0
     for obj in collection.all_objects:
@@ -245,7 +399,8 @@ def apply_target_game_settings(collection, target_game):
             pass
 
     return {'filter_set': filter_set, 'subdata_added': subdata_added,
-            'filter_path': path}
+            'filter_path': path, 'attr_translated': attr_translated,
+            'attr_dropped': attr_dropped}
 
 
 class RemapReport:

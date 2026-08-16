@@ -363,7 +363,8 @@ class MODDER_OT_ConvertChainCrossGame(bpy.types.Operator):
         # Bone re-binding is only half a port: the collider filter path and the
         # chain2 subdata are per-game and invisible in the outliner, so a port
         # without them looks finished and fails at load time.
-        applied = apply_target_game_settings(col, self.target_game)
+        applied = apply_target_game_settings(col, self.target_game,
+                                             self.source_game)
 
         # RE-Chain-Editor's export dialog preselects its version from the *last
         # imported* file (scene["REChainLastImportedChain(2)Version"]), which
@@ -373,6 +374,34 @@ class MODDER_OT_ConvertChainCrossGame(bpy.types.Operator):
         key = ("REChainLastImportedChain2Version" if is_chain2(self.target_game)
                else "REChainLastImportedChainVersion")
         context.scene[key] = version
+
+        # Same problem one level up, and a worse one. ``chainFileType`` is a
+        # *scene* enum that RE-Chain-Editor only ever writes in
+        # createChainCollection, from the collection-name suffix at import time
+        # (blender_re_chain.py:96-100). Nothing re-derives it from the active
+        # object, so after a port it still says whatever the last *import* was --
+        # the source game's container.
+        #
+        # It is not cosmetic. It picks the Set Attribute Flag vocabulary and the
+        # dialog's own "Type:" label (re_chain_operators.py:2092, :2123, :2155),
+        # which fields the header / settings / group / node panels draw
+        # (ui_re_chain_panels.py:202, :318, :452-457, :551), the chain2 subdata
+        # panel's poll (:416), and every create-operator (:25, :247, :425, :458,
+        # :498, :574, :651). Left stale, a ported .chain is edited with chain2's
+        # bit meanings -- exactly the mismeaning translate_group_attr just fixed,
+        # reintroduced by hand on the user's next edit.
+        #
+        # The collection pointer moves with it, deliberately: type without
+        # collection is worse than neither, because the create-operators would
+        # then build target-flavoured objects into the *source* collection.
+        toolpanel = getattr(context.scene, "re_chain_toolpanel", None)
+        if toolpanel is not None:
+            try:
+                toolpanel.chainFileType = ("chain2" if is_chain2(self.target_game)
+                                           else "chain")
+                toolpanel.chainCollection = col
+            except (AttributeError, TypeError, ValueError):
+                pass
 
         self.report({'INFO'}, T("core.chain_convert_ops.done").format(
             game=self.target_game, remapped=len(rep.remapped), kept=rep.unchanged))
@@ -389,6 +418,15 @@ class MODDER_OT_ConvertChainCrossGame(bpy.types.Operator):
         if applied['subdata_added']:
             self.report({'INFO'}, T("core.chain_convert_ops.subdata_added").format(
                 n=applied['subdata_added']))
+        # Worth reporting even though it is automatic: the numbers in the Attribute
+        # Flags field change, and a user comparing them against the source file
+        # would otherwise read that as the port corrupting them.
+        if applied['attr_translated']:
+            self.report({'INFO'}, T("core.chain_convert_ops.attr_translated").format(
+                n=applied['attr_translated']))
+        if applied['attr_dropped']:
+            self.report({'WARNING'}, T("core.chain_convert_ops.attr_dropped").format(
+                names=", ".join(applied['attr_dropped'])))
         # The container is chosen by which operator the user runs, and nothing in
         # the scene decides it -- so saying which one is part of the result.
         self.report({'INFO'}, T("core.chain_convert_ops.export_with").format(
