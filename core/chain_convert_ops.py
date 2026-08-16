@@ -24,15 +24,17 @@ from .i18n import T
 from .mesh_port_ops import collection_armatures, is_mesh_collection, mesh_collections
 
 #: Games this is offered for, keyed by the ``game_code`` in the bone preset -- which
-#: is **not** always the section key: MH Rise's section is ``mhrs`` but its preset
-#: says ``MHR``.  Keying off the preset is what makes ``_preset_by_game()`` resolve.
+#: is **not** always the section key, though it now agrees for every game here.
+#: Keying off the preset is what makes ``_preset_by_game()`` resolve.
 #:
 #: Deliberately three, not five:
 #: * **MHWI** is not RE Engine at all -- its physics goes through mhw_ctc, and its
 #:   chain code is off-limits per the refactor backlog.
-#: * **MHRS** is RE Engine, but its rig is positioned from the character centre like
-#:   MHWI rather than from the sole of the foot, so a port needs work nobody has done
-#:   or measured yet.  Shelved rather than offered untested.
+#: * **MHRS** is RE Engine and shares MHWI's rest frame exactly (measured
+#:   2026-08-16: 16 landmarks, max deviation 0.0022 m, and the sole offset to
+#:   MHWilds is the same 1.0468 mhwi_port uses).  What it still lacks is a
+#:   registered native skeleton and reference skeleton, so it is not yet offered.
+#:   See docs/mhrs_port_plan.md.
 #: * **SF6 / DMC5** have no reference skeleton to validate against.
 #:
 #: The mapping layer already handles all of them (`build_cross_game_map` composes any

@@ -40,7 +40,15 @@ from .weight_utils import merge_weights_and_delete_bones
 
 #: Games sharing one axis convention: a port between any two of them needs no C.
 #: RE9 is the only registered member of the other family.
-FAMILY_A = frozenset({"MHWS", "RE4", "SF6", "DMC5", "MHR", "MHWR"})
+#:
+#: These are ``game_code`` values, matched against a preset's own
+#: ``preset_info.game_code`` -- so they must be spelled the way the presets spell
+#: them.  MH Rise used to appear here as ``MHR``/``MHWR`` while the rest of the
+#: addon said ``MHRS``, which is not a cosmetic split: build_cross_game_map keys
+#: CrossGameBoneMap off the preset while this set and mesh_port._INSERT_RULES key
+#: off the other spelling, so a mismatch yields a silently *empty* mapping rather
+#: than an error.  One spelling, everywhere.
+FAMILY_A = frozenset({"MHWS", "RE4", "SF6", "DMC5", "MHRS"})
 
 #: Ported rigs are offered for the same three games the chain port covers -- the ones
 #: with a reference skeleton to derive against and hand-made ground truth to check.

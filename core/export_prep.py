@@ -30,6 +30,10 @@ from contextlib import contextmanager
 #: meshes count as "the face" is decided by the presence of a vertex group
 #: named after the game's head bone, because the head geometry can live in any
 #: object with any name.
+#: Keyed by the lowercase *section* key, not by ``game_code``.  MH Rise's preset
+#: file is still called ``mhwr.json`` for compatibility with existing user presets
+#: even though its ``game_code`` is ``MHRS`` -- the filename is not a game code and
+#: nothing derives one from it.
 _GAME_BONE_PRESET = {
     'mhws': 'mhws.json',
     'mhrs': 'mhwr.json',

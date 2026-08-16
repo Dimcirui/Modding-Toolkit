@@ -1,7 +1,7 @@
 {
   "preset_info": {
     "name": "怪猎崛起",
-    "game_code": "MHR",
+    "game_code": "MHRS",
     "type": "Y_PRESET",
     "version": "1.0",
     "description": "Target preset for MHRise (RE Engine).",
