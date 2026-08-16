@@ -1199,6 +1199,12 @@ STRINGS = {
         "EN": "{n} physics bone(s) hang off a bone the new rig has no counterpart "
               "for and were not grafted: {names}",
         "ZH": "{n} 根物理骨挂在新骨架没有对应物的骨上，未嫁接：{names}"},
+    "core.mhwi_port_ops.physics_rehomed": {
+        "EN": "{n} physics bone(s) attached further up, their own parent having no "
+              "MHWilds counterpart: {pairs}. They will follow more of that limb's "
+              "motion than they did in World",
+        "ZH": "{n} 根物理骨改挂到了更上一级，因为它们原本的父骨在荒野没有对应：{pairs}。"
+              "它们会比在世界里跟随更多该肢体的运动"},
     "core.mhwi_port_ops.unknown_ids": {
         "EN": "{n} bone id(s) are neither base skeleton nor a physics id, and were "
               "kept as-is: {names}",

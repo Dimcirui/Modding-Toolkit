@@ -89,6 +89,49 @@ BASE_ID_RANGES = ((0, 21), (30, 63), (64, 69), (70, 77), (80, 85), (100, 104),
 PHYSICS_ID_RANGES = ((150, 246), (256, 511))
 
 
+#: Where a physics chain hanging off a *base* bone with no MHWilds counterpart goes
+#: instead.  MHWI bone name -> MHWilds bone name (user's decision, 2026-08-16).
+#:
+#: 064 and 067 are the left and right leg's skirt attach bones.  They are genuinely
+#: half-followers: they rise when the leg lifts and ignore everything else it does, and
+#: MHWilds has no bone that behaves that way, so the bone presets map neither -- which
+#: left every skirt chain hanging off them orphaned and dropped.
+#:
+#: The thigh is the deliberate approximation.  A chain moved there follows *all* of the
+#: leg's motion rather than only the lift, which is wrong in the same direction the
+#: source is right; the alternative the generic walk below would have reached is the
+#: hip, which follows none of it.  Overshooting beats not moving at all for a skirt.
+#:
+#: Only these two are listed because only these two have a known answer.  The rest of
+#: the 064-069 skirt block falls through to ``physics_parent_chain``, which finds the
+#: nearest ancestor that does map rather than guessing at a slot.
+PHYSICS_PARENT_OVERRIDES = {
+    "MhBone_064": "L_Thigh",
+    "MhBone_067": "R_Thigh",
+}
+
+
+def physics_parent_chain(parent_names, start):
+    """Ancestors of *start*, nearest first, as ``(mhwi name, is_physics)`` pairs.
+
+    *parent_names* is ``{bone: parent_or_None}`` from the source rig.  Walking rather
+    than looking only at the direct parent is what turns "this chain has nowhere to go"
+    into "this chain attaches higher up": a physics bone whose parent is a base bone the
+    presets do not map used to be reported as an orphan and dropped, taking every bone
+    below it with it, because its own children then had no parent either.
+
+    Cycle-guarded, since a malformed rig would otherwise hang the port rather than
+    report it.
+    """
+    out, seen = [], set()
+    node = parent_names.get(start)
+    while node is not None and node not in seen:
+        seen.add(node)
+        out.append((node, is_physics_bone(node)))
+        node = parent_names.get(node)
+    return out
+
+
 def bone_id(name):
     """The mod3 function id behind an ``MhBone_NNN`` name, or None if not one."""
     m = _NAME_RE.match(name or "")

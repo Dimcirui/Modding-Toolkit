@@ -314,6 +314,43 @@ def _physics_order(arm_obj):
     return out
 
 
+def _graft_parent(eb, parents, name, name_map):
+    """``(edit bone to hang *name* from, the MHWI bone it came from)``, or ``(None, None)``.
+
+    Walks up rather than looking only at the direct parent.  A physics bone whose
+    parent is a base bone the presets do not map used to be dropped and reported as an
+    orphan -- and since its own children then had no parent either, the whole chain
+    below it went with it.  MHWI's 064/067 skirt attach bones are exactly that case and
+    are not exotic: they carry the skirt.
+
+    Three ways an ancestor can be usable, in the order they are tried per ancestor:
+
+    * an **override** -- a base bone with no counterpart whose right destination is
+      known anyway (``mhwi_port.PHYSICS_PARENT_OVERRIDES``).  First, because it beats
+      what the walk would otherwise find: 064's own ancestry leads to the hip, which
+      follows none of the leg's motion, where the override says thigh.
+    * a **physics bone already grafted** -- it keeps its MHWI name, so it is looked up
+      as-is.  Checked against *eb* rather than assumed, because an ancestor that was
+      itself orphaned is not there and the walk has to carry on past it.
+    * a **mapped base bone** -- the same mapping the snap used.
+
+    Anything found must actually exist on the target rig; a name the presets produce
+    for a bone MHWilds does not have is no better than no name.
+    """
+    for ancestor, is_physics in mhwi_port.physics_parent_chain(parents, name):
+        override = mhwi_port.PHYSICS_PARENT_OVERRIDES.get(ancestor)
+        if override and override in eb:
+            return eb[override], ancestor
+        if is_physics:
+            if ancestor in eb:
+                return eb[ancestor], ancestor
+            continue
+        mapped = name_map.get(ancestor)
+        if mapped and mapped in eb:
+            return eb[mapped], ancestor
+    return None, None
+
+
 def transplant_physics(model_arm, ref_arm, name_map):
     """Copy the model's own cloth and hair bones onto the new rig.
 
@@ -328,35 +365,37 @@ def transplant_physics(model_arm, ref_arm, name_map):
     no physical effect in the game at all.  Their names are kept, because the chain
     file being rebuilt alongside will refer to them by the same name.
 
-    Returns ``(made, orphans)``; an orphan is a physics bone whose parent resolved to
-    nothing on the new rig, which is reported rather than guessed at.
+    Returns ``(made, orphans, rehomed)``.  An orphan is a physics bone with no usable
+    ancestor at all, still reported rather than guessed at.  ``rehomed`` is
+    ``[(bone, its MHWI parent, where it actually landed)]`` -- the chains that attached
+    further up because their own parent has no MHWilds counterpart, which is a fact
+    about the result the user should see rather than a silent success.
     """
     names = _physics_order(model_arm)
     if not names:
-        return 0, []
+        return 0, [], []
 
+    parents = {b.name: (b.parent.name if b.parent else None)
+               for b in model_arm.data.bones}
     src_bones = model_arm.data.bones
     to_ref = ref_arm.matrix_world.inverted() @ model_arm.matrix_world
 
     _activate(bpy.context, ref_arm)
     bpy.ops.object.mode_set(mode='EDIT')
     eb = ref_arm.data.edit_bones
-    made, orphans = 0, []
+    made, orphans, rehomed = 0, [], []
     try:
         for name in names:
             if name in eb:
                 continue
             src = src_bones[name]
-            parent_name = src.parent.name if src.parent else None
-            # A physics bone hangs off either another physics bone, which keeps its
-            # name, or a base bone, which the snap renamed -- so the base case has to
-            # go through the same mapping the snap used.
-            if parent_name is not None and not mhwi_port.is_physics_bone(parent_name):
-                parent_name = name_map.get(parent_name)
-            parent = eb.get(parent_name) if parent_name else None
+            parent, via = _graft_parent(eb, parents, name, name_map)
             if parent is None:
                 orphans.append(name)
                 continue
+            direct = src.parent.name if src.parent else None
+            if direct is not None and via != direct:
+                rehomed.append((name, direct, parent.name))
             new = eb.new(name)
             new.head = to_ref @ src.head_local
             new.tail = to_ref @ src.tail_local
@@ -366,7 +405,7 @@ def transplant_physics(model_arm, ref_arm, name_map):
             made += 1
     finally:
         bpy.ops.object.mode_set(mode='OBJECT')
-    return made, orphans
+    return made, orphans, rehomed
 
 
 # ── 8. optimise ─────────────────────────────────────────────────────────────────
@@ -474,7 +513,8 @@ class MHWI_OT_PortToMHWS(bpy.types.Operator):
         snap_reference_to_model(context, work_arm, ref_arm)
         out_col = assemble_collection(col, ref_arm, work_meshes)
         rename_vertex_groups(context, work_meshes)
-        grafted, orphans = transplant_physics(work_arm, ref_arm, dict(cross.mapping))
+        grafted, orphans, rehomed = transplant_physics(
+            work_arm, ref_arm, dict(cross.mapping))
 
         bpy.data.objects.remove(work_arm, do_unlink=True)
         optimize(context, ref_arm, work_meshes)
@@ -485,12 +525,19 @@ class MHWI_OT_PortToMHWS(bpy.types.Operator):
         if orphans:
             parts.append(T("core.mhwi_port_ops.physics_orphans").format(
                 n=len(orphans), names=", ".join(orphans[:8])))
+        if rehomed:
+            # Worth saying out loud: these chains work, but they hang somewhere the
+            # source did not put them, so they will follow a little more motion than
+            # they used to.
+            pairs = sorted({f"{src}->{dst}" for _b, src, dst in rehomed})
+            parts.append(T("core.mhwi_port_ops.physics_rehomed").format(
+                n=len(rehomed), pairs=", ".join(pairs[:4])))
         unknown = mhwi_port.partition(
             [b.name for b in arms[0].data.bones])["unknown"]
         if unknown:
             parts.append(T("core.mhwi_port_ops.unknown_ids").format(
                 n=len(unknown), names=", ".join(unknown[:8])))
-        self.report({'WARNING'} if (orphans or unknown) else {'INFO'},
+        self.report({'WARNING'} if (orphans or unknown or rehomed) else {'INFO'},
                     "  ".join(parts))
         return {'FINISHED'}
 
