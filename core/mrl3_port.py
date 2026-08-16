@@ -188,3 +188,51 @@ def param_pairs(mode):
     if mode == "ALL":
         pairs += [p for p in ALL_PARAMS if not is_excluded(p[0])]
     return pairs
+
+
+# ── relay support ───────────────────────────────────────────────────────────────
+# Used when the port is asked for MHRS: the material half goes through the ordinary
+# MHWS -> MHRS port, which skips its whole texture-binding loop when it is told not
+# to convert textures -- and it is told not to, because ``mrl3_port_ops`` has
+# already written them in MHRS's own container.  So the bindings are carried over
+# by slot type instead.
+#
+# A plain name-keyed copy is enough because MHWilds and MHRS name all 15 slot types
+# identically and pack them identically (measured against the registered tex
+# configs); it is the same fact that lets ``mdf_port_tex.repack_slot`` rewrite the
+# container without touching pixels.
+#
+# Duck-typed rather than bpy-typed, so it lives here with the rest of the offline-
+# checkable half rather than in the ops module.
+
+def _materials_by_name(col):
+    out = {}
+    for obj in col.objects:
+        if obj.get("~TYPE") != "RE_MDF_MATERIAL":
+            continue
+        data = getattr(obj, "re_mdf_material", None)
+        if data is not None:
+            out[data.materialName or obj.name] = data
+    return out
+
+
+def carry_texture_bindings(src_col, dst_col):
+    """Copy texture paths from *src_col*'s materials onto *dst_col*'s, by slot type.
+
+    Only non-empty source paths are copied, and only onto slots the destination
+    actually has -- a stock prefab path is a better answer than a blank binding
+    for a slot the source never filled.
+    """
+    src_mats = _materials_by_name(src_col)
+    carried = 0
+    for name, dst_data in _materials_by_name(dst_col).items():
+        src_data = src_mats.get(name)
+        if src_data is None:
+            continue
+        src_paths = {b.textureType: b.path for b in src_data.textureBindingList_items}
+        for binding in dst_data.textureBindingList_items:
+            path = src_paths.get(binding.textureType)
+            if path and binding.path != path:
+                binding.path = path
+                carried += 1
+    return carried

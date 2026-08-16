@@ -1336,9 +1336,10 @@ STRINGS = {
               "旋钮少得多，所以多数参数无处可去——23 个里只有 6 个能保留，"
               "即使做直连转换也只能到 8 个"},
     "core.mrl3_port_ops.relayed": {
-        "EN": "Then ported to MHRS: {name}, {n} material(s). The MHWilds "
-              "intermediate was removed",
-        "ZH": "已继续转到怪猎崛起：{name}，{n} 个材质。中间的荒野集合已删除"},
+        "EN": "Then ported to MHRS: {name}, {n} material(s), {tex} texture "
+              "binding(s) carried. The MHWilds intermediate was removed",
+        "ZH": "已继续转到怪猎崛起：{name}，{n} 个材质，带过 {tex} 条贴图绑定。"
+              "中间的荒野集合已删除"},
     "core.mrl3_port_ops.relay_failed": {
         "EN": "The MHWilds materials were built, but the MHRS step failed ({err}). "
               "The MHWilds collection was kept",

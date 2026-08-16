@@ -75,6 +75,8 @@ def _target_game_items(self=None, context=None):
     _target_item_cache.clear()
     _target_item_cache.extend((g, T(label), T(desc)) for g, label, desc in _TARGET_ITEMS)
     return _target_item_cache
+
+
 #: Where the second hop's output should end up named, given this port's own output.
 _RELAY_TARGET = "MHRS"
 
@@ -481,10 +483,10 @@ class MHWI_OT_PortMrl3ToMdf2(bpy.types.Operator):
             box.label(text=T("core.mdf_port_ops.mod_root_hint"), icon='INFO')
             _draw_mod_root_row(box, context, "MHWI",
                                {"natives_root_key": SRC_NATIVES_KEY})
-            dst_cfg = mdf_port_tex.get_game_tex_config(DST_GAME)
+            dst_cfg = mdf_port_tex.get_game_tex_config(self.target_game)
             if dst_cfg:
                 box.label(text=T("core.mrl3_port_ops.export_root_hint"), icon='EXPORT')
-                _draw_mod_root_row(box, context, DST_GAME, dst_cfg)
+                _draw_mod_root_row(box, context, self.target_game, dst_cfg)
 
     def execute(self, context):
         src_col = bpy.data.collections.get(self.source_collection)
@@ -512,7 +514,14 @@ class MHWI_OT_PortMrl3ToMdf2(bpy.types.Operator):
                 self.report({'ERROR'}, T("core.mrl3_port_ops.all_culled"))
                 return {'CANCELLED'}
 
-        dst_cfg = mdf_port_tex.get_game_tex_config(DST_GAME)
+        # Textures go straight to the *final* target, even when the material is
+        # built against MHWilds' prefab on the way to MHRS.  Writing them as
+        # MHWilds and fixing them up afterwards would mean either a second
+        # decode/encode or a pile of orphaned .tex in the wrong container; writing
+        # them once here costs nothing extra, because the two games' channel_maps
+        # and abbrev_map are identical and only tex_version (241106027 vs 28),
+        # use_art_prefix and the natives root differ.
+        dst_cfg = mdf_port_tex.get_game_tex_config(self.target_game)
         if dst_cfg is None:
             self.report({'ERROR'}, T("core.mdf_port_ops.missing_tex_config"))
             return {'CANCELLED'}
@@ -602,10 +611,14 @@ class MHWI_OT_PortMrl3ToMdf2(bpy.types.Operator):
         second hop fails, the MHWilds materials are a real result and throwing
         them away would turn a partial port into no port at all.
 
-        Textures are not converted again.  This port has already written them into
-        the destination's own natives tree in the target's container, and the
-        second hop's job here is the material, not the pixels -- re-running it
-        would resolve source paths that no longer describe where anything is.
+        Textures are not converted again -- ``execute`` has already written them in
+        MHRS's own container and path convention, so there is nothing left to
+        convert.  But the material port skips its whole binding loop when
+        ``convert_textures`` is off, which would leave the new materials on
+        PL_Default's stock paths, so the bindings are carried over here by slot
+        type.  A plain name-keyed copy is enough: MHWilds and MHRS name all 15 slot
+        types identically and pack them identically, which is the same measurement
+        that makes the relay free in the first place.
         """
         stem = mhws_col.name
         for suffix in (f"_{DST_GAME}.mdf2", ".mdf2"):
@@ -630,11 +643,13 @@ class MHWI_OT_PortMrl3ToMdf2(bpy.types.Operator):
         if made is None:
             return False, T("core.mrl3_port_ops.relay_no_result")
         made.name = f"{stem}_{_RELAY_TARGET}.mdf2"
+        carried = mrl3_port.carry_texture_bindings(mhws_col, made)
         n = len([o for o in made.objects if o.get("~TYPE") == "RE_MDF_MATERIAL"])
         for obj in list(mhws_col.objects):
             bpy.data.objects.remove(obj, do_unlink=True)
         bpy.data.collections.remove(mhws_col)
-        return True, T("core.mrl3_port_ops.relayed").format(name=made.name, n=n)
+        return True, T("core.mrl3_port_ops.relayed").format(
+            name=made.name, n=n, tex=carried)
 
 
 classes = [MHWI_OT_PortMrl3ToMdf2]
