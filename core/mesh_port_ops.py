@@ -34,7 +34,7 @@ from .bone_correction import (DEFAULT_TOLERANCE_DEG, derive_bone_correction,
                               same_convention_set)
 from .bone_mapper import BoneMapManager, auto_detect_preset, build_cross_game_map
 from .i18n import T
-from .mesh_port import build_port_plan
+from .mesh_port import build_port_plan, origin_shift
 from .ref_skeleton import get_reference_skeleton_items, import_reference_armature
 from .weight_utils import merge_weights_and_delete_bones
 
@@ -476,6 +476,23 @@ def mesh_collections():
     return [c for c in bpy.data.collections if is_mesh_collection(c)]
 
 
+def _translate_rig(arm_obj, dz):
+    """Move the rig and everything that travels with it by *dz* in world Z.
+
+    Object transforms, not bone or vertex data: it is a rigid move of the whole
+    assembly, so there is nothing to bake.  Meshes parented to the armature come
+    along on their own; ones merely bound by modifier do not, so they are moved
+    explicitly.  Same shape as ``mhwi_port_ops.translate_rig``, which does this for
+    the MHWI pipeline; the carried set is ``pose_bake.attached_meshes``, which is
+    what "travels with the rig" means everywhere else in this file.
+    """
+    arm_obj.location.z += dz
+    for obj in pose_bake.attached_meshes(arm_obj):
+        if obj.parent is not arm_obj:
+            obj.location.z += dz
+    bpy.context.view_layer.update()
+
+
 def collection_armatures(col):
     return [o for o in col.all_objects if o.type == 'ARMATURE']
 
@@ -707,6 +724,17 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
                 else:
                     arm = bone_utils.duplicate_armature_with_meshes(
                         arm, f"{arm.name}_{self.target_game}")
+
+        # Into the target's rig frame before anything measures against the
+        # reference, which is imported in that frame.  Nothing downstream actually
+        # depends on the order -- the insert rules are origin-agnostic (colocate and
+        # midpoint anchor on the *model's* own bones, ref_offset takes the
+        # reference's parent-relative offset) and the correction derivation only
+        # reads rotations -- but "already in the target frame" is the assumption a
+        # later reader will make, so make it true as early as possible.
+        dz = origin_shift(self.source_game, self.target_game)
+        if dz:
+            _translate_rig(arm, dz)
 
         ref_arm = None
         if self.reference_skeleton and self.reference_skeleton != "NONE":

@@ -60,6 +60,56 @@ This module is free of ``bpy`` so the plan can be unit-tested offline; geometry 
 weight transfer live in ``core/mesh_port_ops.py``.
 """
 
+from .mhwi_port import SOLE_OFFSET_Z
+
+#: Where a game puts its rig origin *anatomically*.  Measured on the reference
+#: bodies (2026-08-16): MHWilds' ``root`` and MHRS's ``Root`` are both at
+#: ``(0,0,0)``, but MHWilds' ``Hip`` is 1.02 above its root while MHRS's
+#: ``Waist_00`` is *at* it -- so MHWilds measures from the ground and MHRS
+#: measures from the pelvis.  MHWI does the same as MHRS, which is why
+#: ``mhwi_port`` has had to lift its models all along.
+#:
+#: RE4 and RE9 are ``GROUND`` by deduction rather than measurement: the existing
+#: MHWS <-> RE4 <-> RE9 ports translate nothing at all and are known good, which
+#: they could not be if any of the three disagreed by a metre.
+#:
+#: An unregistered game defaults to ``GROUND`` -- every RE Engine game measured so
+#: far is, and MHRS is the exception, so that is the way to be wrong least often.
+RIG_ORIGIN = {
+    "MHWS": "GROUND", "RE4": "GROUND", "RE9": "GROUND",
+    "SF6": "GROUND", "DMC5": "GROUND",
+    "MHRS": "PELVIS",
+}
+DEFAULT_RIG_ORIGIN = "GROUND"
+
+
+def origin_shift(source_game, target_game):
+    """World-Z the model must move by to land in *target_game*'s rig frame.
+
+    ``0.0`` between two games of the same convention, so every port that works
+    today keeps translating nothing.
+
+    One constant in both directions rather than a per-model measurement (user's
+    decision), which makes the shift exactly reversible: a round trip through the
+    other convention returns the model to where it started, and no port can
+    quietly resize a character by disagreeing with its own inverse.
+
+    The constant is ``mhwi_port``'s, imported rather than restated -- it is the
+    same rig frame and the docstring there carries the measurement, including why
+    neither hip-to-hip (1.02, sinks the model 2.7 cm) nor mesh-sole-to-mesh-sole
+    (1.0518, and a sole moves 8 mm from the T-pose conversion alone) is the
+    number.  Its cost is that a character of non-standard height lands slightly
+    off; the rejected alternatives were not more accurate, only less stable.
+    """
+    src = RIG_ORIGIN.get(source_game, DEFAULT_RIG_ORIGIN)
+    dst = RIG_ORIGIN.get(target_game, DEFAULT_RIG_ORIGIN)
+    if src == dst:
+        return 0.0
+    # Leaving a pelvis-origin frame, the sole sits at -SOLE_OFFSET_Z and has to
+    # come up to 0; entering one, the reverse.
+    return SOLE_OFFSET_Z if dst == "GROUND" else -SOLE_OFFSET_Z
+
+
 #: Placement rules for a bone the target game has and the source rig lacks.
 #:
 #: ``("colocate", anchor)``   -- head goes exactly where *anchor*'s head is, so the
