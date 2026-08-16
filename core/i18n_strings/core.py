@@ -1255,11 +1255,30 @@ STRINGS = {
         "EN": "{n} flag(s) left at MHWilds' defaults (Basic mode)",
         "ZH": "{n} 个标志位保留荒野默认值（基础模式）"},
     "core.ctc_port_ops.rebuild_note": {
-        "EN": "Pick the ported MHWilds rig, not the MHWI one. Physics bones keep "
-              "their names; base bones are remapped with the same table the model "
-              "port used",
-        "ZH": "请选移植后的荒野骨架，而不是 MHWI 的。物理骨保持原名，"
+        "EN": "Pick the ported rig, not the MHWI one. Physics bones keep their "
+              "names; base bones are remapped with the same table the model port used",
+        "ZH": "请选移植后的骨架，而不是 MHWI 的。物理骨保持原名，"
               "基础骨用与模型移植同一张映射表改名"},
+    "core.ctc_port_ops.game_mhwi": {"EN": "MHWI", "ZH": "怪猎世界"},
+    "core.ctc_port_ops.detect_ok": {
+        "EN": "Target armature reads as {game} -- matches the chosen target",
+        "ZH": "目标骨架识别为{game}，与所选目标游戏一致"},
+    "core.ctc_port_ops.detect_mismatch": {
+        "EN": "Target armature reads as {found}, but the target game is {chosen}. "
+              "Base bones would be renamed to {chosen}'s names on a rig that is not "
+              "one",
+        "ZH": "目标骨架识别为{found}，但目标游戏选的是{chosen}。"
+              "基础骨会按{chosen}的命名改名，而这根骨架并不是{chosen}的"},
+    "core.ctc_port_ops.detect_is_source": {
+        "EN": "That is the MHWI rig the .ctc came off, not a ported one -- pick the "
+              "output of the model port instead",
+        "ZH": "这是 .ctc 所属的 MHWI 源骨架，不是移植后的骨架——请改选模型移植的产出"},
+    "core.ctc_port_ops.detect_unknown": {
+        "EN": "Could not tell which game this armature is from. Pick the ported rig, "
+              "not the MHWI one -- base bones are remapped, physics bones keep their "
+              "names",
+        "ZH": "无法识别这根骨架属于哪个游戏。请选移植后的骨架而不是 MHWI 的——"
+              "基础骨会改名，物理骨保持原名"},
     "core.ctc_port_ops.pick_inputs": {
         "EN": "Pick a .ctc collection and a target armature",
         "ZH": "请选择一个 .ctc 集合和目标骨架"},

@@ -469,7 +469,7 @@ def _collection_items(self, context):
 
 class MHWI_OT_PortToMHWS(bpy.types.Operator):
     bl_idname = "mhwi.port_to_mhws"
-    bl_label = "MHWI -> MHWilds"
+    bl_label = "MHWI Model Port"
     #: No 'UNDO', for the same reason as the mesh port and the reference importer:
     #: this creates and deletes objects through ``bpy.data``, so a redo-panel re-run
     #: would build a second model rather than revise the first.

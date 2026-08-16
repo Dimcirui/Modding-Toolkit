@@ -412,7 +412,7 @@ def used_material_names(mod3_col):
 
 class MHWI_OT_PortMrl3ToMdf2(bpy.types.Operator):
     bl_idname = "mhwi.port_mrl3_to_mdf2"
-    bl_label = "MRL3 -> MDF2"
+    bl_label = "MHWI Material Port"
     #: No 'UNDO': materials and .tex files are created outside the undo stack, so a
     #: redo-panel re-run would build a second set rather than revise the first.
     bl_options = {'REGISTER'}

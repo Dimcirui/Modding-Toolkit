@@ -669,9 +669,69 @@ def _target_game_items(self=None, context=None):
     return _target_item_cache
 
 
+#: Game codes this dialog has to name in a sentence, including the one that is only
+#: ever a *source* -- detect_armature_game can return MHWI, and "MHWI" untranslated
+#: in the middle of a Chinese sentence is the thing the i18n table exists to avoid.
+_GAME_LABEL_KEYS = {
+    "MHWS": "core.ctc_port_ops.target_mhws",
+    "MHRS": "core.ctc_port_ops.target_mhrs",
+    "MHWI": "core.ctc_port_ops.game_mhwi",
+}
+
+
+def _game_label(game_code):
+    key = _GAME_LABEL_KEYS.get(game_code)
+    return T(key) if key else (game_code or "?")
+
+
+#: ``{(name, bone count): game_code or None}``.
+#:
+#: Needed because the caller is ``draw()``, which Blender re-runs on every redraw of
+#: the dialog -- including while the mouse simply moves over it -- and one detection
+#: loads *every* shipped preset and tests all 47 standard slots against the rig.
+#: Uncached that is tens of preset loads per frame.
+#:
+#: Keyed on the bone count as well as the name so an armature edited between two
+#: openings of the dialog is re-tested rather than answered from a stale entry; a
+#: rename alone also misses, which is the cheap direction to be wrong in.
+_detect_cache = {}
+
+
+def detect_armature_game(arm_obj):
+    """Which game's rig *arm_obj* looks like, by bone names, or ``None``.
+
+    The same >= 95% standard-slot coverage test the bone tools already use to
+    auto-pick a preset -- asking the armature instead of telling the user what to
+    pick.  ``None`` means no preset claimed it, which for this dialog is the
+    ordinary case of a hand-built or partial rig, not an error.
+
+    Returns a ``game_code``, so an MHWI rig comes back as ``"MHWI"`` and can be
+    called out specifically: picking the *source* rig here is the mistake the old
+    static hint existed to prevent, and it is exactly the one this can detect.
+    """
+    if arm_obj is None or arm_obj.type != 'ARMATURE':
+        return None
+    key = (arm_obj.name, len(arm_obj.data.bones))
+    if key in _detect_cache:
+        return _detect_cache[key]
+
+    from .bone_mapper import BoneMapManager, auto_detect_preset
+    game = None
+    try:
+        preset = auto_detect_preset(arm_obj, False)
+        if preset:
+            mgr = BoneMapManager()
+            if mgr.load_preset(preset):
+                game = mgr.preset_info.get("game_code")
+    except Exception:
+        game = None
+    _detect_cache[key] = game
+    return game
+
+
 class MHWI_OT_PortPhysicsToMHWS(bpy.types.Operator):
     bl_idname = "mhwi.port_physics_to_mhws"
-    bl_label = "MHWI Physics -> MHWilds"
+    bl_label = "MHWI Physics Port"
     #: No 'UNDO', for the same reason as the model port: this creates objects through
     #: operators and bpy.data, so a redo-panel re-run would build a second chain2
     #: rather than revise the first.
@@ -706,8 +766,26 @@ class MHWI_OT_PortPhysicsToMHWS(bpy.types.Operator):
         layout.prop(self, "target_game", text=T("core.ctc_port_ops.target_label"))
         layout.prop(self, "migrate_flags",
                     text=T("core.ctc_port_ops.migrate_flags"))
+
+        # What the armature actually is, rather than a note about what to pick.
+        # The old hint named MHWilds, which stopped being true once the port grew
+        # a target -- and it could only ever describe the mistake, never catch it.
         box = layout.box()
-        box.label(text=T("core.ctc_port_ops.rebuild_note"), icon='INFO')
+        arm = bpy.data.objects.get(self.target_armature)
+        detected = detect_armature_game(arm)
+        if detected is None:
+            box.label(text=T("core.ctc_port_ops.detect_unknown"), icon='QUESTION')
+        elif detected == "MHWI":
+            # The one specific mistake worth naming: this is the rig the .ctc came
+            # off, so its bones are the *source* names and nothing would remap.
+            box.label(text=T("core.ctc_port_ops.detect_is_source"), icon='ERROR')
+        elif detected == self.target_game:
+            box.label(text=T("core.ctc_port_ops.detect_ok").format(
+                game=_game_label(detected)), icon='CHECKMARK')
+        else:
+            box.label(text=T("core.ctc_port_ops.detect_mismatch").format(
+                found=_game_label(detected), chosen=_game_label(self.target_game)),
+                icon='ERROR')
 
     def execute(self, context):
         col = bpy.data.collections.get(self.source_collection)
