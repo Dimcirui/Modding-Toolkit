@@ -108,8 +108,16 @@ FACIAL_ROOTS = {
 }
 
 #: Games whose reference model needs no post-import options at all, so the dialog
-#: shows none.  MHWI's and MHRS's bodies carry no facial rig and no auxiliary bones,
-#: and both are authored in T-pose already -- all three switches would be no-ops.
+#: shows none.  Neither body carries a facial rig, and both are authored in T-pose
+#: already (MHRS shares MHWI's rest frame exactly -- measured 2026-08-16), so the
+#: facial and T-pose switches are no-ops for both.
+#:
+#: The auxiliary switch is a no-op for MHWI, which ships no native skeleton.  It is
+#: **not** obviously one for MHRS: its 79 base bones do include ``_W`` helpers and
+#: ``_T`` twists.  MHRS stays here anyway, deliberately -- offering the merge on a
+#: 79-bone rig is a product decision nobody has made, and the reference body is
+#: imported to be measured against, not to be edited down.  Revisit on purpose,
+#: not as a side effect of the native skeleton landing.
 OPTIONLESS_GAMES = frozenset({"MHWI", "MHRS"})
 
 
