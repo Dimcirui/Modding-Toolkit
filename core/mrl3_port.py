@@ -216,12 +216,25 @@ def _materials_by_name(col):
     return out
 
 
-def carry_texture_bindings(src_col, dst_col):
+def carry_texture_bindings(src_col, dst_col, is_custom=None):
     """Copy texture paths from *src_col*'s materials onto *dst_col*'s, by slot type.
 
-    Only non-empty source paths are copied, and only onto slots the destination
-    actually has -- a stock prefab path is a better answer than a blank binding
-    for a slot the source never filled.
+    Only onto slots the destination actually has, and only from source slots that
+    hold *the author's own* texture.  *is_custom* is a one-argument predicate --
+    in practice ``is_custom_tex_path`` bound to the source game's vanilla list.
+
+    Skipping the non-custom ones is not an optimisation, it is the point.  Every
+    prefab fills every slot, so "source path is non-empty" is true of all of them,
+    and a stock path is **per game**: MHWilds' basic prefab puts
+    ``MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex`` in EmissiveMap and FxMap
+    where MHRS's PL_Default puts ``systems/rendering/NullBlack.tex``.  Carrying
+    those across replaces the destination's own correct placeholder with one that
+    does not exist in the destination game -- 46064 entries in MHWilds' vanilla
+    list against 26473 in MHRS's, and that path is in the first and not the
+    second, so the game cannot load it and the pre-export check flags every one.
+
+    Without a predicate every non-empty path is carried, which is the old
+    behaviour and is only right when both sides share a vanilla set.
     """
     src_mats = _materials_by_name(src_col)
     carried = 0
@@ -232,7 +245,9 @@ def carry_texture_bindings(src_col, dst_col):
         src_paths = {b.textureType: b.path for b in src_data.textureBindingList_items}
         for binding in dst_data.textureBindingList_items:
             path = src_paths.get(binding.textureType)
-            if path and binding.path != path:
+            if not path or (is_custom is not None and not is_custom(path)):
+                continue
+            if binding.path != path:
                 binding.path = path
                 carried += 1
     return carried

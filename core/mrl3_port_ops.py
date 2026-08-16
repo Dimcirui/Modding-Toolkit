@@ -643,7 +643,15 @@ class MHWI_OT_PortMrl3ToMdf2(bpy.types.Operator):
         if made is None:
             return False, T("core.mrl3_port_ops.relay_no_result")
         made.name = f"{stem}_{_RELAY_TARGET}.mdf2"
-        carried = mrl3_port.carry_texture_bindings(mhws_col, made)
+        # Only the author's own textures move. The stock paths differ per game and
+        # the destination prefab already carries the right ones -- see
+        # carry_texture_bindings' docstring for what carrying them costs.
+        from .mdf_material_convert_base import (_load_vanilla_art_paths,
+                                                is_custom_tex_path)
+        src_cfg = mdf_port_tex.get_game_tex_config(DST_GAME) or {}
+        vanilla = _load_vanilla_art_paths(src_cfg.get("vanilla_asset_rel", ""))
+        carried = mrl3_port.carry_texture_bindings(
+            mhws_col, made, lambda p: is_custom_tex_path(p, vanilla))
         n = len([o for o in made.objects if o.get("~TYPE") == "RE_MDF_MATERIAL"])
         for obj in list(mhws_col.objects):
             bpy.data.objects.remove(obj, do_unlink=True)
