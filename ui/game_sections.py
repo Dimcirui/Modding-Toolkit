@@ -188,8 +188,11 @@ SECTIONS = {
             op("mhwi.auto_create_chains", "ui.main_panel.btn_create_chain",
                'LINKED', needs='mhw_ctc'),
         ],
-        # One-way and one-target, unlike the RE-to-RE ports: crossing engines is a
-        # rebuild, and only MHWilds has the reference data to rebuild against.
+        # One-way, unlike the RE-to-RE ports: crossing engines is a rebuild, so
+        # MHWI is always the source and never a destination.  The *target* is no
+        # longer fixed, though -- each dialog offers MHWilds or MH Rise -- so the
+        # three are named after the source format rather than after a destination
+        # only one of them would be right about.
         'port': [
             op("mhwi.port_to_mhws", "ui.main_panel.btn_port_mhwi_to_mhws",
                'ARMATURE_DATA'),

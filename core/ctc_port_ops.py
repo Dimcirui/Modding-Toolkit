@@ -40,8 +40,32 @@ from .bone_mapper import build_cross_game_map
 from .i18n import T
 
 SRC_PRESET = "mhwi_world.json"
+
+#: Default target; the per-target rows are mhwi_port.PORT_TARGETS, shared with the
+#: mesh port so the two cannot offer different destinations.
 DST_PRESET = "mhws.json"
 DST_GAME = "MHWS"
+
+
+def _retarget_group_attrs(fields, game):
+    """Re-encode the group attribute mask for a ``.chain`` target.
+
+    ctc_port builds everything in chain2's vocabulary, because MHWilds was the only
+    destination.  MHRS reads ``.chain`` v48, where three of those bits mean
+    something else -- ExtraNode, ScaleAnimation and CollisionCharacter are a
+    three-cycle between the two formats -- so the mask has to be re-encoded rather
+    than carried.  Identity for a chain2 target, so MHWilds is untouched.
+    """
+    if chain_convert.is_chain2(game):
+        return fields, []
+    dropped = []
+    for key in ("attrFlags", "groupDefaultAttr"):
+        if key not in fields:
+            continue
+        fields[key], gone = chain_convert.translate_group_attr(
+            fields[key], True, False)
+        dropped.extend(gone)
+    return fields, dropped
 
 #: MHW Model Editor's object tags.  Note the key is ``~TYPE`` on the MHWI side and
 #: plain ``TYPE`` on the RE side -- the two addons chose differently and mixing them
@@ -348,7 +372,7 @@ def _write_pg(pg, fields):
     return missed
 
 
-def _apply_group(group_obj, chain, report, flag_mode):
+def _apply_group(group_obj, chain, report, flag_mode, game=DST_GAME):
     """Write the group defaults and the routed flags onto one built chain group.
 
     Easy to leave out, and it fails quietly when you do: ``chain_from_bone`` gives
@@ -359,9 +383,12 @@ def _apply_group(group_obj, chain, report, flag_mode):
     group and the settings must carry the *same* routed bits, or the group's own
     default flattens the per-chain difference the settings just recorded.
     """
-    missed = _write_pg(group_obj.re_chain_chaingroup,
-                       ctc_port.build_group(chain["collision_flags"],
-                                            chain["chain_flags"], flag_mode))
+    fields, dropped = _retarget_group_attrs(
+        ctc_port.build_group(chain["collision_flags"], chain["chain_flags"],
+                             flag_mode),
+        game)
+    report["dropped_flags"].update(dropped)
+    missed = _write_pg(group_obj.re_chain_chaingroup, fields)
     report["unwritable_group_fields"].update(missed)
 
 
@@ -488,7 +515,8 @@ def _new_report():
     }
 
 
-def build(context, arm_obj, chains, colliders, stem, flag_mode="ALL"):
+def build(context, arm_obj, chains, colliders, stem, flag_mode="ALL",
+          game=DST_GAME):
     """Create one chain2 collection holding *chains* and *colliders*.
 
     Returns ``(collection, report)``, or ``(None, report)`` if the collection could
@@ -504,8 +532,8 @@ def build(context, arm_obj, chains, colliders, stem, flag_mode="ALL"):
         return None, report
 
     config = re_chain_utils.REChainConfig(
-        chain_format=chain_convert.CHAIN_EXT_BY_GAME[DST_GAME],
-        chain_file_type="chain2",
+        chain_format=chain_convert.CHAIN_EXT_BY_GAME[game],
+        chain_file_type="chain2" if chain_convert.is_chain2(game) else "chain",
         auto_create_collection=True,
         collection_name=stem,
         tuning=ctc_port.HEADER_DEFAULTS,
@@ -523,7 +551,9 @@ def build(context, arm_obj, chains, colliders, stem, flag_mode="ALL"):
             flag_mode)
         # The one field the port must not carry a second copy of.
         fields["colliderFilterInfoPath"] = \
-            chain_convert.COLLIDER_FILTER_BY_GAME.get(DST_GAME, "")
+            chain_convert.COLLIDER_FILTER_BY_GAME.get(game, "")
+        fields, attr_dropped = _retarget_group_attrs(fields, game)
+        report["dropped_flags"].update(attr_dropped)
         report["dropped_flags"].update(chain_report["dropped_flags"])
         report["deferred_flags"].update(chain_report["deferred_flags"])
         report["dropped_fields"].update(chain_report["dropped_fields"])
@@ -535,7 +565,7 @@ def build(context, arm_obj, chains, colliders, stem, flag_mode="ALL"):
              getattr(toolpanel, "experimentalPoseModeOptions", False),
              toolpanel.collisionShape)
     toolpanel.chainCollection = col
-    toolpanel.chainFileType = "chain2"
+    toolpanel.chainFileType = "chain2" if chain_convert.is_chain2(game) else "chain"
 
     _activate(context, arm_obj)
     bpy.ops.object.mode_set(mode='POSE')
@@ -573,7 +603,7 @@ def build(context, arm_obj, chains, colliders, stem, flag_mode="ALL"):
                     continue
                 report["groups"] += 1
                 report["nodes"] += len(chain["nodes"])
-                _apply_group(group, chain, report, flag_mode)
+                _apply_group(group, chain, report, flag_mode, game)
                 _apply_nodes(arm_obj, group, chain, report)
 
         for shape in colliders:
@@ -621,6 +651,24 @@ def _armature_items(self, context):
     return _arm_items_cache
 
 
+#: Persistent backing, same rule as the two caches above: Blender keeps the string
+#: pointers, so the callback must not hand back a list it just built.
+_target_item_cache = []
+
+_TARGET_LABELS = {
+    "MHWS": ("core.ctc_port_ops.target_mhws", "core.ctc_port_ops.target_mhws_desc"),
+    "MHRS": ("core.ctc_port_ops.target_mhrs", "core.ctc_port_ops.target_mhrs_desc"),
+}
+
+
+def _target_game_items(self=None, context=None):
+    _target_item_cache.clear()
+    for game in mhwi_port.PORT_TARGET_ORDER:
+        label, desc = _TARGET_LABELS[game]
+        _target_item_cache.append((game, T(label), T(desc)))
+    return _target_item_cache
+
+
 class MHWI_OT_PortPhysicsToMHWS(bpy.types.Operator):
     bl_idname = "mhwi.port_physics_to_mhws"
     bl_label = "MHWI Physics -> MHWilds"
@@ -635,6 +683,8 @@ class MHWI_OT_PortPhysicsToMHWS(bpy.types.Operator):
 
     source_collection: bpy.props.EnumProperty(name="Source", items=_ctc_items)
     target_armature: bpy.props.EnumProperty(name="Armature", items=_armature_items)
+    target_game: bpy.props.EnumProperty(
+        name="Target", items=_target_game_items, default=0)
     migrate_flags: bpy.props.EnumProperty(
         name="Flags",
         items=lambda self, ctx: [
@@ -653,6 +703,7 @@ class MHWI_OT_PortPhysicsToMHWS(bpy.types.Operator):
                     text=T("core.ctc_port_ops.source_collection"))
         layout.prop(self, "target_armature",
                     text=T("core.ctc_port_ops.target_armature"))
+        layout.prop(self, "target_game", text=T("core.ctc_port_ops.target_label"))
         layout.prop(self, "migrate_flags",
                     text=T("core.ctc_port_ops.migrate_flags"))
         box = layout.box()
@@ -668,7 +719,8 @@ class MHWI_OT_PortPhysicsToMHWS(bpy.types.Operator):
             self.report({'ERROR'}, T("core.ctc_port_ops.need_chain_editor"))
             return {'CANCELLED'}
 
-        cross = build_cross_game_map(SRC_PRESET, DST_PRESET)
+        cross = build_cross_game_map(
+            SRC_PRESET, mhwi_port.port_target(self.target_game)["preset"])
         if cross is None:
             self.report({'ERROR'}, T("core.ctc_port_ops.preset_load_failed"))
             return {'CANCELLED'}
@@ -690,7 +742,8 @@ class MHWI_OT_PortPhysicsToMHWS(bpy.types.Operator):
         if stem.endswith(".ctc"):
             stem = stem[:-4]
         out, report = build(context, arm, chains, colliders,
-                            f"{stem}_{DST_GAME}", self.migrate_flags)
+                            f"{stem}_{self.target_game}", self.migrate_flags,
+                            self.target_game)
         if out is None:
             self.report({'ERROR'}, T("core.ctc_port_ops.build_failed"))
             return {'CANCELLED'}

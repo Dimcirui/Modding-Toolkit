@@ -164,12 +164,17 @@ STRINGS = {
     # is what "to Wilds" carries; the earlier "Rebuild as" wording tried to carry the
     # rebuild-vs-conversion difference too, which is an implementation detail the
     # button does not need to argue (user, 2026-08-16).
+    # The destination is no longer in the label: each of the three now picks its
+    # target game inside its own dialog (MHWilds or MH Rise), so naming one game on
+    # the button would be wrong half the time.  They are named after the *source*
+    # format instead, which is what the user is holding when they reach for the
+    # button and is the same for every target.
     "ui.main_panel.btn_port_mhwi_to_mhws": {
-        "EN": "Port Model to Wilds", "ZH": "移植模型到荒野"},
+        "EN": "Port Model (mod3)", "ZH": "移植模型 (mod3)"},
     "ui.main_panel.btn_port_mrl3_to_mdf2": {
-        "EN": "Port Material to Wilds", "ZH": "移植材质到荒野"},
+        "EN": "Port Material (mrl3)", "ZH": "移植材质 (mrl3)"},
     "ui.main_panel.btn_port_ctc_to_chain2": {
-        "EN": "Port Physics to Wilds", "ZH": "移植物理到荒野"},
+        "EN": "Port Physics (ctc)", "ZH": "移植物理 (ctc)"},
     "ui.main_panel.btn_record_transform":         {"EN": "Record Transform (select two armatures)", "ZH": "录制变换 (选两个骨架)"},
     "ui.main_panel.btn_apply_forward":            {"EN": "▶ Forward (A→B)", "ZH": "▶ 正向 (A→B)"},
     "ui.main_panel.btn_apply_inverse":            {"EN": "◀ Inverse (B→A)", "ZH": "◀ 逆向 (B→A)"},

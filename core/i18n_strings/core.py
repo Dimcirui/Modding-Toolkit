@@ -1321,6 +1321,31 @@ STRINGS = {
         "ZH": "导出目录"},
     "core.mrl3_port_ops.migrate_params": {
         "EN": "Migrate Params", "ZH": "迁移参数"},
+    "core.ctc_port_ops.target_label": {"EN": "Target Game", "ZH": "目标游戏"},
+    "core.ctc_port_ops.target_mhws": {"EN": "MHWS", "ZH": "怪猎荒野"},
+    "core.ctc_port_ops.target_mhws_desc": {
+        "EN": "Build a MHWilds .chain2", "ZH": "生成怪猎荒野的 .chain2"},
+    "core.ctc_port_ops.target_mhrs": {"EN": "MHRS", "ZH": "怪猎崛起"},
+    "core.ctc_port_ops.target_mhrs_desc": {
+        "EN": "Build a MH Rise .chain (v48). The scene objects are the same either "
+              "way -- only the export format and the group attribute bits differ, "
+              "and those are re-encoded rather than carried",
+        "ZH": "生成怪猎崛起的 .chain（v48）。两者的场景对象完全相同——"
+              "只有导出格式和 Group 属性位不同，而后者会被重新编码而非照搬"},
+    "core.mhwi_port_ops.target_label": {"EN": "Target Game", "ZH": "目标游戏"},
+    "core.mhwi_port_ops.target_mhws": {"EN": "MHWS", "ZH": "怪猎荒野"},
+    "core.mhwi_port_ops.target_mhws_desc": {
+        "EN": "Rebuild onto MHWilds' skeleton: lift to its ground origin, swing the "
+              "thumbs 29 degrees onto its splay, then run its two skeleton passes",
+        "ZH": "重建到怪猎荒野骨架：抬升到其地面原点、把拇指旋转 29 度对上其外张角度，"
+              "再跑荒野的两个骨架优化"},
+    "core.mhwi_port_ops.target_mhrs": {"EN": "MHRS", "ZH": "怪猎崛起"},
+    "core.mhwi_port_ops.target_mhrs_desc": {
+        "EN": "Rebuild onto MH Rise's skeleton. Measured to share MHWI's rest frame "
+              "exactly, so there is no lift and no thumb swing -- this is a rename "
+              "and a rig swap, nothing is moved",
+        "ZH": "重建到怪猎崛起骨架。实测与 MHWI 处于同一静止姿态坐标系，"
+              "所以既不抬升也不旋转拇指——只是重命名加换骨架，不移动任何东西"},
     "core.mrl3_port_ops.target_label": {"EN": "Target Game", "ZH": "目标游戏"},
     "core.mrl3_port_ops.target_mhws": {"EN": "MHWS", "ZH": "怪猎荒野"},
     "core.mrl3_port_ops.target_mhws_desc": {

@@ -57,6 +57,51 @@ THUMB_ROTATIONS = {
           ("MhBone_049", (0.4818, -0.8651, -0.1395), 13.182)],
 }
 
+#: What differs per destination game.  MHWilds was the only target for a long time,
+#: so what used to be four module constants is now one row each.
+#:
+#: MHRS's row is nearly empty, and that is the measurement rather than a stub:
+#:
+#: * ``sole_offset = 0`` -- MHWI and MHRS are the *same rest frame*.  16 landmarks
+#:   over the two reference bodies, max deviation 0.0022 m, most exactly zero, and
+#:   identical bounding boxes to four decimals.  Both measure from the pelvis while
+#:   MHWilds measures from the ground, which is the whole of SOLE_OFFSET_Z.
+#: * ``rotate_thumbs = False`` -- the thumb swing is a *MHWilds* fixup, not an MHWI
+#:   quirk.  MHWI's thumb axis sits 24.19 deg from MHWilds' and **0.351 deg** from
+#:   MHRS's, so applying it here would introduce the error it exists to remove.
+#: * ``optimize_ops = ()`` -- ``mhws.optimize_skeleton`` and ``mhws.optimize_aux_bones``
+#:   are MHWilds' own helper-system passes.  MHRS has no helper system to optimise
+#:   and no such operators; there is nothing to substitute, not merely nothing wired.
+#:
+#: ``preset`` is the bone preset's *filename*.  MH Rise's is still ``mhwr.json`` for
+#: compatibility with existing user presets even though its game_code is ``MHRS``.
+PORT_TARGETS = {
+    "MHWS": {
+        "preset": "mhws.json",
+        "sole_offset": None,            # filled from SOLE_OFFSET_Z below
+        "rotate_thumbs": True,
+        "optimize_ops": ("mhws.optimize_skeleton", "mhws.optimize_aux_bones"),
+    },
+    "MHRS": {
+        "preset": "mhwr.json",
+        "sole_offset": 0.0,
+        "rotate_thumbs": False,
+        "optimize_ops": (),
+    },
+}
+
+#: Order the targets are offered in; MHWilds first because it is the validated one.
+PORT_TARGET_ORDER = ("MHWS", "MHRS")
+
+
+PORT_TARGETS["MHWS"]["sole_offset"] = SOLE_OFFSET_Z
+
+
+def port_target(game_code):
+    """The per-game row, or MHWilds' as the default."""
+    return PORT_TARGETS.get(game_code) or PORT_TARGETS["MHWS"]
+
+
 #: MHWI's origin bone, and what MHWilds calls the same thing.  Function id 000 is
 #: "原点/Root" in the id table, and it is the parent of the pelvis -- so it is the one
 #: leftover that gets renamed rather than dropped, because a rig with no root leaves

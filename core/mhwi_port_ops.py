@@ -46,6 +46,9 @@ from .bone_mapper import build_cross_game_map
 from .i18n import T
 
 SRC_PRESET = "mhwi_world.json"
+
+#: Kept as the default target so every existing call site and preset reference
+#: still means MHWilds; the per-target rows live in mhwi_port.PORT_TARGETS.
 DST_PRESET = "mhws.json"
 DST_GAME = "MHWS"
 
@@ -158,7 +161,7 @@ def rotate_thumbs(arm_obj, context=None):
 
 # ── 3. the reference rig ────────────────────────────────────────────────────────
 
-def import_reference_rig(context):
+def import_reference_rig(context, game=DST_GAME):
     """MHWilds' reference skeleton, facial bones merged and T-posed, mesh discarded.
 
     This is the state the "Import Reference Model" button produces with its first two
@@ -170,15 +173,24 @@ def import_reference_rig(context):
     Auxiliary bones are deliberately *not* merged: they are MHWilds' own helper
     system and the ported rig is supposed to have them.
     """
-    ident = ref_model.MODELS.get(DST_GAME, ())
+    ident = ref_model.MODELS.get(game, ())
     if not ident:
         return None
-    arm = ref_model_ops.import_model(DST_GAME, ident[0][0])
+    # First entry: MHWilds ships only a female body, and where a game ships both
+    # (MHRS) the choice does not survive anyway -- snap_reference_to_model moves
+    # every mapped bone onto the MHWI joints, so the reference's own proportions
+    # are overwritten and only its bone *set* matters, which is identical.
+    arm = ref_model_ops.import_model(game, ident[0][0])
     if arm is None:
         return None
-    ref_model_ops.apply_merges(arm, DST_GAME, True, False)
-    _activate(context, arm)
-    bpy.ops.modder.ree_to_tpose()
+    # Both passes are no-ops for an OPTIONLESS game by definition -- that set means
+    # "no facial rig, and authored in T-pose already" -- so they are skipped rather
+    # than run for their own sake. ree_to_tpose in particular has nothing to derive
+    # against for a game with no correction data.
+    if game not in ref_model.OPTIONLESS_GAMES:
+        ref_model_ops.apply_merges(arm, game, True, False)
+        _activate(context, arm)
+        bpy.ops.modder.ree_to_tpose()
 
     for obj in list(bound_meshes(arm)):
         bpy.data.objects.remove(obj, do_unlink=True)
@@ -187,7 +199,7 @@ def import_reference_rig(context):
 
 # ── 4. snap the reference onto the model ────────────────────────────────────────
 
-def snap_reference_to_model(context, model_arm, ref_arm):
+def snap_reference_to_model(context, model_arm, ref_arm, dst_preset=DST_PRESET):
     """Move *ref_arm*'s bones onto *model_arm*'s joints, position only.
 
     ``modder.universal_snap`` reads the two rigs through the bone presets, so it
@@ -204,7 +216,7 @@ def snap_reference_to_model(context, model_arm, ref_arm):
              settings.align_mode_override)
     try:
         settings.import_preset_enum = SRC_PRESET
-        settings.target_preset_enum = DST_PRESET
+        settings.target_preset_enum = dst_preset
         settings.align_mode_override = 'POS_ONLY'
         _activate(context, ref_arm, selected=(model_arm,))
         bpy.ops.modder.universal_snap()
@@ -215,7 +227,7 @@ def snap_reference_to_model(context, model_arm, ref_arm):
 
 # ── 5. assemble the output collection ───────────────────────────────────────────
 
-def assemble_collection(src_col, ref_arm, meshes):
+def assemble_collection(src_col, ref_arm, meshes, game=DST_GAME):
     """A ``.mesh`` collection holding the new rig and the meshes, rebound to it.
 
     Tagged ``RE_MESH_COLLECTION`` because the output is a MHWilds model: every
@@ -233,7 +245,7 @@ def assemble_collection(src_col, ref_arm, meshes):
         if stem.endswith(suffix):
             stem = stem[:-len(suffix)]
             break
-    col = bpy.data.collections.new(f"{stem}_{DST_GAME}.mesh")
+    col = bpy.data.collections.new(f"{stem}_{game}.mesh")
     col["~TYPE"] = "RE_MESH_COLLECTION"
     col.color_tag = "COLOR_01"
 
@@ -267,7 +279,7 @@ def assemble_collection(src_col, ref_arm, meshes):
 
 # ── 6. vertex groups ────────────────────────────────────────────────────────────
 
-def rename_vertex_groups(context, meshes):
+def rename_vertex_groups(context, meshes, dst_preset=DST_PRESET):
     """Rename the meshes' vertex groups from MHWI names to MHWilds names.
 
     ``modder.direct_convert`` is the same button a user would press ("Rename Vertex
@@ -279,7 +291,7 @@ def rename_vertex_groups(context, meshes):
     saved = (settings.import_preset_enum, settings.target_preset_enum)
     try:
         settings.import_preset_enum = SRC_PRESET
-        settings.target_preset_enum = DST_PRESET
+        settings.target_preset_enum = dst_preset
         if not meshes:
             return
         _activate(context, meshes[0], selected=meshes[1:])
@@ -410,15 +422,36 @@ def transplant_physics(model_arm, ref_arm, name_map):
 
 # ── 8. optimise ─────────────────────────────────────────────────────────────────
 
-def optimize(context, arm_obj, meshes):
-    """The two MHWilds skeleton passes, run as the user would run them by hand."""
-    _activate(context, arm_obj, selected=meshes)
-    bpy.ops.mhws.optimize_skeleton()
-    _activate(context, arm_obj, selected=meshes)
-    bpy.ops.mhws.optimize_aux_bones()
+def optimize(context, arm_obj, meshes, ops=()):
+    """The target's own skeleton passes, run as the user would run them by hand.
+
+    Empty for MHRS, and that is not an omission: these are MHWilds' helper-system
+    passes and MHRS has no helper system for them to act on."""
+    for idname in ops:
+        _activate(context, arm_obj, selected=meshes)
+        category, _, name = idname.partition(".")
+        getattr(getattr(bpy.ops, category), name)()
 
 
 # ── operator ────────────────────────────────────────────────────────────────────
+
+#: Same persistent-list rule as _collection_items below: Blender's C side keeps the
+#: pointers, so the callback must not return a list it just built.
+_target_item_cache = []
+
+_TARGET_LABELS = {
+    "MHWS": ("core.mhwi_port_ops.target_mhws", "core.mhwi_port_ops.target_mhws_desc"),
+    "MHRS": ("core.mhwi_port_ops.target_mhrs", "core.mhwi_port_ops.target_mhrs_desc"),
+}
+
+
+def _target_game_items(self=None, context=None):
+    _target_item_cache.clear()
+    for game in mhwi_port.PORT_TARGET_ORDER:
+        label, desc = _TARGET_LABELS[game]
+        _target_item_cache.append((game, T(label), T(desc)))
+    return _target_item_cache
+
 
 _collection_item_cache = []
 
@@ -448,6 +481,8 @@ class MHWI_OT_PortToMHWS(bpy.types.Operator):
 
     source_collection: bpy.props.EnumProperty(
         name="Source", items=_collection_items)
+    target_game: bpy.props.EnumProperty(
+        name="Target", items=_target_game_items, default=0)
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self, width=430)
@@ -456,6 +491,7 @@ class MHWI_OT_PortToMHWS(bpy.types.Operator):
         layout = self.layout
         layout.prop(self, "source_collection",
                     text=T("core.mhwi_port_ops.source_collection"))
+        layout.prop(self, "target_game", text=T("core.mhwi_port_ops.target_label"))
         box = layout.box()
         box.label(text=T("core.mhwi_port_ops.rebuild_note"), icon='INFO')
 
@@ -469,7 +505,8 @@ class MHWI_OT_PortToMHWS(bpy.types.Operator):
             self.report({'ERROR'}, T("core.mhwi_port_ops.not_mhwi"))
             return {'CANCELLED'}
 
-        cross = build_cross_game_map(SRC_PRESET, DST_PRESET)
+        cross = build_cross_game_map(
+            SRC_PRESET, mhwi_port.port_target(self.target_game)["preset"])
         if cross is None:
             self.report({'ERROR'}, T("core.mhwi_port_ops.preset_load_failed"))
             return {'CANCELLED'}
@@ -495,10 +532,12 @@ class MHWI_OT_PortToMHWS(bpy.types.Operator):
         for mesh in work_meshes:
             pose_bake.rebind(mesh, work_arm)
 
-        translate_rig(work_arm, mhwi_port.SOLE_OFFSET_Z)
-        thumbs = rotate_thumbs(work_arm, context)
+        cfg = mhwi_port.port_target(self.target_game)
+        if cfg["sole_offset"]:
+            translate_rig(work_arm, cfg["sole_offset"])
+        thumbs = rotate_thumbs(work_arm, context) if cfg["rotate_thumbs"] else 0
 
-        ref_arm = import_reference_rig(context)
+        ref_arm = import_reference_rig(context, self.target_game)
         if ref_arm is None:
             # The mesh copies have to go too.  ``duplicate_armature_with_meshes``
             # links them into the *source's* collections, so leaving them behind
@@ -510,14 +549,14 @@ class MHWI_OT_PortToMHWS(bpy.types.Operator):
             self.report({'ERROR'}, T("core.mhwi_port_ops.need_reference"))
             return {'CANCELLED'}
 
-        snap_reference_to_model(context, work_arm, ref_arm)
-        out_col = assemble_collection(col, ref_arm, work_meshes)
-        rename_vertex_groups(context, work_meshes)
+        snap_reference_to_model(context, work_arm, ref_arm, cfg["preset"])
+        out_col = assemble_collection(col, ref_arm, work_meshes, self.target_game)
+        rename_vertex_groups(context, work_meshes, cfg["preset"])
         grafted, orphans, rehomed = transplant_physics(
             work_arm, ref_arm, dict(cross.mapping))
 
         bpy.data.objects.remove(work_arm, do_unlink=True)
-        optimize(context, ref_arm, work_meshes)
+        optimize(context, ref_arm, work_meshes, cfg["optimize_ops"])
 
         parts = [T("core.mhwi_port_ops.stat").format(
             name=out_col.name, thumbs=thumbs, bones=len(ref_arm.data.bones),
