@@ -83,11 +83,17 @@ MODELS = {
     "MHWS": [
         ("female", "core.ref_model.female", "fbx", ("mhws", "MHWilds_Female.fbx")),
     ],
+    # FBX rather than the .mesh these were converted from: the mesh route needs RE
+    # Mesh Editor installed and the FBX route needs nothing, and the same file then
+    # doubles as the cross-game port's reference skeleton
+    # (assets/reference_skeletons/mhrs/).  Verified round-trip against the .mesh --
+    # bone heads and orientations are bit-identical, only bone *lengths* shorten,
+    # which is what every shipped .fbx reference already does (MHWilds_Female.fbx
+    # has the same signature) and what every consumer is insensitive to: they take
+    # the tail as a direction and normalise it.
     "MHRS": [
-        ("female", "core.ref_model.female", "remesh",
-         "assets/mhrs/shadow/f_shadow.mesh.2109148288"),
-        ("male", "core.ref_model.male", "remesh",
-         "assets/mhrs/shadow/m_shadow.mesh.2109148288"),
+        ("female", "core.ref_model.female", "fbx", ("mhrs", "f_shadow.fbx")),
+        ("male", "core.ref_model.male", "fbx", ("mhrs", "m_shadow.fbx")),
     ],
     "RE4": [
         ("leon", None, "fbx", ("re4", "leon.fbx")),

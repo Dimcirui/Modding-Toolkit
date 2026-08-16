@@ -55,7 +55,7 @@ FAMILY_A = frozenset({"MHWS", "RE4", "SF6", "DMC5", "MHRS"})
 PORTABLE_GAMES = ("MHWS", "RE4", "RE9")
 
 #: Reference skeletons live under assets/reference_skeletons/<lowercased game_code>/.
-_REF_DIRS = {"MHWS": "mhws", "RE4": "re4", "RE9": "re9"}
+_REF_DIRS = {"MHWS": "mhws", "RE4": "re4", "RE9": "re9", "MHRS": "mhrs"}
 
 _TEMP_PREFIX = "__port_tmp__"
 
