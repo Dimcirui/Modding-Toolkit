@@ -34,7 +34,7 @@ from .bone_correction import (DEFAULT_TOLERANCE_DEG, derive_bone_correction,
                               same_convention_set)
 from .bone_mapper import BoneMapManager, auto_detect_preset, build_cross_game_map
 from .i18n import T
-from .mesh_port import build_port_plan, origin_shift
+from .mesh_port import PLUMBING_BONES, build_port_plan, origin_shift
 from .ref_skeleton import get_reference_skeleton_items, import_reference_armature
 from .weight_utils import merge_weights_and_delete_bones
 
@@ -50,9 +50,11 @@ from .weight_utils import merge_weights_and_delete_bones
 #: than an error.  One spelling, everywhere.
 FAMILY_A = frozenset({"MHWS", "RE4", "SF6", "DMC5", "MHRS"})
 
-#: Ported rigs are offered for the same three games the chain port covers -- the ones
-#: with a reference skeleton to derive against and hand-made ground truth to check.
-PORTABLE_GAMES = ("MHWS", "RE4", "RE9")
+#: Ported rigs are offered for the games with a reference skeleton to derive against.
+#: MHRS joined once it had one (assets/reference_skeletons/mhrs/) and a native bone
+#: table; it is the first member whose rig origin is not on the ground, which is what
+#: RIG_ORIGIN and origin_shift() exist for.
+PORTABLE_GAMES = ("MHWS", "RE4", "RE9", "MHRS")
 
 #: Reference skeletons live under assets/reference_skeletons/<lowercased game_code>/.
 _REF_DIRS = {"MHWS": "mhws", "RE4": "re4", "RE9": "re9", "MHRS": "mhrs"}
@@ -477,19 +479,52 @@ def mesh_collections():
 
 
 def _translate_rig(arm_obj, dz):
-    """Move the rig and everything that travels with it by *dz* in world Z.
+    """Move the *body* by *dz* in world Z, leaving the file origin where it is.
 
-    Object transforms, not bone or vertex data: it is a rigid move of the whole
-    assembly, so there is nothing to bake.  Meshes parented to the armature come
-    along on their own; ones merely bound by modifier do not, so they are moved
-    explicitly.  Same shape as ``mhwi_port_ops.translate_rig``, which does this for
-    the MHWI pipeline; the carried set is ``pose_bake.attached_meshes``, which is
-    what "travels with the rig" means everywhere else in this file.
+    Object transform for the body, because it is a rigid move of the whole
+    assembly and there is nothing to bake -- and it does reach the file:
+    RE Mesh Editor's exporter runs ``exportArmatureData.transform(
+    armatureObj.matrix_world)`` before writing, so the object's location is baked
+    into the exported bone data.  Meshes parented to the armature come along on
+    their own; ones merely bound by modifier do not, so they move explicitly.
+    ``pose_bake.attached_meshes`` is what "travels with the rig" means everywhere
+    else in this file.
+
+    **The plumbing root is then put back.**  It is not anatomy, it is the origin
+    the file is expressed around, and both conventions keep it at zero -- what
+    differs is where the *body* sits relative to it.  Carried down with everything
+    else, it would land a metre below the model and change every child's
+    parent-relative offset by that metre, so animation driving the root would swing
+    the body about a point under its feet.  This is what the MHWI pipeline already
+    does, by a different route: ``root`` is in PLUMBING_BONES and no preset maps
+    it, so ``snap_reference_to_model`` leaves it at the reference rig's origin
+    while ``translate_rig`` lifts only the model onto it.
     """
     arm_obj.location.z += dz
     for obj in pose_bake.attached_meshes(arm_obj):
         if obj.parent is not arm_obj:
             obj.location.z += dz
+    bpy.context.view_layer.update()
+
+    prev_mode = arm_obj.mode
+    bpy.context.view_layer.objects.active = arm_obj
+    bpy.ops.object.mode_set(mode='EDIT')
+    try:
+        for eb in arm_obj.data.edit_bones:
+            if eb.name not in PLUMBING_BONES:
+                continue
+            # Children that are *connected* would follow the parent's tail, which
+            # would undo the move for that branch. Nothing in these rigs connects
+            # to the root (MHWilds' root sits 1.02 below its own Hip), but a rig
+            # that did would fail silently, so it is broken rather than trusted.
+            for child in eb.children:
+                child.use_connect = False
+            eb.head.z -= dz
+            eb.tail.z -= dz
+    finally:
+        bpy.ops.object.mode_set(mode='OBJECT')
+        if prev_mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode=prev_mode)
     bpy.context.view_layer.update()
 
 

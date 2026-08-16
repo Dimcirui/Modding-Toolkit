@@ -72,13 +72,14 @@ BONE_CONSTRAINT = "BoneName"
 #: different container formats, not two spellings of one -- a ``.chain2`` handed to
 #: RE4R is simply the wrong file.  Confirmed against docs/chain_chain2_plan.md and
 #: against all three reference characters in the project's own scene.
-CHAIN_EXT_BY_GAME = {"MHWS": ".chain2", "RE4": ".chain", "RE9": ".chain2"}
+CHAIN_EXT_BY_GAME = {"MHWS": ".chain2", "RE4": ".chain", "RE9": ".chain2",
+                     "MHRS": ".chain"}
 
 #: File version each game's exporter writes, from RE-Chain-Editor's own export
 #: dropdowns (``__init__.py`` ``ExportREChain.filename_ext`` /
 #: ``ExportREChain2.filename_ext``).  These are the numbers the *game* validates
 #: against ``supportedVersionSet``, so they are not cosmetic.
-CHAIN_VERSION_BY_GAME = {"MHWS": 14, "RE4": 53, "RE9": 15}
+CHAIN_VERSION_BY_GAME = {"MHWS": 14, "RE4": 53, "RE9": 15, "MHRS": 48}
 
 #: ``colliderFilterInfoPath`` is a **path into the game's own files**, so it can
 #: only ever be correct for the game it names.  MHWilds is the only supported
@@ -91,6 +92,9 @@ COLLIDER_FILTER_BY_GAME = {
     "MHWS": "System/Collision/Filter/Character/Character_Chain.cfil",
     "RE4": "",
     "RE9": "",
+    # MHRS predates the feature: chain v1 only gained clspFlags at version 52 and
+    # MHRS writes 48, so it has no collider filter to name.
+    "MHRS": "",
 }
 
 #: What RE-Chain-Editor writes into an empty chain2 ``subDataList`` (see

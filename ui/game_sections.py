@@ -80,23 +80,30 @@ GROUP_LABELS = {
 }
 
 
-def _port(game_code):
+def _port(game_code, mdf=True):
     """The cross-game port entries, identical for every RE Engine game.
 
     The section fixes the source game; the dialog picks the target.  MHWI is not one
     of these: it is not RE Engine, so it has no target to pick and no shared chain
     format.  Its one-way rebuild to MHWilds is a separate operator with its own
     entry, ``mhwi.port_to_mhws``.
+
+    ``mdf=False`` for MHRS: the material port needs one prefab per archetype to
+    classify against and MHRS ships only ``standard``, so offering the button would
+    hand back a dialog with nothing in its target list.  Drawing two buttons is
+    honest about which halves are ready; see core/mdf_port.py's own scope note.
     """
-    return [op("modder.port_mesh_cross_game",
-               "ui.main_panel.btn_port_mesh_cross_game", 'ARMATURE_DATA',
-               props={'source_game': game_code}),
-            op("modder.convert_chain_cross_game",
-               "ui.main_panel.btn_convert_chain_cross_game", 'UV_SYNC_SELECT',
-               needs='re_chain', props={'source_game': game_code}),
-            op("modder.port_mdf_material_cross_game",
-               "ui.main_panel.btn_port_mdf_material_cross_game", 'MATERIAL',
-               props={'source_game': game_code})]
+    entries = [op("modder.port_mesh_cross_game",
+                  "ui.main_panel.btn_port_mesh_cross_game", 'ARMATURE_DATA',
+                  props={'source_game': game_code}),
+               op("modder.convert_chain_cross_game",
+                  "ui.main_panel.btn_convert_chain_cross_game", 'UV_SYNC_SELECT',
+                  needs='re_chain', props={'source_game': game_code})]
+    if mdf:
+        entries.append(op("modder.port_mdf_material_cross_game",
+                          "ui.main_panel.btn_port_mdf_material_cross_game",
+                          'MATERIAL', props={'source_game': game_code}))
+    return entries
 
 
 def _mdf_pair(prefix):
@@ -294,6 +301,7 @@ SECTIONS = {
             _mdf_pair('mhrs'),
         ],
         'physics': [_re_chain('mhrs')],
+        'port': _port('MHRS', mdf=False),
     },
     're9': {
         'label': "RE9 Tools", 'icon': 'GHOST_ENABLED',

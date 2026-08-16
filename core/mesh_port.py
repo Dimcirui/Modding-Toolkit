@@ -156,12 +156,71 @@ _INSERT_RULES = {
         "{s}_Palm": ("colocate", "{s}_Hand"),
         "{s}_Instep": ("ref_offset", None),
     },
+    # MHRS's whole rig is 79 bones and the preset maps 51 of them, so this table
+    # only has to cover the other 28 -- one of which, ``Root``, is plumbing and
+    # never inserted.  Measured on f_shadow (2026-08-16), distance from each bone
+    # to the nearest *mapped* joint; everything below is 0-2 mm from its anchor,
+    # so co-location is not a simplification here, it is what the rig does.
+    #
+    # ``_W`` helpers and ``_T`` twists are MHRS's equivalent of MHWilds' ``_HJ_``
+    # family. Unlike MHWilds there is no separate table to borrow, but they need
+    # none: each sits on a joint rather than between two, so none of them is a
+    # midpoint case.  Note the anchor is the joint the bone rides on, which is
+    # *not* always its parent -- ``L_Arm_00_W`` hangs off ``L_Arm_00`` but sits
+    # 137.5 mm away, on ``L_Arm_01``.
+    "MHRS": {
+        "Cog": ("colocate", "Waist_00"),
+        "Neck_00_S": ("colocate", "Neck_00"),
+        "{s}_Arm_00_W": ("colocate", "{s}_Arm_01"),
+        "{s}_Arm_01_T": ("colocate", "{s}_Arm_01"),
+        "{s}_Arm_01_W": ("colocate", "{s}_Arm_02"),
+        "{s}_Leg_00_W": ("colocate", "{s}_Leg_00"),
+        "{s}_Leg_01_W": ("colocate", "{s}_Leg_01"),
+        "{s}_Leg_02_T": ("colocate", "{s}_Leg_02"),
+        "{s}_Weapon_00": ("colocate", "{s}_Arm_03"),
+        # The palm, and the reason this pair cannot use {s}: the left hand's is
+        # L_Finger_09 while the right hand's is called R_Grip_00, because on that
+        # side it doubles as the weapon grip.  Both parent the ring and pinky
+        # roots, both sit 21.3 mm off the hand -- the same relationship MHWS and
+        # RE4 express as {s}_Palm -> {s}_Hand.
+        "L_Finger_09": ("colocate", "L_Arm_03"),
+        "R_Grip_00": ("colocate", "R_Arm_03"),
+        # Not on any joint: 74.1 mm past the forearm, between it and the hand.
+        "{s}_Arm_02_T": ("ref_offset", None),
+        # Rig furniture with no anatomical anchor. The IK targets are the reason
+        # this is not simply "everything unmapped colocates": L_Hand_IK hangs off
+        # Spine_01 but sits 154.3 mm away and 10 mm from its opposite number, i.e.
+        # nowhere near a joint of its own.
+        "{s}_Foot_IK": ("ref_offset", None),
+        "{s}_Hand_IK": ("ref_offset", None),
+        "Face_Parts": ("ref_offset", None),
+        "LookAt": ("ref_offset", None),
+        "PL_Cam": ("ref_offset", None),
+    },
 }
 
-#: Bones that exist on every rig as scene plumbing rather than anatomy.  They are
-#: never renamed (no preset registers them) and never inserted; same name in every
-#: game means pass-through is already correct.
-PLUMBING_BONES = frozenset({"root", "Root"})
+#: The bone every rig has as scene plumbing rather than anatomy: the origin the
+#: file is expressed around.  No preset registers it, so it is not renamed by the
+#: mapping and never inserted as a missing target bone.
+#:
+#: It is **not** the same name in every game, which is the trap this pair exists to
+#: close.  MHWS, RE4 and RE9 all spell it ``root``; MHRS spells it ``Root``.  RE
+#: Engine binds bones by name *hash*, so those are two different bones -- a ported
+#: rig that kept ``root`` in an MHRS file has no origin bone at all, and every
+#: reference bone parented to ``Root`` (Face_Parts, LookAt, PL_Cam, the foot IK
+#: targets) then has no parent to be inserted under.  Caught by the first real
+#: MHWS -> MHRS run, which produced 79 bones of which 6 were the wrong 6.
+PLUMBING_ROOT_BY_GAME = {"MHWS": "root", "RE4": "root", "RE9": "root",
+                         "SF6": "root", "DMC5": "root", "MHRS": "Root"}
+DEFAULT_PLUMBING_ROOT = "root"
+
+#: Every spelling, for "is this bone plumbing?" tests that do not know a game.
+PLUMBING_BONES = frozenset(PLUMBING_ROOT_BY_GAME.values())
+
+
+def plumbing_root(game_code):
+    """What *game_code* calls its origin bone."""
+    return PLUMBING_ROOT_BY_GAME.get(game_code, DEFAULT_PLUMBING_ROOT)
 
 
 def insert_rules_for(game_code, extra_rules=None):
@@ -291,9 +350,23 @@ def build_port_plan(src_bones, cross_map, dst_game=None, src_main_names=(),
     src_bones = list(src_bones)
     src_main_names = set(src_main_names)
 
+    # 0. the plumbing root, which no preset maps and which is therefore invisible to
+    #    cross_map.  It still has to be *renamed* when the two games spell it
+    #    differently (MHRS capitalises it), because bones bind by name hash.
+    src_root = plumbing_root(plan.src_game)
+    dst_root = plumbing_root(plan.dst_game)
+    root_rename = (src_root != dst_root and src_root in src_bones
+                   and dst_root not in src_bones)
+
     # 1. group by destination, so many-to-one shows up before anything is decided
     by_dst = {}
     for name in src_bones:
+        if root_rename and name == src_root:
+            plan.renames.append((name, dst_root))
+            continue
+        if name in PLUMBING_BONES:
+            plan.passthrough.append(name)
+            continue
         dst = cross_map.get(name)
         if dst is None:
             plan.passthrough.append(name)

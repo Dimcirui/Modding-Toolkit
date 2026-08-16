@@ -30,16 +30,16 @@ from .mesh_port_ops import collection_armatures, is_mesh_collection, mesh_collec
 #: Deliberately three, not five:
 #: * **MHWI** is not RE Engine at all -- its physics goes through mhw_ctc, and its
 #:   chain code is off-limits per the refactor backlog.
-#: * **MHRS** is RE Engine and shares MHWI's rest frame exactly (measured
-#:   2026-08-16: 16 landmarks, max deviation 0.0022 m, and the sole offset to
-#:   MHWilds is the same 1.0468 mhwi_port uses).  What it still lacks is a
-#:   registered native skeleton and reference skeleton, so it is not yet offered.
-#:   See docs/mhrs_port_plan.md.
 #: * **SF6 / DMC5** have no reference skeleton to validate against.
+#:
+#: MHRS joined on 2026-08-16, once it had a native bone table and a reference
+#: skeleton.  It is the first entry that writes ``.chain`` v48 rather than a
+#: ``.chain2``, so every MHRS pair crosses the container boundary in one direction
+#: or the other and leans on ``translate_group_attr``.
 #:
 #: The mapping layer already handles all of them (`build_cross_game_map` composes any
 #: pair); this list is only about which ones have been *validated end to end*.
-PORTABLE_GAMES = ("MHWS", "RE4", "RE9")
+PORTABLE_GAMES = ("MHWS", "RE4", "RE9", "MHRS")
 
 #: EnumProperty item callbacks must keep a persistent reference to what they return.
 #: Blender's C side holds the strings, and a list built inside the callback is freed
