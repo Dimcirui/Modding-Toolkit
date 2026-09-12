@@ -862,13 +862,22 @@ class MHWS_OT_OptimizeSkeleton(bpy.types.Operator):
 
         # Knee 对齐到膝关节，Shin 在其正下方 0.01：
         # universal_snap 已把 Shin 头对齐到膝关节位置，先把 Knee 平移到该点（保持自身方向长度），
-        # 再把 Shin 整体下移 0.01，使 Knee 恰在 Shin 正上方（仅 Z 相差），与 MBT 一致
+        # 再把 Shin 整体下移 0.01，使 Knee 恰在 Shin 正上方（仅 Z 相差），与 MBT 一致。
+        # 该操作不是幂等的（每次都会再下移 0.01），反复点击会让两骨越移越低——
+        # 先判断是否已满足目标关系，满足则整侧跳过。
         for side in ('L', 'R'):
             shin = edit_bones.get(f'{side}_Shin')
             if shin is None:
                 continue
             knee = edit_bones.get(f'{side}_Knee')
             if knee is not None:
+                already_aligned = (
+                    abs(knee.head.x - shin.head.x) < 1e-4
+                    and abs(knee.head.y - shin.head.y) < 1e-4
+                    and abs((knee.head.z - shin.head.z) - 0.01) < 1e-4
+                )
+                if already_aligned:
+                    continue
                 offset = shin.head - knee.head
                 knee.tail = knee.tail + offset
                 knee.head = shin.head.copy()
