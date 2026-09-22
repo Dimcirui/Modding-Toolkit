@@ -271,6 +271,7 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
         row.prop(settings, "mhws_triangulate_face", text=T("ui.prop.triangulate_face"), icon='MOD_TRIANGULATE')
 
         self._draw_bonesystem(layout, settings)
+        self._draw_lua_bone_system(layout, settings, scene, armor_id, variant)
 
         pairs = _gather_check_pairs(scene, armor_id, variant, active_parts)
         pec.draw_inline_summary(self, layout, context, 'MHWS', pairs, natives_root)
@@ -289,6 +290,38 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
         name_row = col.row(align=True)
         name_row.prop(settings, "mhws_fbxskel_name", text=T("mhws.batch_export_ui.fbxskel_name_label"))
         name_row.operator("mhws.bonesystem_settings", text="", icon='PREFERENCES')
+
+    def _draw_lua_bone_system(self, layout, settings, scene, armor_id, variant):
+        layout.separator()
+        box = layout.box()
+        row = box.row(align=True)
+        row.prop(settings, "mhws_use_lua_bone_system",
+                 text=T("mhws.batch_export_ui.use_lua_bone_system_label"), icon='ARMATURE_DATA')
+        if not settings.mhws_use_lua_bone_system:
+            return
+
+        box.prop(settings, "mhws_bs_armature", text=T("mhws.batch_export_ui.armature_label"))
+
+        head_row = box.row(align=False)
+        head_row.label(text=T("mhws.batch_export_ui.lua_bone_head_label"))
+        for ft in ("mesh", "mdf2"):
+            sub = head_row.row(align=True)
+            cur = get_binding(scene, armor_id, variant, "head", ft)
+            op = sub.operator(
+                "mhws.pick_collection",
+                text=cur if cur else "—",
+                icon='DOWNARROW_HLT' if not cur else _FILETYPE_ICONS[ft]
+            )
+            op.armor_id = armor_id
+            op.variant  = variant
+            op.part     = "head"
+            op.filetype = ft
+            if cur:
+                op_c = sub.operator("mhws.clear_binding", text="", icon='X')
+                op_c.armor_id = armor_id
+                op_c.variant  = variant
+                op_c.part     = "head"
+                op_c.filetype = ft
 
     def execute(self, context):
         bpy.ops.mhws.batch_export()

@@ -178,6 +178,14 @@ STRINGS = {
         "ZH": "Bonesystem 完成: {fbxskel}.fbxskel.7 / {json}.json"},
     "mhws.batch_export.bonesystem_failed": {"EN": "Bonesystem failed: {err}", "ZH": "Bonesystem 失败: {err}"},
 
+    # ── Lua Bone System export ───────────────────────────────────────────────
+    "mhws.batch_export.lua_bone_select_armature": {
+        "EN": "Lua Bone System: please select an armature object", "ZH": "Lua Bone System: 请选择一个骨架对象"},
+    "mhws.batch_export.lua_bone_export_done": {
+        "EN": "Lua Bone System complete: {name} ({missing} joint(s) not found, written as zero; "
+              "{head} head file(s) written)",
+        "ZH": "Lua Bone System 完成: {name} (缺失 {missing} 根骨骼, 已写为 0; 头部文件写入 {head} 个)"},
+
     # ── MHWS_OT_BatchExport ──────────────────────────────────────────────────
     "mhws.batch_export.batch_export_desc": {"EN": "MHWs armor batch export", "ZH": "MHWs 装备批量导出"},
     "mhws.batch_export.re_mesh_not_installed_cleanup_skip": {
@@ -223,6 +231,8 @@ STRINGS = {
     "mhws.batch_export_ui.use_bonesystem_label": {"EN": "Use Bonesystem", "ZH": "使用 Bonesystem"},
     "mhws.batch_export_ui.armature_label": {"EN": "Armature", "ZH": "骨架"},
     "mhws.batch_export_ui.fbxskel_name_label": {"EN": "FBXSkel Name", "ZH": "FBXSkel 名"},
+    "mhws.batch_export_ui.use_lua_bone_system_label": {"EN": "Use Lua Bone System", "ZH": "使用 Lua Bone System"},
+    "mhws.batch_export_ui.lua_bone_head_label": {"EN": "Head", "ZH": "头部"},
 
     # ══════════════════════════════════════════════════════════════════════
     # games/mhws/batch_import.py

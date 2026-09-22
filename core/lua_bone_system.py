@@ -76,6 +76,28 @@ def local_rest_positions(armature_obj):
     return out
 
 
+def absolute_positions(target, joint_names):
+    """``{joint: {x,y,z}}`` -- *target*'s own rest position, verbatim, for each
+    name in *joint_names*; zero for a name *target* doesn't have.
+
+    This is the mechanism Wilds' own "lua bone system" script uses (a
+    community fork of this one, not MHRS's): unlike ``build_offsets``, it does
+    not diff against a base rig at all -- it captures each joint's raw
+    ``LocalPosition`` in-game and reapplies it verbatim. Confirmed by diffing a
+    shipped custom json against the same rig re-read in Blender: every joint
+    matched except ``Hip``, whose in-game capture reflects a live IK pelvis
+    adjustment a static rest pose can't reproduce -- not a flaw in this
+    function. Joints missing from *target* (``Ground_Angle``, ``root`` on a
+    rig that doesn't skin them) are control joints the game never customizes,
+    so zero is the correct value, not a fallback guess.
+    """
+    out = {}
+    for name in joint_names:
+        t = target.get(name)
+        out[name] = {"x": 0.0, "y": 0.0, "z": 0.0} if t is None else {"x": t[0], "y": t[1], "z": t[2]}
+    return out
+
+
 def build_offsets(target, base):
     """The offset table for a rig, given *target* and *base* rest positions.
 

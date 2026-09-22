@@ -8,6 +8,7 @@ from ..re9.batch_export import _do_export_mesh, _do_export_mdf2, _do_export_chai
 from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
 from ...core import console_export
 from ...core import export_prep
+from ...core import lua_bone_system
 from ...core.i18n import T
 
 # MHWs 游戏级文件后缀常量
@@ -306,6 +307,113 @@ def _do_bonesystem_export(context, settings, variant_armor_id):
                 o.select_set(True)
 
 
+# ── Lua Bone System (Wilds community script, distinct from MHRS's LuaBoneSystem) ──
+# reframework/autorun/lua bone system/joints.lua's JointList, verbatim order.
+_LUA_BONE_JOINTS = [
+    'root', 'Hip', 'Spine_0', 'Spine_1', 'Spine_2', 'Neck_0', 'Neck_1', 'Head',
+    'R_Eye', 'L_Eye', 'HeadRX_HJ_01', 'Neck_1_HJ_00', 'Neck_0_HJ_00',
+    'L_Shoulder', 'L_UpperArm', 'L_Forearm', 'L_Hand', 'L_Thumb1', 'L_Thumb2',
+    'L_Thumb3', 'L_Thumb_HJ_02', 'L_Thumb_HJ_01', 'L_Thumb_HJ_00', 'L_Thumb_HJ_03',
+    'L_IndexF1', 'L_IndexF2', 'L_IndexF3', 'L_IndexF_HJ_03', 'L_IndexF_HJ_02',
+    'L_IndexF_HJ_00', 'L_IndexF_HJ_01', 'L_IndexF_HJ_04', 'L_MiddleF1', 'L_MiddleF2',
+    'L_MiddleF3', 'L_MiddleF_HJ_03', 'L_MiddleF_HJ_02', 'L_MiddleF_HJ_00',
+    'L_MiddleF_HJ_01', 'L_MiddleF_HJ_04', 'L_Palm', 'L_RingF1', 'L_RingF2', 'L_RingF3',
+    'L_RingF_HJ_03', 'L_RingF_HJ_02', 'L_RingF_HJ_00', 'L_RingF_HJ_01', 'L_RingF_HJ_04',
+    'L_PinkyF1', 'L_PinkyF2', 'L_PinkyF3', 'L_PinkyF_HJ_03', 'L_PinkyF_HJ_02',
+    'L_PinkyF_HJ_00', 'L_PinkyF_HJ_01', 'L_PinkyF_HJ_04', 'L_Hand_HJ_01',
+    'L_HandRZ_HJ_00', 'L_Hand_HJ_00', 'L_ForearmTwist_HJ_02', 'L_ForearmRY_HJ_00',
+    'L_ForearmRY_HJ_01', 'L_ForearmTwist_HJ_01', 'L_ForearmTwist_HJ_00',
+    'L_Forearm_HJ_00', 'L_Elbow_HJ_00', 'L_UpperArmTwist_HJ_00', 'L_UpperArmTwist_HJ_01',
+    'L_Triceps_HJ_00', 'L_Biceps_HJ_00', 'L_Biceps_HJ_01', 'L_UpperArmTwist_HJ_02',
+    'L_ForearmDouble_HJ_00', 'L_UpperArm_HJ_00', 'L_Deltoid_HJ_00', 'L_Deltoid_HJ_01',
+    'L_Deltoid_HJ_02', 'L_Shoulder_HJ_00', 'L_UpperArmDouble_HJ_00',
+    'R_Shoulder', 'R_UpperArm', 'R_Forearm', 'R_Hand', 'R_Thumb1', 'R_Thumb2',
+    'R_Thumb3', 'R_Thumb_HJ_02', 'R_Thumb_HJ_01', 'R_Thumb_HJ_00', 'R_Thumb_HJ_03',
+    'R_IndexF1', 'R_IndexF2', 'R_IndexF3', 'R_IndexF_HJ_03', 'R_IndexF_HJ_02',
+    'R_IndexF_HJ_00', 'R_IndexF_HJ_01', 'R_IndexF_HJ_04', 'R_MiddleF1', 'R_MiddleF2',
+    'R_MiddleF3', 'R_MiddleF_HJ_03', 'R_MiddleF_HJ_02', 'R_MiddleF_HJ_00',
+    'R_MiddleF_HJ_01', 'R_MiddleF_HJ_04', 'R_Palm', 'R_RingF1', 'R_RingF2', 'R_RingF3',
+    'R_RingF_HJ_03', 'R_RingF_HJ_02', 'R_RingF_HJ_00', 'R_RingF_HJ_01', 'R_RingF_HJ_04',
+    'R_PinkyF1', 'R_PinkyF2', 'R_PinkyF3', 'R_PinkyF_HJ_03', 'R_PinkyF_HJ_02',
+    'R_PinkyF_HJ_00', 'R_PinkyF_HJ_01', 'R_PinkyF_HJ_04', 'R_Hand_HJ_01',
+    'R_HandRZ_HJ_00', 'R_Hand_HJ_00', 'R_ForearmTwist_HJ_02', 'R_ForearmRY_HJ_00',
+    'R_ForearmRY_HJ_01', 'R_ForearmTwist_HJ_01', 'R_ForearmTwist_HJ_00',
+    'R_Forearm_HJ_00', 'R_Elbow_HJ_00', 'R_UpperArmTwist_HJ_00', 'R_UpperArmTwist_HJ_01',
+    'R_Triceps_HJ_00', 'R_Biceps_HJ_00', 'R_Biceps_HJ_01', 'R_UpperArmTwist_HJ_02',
+    'R_ForearmDouble_HJ_00', 'R_UpperArm_HJ_00', 'R_Deltoid_HJ_00', 'R_Deltoid_HJ_01',
+    'R_Deltoid_HJ_02', 'R_Shoulder_HJ_00', 'R_UpperArmDouble_HJ_00',
+    'L_Traps_HJ_00', 'L_Traps_HJ_01', 'L_Pec_HJ_00', 'L_Pec_HJ_01', 'L_Lats_HJ_00',
+    'L_Lats_HJ_01', 'R_Traps_HJ_00', 'R_Traps_HJ_01', 'R_Pec_HJ_00', 'R_Pec_HJ_01',
+    'R_Lats_HJ_00', 'R_Lats_HJ_01', 'Spine_2_HJ_00', 'R_Bust_HJ_00', 'R_Bust_HJ_01',
+    'L_Bust_HJ_00', 'L_Bust_HJ_01', 'Spine_1_HJ_00', 'Spine_0_HJ_00',
+    'L_Thigh', 'L_Knee', 'L_Shin', 'L_Foot', 'L_Instep', 'L_Toe', 'L_Foot_HJ_00',
+    'L_Calf_HJ_00', 'L_Shin_HJ_00', 'L_Shin_HJ_01', 'L_Knee_HJ_00', 'L_KneeDouble_HJ_00',
+    'L_KneeRX_HJ_00', 'L_ThighTwist_HJ_00', 'L_ThighTwist_HJ_01', 'L_ThighTwist_HJ_02',
+    'R_Thigh', 'R_Knee', 'R_Shin', 'R_Foot', 'R_Instep', 'R_Toe', 'R_Foot_HJ_00',
+    'R_Calf_HJ_00', 'R_Shin_HJ_00', 'R_Shin_HJ_01', 'R_KneeRX_HJ_00', 'R_Knee_HJ_00',
+    'R_KneeDouble_HJ_00', 'R_ThighTwist_HJ_00', 'R_ThighTwist_HJ_01', 'R_ThighTwist_HJ_02',
+    'L_ThighRZ_HJ_00', 'L_ThighRZ_HJ_01', 'R_ThighRZ_HJ_00', 'R_ThighRZ_HJ_01',
+    'L_Hip_HJ_00', 'L_Hip_HJ_01', 'R_Hip_HJ_00', 'R_Hip_HJ_01',
+    'L_ThighRX_HJ_00', 'L_ThighRX_HJ_01', 'R_ThighRX_HJ_00', 'R_ThighRX_HJ_01',
+    'Hip_HJ_00', 'Ground_Angle',
+]
+
+
+def _do_lua_bone_export(context, natives_root, settings, scene, armor_id, variant, variant_armor_id):
+    """Write the Wilds "lua bone system" custom json, and the matching custom
+    head mesh/mdf2 if bound, for this armor set.
+
+    Unlike MHRS's LuaBoneSystem (core/lua_bone_system.build_offsets), this
+    community script for Wilds does not diff against a base/vanilla rig -- it
+    captures each joint's raw LocalPosition in-game and reapplies it verbatim
+    (confirmed by diffing a real shipped custom json against the same reshaped
+    rig re-read in Blender; see core.lua_bone_system.absolute_positions).
+
+    The runtime script keys its file lookup on the equipped Helmet's own model
+    id (its get_HelmID() scans for that specific part), so the json -- and the
+    head mesh/mdf2 below -- must be named/placed under that same id regardless
+    of which part triggered the export, not one copy per part as MHRS's
+    version needs.
+
+    The head mesh/mdf2 are optional: the script falls back to the vanilla
+    default head (folder "0000") when they're absent, so a missing binding is
+    reported but does not fail the export.
+
+    Returns (ok: bool, message: str).
+    """
+    user_arm = settings.mhws_bs_armature
+    if user_arm is None or user_arm.type != 'ARMATURE':
+        return False, T("mhws.batch_export.lua_bone_select_armature")
+
+    target = lua_bone_system.local_rest_positions(user_arm)
+    positions = lua_bone_system.absolute_positions(target, _LUA_BONE_JOINTS)
+
+    helm_id = f"{variant_armor_id}3"
+    out_dir = os.path.join(natives_root, "reframework", "data", "lua bone system", "custom")
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, f"{helm_id}.json")
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(positions, f, indent=4, sort_keys=True)
+
+    missing = sorted(set(_LUA_BONE_JOINTS) - set(target))
+
+    # The script's own path template: Art/Model/Character/ch00/{001|000}/{HelmID}/ch00_{gender}_0000.{ext}
+    gender_dir = "001" if variant.startswith("f") else "000"
+    head_dir = os.path.join(natives_root, "natives", "STM", "Art", "Model", "Character",
+                             "ch00", gender_dir, helm_id)
+    head_written = 0
+    for filetype, export_func in (("mesh", _do_export_mesh), ("mdf2", _do_export_mdf2)):
+        col_name = get_binding(scene, armor_id, variant, "head", filetype)
+        if not col_name or col_name not in bpy.data.collections:
+            continue
+        head_path = os.path.join(head_dir, f"ch00_{gender_dir}_0000.{filetype}.{MHWS_EXTS[filetype]}")
+        export_func(head_path, col_name)
+        head_written += 1
+
+    return True, T("mhws.batch_export.lua_bone_export_done").format(
+        name=os.path.basename(out_path), missing=len(missing), head=head_written)
+
+
 # ── 导出 Operator ──────────────────────────────────────────────
 
 class MHWS_OT_BatchExport(bpy.types.Operator):
@@ -484,6 +592,16 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
         # ── Bonesystem ──
         if settings.mhws_use_bonesystem:
             ok, msg = _do_bonesystem_export(context, settings, variant_armor_id)
+            if ok:
+                self.report({'INFO'}, msg)
+            else:
+                self.report({'WARNING'}, msg)
+                fail_count += 1
+
+        # ── Lua Bone System ──
+        if settings.mhws_use_lua_bone_system:
+            ok, msg = _do_lua_bone_export(
+                context, natives_root, settings, scene, armor_id, variant, variant_armor_id)
             if ok:
                 self.report({'INFO'}, msg)
             else:

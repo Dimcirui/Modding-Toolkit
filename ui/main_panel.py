@@ -321,6 +321,13 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         items=_mhws_bs_bind_part_items,
         default=0,
     )
+    mhws_use_lua_bone_system: bpy.props.BoolProperty(
+        name="Use Lua Bone System",
+        description="Also write the Wilds \"lua bone system\" custom joint json on export "
+                    "(a community REFramework script, distinct from the Bonesystem above; "
+                    "uses the same armature picked for Bonesystem)",
+        default=False,
+    )
     mhws_use_blank_export: bpy.props.BoolProperty(
         name="Use Blank Model for Unselected",
         description="For slots with no collection selected, copy in the built-in blank file instead of skipping",
