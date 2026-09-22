@@ -41,13 +41,19 @@ def prune_shape_keys(obj):
 
     A lone basis left behind is dropped too: it carries no information and
     stops the object from being edited normally.
+
+    ``TK_Basis`` (see core/shapekey_utils.py) is flat by construction -- it is
+    a deliberate snapshot of Basis, not a no-op left over from a split -- so
+    it is exempted even though it would otherwise match the same test.
     """
+    from .shapekey_utils import FROZEN_BASIS_NAME
+
     me = obj.data
     if not me.shape_keys:
         return 0
     removed = 0
     for kb in list(me.shape_keys.key_blocks):
-        if _shape_key_is_flat(kb):
+        if kb.name != FROZEN_BASIS_NAME and _shape_key_is_flat(kb):
             obj.shape_key_remove(kb)
             removed += 1
     if me.shape_keys and len(me.shape_keys.key_blocks) == 1:

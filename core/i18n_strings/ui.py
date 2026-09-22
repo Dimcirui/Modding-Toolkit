@@ -399,6 +399,15 @@ STRINGS = {
         "ZH": "有 {n} 个物体被跳过，因为它们的网格数据与其他物体共用"},
 
     "ui.main_panel.fsk_field_reset":              {"EN": "Reset Target To Current Normals", "ZH": "重设目标为当前法向"},
+    "ui.main_panel.fsk_base_frozen":              {"EN": "Frozen Basis (auto)", "ZH": "冻结基型（自动）"},
+    "ui.main_panel.fsk_base_frozen_desc": {
+        "EN": "Snapshot this mesh's Basis into a hidden 'TK_Basis' shape key the first time this runs, "
+              "then always read the authored directions off that snapshot instead of the live Basis. "
+              "Recommended: if Basis itself is what got corrupted, reading it live just re-captures the "
+              "corruption every time, and there is no way back",
+        "ZH": "第一次运行时把本网格的基型快照进一个隐藏的 'TK_Basis' 形态键，之后一律从这份快照读原本的方向，"
+              "不再读实时基型。推荐使用：如果基型本身就是被搞坏的那部分，实时读它只会一次次把坏值重新记下来，"
+              "没法再修回去"},
     "ui.main_panel.fsk_base_self":                {"EN": "Own Basis", "ZH": "自身基型"},
     "ui.main_panel.fsk_base_self_desc": {
         "EN": "Read the authored directions off this mesh's own base shape, which is what its stored normals already decode against",

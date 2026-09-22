@@ -525,7 +525,10 @@ def _mesh_object_items(self, context):
 #: ``(id, label key, description key)``.  Enum item labels are static text
 #: Blender resolves at registration, before the language is known, so they have
 #: to come from a callable that runs ``T()`` at draw time.
+#: FROZEN comes first (and is therefore the default): it costs nothing over
+#: SELF on a first run and does not carry SELF's failure mode on a later one.
 _BASE_SOURCE_ITEMS = (
+    ('FROZEN', "ui.main_panel.fsk_base_frozen", "ui.main_panel.fsk_base_frozen_desc"),
     ('SELF', "ui.main_panel.fsk_base_self", "ui.main_panel.fsk_base_self_desc"),
     ('OBJECT', "ui.main_panel.fsk_base_object", "ui.main_panel.fsk_base_object_desc"),
 )
@@ -640,6 +643,31 @@ with the encoding basis (see core/normal_utils.py)"""
                 obj=ref.name))
         return co.reshape(-1, 3).astype(np.float64)
 
+    def _frozen_basis(self, obj):
+        """This mesh's own base geometry, snapshotted once into a
+        ``TK_Basis`` shape key and read from there on every later run.
+
+        Reading "this mesh's own Basis" trusts whatever Basis holds *right
+        now* -- but Basis is exactly what a bad transform bake or import
+        round-trip can corrupt, and once that happens a repair that reads it
+        live just captures the corruption as the new target (see
+        ``reencode_for_shape``'s intent field). Snapshotting Basis into a
+        hidden key the first time this runs gives every later repair a fixed
+        point instead: even if Basis breaks again afterward, the reference
+        this reads from does not follow it.
+        """
+        import numpy as np
+        from .shapekey_utils import FROZEN_BASIS_NAME
+
+        me = obj.data
+        frozen = me.shape_keys.key_blocks.get(FROZEN_BASIS_NAME)
+        if frozen is None:
+            frozen = obj.shape_key_add(name=FROZEN_BASIS_NAME, from_mix=False)
+            frozen.mute = True
+        co = np.empty(len(me.vertices) * 3, np.float32)
+        frozen.data.foreach_get("co", co)
+        return co.reshape(-1, 3).astype(np.float64)
+
     def execute(self, context):
         import numpy as np
         from . import normal_utils, shapekey_utils
@@ -674,6 +702,8 @@ with the encoding basis (see core/normal_utils.py)"""
                 base_co = self._reference_base(obj)
                 if base_co is None:
                     return {'CANCELLED'}
+            elif self.base_source == 'FROZEN':
+                base_co = self._frozen_basis(obj)
 
             n, fresh, resid = normal_utils.reencode_for_shape(
                 me, co, reset_intent=self.reset_intent, base_co=base_co)

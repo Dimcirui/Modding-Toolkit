@@ -30,6 +30,13 @@ of this implementation — every cross-shape-key approach shares it.
 
 import numpy as np
 
+#: Name of the shape key MHW_OT_FixShapeKeyNormals snapshots Basis into the
+#: first time it repairs a mesh, so a later repair has a fixed point even if
+#: Basis itself gets corrupted again in between (see core/mesh_ops.py). It is
+#: flat by construction -- identical to Basis at capture time -- so anything
+#: that prunes "no-op" shape keys has to know to leave it alone.
+FROZEN_BASIS_NAME = "TK_Basis"
+
 #: Modifier types whose output topology depends on vertex positions, so each
 #: shape key would produce a different vertex count or ordering.  Decimate is
 #: the nasty one: the counts often match by luck, `join_shapes` accepts them,
