@@ -485,6 +485,16 @@ def _luminance(rgb):
 
 
 
+def _grade_applies(s):
+    """Whether the colour-grade pick takes effect. The DXGI format is the
+    veto: a non-_SRGB target never gets graded, whatever the preset says, so
+    deliberately picking a linear format can't have its data re-curved by a
+    grade left on from an earlier colour conversion. Same rule the MDF
+    processor/generator already use (color_grade.is_color_format)."""
+    from .color_grade import is_color_format
+    return s.preset in ('COLOR', 'CUSTOM') and is_color_format(s.format)
+
+
 def _apply_color_grade_file(path, mode, out_dir, name_hint):
     """Run core.color_grade over *path* and stage the result as a TGA.
 
@@ -808,9 +818,10 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
             # CUSTOM stays fully open for the same reason as detail overlay above.
             if s.preset in ('COLOR', 'CUSTOM'):
                 adj_box.separator()
-                grade_row = adj_box.row(align=True)
-                grade_row.label(text=T("core.color_grade.label"))
-                grade_row.prop(s, "color_grade", text="")
+                if _grade_applies(s):
+                    grade_row = adj_box.row(align=True)
+                    grade_row.label(text=T("core.color_grade.label"))
+                    grade_row.prop(s, "color_grade", text="")
                 adj_box.prop(s, "color_adjust_enabled", text=T("core.tex_convert_base.color_adjust_enabled_name"))
                 if s.color_adjust_enabled:
                     col = adj_box.column(align=True)
@@ -939,7 +950,7 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
                 self.report({'ERROR'}, T("core.tex_convert_base.channel_compose_failed"))
                 return {'CANCELLED'}
 
-            if s.preset in ('COLOR', 'CUSTOM') and s.color_grade != 'NONE':
+            if _grade_applies(s) and s.color_grade != 'NONE':
                 png_path = _apply_color_grade_file(
                     png_path, s.color_grade, temp_dir, "tex_convert_grade")
 
