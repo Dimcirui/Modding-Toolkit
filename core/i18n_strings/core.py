@@ -791,6 +791,14 @@ STRINGS = {
     "core.tex_convert_base.detail_map_name": {"EN": "Detail Map", "ZH": "细节图"},
     "core.tex_convert_base.detail_tiling_x_name": {"EN": "Tiling X", "ZH": "Tiling X"},
     "core.tex_convert_base.detail_tiling_y_name": {"EN": "Tiling Y", "ZH": "Tiling Y"},
+    "core.tex_convert_base.detail_mask_enabled_name": {"EN": "Use Mask", "ZH": "使用遮罩"},
+    "core.tex_convert_base.detail_mask_path_name": {"EN": "Mask Image", "ZH": "遮罩图"},
+    "core.tex_convert_base.detail_mask_channel_name": {"EN": "Channel", "ZH": "通道"},
+    "core.tex_convert_base.detail_mask_invert_name": {"EN": "Invert Mask", "ZH": "反转遮罩"},
+    "core.tex_convert_base.detail_mask_hint": {
+        "EN": "White = full detail, black = source kept as-is", "ZH": "白色=完整叠加细节，黑色=保持原图不变"},
+    "core.tex_convert_base.detail_mask_missing": {
+        "EN": "Mask image not found, please check the mask path", "ZH": "找不到遮罩图，请检查遮罩路径"},
     "core.tex_convert_base.detail_blend_failed": {
         "EN": "Detail map blend failed, please check the detail image", "ZH": "细节图混合失败，请检查细节图片"},
 

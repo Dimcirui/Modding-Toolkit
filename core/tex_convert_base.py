@@ -432,10 +432,17 @@ def _tile_sample_bilinear(arr, out_w, out_h, tiling_x, tiling_y):
     return top * (1.0 - fy) + bot * fy
 
 
-def _blend_detail_normal(base_path, detail_path, tiling_x, tiling_y, out_dir, name_hint):
+def _blend_detail_normal(base_path, detail_path, tiling_x, tiling_y, out_dir, name_hint,
+                         mask_path=None, mask_channel='R', mask_invert=False):
     """Overlay a tiled detail normal map onto a base normal map, blending
     only X/Y and re-deriving Z. Returns the output PNG path, or None on
-    failure (e.g. unreadable detail image)."""
+    failure (e.g. unreadable detail image).
+
+    mask_path: optional grayscale-ish image; its `mask_channel` scales the
+    detail per pixel (1 = full detail, 0 = none). Stretched over the base's
+    own UV range regardless of the detail tiling. Where the mask is 0 the
+    output equals the source pixel -- including B, which the unmasked path
+    would otherwise overwrite with the re-derived Z."""
     import numpy as np
 
     def _load_arr(path, tag):
@@ -458,12 +465,23 @@ def _blend_detail_normal(base_path, detail_path, tiling_x, tiling_y, out_dir, na
     base_xy = base_arr[:, :, :2] * 2.0 - 1.0
     detail_xy = detail_tiled[:, :, :2] * 2.0 - 1.0
 
+    mask = None
+    if mask_path:
+        mask_arr = _load_arr(mask_path, "mask")
+        mask = _tile_sample_bilinear(mask_arr, w, h, 1.0, 1.0)[:, :, _CH[mask_channel]]
+        mask = np.clip(mask, 0.0, 1.0)
+        if mask_invert:
+            mask = 1.0 - mask
+        detail_xy = detail_xy * mask[:, :, None]
+
     xy = np.clip(base_xy + detail_xy, -1.0, 1.0)
-    z = np.sqrt(np.clip(1.0 - np.sum(xy * xy, axis=-1), 0.0, 1.0))
+    z = np.sqrt(np.clip(1.0 - np.sum(xy * xy, axis=-1), 0.0, 1.0)) * 0.5 + 0.5
+    if mask is not None:
+        z = base_arr[:, :, 2] * (1.0 - mask) + z * mask
 
     result = np.empty((h, w, 4), dtype=np.float32)
     result[:, :, 0:2] = xy * 0.5 + 0.5
-    result[:, :, 2] = z * 0.5 + 0.5
+    result[:, :, 2] = z
     result[:, :, 3] = base_arr[:, :, 3]
 
     out_path = os.path.join(out_dir, f"{name_hint}.tga")
@@ -619,6 +637,13 @@ class TexConvertSettings(bpy.types.PropertyGroup):
     detail_path: bpy.props.StringProperty(name="Detail Map", subtype='FILE_PATH')
     detail_tiling_x: bpy.props.FloatProperty(name="Tiling X", default=1.0, min=0.01)
     detail_tiling_y: bpy.props.FloatProperty(name="Tiling Y", default=1.0, min=0.01)
+    # Optional mask restricting where the detail lands. Sampled once over the
+    # base's UV range (never tiled -- it describes regions of the base, not of
+    # the detail), and scales the detail's strength per pixel.
+    detail_mask_enabled: bpy.props.BoolProperty(name="Use Mask", default=False)
+    detail_mask_path: bpy.props.StringProperty(name="Mask Image", subtype='FILE_PATH')
+    detail_mask_channel: bpy.props.EnumProperty(name="", items=_CH_ITEMS, default='R')
+    detail_mask_invert: bpy.props.BoolProperty(name="Invert Mask", default=False)
 
     # In RGBA mode each output channel only picks a "source image/constant +
     # source channel"; invert follows the corresponding source image's
@@ -812,6 +837,13 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
                         tile_row = adj_box.row(align=True)
                         tile_row.prop(s, "detail_tiling_x", text=T("core.tex_convert_base.detail_tiling_x_name"))
                         tile_row.prop(s, "detail_tiling_y", text=T("core.tex_convert_base.detail_tiling_y_name"))
+                        adj_box.prop(s, "detail_mask_enabled", text=T("core.tex_convert_base.detail_mask_enabled_name"))
+                        if s.detail_mask_enabled:
+                            mask_row = adj_box.row(align=True)
+                            mask_row.prop(s, "detail_mask_path", text=T("core.tex_convert_base.detail_mask_path_name"))
+                            mask_row.prop(s, "detail_mask_channel", text="")
+                            adj_box.prop(s, "detail_mask_invert", text=T("core.tex_convert_base.detail_mask_invert_name"))
+                            adj_box.label(text=T("core.tex_convert_base.detail_mask_hint"), icon='INFO')
 
             # Exposure/Saturation/Vibrance only make sense on real color data,
             # not normal/mask/packed textures, so this is gated on COLOR --
@@ -905,9 +937,17 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
                 if s.preset in ('NONCOLOR', 'NRRO', 'CUSTOM') and s.detail_enabled and s.detail_path:
                     detail_path = bpy.path.abspath(s.detail_path)
                     if os.path.isfile(detail_path):
+                        mask_path = None
+                        if s.detail_mask_enabled and s.detail_mask_path:
+                            mask_path = bpy.path.abspath(s.detail_mask_path)
+                            if not os.path.isfile(mask_path):
+                                self.report({'ERROR'}, T("core.tex_convert_base.detail_mask_missing"))
+                                return {'CANCELLED'}
                         working = _blend_detail_normal(
                             working, detail_path, s.detail_tiling_x, s.detail_tiling_y,
-                            temp_dir, "tex_convert_detail")
+                            temp_dir, "tex_convert_detail",
+                            mask_path=mask_path, mask_channel=s.detail_mask_channel,
+                            mask_invert=s.detail_mask_invert)
                         if not working:
                             self.report({'ERROR'}, T("core.tex_convert_base.detail_blend_failed"))
                             return {'CANCELLED'}
