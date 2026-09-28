@@ -1806,6 +1806,18 @@ STRINGS = {
     "core.pre_export_fix_ops.outdated_mmtrs": {
         "EN": "These materials carry mmtrs index data, which a reorder does not update: {names}",
         "ZH": "这些材质带有 mmtrs 索引数据，重排属性不会同步更新它：{names}"},
+    "core.pre_export_fix_ops.fix_textures_desc": {
+        "EN": "Rewrite the texture files that are built wrong, in place: another game's version "
+              "(container only, pixels untouched), sides that are not powers of two, and DDS or image "
+              "files renamed to .tex",
+        "ZH": "原地重写做错了的贴图文件：别的游戏的版本（只换容器，像素不动）、边长不是 2 的幂、"
+              "改了后缀的 DDS 或图片"},
+    "core.pre_export_fix_ops.fix_textures_no_root": {
+        "EN": "Set the Mod Root first", "ZH": "请先设置 Mod 根目录"},
+    "core.pre_export_fix_ops.fix_textures_done": {"EN": "Fixed {n} texture(s)", "ZH": "已修复 {n} 张贴图"},
+    "core.pre_export_fix_ops.fix_textures_failed": {
+        "EN": "{n} texture(s) could not be fixed; see the system console",
+        "ZH": "{n} 张贴图修复失败，详见系统控制台"},
     "core.pre_export_fix_ops.ascii_desc": {
         "EN": "Rename non-English bones to pinyin/romaji in every armature involved, and update "
               "vertex groups, chain constraints and chain joint fields to match",
@@ -1948,6 +1960,8 @@ STRINGS = {
     "core.pre_export_check_ops.sub_tex_root_wrong": {
         "EN": "None Found At All", "ZH": "一张都找不到"},
     "core.pre_export_check_ops.sub_tex_missing": {"EN": "Not Found", "ZH": "找不到"},
+    "core.pre_export_check_ops.sub_tex_wrong_version": {
+        "EN": "Built for Another Game", "ZH": "版本不对"},
     "core.pre_export_check_ops.sub_tex_not_pow2": {
         "EN": "Size Not a Power of Two", "ZH": "边长不是 2 的幂"},
     "core.pre_export_check_ops.sub_tex_unreadable": {
@@ -1992,9 +2006,18 @@ STRINGS = {
     "core.pre_export_check_ops.item_root_wrong": {
         "EN": "No custom texture found under the Mod Root ({n} in total): {root}",
         "ZH": "Mod 根目录下找不到任何自定义贴图（共 {n} 条）：{root}"},
+    "core.pre_export_check_ops.item_wrong_version": {
+        "EN": "{path} — only a .tex.{have} exists, built for another game",
+        "ZH": "{path} — 只有 .tex.{have}，是给别的游戏转的"},
+    "core.pre_export_check_ops.item_wrong_header": {
+        "EN": "{path} — its header says version {have}", "ZH": "{path} — 文件头写的是版本 {have}"},
+    "core.pre_export_check_ops.item_unreadable_kind": {
+        "EN": "{path} — really a {kind} file", "ZH": "{path} — 实际是 {kind} 文件"},
     "core.pre_export_check_ops.item_unreadable": {
-        "EN": "{path} — probably a renamed png/dds",
-        "ZH": "{path} — 可能是改了后缀的 png/dds"},
+        "EN": "{path} — not a file format that can be recognised",
+        "ZH": "{path} — 认不出是什么格式"},
+    "core.pre_export_check_ops.item_tex_corrupt": {
+        "EN": "{path} — the .tex file is damaged", "ZH": "{path} — .tex 文件已损坏"},
     "core.pre_export_check_ops.item_pair": {
         "EN": "Mesh wants \"{mesh}\", the mdf has \"{mdf}\"",
         "ZH": "网格要「{mesh}」，mdf 里是「{mdf}」"},
@@ -2033,6 +2056,7 @@ STRINGS = {
     "core.pre_export_check_ops.outdated_snapshot": {
         "EN": "Compared with the vanilla layout snapshot {snap}; after a game update it may be the snapshot that is old",
         "ZH": "对照的是 {snap} 的原版快照；游戏更新后也可能是快照过时了"},
+    "core.pre_export_check_ops.btn_fix_textures": {"EN": "Fix Textures", "ZH": "修复贴图"},
     "core.pre_export_check_ops.btn_ascii_bones": {
         "EN": "Rename to English and Sync References", "ZH": "转成英文名并同步引用"},
     "core.pre_export_check_ops.btn_select_unweighted": {

@@ -278,6 +278,59 @@ class MODDER_OT_PecUpdateOutdated(bpy.types.Operator):
                        snap=mdf_layouts.snapshot_label(game))
 
 
+# ── Textures ─────────────────────────────────────────────────────────────────
+
+class MODDER_OT_PecFixTextures(bpy.types.Operator):
+    """「修复贴图」 (docs/pre_export_check_plan.md §5.1): the texture files that
+    are there but built wrong -- another game's version, a side that is not a
+    power of two, a DDS or image under a .tex name.  In place, no backups."""
+    bl_idname = "modder.pec_fix_textures"
+    bl_label = "Fix Textures"
+    bl_options = {'REGISTER'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T(_K + "fix_textures_desc")
+
+    def execute(self, context):
+        from . import tex_repair
+        game = pec._LAST_RUN.get('game', "")
+        root = pec._LAST_RUN.get('root', "")
+        cfg = pec._tex_config(game)
+        if cfg is None or not root:
+            self.report({'ERROR'}, T(_K + "fix_textures_no_root"))
+            return {'CANCELLED'}
+        version = cfg["tex_version"]
+        bindings = [(label, o) for label, mdf, _mesh in _pairs() for o in pec._mdf_materials(mdf)]
+        r = pec.texture_problems(bindings, cfg, root)
+        done, failed = 0, []
+        jobs = []
+        for path in r['wrong_version']:
+            jobs.append((path, lambda p=path: tex_repair.rewrite_version(r['other'][p][1], version, r['disk'][p])))
+        for path in r['header']:
+            jobs.append((path, lambda p=path: tex_repair.rewrite_version(r['disk'][p], version, r['disk'][p])))
+        for path in r['not_pow2']:
+            jobs.append((path, lambda p=path: tex_repair.resize_pow2(r['disk'][p], version)))
+        for path, users in r['unreadable'].items():
+            kind = r['kind'].get(path)
+            if kind in tex_repair.CONVERTIBLE:
+                slot = users[0][2]
+                jobs.append((path, lambda p=path, k=kind, s=slot:
+                             tex_repair.convert_foreign(r['disk'][p], k, s, version)))
+        for path, job in jobs:
+            try:
+                job()
+                done += 1
+            except Exception as e:
+                print(f"[PreExportCheck] texture fix failed for {path}: {e}")
+                failed.append(path)
+        if failed:
+            self.report({'WARNING'}, T(_K + "fix_textures_failed").format(n=len(failed)))
+        pec._rerun_and_store(context)
+        self.report({'INFO'}, T(_K + "fix_textures_done").format(n=done))
+        return {'FINISHED'}
+
+
 # ── Bones and weights ────────────────────────────────────────────────────────
 
 def _scope_armatures():
@@ -564,7 +617,8 @@ class MODDER_OT_PecQuickGenerate(bpy.types.Operator):
 classes = [MODDER_OT_PecAlignNames, MODDER_OT_PecSeparateRecheck,
            MODDER_OT_PecFixUnusedByBlender, MODDER_OT_PecDeleteUnused,
            MODDER_OT_PecUpdateOutdated, PEC_QuickGenRow, MODDER_OT_PecQuickGenerate,
-           MODDER_OT_PecAsciiBones, MODDER_OT_PecSelectUnweighted]
+           MODDER_OT_PecAsciiBones, MODDER_OT_PecSelectUnweighted,
+           MODDER_OT_PecFixTextures]
 
 
 def register():

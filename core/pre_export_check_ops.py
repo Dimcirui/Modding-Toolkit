@@ -76,7 +76,7 @@ _NONE = "NONE"
 #: Group order inside each category, most actionable first.  Errors still
 #: always precede notes (pre_export_report.build_report).
 _SUB_ORDER = (
-    'tex_root_wrong', 'tex_missing', 'tex_not_pow2', 'tex_unreadable', 'tex_empty',
+    'tex_root_wrong', 'tex_missing', 'tex_wrong_version', 'tex_not_pow2', 'tex_unreadable', 'tex_empty',
     'mat_pair', 'mat_pair_weak', 'mesh_unmatched', 'mat_unused_fixable', 'mat_unused', 'mat_duplicate',
     'mat_outdated', 'name_illegal', 'mesh_multi_color', 'mat_snapshot_stale',
     'mesh_structure', 'bone_non_ascii', 'vgroup_no_bone', 'unweighted',
@@ -96,6 +96,7 @@ _CAT_KEYS = {
 _SUB_KEYS = {
     'tex_root_wrong':   _K + "sub_tex_root_wrong",
     'tex_missing':      _K + "sub_tex_missing",
+    'tex_wrong_version': _K + "sub_tex_wrong_version",
     'tex_not_pow2':     _K + "sub_tex_not_pow2",
     'tex_unreadable':   _K + "sub_tex_unreadable",
     'tex_empty':        _K + "sub_tex_empty",
@@ -255,70 +256,121 @@ def _reason_text(codes):
     return ", ".join(T(_REASON_KEYS[c]) for c in codes)
 
 
-def _texture_findings(bindings, cfg, natives_root):
-    """``[finding]`` for the texture half, over every part at once.
+def texture_problems(bindings, cfg, natives_root):
+    """Classify every binding once; the check and the 「修复贴图」 button read
+    the same result.  *bindings* is ``[(part, material object)]``.
 
-    *bindings* is ``[(part, material object)]``.  The verdict ("nothing custom
-    resolved -- wrong root" vs "some files are missing") is taken over all
-    parts together: the mod root is one directory, so judging it per part could
-    call it wrong for one part and fine for the next.
+    Returns a dict of path -> ``[(part, obj, slot)]`` users per class, plus the
+    per-path detail the fixes need (``wrong_version``: the file found under
+    another version; ``header``: a right suffix over a wrong header version;
+    ``size``; ``kind``: what an unreadable file really is).
     """
-    tex_version = cfg["tex_version"]
+    from . import tex_repair
+    version = cfg["tex_version"]
     vanilla = _load_vanilla_art_paths(cfg["vanilla_asset_rel"])
 
-    def exists(path):
-        return os.path.isfile(pc.resolve_disk_path(natives_root, path, tex_version))
+    def disk(path):
+        return pc.resolve_disk_path(natives_root, path, version)
 
-    found = {}     # path -> [(part, obj)]; the same file is usually bound many times
-    missing = {}   # path -> [(part, obj)]
-    empty = []     # (part, obj, material name, slot)
+    def exists(path):
+        return os.path.isfile(disk(path))
+
+    res = {'found': {}, 'missing': {}, 'wrong_version': {}, 'header': {},
+           'not_pow2': {}, 'unreadable': {}, 'empty': [], 'size': {}, 'kind': {},
+           'other': {}, 'disk': {}}
     for part, obj in bindings:
         md = obj.re_mdf_material
         for b in md.textureBindingList_items:
             path = pc.normalize_tex_path(b.path)
             verdict = pc.classify_tex_binding(path, vanilla, exists)
-            if verdict == pc.TEX_FOUND:
-                found.setdefault(path, []).append((part, obj))
+            user = (part, obj, b.textureType)
+            if verdict == pc.TEX_EMPTY:
+                res['empty'].append((part, obj, md.materialName, b.textureType))
             elif verdict == pc.TEX_MISSING:
-                missing.setdefault(path, []).append((part, obj))
-            elif verdict == pc.TEX_EMPTY:
-                empty.append((part, obj, md.materialName, b.textureType))
+                others = tex_repair.other_versions(disk(path), version)
+                if others:
+                    res['wrong_version'].setdefault(path, []).append(user)
+                    res['other'][path] = others[0]
+                else:
+                    res['missing'].setdefault(path, []).append(user)
+                res['disk'][path] = disk(path)
+            elif verdict == pc.TEX_FOUND:
+                res['found'].setdefault(path, []).append(user)
+                res['disk'][path] = disk(path)
 
+    # Only the custom textures that resolved can be read: a vanilla path lives
+    # in the game's paks.  A header read per unique path, no mip decompressed.
+    for path, users in res['found'].items():
+        d = res['disk'][path]
+        hv = tex_repair.header_version(d)
+        if hv is not None and hv != version:
+            res['header'][path] = users
+            res['other'][path] = (hv, d)
+            continue
+        size = read_tex_size(d)
+        verdict = pc.classify_tex_size(size)
+        if verdict == pc.TEXF_NOT_POW2:
+            res['not_pow2'][path] = users
+            res['size'][path] = size
+        elif verdict == pc.TEXF_UNREADABLE:
+            res['unreadable'][path] = users
+            res['kind'][path] = tex_repair.sniff(d)
+    return res
+
+
+def _texture_findings(bindings, cfg, natives_root):
+    """``[finding]`` for the texture half, over every part at once.
+
+    The verdict ("nothing custom resolved -- wrong root" vs "some files are
+    missing") is taken over all parts together: the mod root is one directory,
+    so judging it per part could call it wrong for one part and fine for the
+    next.  A texture present only under another game's version counts as
+    present for that verdict: its cause is the conversion, not the root.
+    """
+    r = texture_problems(bindings, cfg, natives_root)
     out = []
-    verdict = pc.texture_verdict(len(found), len(missing))
+
+    def emit(sub, text, path, users):
+        for part, obj, _slot in users:
+            out.append(pr.finding('tex', sub, text, key=path, part=part, objects=[obj.name]))
+
+    present = len(r['found']) + len(r['wrong_version'])
+    verdict = pc.texture_verdict(present, len(r['missing']))
     if verdict == pc.TEXV_ROOT_WRONG:
         # One line for the whole thing -- every path fails for the same single
         # reason -- plus the first few paths so the user can tell a wrong root
         # (complete, plausible paths) from textures never built (a short list).
-        n = sum(len(v) for v in missing.values())
-        objs = [o.name for users in missing.values() for _p, o in users]
+        n = sum(len(v) for v in r['missing'].values())
+        objs = [o.name for users in r['missing'].values() for _p, o, _s in users]
         out.append(pr.finding('tex', 'tex_root_wrong',
                               T(_K + "item_root_wrong").format(n=n, root=natives_root),
                               key='summary', objects=objs))
-        for path in list(missing)[:3]:
+        for path in list(r['missing'])[:3]:
             out.append(pr.finding('tex', 'tex_root_wrong', path, key=path))
     elif verdict == pc.TEXV_MISSING:
-        for path, users in missing.items():
-            for part, obj in users:
-                out.append(pr.finding('tex', 'tex_missing', path, key=path,
-                                      part=part, objects=[obj.name]))
+        for path, users in r['missing'].items():
+            emit('tex_missing', path, path, users)
 
-    # Only the custom textures that resolved can be read: a vanilla path lives in
-    # the game's paks.  One 40-byte header read per unique path.
-    for path, users in found.items():
-        size = read_tex_size(pc.resolve_disk_path(natives_root, path, tex_version))
-        size_verdict = pc.classify_tex_size(size)
-        if size_verdict == pc.TEXF_OK:
-            continue
-        if size_verdict == pc.TEXF_NOT_POW2:
-            sub, text = 'tex_not_pow2', f"{size[0]}×{size[1]}  {path}"
+    for path, users in r['wrong_version'].items():
+        have = r['other'][path][0]
+        emit('tex_wrong_version', T(_K + "item_wrong_version").format(path=path, have=have), path, users)
+    for path, users in r['header'].items():
+        have = r['other'][path][0]
+        emit('tex_wrong_version', T(_K + "item_wrong_header").format(path=path, have=have), path, users)
+    for path, users in r['not_pow2'].items():
+        w, h = r['size'][path]
+        emit('tex_not_pow2', f"{w}×{h}  {path}", path, users)
+    for path, users in r['unreadable'].items():
+        kind = r['kind'].get(path)
+        if kind == 'TEX':       # a .tex header, but the size could not be read
+            text = T(_K + "item_tex_corrupt").format(path=path)
+        elif kind:
+            text = T(_K + "item_unreadable_kind").format(path=path, kind=kind)
         else:
-            sub, text = 'tex_unreadable', T(_K + "item_unreadable").format(path=path)
-        for part, obj in users:
-            out.append(pr.finding('tex', sub, text, key=path, part=part,
-                                  objects=[obj.name]))
+            text = T(_K + "item_unreadable").format(path=path)
+        emit('tex_unreadable', text, path, users)
 
-    for part, obj, mat, slot in empty:
+    for part, obj, mat, slot in r['empty']:
         out.append(pr.finding('tex', 'tex_empty', f"{mat}  [{slot}]",
                               key=(obj.name, slot), part=part, objects=[obj.name]))
     return out
@@ -1274,6 +1326,9 @@ _ACTIONS = {
     'mesh_multi_color':   ("modder.pec_separate_recheck",   "btn_separate",       'MOD_EXPLODE'),
     'mat_outdated':       ("modder.pec_update_outdated",    "btn_outdated",       'FILE_REFRESH'),
     'bone_non_ascii':     ("modder.pec_ascii_bones",        "btn_ascii_bones",    'BONE_DATA'),
+    'tex_wrong_version':  ("modder.pec_fix_textures",       "btn_fix_textures",   'TEXTURE'),
+    'tex_not_pow2':       ("modder.pec_fix_textures",       "btn_fix_textures",   'TEXTURE'),
+    'tex_unreadable':     ("modder.pec_fix_textures",       "btn_fix_textures",   'TEXTURE'),
     'unweighted':         ("modder.pec_select_unweighted",  "btn_select_unweighted", 'RESTRICT_SELECT_OFF'),
 }
 
