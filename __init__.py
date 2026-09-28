@@ -34,6 +34,7 @@ from .core import mrl3_port_ops
 from .core import ctc_port_ops
 from .core import mhwi_batch_port_ops
 from .core import pre_export_check_ops
+from .core import pre_export_fix_ops
 from .core import ref_model_ops
 from .core import stale_cleanup_ops
 from . import ui, games
@@ -141,6 +142,7 @@ modules = [
     # After mdf_port_ops: it imports that module's collection picker and shared
     # "Mod Root" row rather than restating either.
     pre_export_check_ops,
+    pre_export_fix_ops,
     ref_model_ops,
     stale_cleanup_ops,
     games,

@@ -1773,6 +1773,64 @@ STRINGS = {
     "core.export_autofix.n_names": {"EN": "{n} name(s)", "ZH": "{n} 处名字"},
 
     # ══════════════════════════════════════════════════════════════════════
+    # core/pre_export_fix_ops.py -- the pre-export report's fix buttons
+    # ══════════════════════════════════════════════════════════════════════
+    "core.pre_export_fix_ops.align_desc": {
+        "EN": "Rename each mesh to the mdf material name it was paired with",
+        "ZH": "把网格名 __ 后面的部分改成与之配对的 mdf 材质名"},
+    "core.pre_export_fix_ops.align_done": {"EN": "Aligned {n} name(s)", "ZH": "已对齐 {n} 处名字"},
+    "core.pre_export_fix_ops.separate_desc": {
+        "EN": "Split these meshes per material, name the pieces, and check again",
+        "ZH": "把这些网格按材质分离、给碎片命名，然后重新检查"},
+    "core.pre_export_fix_ops.separate_done": {
+        "EN": "Separated into {n} new mesh(es)", "ZH": "已分离出 {n} 个新网格"},
+    "core.pre_export_fix_ops.unused_blender_desc": {
+        "EN": "Use the mesh whose Blender material carries the unused mdf material's name: "
+              "separate it if it has several materials, otherwise rename it",
+        "ZH": "用 Blender 材质与多余材质同名的网格来接上它：多材质的分离，单材质的改名"},
+    "core.pre_export_fix_ops.unused_blender_done": {
+        "EN": "Fixed {n} mesh(es)", "ZH": "已修复 {n} 个网格"},
+    "core.pre_export_fix_ops.delete_unused_desc": {
+        "EN": "Delete the mdf materials no mesh uses, then renumber the rest",
+        "ZH": "删掉没有网格使用的 mdf 材质，再给其余材质重新编号"},
+    "core.pre_export_fix_ops.delete_unused_done": {
+        "EN": "Deleted {n} material(s)", "ZH": "已删除 {n} 个材质"},
+    "core.pre_export_fix_ops.outdated_desc": {
+        "EN": "Bring each material to its shader's vanilla layout from the bundled snapshot: "
+              "padding fixed, new properties and slots added with vanilla defaults, retired ones "
+              "removed, properties reordered. Values you set are kept",
+        "ZH": "按内置的原版快照把材质对齐到它所用着色器的原版布局：修正 padding，"
+              "补上新增的属性与贴图槽（用原版默认值），删掉已移除的，按原版顺序重排。你设的值保留"},
+    "core.pre_export_fix_ops.outdated_done": {
+        "EN": "Updated {n} material(s) against {snap}", "ZH": "已按 {snap} 更新 {n} 个材质"},
+    "core.pre_export_fix_ops.outdated_mmtrs": {
+        "EN": "These materials carry mmtrs index data, which a reorder does not update: {names}",
+        "ZH": "这些材质带有 mmtrs 索引数据，重排属性不会同步更新它：{names}"},
+    "core.pre_export_fix_ops.quick_desc": {
+        "EN": "Generate the materials the mdf lacks from the meshes' Blender materials; "
+              "only the preset is chosen, everything else uses the generator's defaults",
+        "ZH": "用网格的 Blender 材质当场生成 mdf 里缺的材质；只选预设，其余全按生成器默认值"},
+    "core.pre_export_fix_ops.quick_title": {
+        "EN": "Quick Generate With the Generator", "ZH": "使用生成器快捷生成"},
+    "core.pre_export_fix_ops.quick_confirm": {"EN": "Generate", "ZH": "生成"},
+    "core.pre_export_fix_ops.quick_no_generator": {
+        "EN": "No material generator is available for this game",
+        "ZH": "这个游戏没有可用的材质生成器"},
+    "core.pre_export_fix_ops.quick_row": {
+        "EN": "{mdf}  ← Blender material \"{mat}\"", "ZH": "{mdf}  ← Blender 材质「{mat}」"},
+    "core.pre_export_fix_ops.quick_no_material": {
+        "EN": "no Blender material to generate from", "ZH": "没有 Blender 材质，无法生成"},
+    "core.pre_export_fix_ops.quick_base_path": {
+        "EN": "Texture Path (under Art/)", "ZH": "贴图路径（Art/ 之下）"},
+    "core.pre_export_fix_ops.quick_need_base": {
+        "EN": "Fill in the texture path first", "ZH": "请先填写贴图路径"},
+    "core.pre_export_fix_ops.quick_failed": {
+        "EN": "{n} material(s) failed to generate; see the system console",
+        "ZH": "{n} 个材质生成失败，详见系统控制台"},
+    "core.pre_export_fix_ops.quick_done": {
+        "EN": "Generated {n} material(s)", "ZH": "已生成 {n} 个材质"},
+
+    # ══════════════════════════════════════════════════════════════════════
     # core/pre_export_check_ops.py
     # ══════════════════════════════════════════════════════════════════════
 
@@ -1886,6 +1944,18 @@ STRINGS = {
         "EN": "Material Missing From the mdf", "ZH": "网格要的材质不存在"},
     "core.pre_export_check_ops.sub_mat_unused": {
         "EN": "Material No Mesh Uses", "ZH": "mdf 里的材质没人用"},
+    "core.pre_export_check_ops.sub_mat_pair_weak": {
+        "EN": "Names Don't Match (a rename, or a new material?)",
+        "ZH": "名字对不上（可能是改名，也可能是新材质）"},
+    "core.pre_export_check_ops.sub_mat_unused_fixable": {
+        "EN": "Unused Material, Fixable From a Blender Material",
+        "ZH": "mdf 里的材质没人用（可按 Blender 材质修复）"},
+    "core.pre_export_check_ops.sub_mat_outdated": {
+        "EN": "Outdated Material", "ZH": "材质过时"},
+    "core.pre_export_check_ops.sub_mat_snapshot_stale": {
+        "EN": "Material Snapshot Out of Date", "ZH": "材质快照与游戏版本不符"},
+    "core.pre_export_check_ops.sub_mesh_multi_color": {
+        "EN": "Several Base Colours on One Mesh", "ZH": "多种底色的网格"},
     "core.pre_export_check_ops.sub_mat_duplicate": {
         "EN": "Duplicate Names", "ZH": "重名"},
     "core.pre_export_check_ops.sub_name_illegal": {
@@ -1907,11 +1977,52 @@ STRINGS = {
     "core.pre_export_check_ops.item_pair": {
         "EN": "Mesh wants \"{mesh}\", the mdf has \"{mdf}\"",
         "ZH": "网格要「{mesh}」，mdf 里是「{mdf}」"},
+    "core.pre_export_check_ops.item_pair_weak": {
+        "EN": "Mesh wants \"{mesh}\", the only unused mdf material is \"{mdf}\"",
+        "ZH": "网格要「{mesh}」，mdf 里只剩「{mdf}」没人用"},
     "core.pre_export_check_ops.item_mesh_unmatched": {
         "EN": "{obj} — no \"{mat}\" in the mdf", "ZH": "{obj} — mdf 里没有「{mat}」"},
     "core.pre_export_check_ops.item_mat_unused": {
         "EN": "\"{mat}\" in the mdf — no mesh uses it",
         "ZH": "mdf 里的「{mat}」— 没有网格使用"},
+    "core.pre_export_check_ops.hint_unused_blender": {
+        "EN": " (mesh \"{obj}\" has a Blender material of that name)",
+        "ZH": "（网格「{obj}」的 Blender 材质与它同名）"},
+    "core.pre_export_check_ops.hint_unused_elsewhere": {
+        "EN": " (may belong to the {where} mesh collection)",
+        "ZH": "（可能属于「{where}」的 mesh 集合）"},
+    "core.pre_export_check_ops.item_multi_color": {
+        "EN": "{obj} — {n} different base colours; in game the whole mesh shows one material",
+        "ZH": "{obj} — 用了 {n} 种底色，进游戏整块只显示一个材质"},
+    "core.pre_export_check_ops.item_multi_color_fallback": {
+        "EN": "{obj} — {n} different base colours; the material name comes from its first Blender material",
+        "ZH": "{obj} — 用了 {n} 种底色，材质名取自第一个 Blender 材质"},
+    "core.pre_export_check_ops.item_snapshot_stale": {
+        "EN": "The bundled vanilla material snapshot ({snap}) is for a different game build than "
+              "yours, so outdated materials were not checked; RE Asset Library's MDF Updater "
+              "reads your game directly",
+        "ZH": "内置的原版材质快照（{snap}）和你安装的游戏版本不一致，已跳过过时材质检查；"
+              "RE Asset Library 的 MDF Updater 会直接读取你的游戏"},
+    "core.pre_export_check_ops.btn_upstream_updater": {
+        "EN": "Open RE Asset Library MDF Updater", "ZH": "打开 RE Asset Library 的 MDF Updater"},
+    "core.pre_export_check_ops.outdated_padding": {"EN": "padding", "ZH": "padding 不对"},
+    "core.pre_export_check_ops.outdated_props": {"EN": "properties changed", "ZH": "属性有增删"},
+    "core.pre_export_check_ops.outdated_order": {"EN": "property order", "ZH": "属性顺序不对"},
+    "core.pre_export_check_ops.outdated_textures": {"EN": "texture slots changed", "ZH": "贴图槽有增删"},
+    "core.pre_export_check_ops.outdated_snapshot": {
+        "EN": "Compared with the vanilla layout snapshot {snap}; after a game update it may be the snapshot that is old",
+        "ZH": "对照的是 {snap} 的原版快照；游戏更新后也可能是快照过时了"},
+    "core.pre_export_check_ops.btn_align": {"EN": "Align to mdf Names", "ZH": "按 mdf 材质名对齐"},
+    "core.pre_export_check_ops.btn_unused_blender": {
+        "EN": "Fix by Blender Material", "ZH": "按 Blender 材质修复"},
+    "core.pre_export_check_ops.btn_delete_unused": {
+        "EN": "Delete Unused Materials", "ZH": "删除多余材质"},
+    "core.pre_export_check_ops.btn_quick_generate": {
+        "EN": "Quick Generate With the Generator", "ZH": "使用生成器快捷生成"},
+    "core.pre_export_check_ops.btn_separate": {
+        "EN": "Separate and Re-check", "ZH": "分离并重新检查"},
+    "core.pre_export_check_ops.btn_outdated": {
+        "EN": "Update Outdated Materials", "ZH": "更新过时材质"},
     "core.pre_export_check_ops.item_mat_duplicate": {
         "EN": "\"{mat}\" appears {n} times in the mdf", "ZH": "mdf 里「{mat}」出现 {n} 次"},
     "core.pre_export_check_ops.item_unweighted": {

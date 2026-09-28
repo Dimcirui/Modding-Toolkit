@@ -53,6 +53,7 @@ from .compat import HAS_DIALOG_TITLE
 from . import pre_export_check as pc
 from . import pre_export_report as pr
 from . import export_autofix
+from . import mdf_layouts
 from .mdf_material_convert_base import _load_vanilla_art_paths
 from .mdf_port_tex import get_game_tex_config
 from .tex_file import read_tex_size
@@ -76,7 +77,8 @@ _NONE = "NONE"
 #: always precede notes (pre_export_report.build_report).
 _SUB_ORDER = (
     'tex_root_wrong', 'tex_missing', 'tex_not_pow2', 'tex_unreadable', 'tex_empty',
-    'mat_pair', 'mesh_unmatched', 'mat_unused', 'mat_duplicate', 'name_illegal',
+    'mat_pair', 'mat_pair_weak', 'mesh_unmatched', 'mat_unused_fixable', 'mat_unused', 'mat_duplicate',
+    'mat_outdated', 'name_illegal', 'mesh_multi_color', 'mat_snapshot_stale',
     'unweighted', 'xform_mirrored', 'xform_degenerate',
 )
 
@@ -99,6 +101,11 @@ _SUB_KEYS = {
     'mat_pair':         _K + "sub_mat_pair",
     'mesh_unmatched':   _K + "sub_mesh_unmatched",
     'mat_unused':       _K + "sub_mat_unused",
+    'mat_unused_fixable': _K + "sub_mat_unused_fixable",
+    'mat_pair_weak':    _K + "sub_mat_pair_weak",
+    'mat_outdated':     _K + "sub_mat_outdated",
+    'mat_snapshot_stale': _K + "sub_mat_snapshot_stale",
+    'mesh_multi_color': _K + "sub_mesh_multi_color",
     'mat_duplicate':    _K + "sub_mat_duplicate",
     'name_illegal':     _K + "sub_name_illegal",
     'unweighted':       _K + "sub_unweighted",
@@ -367,76 +374,282 @@ def _check_weights(meshes, part):
     return out
 
 
-def _check_names_and_matching(materials, meshes, part):
-    """``[finding]`` for everything that is about names: matching in both
-    directions, legality on both sides, and duplicates.
+def used_materials(obj):
+    """The Blender materials *obj*'s faces actually use, in slot order.  Slots no
+    face points at -- common after joining and separating -- do not count."""
+    me = obj.data
+    mats = list(me.materials)
+    if not mats:
+        return []
+    import numpy as np
+    idx = np.empty(len(me.polygons), np.int32)
+    me.polygons.foreach_get("material_index", idx)
+    out = []
+    for i in sorted(set(int(i) for i in idx)):
+        if 0 <= i < len(mats) and mats[i] is not None and mats[i] not in out:
+            out.append(mats[i])
+    return out
+
+
+def material_matching(materials, meshes):
+    """Everything the name checks and their fix buttons need, computed once.
 
     One problem is reported once: a half-done rename becomes a single "mesh
     wants X, mdf has Y" line rather than a dangling mesh *and* a dangling
     material, and a pair whose names match once legalised is left to the
-    illegal-name group, whose fix button resolves it.
+    illegal-name group, whose fix resolves it.
     """
-    out = []
     mat_names = [o.re_mdf_material.materialName for o in materials]
     mat_by_name = {}
     for o in materials:
         mat_by_name.setdefault(o.re_mdf_material.materialName, []).append(o)
     mesh_entries = [(o, *_derived_material(o)) for o in meshes]
+    illegal = {n for n in mat_names if pc.name_problems(n)}
+    illegal |= {m for _o, m, _how in mesh_entries if pc.name_problems(m)}
+    paired, rest_meshes, rest_mats = [], [], []
+    if meshes:
+        unmatched, unused = pc.match_meshes_to_materials(
+            [(o.name, mat) for o, mat, _how in mesh_entries], mat_names)
+        paired, rest_meshes, rest_mats = pc.pair_unmatched(unmatched, unused)
+        paired = [p for p in paired
+                  if not ((p[1] in illegal or p[2] in illegal)
+                          and pc.fix_name(p[1]) == pc.fix_name(p[2]))]
+    # A pair made only because one of each was left over cannot tell a half-done
+    # rename from a new material meeting a genuinely unused one (measured: after
+    # the other fixes, "Skirt" -- a new material -- got paired with a leftover
+    # "cloth", and aligning would have renamed it to cloth). Those stay pairs
+    # for the report line, but the generate and delete fixes still see them.
+    def similar(a, b):
+        a, b = a or '', b or ''
+        return a.lower() == b.lower() or pc.fix_name(a).lower() == pc.fix_name(b).lower()
+    weak = [p for p in paired if not similar(p[1], p[2])]
+    rest_mats = list(dict.fromkeys(rest_mats))
+    return {'mat_names': mat_names, 'mat_by_name': mat_by_name,
+            'mesh_entries': mesh_entries, 'illegal': illegal,
+            'paired': paired, 'weak': weak,
+            'rest_meshes': rest_meshes, 'rest_mats': rest_mats,
+            'open_meshes': rest_meshes + [(o, w) for o, w, _h in weak],
+            'open_mats': rest_mats + [h for _o, _w, h in weak if h not in rest_mats]}
+
+
+def unused_by_blender_material(name, meshes, mat_names):
+    """Meshes in the same collection that can take mdf material *name* because
+    their Blender material is called that (Blender's .NNN ignored) -- §5.2
+    direction a.  Two ways in: faces joined into a mesh named after another
+    material (several used materials: separating fixes it), or a single-material
+    mesh named after something the mdf does not have.  A single-material mesh
+    that already matches another mdf material is left out: renaming it would
+    only move the dangling material somewhere else."""
+    out = []
+    names = set(mat_names)
+    for o in meshes:
+        mats = used_materials(o)
+        if not any(pc.strip_dedup_suffix(m.name) == name for m in mats):
+            continue
+        if len(mats) > 1 or _derived_material(o)[0] not in names:
+            out.append(o)
+    return out
+
+
+def _elsewhere(name, own_col, part_of):
+    """Where else *name* is asked for, as display names (§5.2 direction b)."""
+    out = []
+    for col in mesh_collections():
+        if col is own_col:
+            continue
+        for o in _mesh_objects(col):
+            mat, _how = _derived_material(o)
+            if mat == name or any(pc.strip_dedup_suffix(m.name) == name for m in used_materials(o)):
+                out.append(part_of.get(col.name, col.name))
+                break
+    return out
+
+
+def _check_names_and_matching(materials, meshes, part, mesh_col=None, part_of=None):
+    """``[finding]`` for everything that is about names: matching in both
+    directions, legality on both sides, and duplicates."""
+    out = []
+    m = material_matching(materials, meshes)
+    mat_by_name = m['mat_by_name']
 
     # ── legality, both sides ──
-    illegal_names = set()
     for obj in materials:
         name = obj.re_mdf_material.materialName
         problems = pc.name_problems(name)
         if problems:
-            illegal_names.add(name)
             out.append(pr.finding(
                 'mat', 'name_illegal',
                 f"{T(_K + 'side_mdf')} {name} — {_reason_text(problems)}",
                 key=('mdf', obj.name), part=part, objects=[obj.name]))
-    for obj, mat, how in mesh_entries:
+    for obj, mat, how in m['mesh_entries']:
         problems = list(pc.name_problems(mat))
         if how == 'single_underscore':
             problems.insert(0, pc.SINGLE_UNDERSCORE)
         if problems:
-            illegal_names.add(mat)
             out.append(pr.finding(
                 'mat', 'name_illegal',
                 f"{T(_K + 'side_mesh')} {obj.name} — {_reason_text(problems)}",
                 key=('mesh', obj.name), part=part, objects=[obj.name]))
 
     # ── matching, both directions ──
-    if meshes:
-        pairs = [(o.name, mat) for o, mat, _how in mesh_entries]
-        unmatched, unused = pc.match_meshes_to_materials(pairs, mat_names)
-        paired, rest_meshes, rest_mats = pc.pair_unmatched(unmatched, unused)
-        for obj_name, want, have in paired:
-            if (want in illegal_names or have in illegal_names) \
-                    and pc.fix_name(want) == pc.fix_name(have):
-                continue    # the name fix makes them match
-            out.append(pr.finding(
-                'mat', 'mat_pair',
-                T(_K + "item_pair").format(mesh=want or T(_K + "no_name"), mdf=have),
-                key=(obj_name, have), part=part,
-                objects=[obj_name] + [o.name for o in mat_by_name.get(have, [])]))
-        for obj_name, want in rest_meshes:
-            out.append(pr.finding(
-                'mat', 'mesh_unmatched',
-                T(_K + "item_mesh_unmatched").format(obj=obj_name,
-                                                     mat=want or T(_K + "no_name")),
-                key=obj_name, part=part, objects=[obj_name]))
-        for name in rest_mats:
-            out.append(pr.finding(
-                'mat', 'mat_unused', T(_K + "item_mat_unused").format(mat=name),
-                key=name, part=part,
-                objects=[o.name for o in mat_by_name.get(name, [])]))
+    for obj_name, want, have in m['paired']:
+        weak = (obj_name, want, have) in m['weak']
+        out.append(pr.finding(
+            'mat', 'mat_pair_weak' if weak else 'mat_pair',
+            T(_K + ("item_pair_weak" if weak else "item_pair")).format(
+                mesh=want or T(_K + "no_name"), mdf=have),
+            key=(obj_name, have), part=part,
+            objects=[obj_name] + [o.name for o in mat_by_name.get(have, [])]))
+    for obj_name, want in m['rest_meshes']:
+        out.append(pr.finding(
+            'mat', 'mesh_unmatched',
+            T(_K + "item_mesh_unmatched").format(obj=obj_name, mat=want or T(_K + "no_name")),
+            key=obj_name, part=part, objects=[obj_name]))
+    for name in m['rest_mats']:
+        text = T(_K + "item_mat_unused").format(mat=name)
+        fixable = unused_by_blender_material(name, meshes, m['mat_names'])
+        if fixable:
+            text += T(_K + "hint_unused_blender").format(obj=fixable[0].name)
+        else:
+            where = _elsewhere(name, mesh_col, part_of or {})
+            if where:
+                text += T(_K + "hint_unused_elsewhere").format(where=", ".join(where[:3]))
+        out.append(pr.finding(
+            'mat', 'mat_unused_fixable' if fixable else 'mat_unused', text,
+            key=name, part=part,
+            objects=[o.name for o in mat_by_name.get(name, [])] + [o.name for o in fixable]))
 
     # ── duplicates, each name with how often it repeats ──
-    for name in pc.duplicate_material_names(mat_names):
+    for name in pc.duplicate_material_names(m['mat_names']):
         out.append(pr.finding(
             'mat', 'mat_duplicate',
-            T(_K + "item_mat_duplicate").format(mat=name, n=mat_names.count(name)),
+            T(_K + "item_mat_duplicate").format(mat=name, n=m['mat_names'].count(name)),
             key=name, part=part, objects=[o.name for o in mat_by_name.get(name, [])]))
+    return out
+
+
+# ── Several base colours behind one material name (§5.2.3) ──────────────────
+
+_file_hashes = {}
+
+
+def _same_file(a, b):
+    """Two paths holding the same bytes -- one image copied under two names."""
+    try:
+        sa, sb = os.stat(a), os.stat(b)
+    except OSError:
+        return False
+    if sa.st_size != sb.st_size:
+        return False
+    import hashlib
+
+    def digest(p, st):
+        key = (p, st.st_mtime_ns, st.st_size)
+        if key not in _file_hashes:
+            h = hashlib.sha1()
+            with open(p, "rb") as fh:
+                for chunk in iter(lambda: fh.read(1 << 20), b""):
+                    h.update(chunk)
+            _file_hashes[key] = h.digest()
+        return _file_hashes[key]
+    return digest(a, sa) == digest(b, sb)
+
+
+def base_color_identity(mat):
+    """What a material shows as its base colour: ``('IMAGE', path)``,
+    ``('SOLID', rgb)`` or ``('UNKNOWN',)``.  Read the way the MDF generator
+    reads it -- first an Image Texture named after an albedo slot (what RE Mesh
+    Editor's importer writes), then the generator's own shader analysis -- so
+    the check and the generator agree on what counts as the same base colour."""
+    from .slot_sources import find_slot_images
+    from .mdf_generator_base import analyze_material_strategies, _is_albedo_slot
+    from .mdf_tex_processor_base import BASE_SLOT_CHANNEL_MAPS
+    if mat is None:
+        return ('UNKNOWN',)
+    albedo = sorted(s for s in BASE_SLOT_CHANNEL_MAPS if _is_albedo_slot(s, BASE_SLOT_CHANNEL_MAPS))
+    found = find_slot_images(mat, albedo)
+    if found:
+        return ('IMAGE', os.path.normcase(os.path.abspath(found[sorted(found)[0]])))
+    try:
+        strat = analyze_material_strategies(mat).get('color')
+    except Exception:
+        return ('UNKNOWN',)
+    if strat and strat[0] == 'DIRECT' and strat[1]:
+        return ('IMAGE', os.path.normcase(os.path.abspath(strat[1])))
+    if strat and strat[0] == 'SOLID':
+        v = strat[1]
+        try:
+            return ('SOLID', tuple(round(float(x), 2) for x in list(v)[:3]))
+        except TypeError:
+            return ('SOLID', (round(float(v), 2),))
+    return ('UNKNOWN',)
+
+
+def distinct_base_colors(mats):
+    """How many genuinely different base colours *mats* show; 0 when any of
+    them cannot be read (reporting then would be a guess)."""
+    ids = [base_color_identity(m) for m in mats]
+    if any(i[0] == 'UNKNOWN' for i in ids):
+        return 0
+    distinct = []
+    for i in ids:
+        if any(i == d or (i[0] == d[0] == 'IMAGE' and _same_file(i[1], d[1])) for d in distinct):
+            continue
+        distinct.append(i)
+    return len(distinct)
+
+
+def _check_multi_color(meshes, part):
+    out = []
+    for obj in meshes:
+        mats = used_materials(obj)
+        if len(mats) < 2:
+            continue
+        n = distinct_base_colors(mats)
+        if n < 2:
+            continue
+        _mat, how = _derived_material(obj)
+        key = "item_multi_color_fallback" if how == 'no_format' else "item_multi_color"
+        out.append(pr.finding('mat', 'mesh_multi_color',
+                              T(_K + key).format(obj=obj.name, n=n),
+                              severity=pr.INFO, key=obj.name, part=part, objects=[obj.name]))
+    return out
+
+
+# ── Outdated materials (§5.2.2) ───────────────────────────────────────────────
+
+_OUTDATED_KEYS = {
+    mdf_layouts.PADDING:  _K + "outdated_padding",
+    mdf_layouts.PROPS:    _K + "outdated_props",
+    mdf_layouts.ORDER:    _K + "outdated_order",
+    mdf_layouts.TEXTURES: _K + "outdated_textures",
+}
+
+
+def _check_outdated(materials, part, game_code):
+    out = []
+    if mdf_layouts.snapshot(game_code) is None or not materials:
+        return out
+    if mdf_layouts.freshness(game_code) == mdf_layouts.STALE:
+        # Judging against a snapshot older than the installed game would report
+        # current materials as outdated. One note instead, pointing at RE Asset
+        # Library's own updater, which reads the live paks.
+        out.append(pr.finding(
+            'mat', 'mat_snapshot_stale',
+            T(_K + "item_snapshot_stale").format(snap=mdf_layouts.snapshot_label(game_code)),
+            severity=pr.INFO, key='stale'))
+        return out
+    for obj in materials:
+        md = obj.re_mdf_material
+        sample = mdf_layouts.sample_for(game_code, md.mmtrPath)
+        if sample is None:
+            continue
+        reasons = mdf_layouts.diff(md, sample)
+        if reasons:
+            out.append(pr.finding(
+                'mat', 'mat_outdated',
+                f"{md.materialName} — " + ", ".join(T(_OUTDATED_KEYS[r]) for r in reasons),
+                key=obj.name, part=part, objects=[obj.name]))
     return out
 
 
@@ -510,11 +723,14 @@ def run_checks_multi(context, game_code, pairs, natives_root, autofix_pairs=None
     """
     findings = []
     bindings = []
+    part_of = {mesh_col.name: label for label, _m, mesh_col in pairs if mesh_col is not None and label}
     for label, mdf_col, mesh_col in pairs:
         materials = _mdf_materials(mdf_col)
         meshes = _mesh_objects(mesh_col) if mesh_col is not None else []
         bindings += [(label, o) for o in materials]
-        findings += _check_names_and_matching(materials, meshes, label)
+        findings += _check_names_and_matching(materials, meshes, label, mesh_col, part_of)
+        findings += _check_multi_color(meshes, label)
+        findings += _check_outdated(materials, label, game_code)
         findings += _check_weights(meshes, label)
         findings += _check_transforms(meshes, label)
 
@@ -553,7 +769,7 @@ def _cols_from_names(named):
     return out
 
 
-def gather_and_check(context, game_code, pairs, natives_root, autofix_pairs=None):
+def gather_and_check(context, game_code, pairs, natives_root, autofix_pairs=None, hints=None):
     """Run the aggregated check over ``pairs`` and remember enough in
     ``_LAST_RUN`` -- a plain module dict, not Scene/ID data -- for a later
     "View Details" click to redo the check and populate the Scene-backed
@@ -577,10 +793,14 @@ def gather_and_check(context, game_code, pairs, natives_root, autofix_pairs=None
         'pairs': _names(pairs),
         'autofix_pairs': _names(autofix_pairs) if autofix_pairs else None,
     })
+    # Context only the calling dialog knows, for the fix buttons -- e.g. the
+    # armor's folder as the last-resort texture path for quick generate.
+    _LAST_RUN.update(hints or {})
     return report, skipped, autofix_n
 
 
-def ensure_checked(op, context, game_code, pairs, natives_root, autofix_pairs=None):
+def ensure_checked(op, context, game_code, pairs, natives_root, autofix_pairs=None,
+                   hints=None):
     """Run (or reuse) the aggregated check for ``pairs``, caching the result on
     ``op`` -- the calling batch export dialog operator, whose instance already
     lives exactly as long as the popup does -- keyed by a fingerprint of
@@ -600,7 +820,7 @@ def ensure_checked(op, context, game_code, pairs, natives_root, autofix_pairs=No
                    tuple(sorted(enabled)) if enabled is not None else None)
     if getattr(op, '_pec_fingerprint', None) != fingerprint:
         report, skipped, autofix_n = gather_and_check(context, game_code, pairs, natives_root,
-                                                      autofix_pairs)
+                                                      autofix_pairs, hints)
         op._pec_fingerprint = fingerprint
         op._pec_report = report
         op._pec_summary = pr.summary(report)
@@ -638,10 +858,10 @@ def draw_summary_row(op, layout):
 
 
 def draw_inline_summary(op, layout, context, game_code, pairs, natives_root,
-                        autofix_pairs=None):
+                        autofix_pairs=None, hints=None):
     """``ensure_checked`` + ``draw_summary_row``, for dialogs (MHWS, MHRS) that
     have no per-part list of their own to annotate before the summary line."""
-    ensure_checked(op, context, game_code, pairs, natives_root, autofix_pairs)
+    ensure_checked(op, context, game_code, pairs, natives_root, autofix_pairs, hints)
     draw_summary_row(op, layout)
 
 
@@ -873,6 +1093,61 @@ def _has_group(report, sub):
     return any(g.sub == sub for e in report for g in e.groups)
 
 
+#: Fix buttons per group code.  Drawn for the *selected* category only: with a
+#: button per repair, showing all of them at once would bury the one that
+#: belongs to what the user is looking at.
+_ACTIONS = {
+    'name_illegal':       ("modder.pre_export_check_fix",   "btn_fix",            'FILE_REFRESH'),
+    'mat_pair':           ("modder.pec_align_names",        "btn_align",          'SORTALPHA'),
+    'mat_unused_fixable': ("modder.pec_fix_unused_blender", "btn_unused_blender", 'MATERIAL'),
+    'mesh_unmatched':     ("modder.pec_quick_generate",     "btn_quick_generate", 'SHADING_TEXTURE'),
+    'mesh_multi_color':   ("modder.pec_separate_recheck",   "btn_separate",       'MOD_EXPLODE'),
+    'mat_outdated':       ("modder.pec_update_outdated",    "btn_outdated",       'FILE_REFRESH'),
+}
+
+
+def _draw_actions(layout, report, entry):
+    from .mdf_generator_base import generator_for
+    subs = [g.sub for g in entry.groups]
+    drawn = set()
+    for sub in subs:
+        action = _ACTIONS.get(sub)
+        if action is None or action[0] in drawn:
+            continue
+        if action[0] == "modder.pec_quick_generate" and generator_for(_LAST_RUN.get('game', "")) is None:
+            continue
+        layout.operator(action[0], text=T(_K + action[1]), icon=action[2])
+        drawn.add(action[0])
+    if 'mat_pair_weak' in subs:
+        # Could be a half-done rename or a new material next to an unused one:
+        # offer all three and let the user say which.
+        for idname, key, icon in (("modder.pec_align_names", "btn_align", 'SORTALPHA'),
+                                  ("modder.pec_quick_generate", "btn_quick_generate", 'SHADING_TEXTURE')):
+            if idname in drawn:
+                continue
+            if idname == "modder.pec_quick_generate" and generator_for(_LAST_RUN.get('game', "")) is None:
+                continue
+            layout.operator(idname, text=T(_K + key), icon=icon)
+            drawn.add(idname)
+    if {'mat_unused', 'mat_unused_fixable', 'mat_pair_weak'} & set(subs):
+        layout.operator("modder.pec_delete_unused", text=T(_K + "btn_delete_unused"), icon='TRASH')
+    if 'name_illegal' in subs:
+        layout.label(text=T(_K + "fix_datablock_note"), icon='INFO')
+    if 'mat_snapshot_stale' in subs and 'blender_mdf_updater' in dir(bpy.ops.re_asset):
+        layout.operator("re_asset.blender_mdf_updater", text=T(_K + "btn_upstream_updater"),
+                        icon='FILE_REFRESH')
+    if 'mat_outdated' in subs:
+        layout.label(text=T(_K + "outdated_snapshot").format(
+            snap=mdf_layouts.snapshot_label(_LAST_RUN.get('game', ""))), icon='INFO')
+    if entry.code == 'autofix':
+        listed = _listed_autofix(report)
+        if listed - export_autofix.TEMPORARY:
+            layout.operator("modder.pre_export_autofix_now",
+                            text=T(_K + "btn_autofix_now"), icon='BRUSH_DATA')
+        if listed & export_autofix.TEMPORARY:
+            layout.label(text=T(_K + "autofix_temp_note"), icon='INFO')
+
+
 def _listed_autofix(report):
     """Item ids listed in the 「可自动修复」 category."""
     return {g.sub[3:] for e in report if e.code == 'autofix' for g in e.groups}
@@ -950,16 +1225,7 @@ class MODDER_OT_PreExportCheckReport(bpy.types.Operator):
                            rows=max(4, min(rows, 28)))
 
         layout.separator()
-        listed = _listed_autofix(report)
-        if listed - export_autofix.TEMPORARY:
-            layout.operator("modder.pre_export_autofix_now",
-                            text=T(_K + "btn_autofix_now"), icon='BRUSH_DATA')
-        if listed & export_autofix.TEMPORARY:
-            layout.label(text=T(_K + "autofix_temp_note"), icon='INFO')
-        if _has_group(report, 'name_illegal'):
-            layout.operator("modder.pre_export_check_fix",
-                            text=T(_K + "btn_fix"), icon='FILE_REFRESH')
-            layout.label(text=T(_K + "fix_datablock_note"), icon='INFO')
+        _draw_actions(layout, report, report[idx])
         layout.prop(self, "select_problems", text=T(_K + "chk_select"))
 
     def execute(self, context):

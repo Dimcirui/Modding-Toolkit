@@ -2037,6 +2037,102 @@ class MdfGenRefreshBase(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# ── Headless entry point ───────────────────────────────────────────────────────
+
+#: Game code -> that game's MdfGenProcessBase subclass, registered by each game's
+#: generator module.  The class is only used for its configuration attributes
+#: (_tex_version, _abbrev_map, _channel_maps, ...); core code stays free of any
+#: games/* import this way.
+_GENERATORS = {}
+
+
+def register_generator(game_code, process_cls):
+    _GENERATORS[game_code] = process_cls
+
+
+def unregister_generator(game_code):
+    _GENERATORS.pop(game_code, None)
+
+
+def generator_for(game_code):
+    return _GENERATORS.get(game_code)
+
+
+class _Runner:
+    """Stands in for the operator instance: _process_one_material only uses
+    ``self`` to collect the channels it could not resolve."""
+
+    def __init__(self):
+        self._unresolved_channels = []
+
+
+def generate_materials(context, cls, entries, settings, mesh_col, mdf_col,
+                       natives_root, base_path, tex_utils=None, read_preset=None):
+    """Run *cls*'s per-material pipeline over *entries* into *mdf_col*.
+
+    ``(generated, failed, unresolved channels)``.  *entries* only need the
+    attributes a material_list entry has (blender_material, material_preset,
+    generate_mipmaps, ...), so the pre-export check's 「使用生成器快捷生成」
+    passes plain objects for the few materials it fills in, and the generator's
+    own button passes its list -- one pipeline, so the two cannot drift apart.
+    *base_path* is final (any _path_fixed_prefix already applied).
+    """
+    if tex_utils is None:
+        tex_utils = _import_tex_utils()
+    if read_preset is None:
+        read_preset = import_read_preset_json()
+        if read_preset is None:
+            raise RuntimeError("RE Mesh Editor preset reader unavailable")
+    image_to_dds, dds_to_tex = tex_utils
+    runner = _Runner()
+    temp_dir = tempfile.mkdtemp(prefix="mdf_gen_")
+    comp_cache = {}  # (slot_type, source_ids, pbr_channels) → (composed, disk, mdf)
+    ok = failed = 0
+    try:
+        for entry in entries:
+            try:
+                _t_mat = time.time()
+                MdfGenProcessBase._process_one_material(
+                    runner, context, entry, settings, mdf_col,
+                    natives_root, base_path, temp_dir,
+                    image_to_dds, dds_to_tex, read_preset, cls, mesh_col,
+                    comp_cache,
+                )
+                ok += 1
+                print(f"[{cls._log_tag}] OK: {entry.blender_material} ({time.time() - _t_mat:.2f}s)")
+            except Exception as e:
+                import traceback
+                print(f"[{cls._log_tag}] FAIL {entry.blender_material}: {e}")
+                traceback.print_exc()
+                failed += 1
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+    return ok, failed, runner._unresolved_channels
+
+
+class QuickEntry:
+    """A material_list entry with the generator's defaults, for a material the
+    user never refreshed into the panel.  Only the preset is chosen; everything
+    else is what a fresh Refresh would put there."""
+
+    def __init__(self, material, preset_path):
+        self.blender_material = material.name
+        locked_path, locked = _locked_preset_for_material(material)
+        self.preset_locked = bool(locked and locked_path)
+        self.preset_path_override = locked_path if self.preset_locked else ""
+        self.material_preset = preset_path
+        self.shader_source = guess_shader_source_default(material)
+        self.use_toon = False
+        self.generate_mipmaps = True
+        self.skip_textures = False
+        self.use_ao = False
+        self.ao_image = ""
+        self.ao_ch = 'R'
+        self.ao_inv = False
+        for pt in ('color', 'normal', 'roughness', 'metallic', 'alpha', 'emissive'):
+            setattr(self, f"bake_size_{pt}", 0)
+
+
 # ── Base operator: Process ─────────────────────────────────────────────────────
 
 class MdfGenProcessBase(bpy.types.Operator):
@@ -2096,29 +2192,11 @@ class MdfGenProcessBase(bpy.types.Operator):
 
         mdf_col = self._get_or_create_mdf_collection(context, mesh_col, settings)
 
-        temp_dir = tempfile.mkdtemp(prefix="mdf_gen_")
-        comp_cache = {}  # (slot_type, source_ids, pbr_channels) → (composed, disk, mdf)
-        export_count = fail_count = 0
-
-        try:
-            for mat_entry in settings.material_list:
-                try:
-                    _t_mat = time.time()
-                    self._process_one_material(
-                        context, mat_entry, settings, mdf_col,
-                        natives_root, base_path, temp_dir,
-                        ImageListToDDS, DDSToTex, readPresetJSON, cls, mesh_col,
-                        comp_cache,
-                    )
-                    export_count += 1
-                    print(f"[{cls._log_tag}] OK: {mat_entry.blender_material} ({time.time() - _t_mat:.2f}s)")
-                except Exception as e:
-                    import traceback
-                    print(f"[{cls._log_tag}] FAIL {mat_entry.blender_material}: {e}")
-                    traceback.print_exc()
-                    fail_count += 1
-        finally:
-            shutil.rmtree(temp_dir, ignore_errors=True)
+        export_count, fail_count, unresolved = generate_materials(
+            context, cls, settings.material_list, settings, mesh_col, mdf_col,
+            natives_root, base_path,
+            tex_utils=(ImageListToDDS, DDSToTex), read_preset=readPresetJSON)
+        self._unresolved_channels = unresolved
 
         _t_sep = time.time()
         try:

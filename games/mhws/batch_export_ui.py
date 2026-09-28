@@ -279,8 +279,14 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
         self._draw_body_reshape(layout, settings, scene, armor_id, variant)
 
         pairs = _gather_check_pairs(scene, armor_id, variant, active_parts)
+        hints = {}
+        vdata = (armor_set or {}).get("variants", {}).get(variant) or {}
+        base = vdata.get("base_path", "").replace("\\", "/")
+        if base.lower().startswith("natives/stm/art/"):
+            hints['tex_base_hint'] = base[len("natives/STM/Art/"):]
         pec.draw_inline_summary(self, layout, context, 'MHWS', pairs, natives_root,
-                                autofix_pairs=bound_pairs(scene, armor_id, variant))
+                                autofix_pairs=bound_pairs(scene, armor_id, variant),
+                                hints=hints)
 
     def _draw_body_reshape(self, layout, settings, scene, armor_id, variant):
         """Bonesystem and the Wilds lua bone system side by side: they are two

@@ -10,6 +10,7 @@ from ...core.mdf_generator_base import (
     load_preset_enum_items,
     _find_meshes_by_material, mesh_collection_poll,
     MdfGenRefreshBase, MdfGenProcessBase,
+    register_generator, unregister_generator,
 )
 from ...core.i18n import T
 from ...core.color_grade import color_grade_items, DEFAULT_MODE_INDEX
@@ -262,9 +263,12 @@ def register():
         bpy.utils.register_class(cls)
     bpy.types.Scene.mhws_mdf_generator = bpy.props.PointerProperty(
         type=MhwsGenSettings)
+    # For the pre-export check's 「使用生成器快捷生成」
+    register_generator('MHWS', MHWS_OT_MdfGenProcess)
 
 
 def unregister():
+    unregister_generator('MHWS')
     del bpy.types.Scene.mhws_mdf_generator
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
