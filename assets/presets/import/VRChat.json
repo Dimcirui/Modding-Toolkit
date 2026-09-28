@@ -167,7 +167,8 @@
                 "Toe_L",
                 "Left toe",
                 "Toe_Base_L",
-                "LeftToes"
+                "LeftToes",
+                "Toes.L"
             ],
             "aux": [
                 "Toe.L_end",
@@ -227,7 +228,8 @@
                 "Toe_R",
                 "Right toe",
                 "Toe_Base_R",
-                "RightToes"
+                "RightToes",
+                "Toes.R"
             ],
             "aux": [
                 "Toe.R_end",
