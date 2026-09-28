@@ -79,7 +79,8 @@ _SUB_ORDER = (
     'tex_root_wrong', 'tex_missing', 'tex_not_pow2', 'tex_unreadable', 'tex_empty',
     'mat_pair', 'mat_pair_weak', 'mesh_unmatched', 'mat_unused_fixable', 'mat_unused', 'mat_duplicate',
     'mat_outdated', 'name_illegal', 'mesh_multi_color', 'mat_snapshot_stale',
-    'unweighted', 'xform_mirrored', 'xform_degenerate',
+    'mesh_structure', 'bone_non_ascii', 'vgroup_no_bone', 'unweighted',
+    'xform_mirrored', 'xform_degenerate',
 )
 
 #: Category and group codes -> their i18n keys.  Spelled out rather than built
@@ -109,6 +110,9 @@ _SUB_KEYS = {
     'mat_duplicate':    _K + "sub_mat_duplicate",
     'name_illegal':     _K + "sub_name_illegal",
     'unweighted':       _K + "sub_unweighted",
+    'mesh_structure':   _K + "sub_mesh_structure",
+    'bone_non_ascii':   _K + "sub_bone_non_ascii",
+    'vgroup_no_bone':   _K + "sub_vgroup_no_bone",
     'xform_mirrored':   _K + "sub_xform_mirrored",
     'xform_degenerate': _K + "sub_xform_degenerate",
     **{'af_' + i: label for i, label in export_autofix.LABEL_KEYS.items()},
@@ -320,20 +324,57 @@ def _texture_findings(bindings, cfg, natives_root):
     return out
 
 
+def collection_armatures(col):
+    """Armatures that are *direct* members of a mesh collection -- the only ones
+    upstream's exporter looks at (``for obj in targetCollection.objects``)."""
+    return [o for o in col.objects if o.type == 'ARMATURE'] if col is not None else []
+
+
+def export_armature(col, meshes):
+    """The armature the exporter will use for *col*: the collection's own, or
+    None.  A mesh's modifier pointing elsewhere does not count -- upstream
+    reports NoArmatureInCollection then (see ``_check_structure``)."""
+    arms = collection_armatures(col)
+    return arms[0] if arms else None
+
+
+def _weighted_group_indices(obj, arm):
+    """Vertex groups the exporter treats as bone weights: named after *any*
+    bone of *arm* (upstream does not look at use_deform), SHAPEKEY_ groups
+    excluded (a DD2 feature)."""
+    if arm is None:
+        return set()
+    bones = arm.data.bones
+    return {vg.index for vg in obj.vertex_groups
+            if not vg.name.startswith("SHAPEKEY_") and vg.name in bones}
+
+
+def _mirror_reason(obj):
+    """Why a mirrored transform is on the list rather than auto-fixed."""
+    if obj.data.users > 1:
+        return T(_K + "mirror_shared")
+    if obj.matrix_basis.determinant() >= 0:
+        return T(_K + "mirror_parent")
+    if obj.name in export_autofix.MIRROR_FAILED:
+        return T(_K + "mirror_normals")
+    return T(_K + "mirror_apply")
+
+
 def _check_transforms(meshes, part):
     """``[finding]`` for object transforms the exporter cannot bake safely.
 
     Only the sign of the determinant matters -- see ``classify_transform``.
     Meshes with no authored split normals are still reported when mirrored,
     because a negative determinant also leaves the winding facing inward; they
-    just lose less.
+    just lose less.  Mirrors auto-fix can bake are dropped later
+    (``_apply_autofix_plan``); what is left says why it could not be.
     """
     out = []
     for obj in meshes:
         det = obj.matrix_world.determinant()
         verdict = pc.classify_transform(det)
         if verdict == pc.XFORM_MIRRORED:
-            text = f"{obj.name}  det={det:.3f}"
+            text = f"{obj.name} — {_mirror_reason(obj)}"
             if not obj.data.has_custom_normals:
                 text += "  " + T(_K + "note_no_custom_normals")
             out.append(pr.finding('bone', 'xform_mirrored', text, key=obj.name,
@@ -345,32 +386,153 @@ def _check_transforms(meshes, part):
     return out
 
 
-def _check_weights(meshes, part):
-    """``[finding]`` for vertices that carry no usable deform weight.
+def unweighted_vertices(obj, arm):
+    """Indices of *obj*'s vertices with no usable bone weight: nothing left
+    once the exporter has dropped weights below ``pc.EXPORT_MIN_WEIGHT`` --
+    their row comes out all zero and then gets the whole 255 added to slot 0,
+    so in game they follow bone index 0 (``file_re_mesh.py:1796-1810``)."""
+    idx = _weighted_group_indices(obj, arm)
+    return [v.index for v in obj.data.vertices
+            if not any(g.group in idx and g.weight >= pc.EXPORT_MIN_WEIGHT for g in v.groups)]
+
+
+def _check_weights(meshes, part, arm):
+    """``[finding]`` for vertices that carry no usable bone weight.
 
     Weights that merely fail to sum to 1 are *not* reported: upstream RE Mesh
     divides by the sum and then adds the rounding gap to each row's largest
-    weight (``file_re_mesh.py:1796-1810``).  What does break is a vertex with
-    nothing left once the exporter has dropped weights below
-    ``pc.EXPORT_MIN_WEIGHT`` -- its row comes out all zero, then gets the whole
-    255 added to slot 0, so in game it follows bone index 0.
+    weight (``file_re_mesh.py:1796-1810``).
     """
     out = []
+    if arm is None:
+        return out
     for obj in meshes:
-        arm = obj.find_armature()
-        if arm is None:
+        if not len(obj.data.polygons):
+            continue    # an empty submesh is reported once, under structure
+        n = len(unweighted_vertices(obj, arm))
+        if not n:
             continue
-        idx = weight_utils.deform_group_indices(obj, arm)
-        if not idx:
+        text = (T(_K + "item_unweighted_all").format(obj=obj.name)
+                if n == len(obj.data.vertices)
+                else T(_K + "item_unweighted").format(obj=obj.name, n=n))
+        out.append(pr.finding('bone', 'unweighted', text, key=obj.name, part=part,
+                              objects=[obj.name]))
+    return out
+
+
+def _check_vertex_groups(meshes, part, arm):
+    """Vertex groups with weight whose name is no bone.  Upstream maps every
+    such group to remap slot 0 (``remapDict[vgName] = 0``) and keeps its
+    weights, so they land on bone index 0 -- a Solidify mask or an outline
+    thickness group with weights drags that bone along in game."""
+    out = []
+    if arm is None:
+        return out
+    bones = arm.data.bones
+    for obj in meshes:
+        bad = [vg for vg in obj.vertex_groups
+               if not vg.name.startswith("SHAPEKEY_") and vg.name not in bones]
+        if not bad:
             continue
-        n = 0
+        idx = {vg.index: vg.name for vg in bad}
+        weighted = set()
         for v in obj.data.vertices:
-            if not any(g.group in idx and g.weight >= pc.EXPORT_MIN_WEIGHT for g in v.groups):
-                n += 1
-        if n:
-            out.append(pr.finding('bone', 'unweighted',
-                                  T(_K + "item_unweighted").format(obj=obj.name, n=n),
-                                  key=obj.name, part=part, objects=[obj.name]))
+            for g in v.groups:
+                if g.group in idx and g.weight >= pc.EXPORT_MIN_WEIGHT:
+                    weighted.add(idx[g.group])
+        for name in sorted(weighted):
+            out.append(pr.finding('bone', 'vgroup_no_bone',
+                                  T(_K + "item_vgroup_no_bone").format(obj=obj.name, vg=name),
+                                  key=(obj.name, name), part=part, objects=[obj.name]))
+    return out
+
+
+#: Upstream's weighted-bone limit per .mesh (SIX_WEIGHT_GAMES get 1024).
+_MAX_WEIGHTED_BONES = {'MHWS': 1024}
+
+
+def _check_structure(mesh_col, meshes, part, game_code):
+    """What makes upstream refuse the whole .mesh: more than one armature in
+    the collection, vertex groups with no armature to map them to, a submesh
+    with no vertices or faces, too many weighted bones."""
+    out = []
+    if mesh_col is None:
+        return out
+    arms = collection_armatures(mesh_col)
+    label = mesh_col.name
+    if len(arms) > 1:
+        out.append(pr.finding('bone', 'mesh_structure',
+                              T(_K + "item_many_armatures").format(col=label, n=len(arms)),
+                              key=(label, 'arms'), part=part, objects=[a.name for a in arms]))
+    if not arms and any(o.vertex_groups for o in meshes):
+        elsewhere = next((o.find_armature() for o in meshes if o.find_armature()), None)
+        key = "item_armature_outside" if elsewhere else "item_no_armature"
+        out.append(pr.finding('bone', 'mesh_structure',
+                              T(_K + key).format(col=label, arm=elsewhere.name if elsewhere else ""),
+                              key=(label, 'noarm'), part=part, objects=[o.name for o in meshes]))
+    for obj in meshes:
+        if not len(obj.data.vertices) or not len(obj.data.polygons):
+            out.append(pr.finding('bone', 'mesh_structure',
+                                  T(_K + "item_empty_mesh").format(obj=obj.name),
+                                  key=(obj.name, 'empty'), part=part, objects=[obj.name]))
+    if arms:
+        bones = arms[0].data.bones
+        weighted = set()
+        for obj in meshes:
+            names = {vg.index: vg.name for vg in obj.vertex_groups if vg.name in bones}
+            for v in obj.data.vertices:
+                weighted.update(names[g.group] for g in v.groups if g.group in names)
+        limit = _MAX_WEIGHTED_BONES.get(game_code, 256)
+        if len(weighted) > limit:
+            out.append(pr.finding('bone', 'mesh_structure',
+                                  T(_K + "item_too_many_bones").format(col=label, n=len(weighted),
+                                                                       limit=limit),
+                                  key=(label, 'bones'), part=part))
+    return out
+
+
+def physics_bone_refs(armatures):
+    """Bone names RE Chain Editor objects point at on *armatures*: node and
+    collider constraint subtargets, plus the plain-string fields
+    ``constraintJntName`` / ``jointHash`` Blender does not keep in sync."""
+    refs = set()
+    targets = set(armatures)
+    for obj in bpy.data.objects:
+        t = obj.get("TYPE")
+        if not t or not str(t).startswith("RE_CHAIN_"):
+            continue
+        con = obj.constraints.get("BoneName")
+        if con is not None and con.target in targets and con.subtarget:
+            refs.add(con.subtarget)
+        node = getattr(obj, "re_chain_chainnode", None)
+        if node is not None:
+            for field in ("constraintJntName", "jointHash"):
+                v = getattr(node, field, "")
+                if v and not v.isdigit():
+                    refs.add(v)
+    return refs
+
+
+def _check_bone_names(armatures, part_of_arm):
+    """Non-ASCII bone names (§6.2).  An error when physics refers to the bone:
+    RE Chain Editor hashes it wrong and the chain points at nothing.  A note
+    otherwise -- the .mesh itself carries the name as a string."""
+    out = []
+    if not armatures:
+        return out
+    names = [b.name for a in armatures for b in a.data.bones]
+    plan = pc.allocate_ascii_names(names, names)
+    if not plan:
+        return out
+    refs = physics_bone_refs(armatures)
+    for old, new in plan.items():
+        used = old in refs
+        text = T(_K + ("item_bone_ascii_physics" if used else "item_bone_ascii")).format(old=old, new=new)
+        owners = [a for a in armatures if old in a.data.bones]
+        out.append(pr.finding('bone', 'bone_non_ascii', text,
+                              severity=pr.ERROR if used else pr.INFO, key=old,
+                              part=part_of_arm.get(owners[0].name, "") if owners else "",
+                              objects=[a.name for a in owners]))
     return out
 
 
@@ -724,15 +886,23 @@ def run_checks_multi(context, game_code, pairs, natives_root, autofix_pairs=None
     findings = []
     bindings = []
     part_of = {mesh_col.name: label for label, _m, mesh_col in pairs if mesh_col is not None and label}
+    armatures, part_of_arm = [], {}
     for label, mdf_col, mesh_col in pairs:
         materials = _mdf_materials(mdf_col)
         meshes = _mesh_objects(mesh_col) if mesh_col is not None else []
+        arm = export_armature(mesh_col, meshes)
+        if arm is not None and arm not in armatures:
+            armatures.append(arm)
+            part_of_arm[arm.name] = label
         bindings += [(label, o) for o in materials]
         findings += _check_names_and_matching(materials, meshes, label, mesh_col, part_of)
         findings += _check_multi_color(meshes, label)
         findings += _check_outdated(materials, label, game_code)
-        findings += _check_weights(meshes, label)
+        findings += _check_structure(mesh_col, meshes, label, game_code)
+        findings += _check_vertex_groups(meshes, label, arm)
+        findings += _check_weights(meshes, label, arm)
         findings += _check_transforms(meshes, label)
+    findings += _check_bone_names(armatures, part_of_arm)
 
     cfg = _tex_config(game_code)
     if cfg is not None and natives_root:
@@ -1103,6 +1273,8 @@ _ACTIONS = {
     'mesh_unmatched':     ("modder.pec_quick_generate",     "btn_quick_generate", 'SHADING_TEXTURE'),
     'mesh_multi_color':   ("modder.pec_separate_recheck",   "btn_separate",       'MOD_EXPLODE'),
     'mat_outdated':       ("modder.pec_update_outdated",    "btn_outdated",       'FILE_REFRESH'),
+    'bone_non_ascii':     ("modder.pec_ascii_bones",        "btn_ascii_bones",    'BONE_DATA'),
+    'unweighted':         ("modder.pec_select_unweighted",  "btn_select_unweighted", 'RESTRICT_SELECT_OFF'),
 }
 
 

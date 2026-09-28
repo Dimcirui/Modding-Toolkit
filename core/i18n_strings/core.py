@@ -1806,6 +1806,21 @@ STRINGS = {
     "core.pre_export_fix_ops.outdated_mmtrs": {
         "EN": "These materials carry mmtrs index data, which a reorder does not update: {names}",
         "ZH": "这些材质带有 mmtrs 索引数据，重排属性不会同步更新它：{names}"},
+    "core.pre_export_fix_ops.ascii_desc": {
+        "EN": "Rename non-English bones to pinyin/romaji in every armature involved, and update "
+              "vertex groups, chain constraints and chain joint fields to match",
+        "ZH": "把所有相关骨架里的非英文骨骼名转成拼音/罗马音，并同步顶点组、chain 约束与 chain 关节字段"},
+    "core.pre_export_fix_ops.ascii_done": {"EN": "Renamed {n} bone name(s)", "ZH": "已改名 {n} 个骨骼名"},
+    "core.pre_export_fix_ops.ascii_reexport": {
+        "EN": "Re-export the whole armor set: files exported before still carry the old names",
+        "ZH": "请整套重新导出：之前导出的文件里还是旧名字"},
+    "core.pre_export_fix_ops.select_unweighted_desc": {
+        "EN": "Select the vertices with no usable weight in Edit Mode, ready to paint",
+        "ZH": "在编辑模式下选中没有有效权重的顶点，方便补权重"},
+    "core.pre_export_fix_ops.select_unweighted_done": {
+        "EN": "Selected {n} vertex(es) on {objs} mesh(es)", "ZH": "已在 {objs} 个网格上选中 {n} 个顶点"},
+    "core.pre_export_fix_ops.select_unweighted_none": {
+        "EN": "No unweighted vertices left", "ZH": "已经没有无权重的顶点了"},
     "core.pre_export_fix_ops.quick_desc": {
         "EN": "Generate the materials the mdf lacks from the meshes' Blender materials; "
               "only the preset is chosen, everything else uses the generator's defaults",
@@ -1962,6 +1977,12 @@ STRINGS = {
         "EN": "Illegal Names", "ZH": "命名不合法"},
     "core.pre_export_check_ops.sub_unweighted": {
         "EN": "Vertices With No Usable Weight", "ZH": "没有有效权重的顶点"},
+    "core.pre_export_check_ops.sub_mesh_structure": {
+        "EN": "Collection Structure", "ZH": "集合结构不对"},
+    "core.pre_export_check_ops.sub_bone_non_ascii": {
+        "EN": "Bone Names Not in English", "ZH": "骨骼名不是英文"},
+    "core.pre_export_check_ops.sub_vgroup_no_bone": {
+        "EN": "Vertex Groups With No Bone", "ZH": "顶点组找不到对应骨骼"},
     "core.pre_export_check_ops.sub_xform_mirrored": {
         "EN": "Mirrored Transform", "ZH": "镜像变换"},
     "core.pre_export_check_ops.sub_xform_degenerate": {
@@ -2012,6 +2033,10 @@ STRINGS = {
     "core.pre_export_check_ops.outdated_snapshot": {
         "EN": "Compared with the vanilla layout snapshot {snap}; after a game update it may be the snapshot that is old",
         "ZH": "对照的是 {snap} 的原版快照；游戏更新后也可能是快照过时了"},
+    "core.pre_export_check_ops.btn_ascii_bones": {
+        "EN": "Rename to English and Sync References", "ZH": "转成英文名并同步引用"},
+    "core.pre_export_check_ops.btn_select_unweighted": {
+        "EN": "Select These Vertices", "ZH": "选中这些顶点"},
     "core.pre_export_check_ops.btn_align": {"EN": "Align to mdf Names", "ZH": "按 mdf 材质名对齐"},
     "core.pre_export_check_ops.btn_unused_blender": {
         "EN": "Fix by Blender Material", "ZH": "按 Blender 材质修复"},
@@ -2027,6 +2052,36 @@ STRINGS = {
         "EN": "\"{mat}\" appears {n} times in the mdf", "ZH": "mdf 里「{mat}」出现 {n} 次"},
     "core.pre_export_check_ops.item_unweighted": {
         "EN": "{obj} — {n} vertex(es)", "ZH": "{obj} — {n} 个顶点"},
+    "core.pre_export_check_ops.item_unweighted_all": {
+        "EN": "{obj} — no bone weight at all; the whole mesh follows bone 0",
+        "ZH": "{obj} — 完全没有骨骼权重，整块会跟着第 0 根骨骼走"},
+    "core.pre_export_check_ops.item_vgroup_no_bone": {
+        "EN": "{obj} · vertex group \"{vg}\" — no bone of that name; its weights go to bone 0",
+        "ZH": "{obj} · 顶点组「{vg}」— 骨架里没有这根骨骼，它的权重会算到第 0 根骨骼上"},
+    "core.pre_export_check_ops.item_many_armatures": {
+        "EN": "{col} — {n} armatures; RE Mesh exports only with one",
+        "ZH": "{col} — 有 {n} 个骨架，RE Mesh 只接受一个"},
+    "core.pre_export_check_ops.item_no_armature": {
+        "EN": "{col} — meshes have vertex groups but the collection has no armature",
+        "ZH": "{col} — 网格有顶点组，但集合里没有骨架"},
+    "core.pre_export_check_ops.item_armature_outside": {
+        "EN": "{col} — armature \"{arm}\" is not a direct member of the collection",
+        "ZH": "{col} — 骨架「{arm}」不是这个集合的直接成员"},
+    "core.pre_export_check_ops.item_empty_mesh": {
+        "EN": "{obj} — no vertices or no faces", "ZH": "{obj} — 空网格（没有顶点或没有面）"},
+    "core.pre_export_check_ops.item_too_many_bones": {
+        "EN": "{col} — {n} / {limit} weighted bones", "ZH": "{col} — 带权重的骨骼 {n} / {limit} 根"},
+    "core.pre_export_check_ops.item_bone_ascii_physics": {
+        "EN": "{old} → {new} — used by a chain", "ZH": "{old} → {new} — 被 chain 引用"},
+    "core.pre_export_check_ops.item_bone_ascii": {"EN": "{old} → {new}", "ZH": "{old} → {new}"},
+    "core.pre_export_check_ops.mirror_shared": {
+        "EN": "mesh data is shared by several objects", "ZH": "网格数据被共用"},
+    "core.pre_export_check_ops.mirror_parent": {
+        "EN": "the mirror comes from a parent (e.g. an armature scaled -1)", "ZH": "镜像来自父级（如骨架带负缩放）"},
+    "core.pre_export_check_ops.mirror_normals": {
+        "EN": "baking it could not keep the normals", "ZH": "应用后法向无法保持"},
+    "core.pre_export_check_ops.mirror_apply": {
+        "EN": "apply it with Safe Apply Base Transform", "ZH": "用「安全应用基础变换」应用它"},
     "core.pre_export_check_ops.item_degenerate": {
         "EN": "{obj} — a scale axis is 0", "ZH": "{obj} — 有一个缩放轴是 0"},
     "core.pre_export_check_ops.note_no_custom_normals": {

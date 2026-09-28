@@ -70,6 +70,10 @@ MAX_INFLUENCES = {'MHWS': 12}
 #: mirror the report would otherwise show.
 MIRROR_MAX_RESIDUAL = 2.0
 
+#: Objects whose mirror fix was taken back this session: the report says why,
+#: and plan() stops calling them fixable (it would only fail again).
+MIRROR_FAILED = set()
+
 #: Game code -> key in upstream's tex_bindings_null.json.
 _NULL_TABLE_GAME = {'MHWS': 'MHWILDS', 'RE4': 'RE4', 'RE9': 'RE9', 'MHRS': 'MHRSB'}
 
@@ -188,7 +192,7 @@ def _mirror_fixable(obj):
         return False
     if obj.matrix_basis.determinant() >= 0:
         return False
-    return obj.data.users == 1
+    return obj.data.users == 1 and obj.name not in MIRROR_FAILED
 
 
 _null_cache = {}
@@ -430,6 +434,7 @@ def _fix_mirror(context, obj):
         obj.data = backup
         bpy.data.meshes.remove(broken)
         obj.matrix_basis = old_basis
+        MIRROR_FAILED.add(obj.name)
         return False
     bpy.data.meshes.remove(backup)
     return True

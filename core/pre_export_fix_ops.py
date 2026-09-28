@@ -278,6 +278,122 @@ class MODDER_OT_PecUpdateOutdated(bpy.types.Operator):
                        snap=mdf_layouts.snapshot_label(game))
 
 
+# ── Bones and weights ────────────────────────────────────────────────────────
+
+def _scope_armatures():
+    arms, meshes = [], []
+    for _label, _mdf, mesh in _pairs():
+        if mesh is None:
+            continue
+        ms = pec._mesh_objects(mesh)
+        meshes += ms
+        arm = pec.export_armature(mesh, ms)
+        if arm is not None and arm not in arms:
+            arms.append(arm)
+    return arms, meshes
+
+
+class MODDER_OT_PecAsciiBones(bpy.types.Operator):
+    """「转成英文名并同步引用」 (docs/pre_export_check_plan.md §6.2).
+
+    ``bone.name = new`` on every armature involved: Blender itself carries the
+    rename to vertex groups of meshes linked to that armature and to constraint
+    subtargets, RE Chain Editor's ``BoneName`` included (measured in 5.1.2).
+    What it does not carry is patched here: the plain-string chain fields
+    ``constraintJntName`` / ``jointHash``, and same-named vertex groups on
+    meshes with no link to the armature.  One old name maps to one new name in
+    every armature, so parts that share a bone stay in step."""
+    bl_idname = "modder.pec_ascii_bones"
+    bl_label = "Rename Bones to English"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T(_K + "ascii_desc")
+
+    def execute(self, context):
+        _object_mode(context)
+        arms, meshes = _scope_armatures()
+        names = [b.name for a in arms for b in a.data.bones]
+        plan = pc.allocate_ascii_names(names, names)
+        if not plan:
+            return _finish(self, context, "ascii_done", 0)
+        for arm in arms:
+            for old, new in plan.items():
+                bone = arm.data.bones.get(old)
+                if bone is not None:
+                    bone.name = new
+        patched = 0
+        for obj in bpy.data.objects:
+            node = getattr(obj, "re_chain_chainnode", None)
+            if node is None or not obj.get("TYPE"):
+                continue
+            for field in ("constraintJntName", "jointHash"):
+                v = getattr(node, field, "")
+                if v in plan:
+                    setattr(node, field, plan[v])
+                    patched += 1
+        for obj in meshes:
+            for vg in obj.vertex_groups:
+                if vg.name in plan and plan[vg.name] not in obj.vertex_groups:
+                    vg.name = plan[vg.name]
+        self.report({'WARNING'}, T(_K + "ascii_reexport"))
+        return _finish(self, context, "ascii_done", len(plan))
+
+
+class MODDER_OT_PecSelectUnweighted(bpy.types.Operator):
+    """「选中这些顶点」: the vertices the exporter would pin to bone 0, selected
+    in Edit Mode on every mesh that has them, ready for weight painting."""
+    bl_idname = "modder.pec_select_unweighted"
+    bl_label = "Select These Vertices"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T(_K + "select_unweighted_desc")
+
+    def execute(self, context):
+        _object_mode(context)
+        targets = []
+        for _label, _mdf, mesh in _pairs():
+            if mesh is None:
+                continue
+            ms = pec._mesh_objects(mesh)
+            arm = pec.export_armature(mesh, ms)
+            for obj in ms:
+                if not len(obj.data.polygons):
+                    continue    # an empty submesh belongs to the structure group
+                bad = set(pec.unweighted_vertices(obj, arm)) if arm else set()
+                if not bad:
+                    continue
+                sel = [i in bad for i in range(len(obj.data.vertices))]
+                obj.data.vertices.foreach_set("select", sel)
+                for e in obj.data.edges:
+                    e.select = False
+                for f in obj.data.polygons:
+                    f.select = False
+                targets.append((obj, len(bad)))
+        if not targets:
+            self.report({'INFO'}, T(_K + "select_unweighted_none"))
+            return {'FINISHED'}
+        for o in context.view_layer.objects:
+            o.select_set(False)
+        for obj, _n in targets:
+            try:
+                obj.select_set(True)
+            except RuntimeError:
+                pass
+        context.view_layer.objects.active = targets[0][0]
+        try:
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.select_mode(type='VERT')
+        except RuntimeError:
+            pass
+        self.report({'INFO'}, T(_K + "select_unweighted_done").format(
+            n=sum(n for _o, n in targets), objs=len(targets)))
+        return {'FINISHED'}
+
+
 # ── 「使用生成器快捷生成」 ─────────────────────────────────────────────────────
 
 #: Game the open quick-generate dialog is for; read by the row preset callback.
@@ -447,7 +563,8 @@ class MODDER_OT_PecQuickGenerate(bpy.types.Operator):
 
 classes = [MODDER_OT_PecAlignNames, MODDER_OT_PecSeparateRecheck,
            MODDER_OT_PecFixUnusedByBlender, MODDER_OT_PecDeleteUnused,
-           MODDER_OT_PecUpdateOutdated, PEC_QuickGenRow, MODDER_OT_PecQuickGenerate]
+           MODDER_OT_PecUpdateOutdated, PEC_QuickGenRow, MODDER_OT_PecQuickGenerate,
+           MODDER_OT_PecAsciiBones, MODDER_OT_PecSelectUnweighted]
 
 
 def register():

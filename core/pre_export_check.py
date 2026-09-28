@@ -305,6 +305,51 @@ def _translit(name):
     return ''.join(out)
 
 
+def is_ascii_name(name):
+    """Bone and vertex-group rule (docs/pre_export_check_plan.md §6.2): ASCII
+    only.  Looser than the material rule on purpose -- spaces and ASCII
+    punctuation hash the same in RE Chain Editor and the engine, so they are
+    left alone; only characters above U+007F break the chain hash."""
+    return all(ord(ch) < 128 for ch in (name or ''))
+
+
+def ascii_name(name):
+    """*name* with only its non-ASCII runs transliterated, ASCII kept verbatim
+    (``头发_00`` -> ``TouFa_00``, ``Hair.L 左`` -> ``Hair.L Zuo``)."""
+    out = []
+    run = []
+    for ch in name or '':
+        if ord(ch) < 128:
+            if run:
+                out.append(_translit(''.join(run)))
+                run = []
+            out.append(ch)
+        else:
+            run.append(ch)
+    if run:
+        out.append(_translit(''.join(run)))
+    s = ''.join(out)
+    return s if s.strip('_ ') else 'Bone'
+
+
+def allocate_ascii_names(names, taken):
+    """``{non-ASCII name: ASCII name}``, each new name unique against *taken*
+    (every bone name in every armature involved) and against each other, so
+    the same old name maps to the same new one in every armature."""
+    taken = set(taken)
+    out = {}
+    for old in names:
+        if old in out or is_ascii_name(old):
+            continue
+        base = ascii_name(old)
+        new, k = base, 2
+        while new in taken:
+            new, k = f"{base}_{k}", k + 1
+        taken.add(new)
+        out[old] = new
+    return out
+
+
 def fix_name(name):
     """A legal name for *name* (``docs/pre_export_check_plan.md`` §6.1, steps
     1-7; step 8, collisions, needs the other names and lives in
