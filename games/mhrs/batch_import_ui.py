@@ -60,7 +60,10 @@ def _build_group_map(items):
 class MHRS_OT_BatchImportDialog(bpy.types.Operator):
     bl_idname  = "mhrs.batch_import_dialog"
     bl_label   = "MHRS Batch Importer"
-    bl_options = {'REGISTER'}
+    # UNDO 必须加在这个入口上：execute 里的 mhrs.batch_import 是嵌套的 Python 调用，
+    # Blender 会抑制它的撤销推送。没有它，导入的东西完全不进撤销栈，下一次 Ctrl+Z
+    # 直接崩（与 modder.import_reference_model 同一个问题，5.1 实测）。
+    bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def description(cls, context, properties):

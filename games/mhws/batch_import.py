@@ -194,7 +194,8 @@ class MHWS_OT_SelectAllImport(bpy.types.Operator):
 class MHWS_OT_BatchImport(bpy.types.Operator):
     bl_idname  = "mhws.batch_import"
     bl_label   = "MHWs Batch Import"
-    bl_options = {'REGISTER'}
+    # 经对话框调用时推送由对话框负责（这里被抑制）；单独调用（F3）时由这里负责。
+    bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def description(cls, context, properties):

@@ -208,10 +208,13 @@ def apply_merges(arm_obj, game, merge_facial, merge_aux):
 class MODDER_OT_ImportReferenceModel(bpy.types.Operator):
     bl_idname = "modder.import_reference_model"
     bl_label = "Import Reference Model"
-    #: No 'UNDO' for the same reason as the mesh port: the merges go through
-    #: ``bpy.data``, so a redo-panel re-run would import a second copy rather than
-    #: revise the first.
-    bl_options = {'REGISTER'}
+    #: 'UNDO' is required, not optional.  Without it this operator pushes no undo
+    #: step at all -- the FBX importer and the other operators it calls are nested
+    #: Python calls, and Blender suppresses undo pushes for those -- so the imported
+    #: objects never enter the undo stack, and the next Ctrl+Z crashes Blender
+    #: (EXCEPTION_ACCESS_VIOLATION in outliner_draw_tree_element, reproduced on 5.1
+    #: with every option combination, the bare FBX import included).
+    bl_options = {'REGISTER', 'UNDO'}
 
     source_game: bpy.props.StringProperty(options={'HIDDEN'})
     model: bpy.props.EnumProperty(name="Model", items=_model_items)
