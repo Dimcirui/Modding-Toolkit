@@ -228,7 +228,11 @@ STRINGS = {
         "EN": "MHWs armor batch export dialog", "ZH": "MHWs 装备批量导出对话框"},
     "mhws.batch_export_ui.select_armor_to_configure": {
         "EN": "Select an armor to configure bindings", "ZH": "请选择装备以配置绑定"},
-    "mhws.batch_export_ui.use_bonesystem_label": {"EN": "Use Bonesystem", "ZH": "使用 Bonesystem"},
+    "mhws.batch_export.lua_bone_skipped_both": {
+        "EN": "Bonesystem and Lua Bone System cannot both be used; only Bonesystem was exported",
+        "ZH": "Bonesystem 与 Lua Bone System 不能同时使用，本次只导出了 Bonesystem"},
+    "mhws.batch_export_ui.use_bonesystem_label": {
+        "EN": "Use Standalone-Skeleton Bonesystem", "ZH": "使用独立骨骼Bonesystem（踩蘑菇）"},
     "mhws.batch_export_ui.armature_label": {"EN": "Armature", "ZH": "骨架"},
     "mhws.batch_export_ui.fbxskel_name_label": {"EN": "FBXSkel Name", "ZH": "FBXSkel 名"},
     "mhws.batch_export_ui.use_lua_bone_system_label": {"EN": "Use Lua Bone System", "ZH": "使用 Lua Bone System"},

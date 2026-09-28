@@ -2,7 +2,7 @@ import bpy
 import os
 import re
 from ..core.i18n import T, draw_language_toggle, get_lang
-from ..core import bone_utils, ui_config
+from ..core import bone_utils, ui_config, export_autofix
 from . import game_sections
 from ..core.mdf_generator_base import MHW_OT_SetChannelSize, MHW_OT_SetShaderSource
 from ..core.bone_utils import get_import_presets_callback, get_target_presets_callback
@@ -22,6 +22,16 @@ from ..core.bone_mapper import BoneMapManager
 
 # Mapping detail preview cache: {(x_preset, y_preset): (mapper_x, mapper_y)}
 _mapping_detail_cache = {}
+
+
+def _mhws_bonesystem_exclusive(own, other):
+    """Update callback: MHWS's Bonesystem and the Wilds lua bone system are two
+    alternative ways to reshape the body and must not both be on (user's call),
+    so switching one on switches the other off. Switching off touches nothing."""
+    def update(self, context):
+        if getattr(self, own) and getattr(self, other):
+            setattr(self, other, False)
+    return update
 
 
 def _align_mode_items(self, context):
@@ -297,6 +307,7 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         name="Use Bonesystem",
         description="Also generate fbxskel.7 and BoneSystem JSON on export (requires the Bonesystem framework)",
         default=False,
+        update=_mhws_bonesystem_exclusive("mhws_use_bonesystem", "mhws_use_lua_bone_system"),
     )
     mhws_fbxskel_name: bpy.props.StringProperty(
         name="FBXSkel Definition Name",
@@ -327,23 +338,26 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
                     "(a community REFramework script, distinct from the Bonesystem above; "
                     "uses the same armature picked for Bonesystem)",
         default=False,
+        update=_mhws_bonesystem_exclusive("mhws_use_lua_bone_system", "mhws_use_bonesystem"),
     )
     mhws_use_blank_export: bpy.props.BoolProperty(
         name="Use Blank Model for Unselected",
         description="For slots with no collection selected, copy in the built-in blank file instead of skipping",
         default=False,
     )
-    mhws_triangulate_face: bpy.props.BoolProperty(
-        name="Triangulate Face Mesh",
-        description="Before export, temporarily add a Triangulate modifier to meshes weighted to the head bone. "
-                     "RE Mesh Editor's exporter otherwise breaks face shading. The mesh data itself is not modified",
-        default=False,
-    )
-    mhws_cleanup_before_export: bpy.props.BoolProperty(
-        name="Clean Mesh Before Export",
-        description="Before export, run on all bound mesh collections: remove loose geometry, fix duplicate UVs, "
-                     "clear zero-weight vertex groups, limit and normalize weights (requires RE Mesh Editor)",
+    # 「导出前自动修正」 replaces the separate Clean Mesh / Triangulate Face toggles
+    # (docs/pre_export_check_plan.md §3.1). Old .blend values for those two are
+    # simply ignored; the only visible change is triangulation now defaulting on.
+    mhws_autofix: bpy.props.BoolProperty(
+        name="Auto-fix Before Export",
+        description="Fix the problems that need no decision before exporting; the gear chooses which",
         default=True,
+    )
+    mhws_autofix_items: bpy.props.EnumProperty(
+        name="Auto-fix Items",
+        items=export_autofix.enum_items,
+        options={'ENUM_FLAG'},
+        default=export_autofix.DEFAULT_MASK,
     )
     re9_triangulate_face: bpy.props.BoolProperty(
         name="Triangulate Face Mesh",

@@ -1716,6 +1716,56 @@ STRINGS = {
         "ZH": "已导入 {name}：合并面部骨 {facial} 根，辅助骨 {aux} 根，{pose}"},
 
     # ══════════════════════════════════════════════════════════════════════
+    # core/export_autofix.py -- 「导出前自动修正」 and its gear dropdown
+    # ══════════════════════════════════════════════════════════════════════
+    "core.export_autofix.toggle": {
+        "EN": "Auto-fix Before Export", "ZH": "导出前自动修正"},
+    "core.export_autofix.toggle_tip": {
+        "EN": "Before export, fix the problems that need no decision: face triangulation, "
+              "weight cleanup, mirrored transforms, texture path spelling, empty texture "
+              "paths, missing vertex colours. The gear chooses which",
+        "ZH": "导出前自动修掉不需要判断的问题：面部三角化、权重清理、镜像变换、贴图路径写法、"
+              "空贴图路径、顶点色补齐。齿轮里可以选修哪些"},
+    "core.export_autofix.item_triangulate": {"EN": "Triangulate Face", "ZH": "面部三角化"},
+    "core.export_autofix.tip_triangulate": {
+        "EN": "Temporarily triangulate meshes weighted to the head bone; removed after export",
+        "ZH": "导出时临时三角化挂在头骨上的网格，导出后移除"},
+    "core.export_autofix.item_weights": {"EN": "Weight Cleanup", "ZH": "权重清理"},
+    "core.export_autofix.tip_weights": {
+        "EN": "Remove loose geometry and empty vertex groups, drop deform weights under 0.002, "
+              "keep at most 12 per vertex, normalise. Deform groups only",
+        "ZH": "删孤立点与空顶点组，清掉低于 0.002 的形变权重，每顶点最多保留 12 个，再归一化。只动形变组"},
+    "core.export_autofix.item_mirror": {"EN": "Mirrored Transforms", "ZH": "镜像变换"},
+    "core.export_autofix.tip_mirror": {
+        "EN": "Apply a mirrored object transform with its split normals kept",
+        "ZH": "应用镜像的物体变换，同时保住自定义法向"},
+    "core.export_autofix.item_tex_paths": {"EN": "Texture Path Spelling", "ZH": "贴图路径写法"},
+    "core.export_autofix.tip_tex_paths": {
+        "EN": "Backslashes, a natives/ prefix and a .tex.<version> suffix in texture paths",
+        "ZH": "贴图路径里的反斜杠、natives/ 前缀与 .tex.版本号 后缀"},
+    "core.export_autofix.item_tex_empty": {"EN": "Empty Texture Paths", "ZH": "空贴图路径"},
+    "core.export_autofix.tip_tex_empty": {
+        "EN": "Fill empty texture slots with the game's null texture",
+        "ZH": "给空的贴图槽位填上游戏的 null 贴图"},
+    "core.export_autofix.item_vcolor": {"EN": "Fill Vertex Colours", "ZH": "顶点色补齐"},
+    "core.export_autofix.tip_vcolor": {
+        "EN": "When some submeshes of a .mesh have vertex colours, temporarily give the rest "
+              "normal-encoded ones instead of RE Mesh's near-black fill; removed after export",
+        "ZH": "同一 .mesh 里有的子网格带顶点色时，导出期间给其余子网格临时写入法向顶点色，"
+              "代替 RE Mesh 补的近黑色；导出后移除"},
+    "core.export_autofix.item_legacy": {"EN": "Compat: Legacy Cleanup", "ZH": "兼容：旧版清理"},
+    "core.export_autofix.tip_legacy": {
+        "EN": "Make Weight Cleanup run RE Mesh Editor's own four cleanup operators instead, "
+              "exactly as the old Clean Mesh Before Export did",
+        "ZH": "让「权重清理」改为直接调用 RE Mesh Editor 的四个清理操作符，即旧版「导出前清理」的行为"},
+    "core.mod_root.ambiguous": {
+        "EN": "This folder holds several natives folders; pick the specific mod folder instead",
+        "ZH": "这个目录下有多个 natives，请选到具体的 mod 目录"},
+    "core.export_autofix.n_meshes": {"EN": "{n} mesh(es)", "ZH": "{n} 个网格"},
+    "core.export_autofix.n_paths": {"EN": "{n} path(s)", "ZH": "{n} 条路径"},
+    "core.export_autofix.n_slots": {"EN": "{n} slot(s)", "ZH": "{n} 个槽位"},
+
+    # ══════════════════════════════════════════════════════════════════════
     # core/pre_export_check_ops.py
     # ══════════════════════════════════════════════════════════════════════
 
@@ -1775,6 +1825,7 @@ STRINGS = {
     "core.pre_export_check_ops.cat_tex": {"EN": "Textures", "ZH": "贴图"},
     "core.pre_export_check_ops.cat_mat": {"EN": "Materials", "ZH": "材质"},
     "core.pre_export_check_ops.cat_bone": {"EN": "Bones & Weights", "ZH": "骨骼与权重"},
+    "core.pre_export_check_ops.cat_autofix": {"EN": "Auto-fixable", "ZH": "可自动修复"},
 
     # ── Each category's two header lines: what happens, then what to do ────
     "core.pre_export_check_ops.effect_tex": {
@@ -1793,6 +1844,22 @@ STRINGS = {
     "core.pre_export_check_ops.effect_bone": {
         "EN": "The export fails, physics stops working, or the model deforms badly in game.",
         "ZH": "无法正常导出，或物理失效，或进游戏后模型严重变形。"},
+    "core.pre_export_check_ops.effect_autofix": {
+        "EN": "Export would fix these on its own, but the matching options are off.",
+        "ZH": "这些问题导出时本可以自动处理，但对应的选项关着。"},
+    "core.pre_export_check_ops.action_autofix": {
+        "EN": "Click Fix Now once, or switch the items on in the gear next to Auto-fix Before Export.",
+        "ZH": "点「立即修复」处理一次，或在「导出前自动修正」旁的齿轮里打开对应选项。"},
+    "core.pre_export_check_ops.btn_autofix_now": {"EN": "Fix Now", "ZH": "立即修复"},
+    "core.pre_export_check_ops.autofix_now_desc": {
+        "EN": "Run the listed auto-fixes once, without changing the export options",
+        "ZH": "把列出的自动修正执行一次，不改导出选项"},
+    "core.pre_export_check_ops.autofix_temp_note": {
+        "EN": "Face triangulation and vertex colour filling only exist during export, "
+              "so they cannot be fixed now",
+        "ZH": "面部三角化与顶点色补齐只在导出期间临时处理，无法立即修复"},
+    "core.pre_export_check_ops.autofix_done": {
+        "EN": "Auto-fixed {n} item(s)", "ZH": "已自动修复 {n} 项"},
     "core.pre_export_check_ops.action_by_reason": {
         "EN": "Handle each line as its reason says.",
         "ZH": "按每条后面写的原因处理。"},
@@ -1875,6 +1942,8 @@ STRINGS = {
     "core.pre_export_check_ops.sum_errors": {
         "EN": "{n} categor(ies) to fix before exporting", "ZH": "{n} 类需要在导出前处理"},
     "core.pre_export_check_ops.sum_infos": {"EN": "{n} note(s)", "ZH": "{n} 条提示"},
+    "core.pre_export_check_ops.sum_autofix": {
+        "EN": "{n} item(s) will be auto-fixed on export", "ZH": "导出时将自动处理 {n} 项"},
     "core.pre_export_check_ops.all_clear": {
         "EN": "No problems found", "ZH": "未发现问题"},
     "core.pre_export_check_ops.btn_fix": {
@@ -1928,6 +1997,12 @@ STRINGS = {
               "safe to compare against",
         "ZH": "没有 MANIFEST.txt —— 这是清单出现之前的安装，或者是源码检出。"
               "请先用发布版 zip 重装；没有清单就没有可靠的比对依据，不会删任何东西"},
+    "core.stale_cleanup_ops.stale_manifest": {
+        "EN": "MANIFEST.txt is for {listed}, but {installed} is installed -- the built-in "
+              "updater does not refresh it. Reinstall from the release zip first; with an "
+              "old list, files this version needs would be deleted",
+        "ZH": "MANIFEST.txt 属于 {listed}，但当前安装的是 {installed} —— 内置更新器不会更新清单。"
+              "请先用发布版 zip 重装；按旧清单比对会把本版本需要的文件当成残留删掉"},
     "core.stale_cleanup_ops.none_found": {
         "EN": "No leftover files -- the install matches this version exactly",
         "ZH": "没有残留文件 —— 安装目录与本版本完全一致"},
@@ -1997,9 +2072,3 @@ STRINGS = {
               "the Modding Toolkit panel",
         "ZH": "请先阅读并确认跨游戏移植使用须知（面板中的“移植”一组）"},
 }
-    "core.stale_cleanup_ops.stale_manifest": {
-        "EN": "MANIFEST.txt is for {listed}, but {installed} is installed -- the built-in "
-              "updater does not refresh it. Reinstall from the release zip first; with an "
-              "old list, files this version needs would be deleted",
-        "ZH": "MANIFEST.txt 属于 {listed}，但当前安装的是 {installed} —— 内置更新器不会更新清单。"
-              "请先用发布版 zip 重装；按旧清单比对会把本版本需要的文件当成残留删掉"},

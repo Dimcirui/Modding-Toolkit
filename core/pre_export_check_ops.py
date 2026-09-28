@@ -52,6 +52,7 @@ from .i18n import T
 from .compat import HAS_DIALOG_TITLE
 from . import pre_export_check as pc
 from . import pre_export_report as pr
+from . import export_autofix
 from .mdf_material_convert_base import _load_vanilla_art_paths
 from .mdf_port_tex import get_game_tex_config
 from .tex_file import read_tex_size
@@ -87,6 +88,7 @@ _CAT_KEYS = {
     'tex':  (_K + "cat_tex",  _K + "effect_tex",  _K + "action_tex"),
     'mat':  (_K + "cat_mat",  _K + "effect_mat",  _K + "action_mat"),
     'bone': (_K + "cat_bone", _K + "effect_bone", _K + "action_by_reason"),
+    'autofix': (_K + "cat_autofix", _K + "effect_autofix", _K + "action_autofix"),
 }
 _SUB_KEYS = {
     'tex_root_wrong':   _K + "sub_tex_root_wrong",
@@ -102,6 +104,7 @@ _SUB_KEYS = {
     'unweighted':       _K + "sub_unweighted",
     'xform_mirrored':   _K + "sub_xform_mirrored",
     'xform_degenerate': _K + "sub_xform_degenerate",
+    **{'af_' + i: label for i, label in export_autofix.LABEL_KEYS.items()},
 }
 
 
@@ -458,13 +461,58 @@ def _skipped_notes(game_code, natives_root, any_without_mesh):
     return notes
 
 
-def run_checks_multi(context, game_code, pairs, natives_root):
-    """``(report, skipped)`` over ``(part label, mdf_col, mesh_col)`` pairs.
+#: Auto-fix items whose problem is a real error when left unfixed; the rest
+#: (triangulation, weight tidying, vertex colour fill) are notes.
+_AUTOFIX_SEVERE = {'MIRROR', 'TEX_EMPTY'}
+
+_AUTOFIX_UNITS = {
+    'TRIANGULATE': "core.export_autofix.n_meshes",
+    'WEIGHTS':     "core.export_autofix.n_meshes",
+    'MIRROR':      "core.export_autofix.n_meshes",
+    'VCOLOR':      "core.export_autofix.n_meshes",
+    'TEX_PATHS':   "core.export_autofix.n_paths",
+    'TEX_EMPTY':   "core.export_autofix.n_slots",
+}
+
+
+def _apply_autofix_plan(findings, fx_plan, enabled):
+    """Judge the state *after* auto-fix (docs/pre_export_check_plan.md §3.2).
+
+    What a fix covers leaves the problem list either way: switched on, the
+    export fixes it; switched off, it moves to the 「可自动修复」 category as one
+    line per item, so a problem is still only reported once.  Returns
+    ``(findings, number of items the export will fix)``.
+    """
+    kept = []
+    for f in findings:
+        if f['sub'] == 'xform_mirrored' and f['objects'] and f['objects'][0] in fx_plan.mirror_fixable:
+            continue
+        if f['sub'] == 'tex_empty' and f['key'] in fx_plan.empty_fixable:
+            continue
+        kept.append(f)
+
+    on = fx_plan.pending(enabled - {'LEGACY'})
+    off = fx_plan.pending({i for i in _AUTOFIX_UNITS
+                           if i not in enabled and i not in export_autofix.SILENT_WHEN_OFF})
+    for item_id, n in off.items():
+        kept.append(pr.finding(
+            'autofix', 'af_' + item_id,
+            T(export_autofix.LABEL_KEYS[item_id]) + " — " + T(_AUTOFIX_UNITS[item_id]).format(n=n),
+            severity=pr.ERROR if item_id in _AUTOFIX_SEVERE else pr.INFO, key=item_id))
+    return kept, sum(on.values())
+
+
+def run_checks_multi(context, game_code, pairs, natives_root, autofix_pairs=None):
+    """``(report, skipped, autofix_n)`` over ``(part label, mdf_col, mesh_col)`` pairs.
 
     A single-pair run passes ``""`` as the label, which keeps the part prefix
     off every line.  ``skipped`` is the human-readable reason for each check
     that did not run; it depends on the game and the shared mod root only, so
-    it is collected once rather than once per part.
+    it is collected once rather than once per part.  ``autofix_n`` is how many
+    items the export's auto-fix will handle (0 for games without auto-fix).
+
+    *autofix_pairs* is what auto-fix itself runs over -- the batch dialogs pass
+    every bound part, including mesh-only ones the check pairs leave out.
     """
     findings = []
     bindings = []
@@ -480,9 +528,15 @@ def run_checks_multi(context, game_code, pairs, natives_root):
     if cfg is not None and natives_root:
         findings += _texture_findings(bindings, cfg, natives_root)
 
+    autofix_n = 0
+    enabled = export_autofix.enabled_items(context, game_code)
+    if enabled is not None:
+        fx_plan = export_autofix.plan(context, game_code, autofix_pairs or pairs)
+        findings, autofix_n = _apply_autofix_plan(findings, fx_plan, enabled)
+
     skipped = _skipped_notes(game_code, natives_root,
                              any(mesh_col is None for _l, _m, mesh_col in pairs))
-    return pr.build_report(findings, _SUB_ORDER), skipped
+    return pr.build_report(findings, _SUB_ORDER), skipped, autofix_n
 
 
 def run_checks(context, game_code, mdf_col, mesh_col, natives_root):
@@ -490,7 +544,22 @@ def run_checks(context, game_code, mdf_col, mesh_col, natives_root):
     return run_checks_multi(context, game_code, [("", mdf_col, mesh_col)], natives_root)
 
 
-def gather_and_check(context, game_code, pairs, natives_root):
+def _names(pairs):
+    return [(label, mdf.name if mdf else "", mesh.name if mesh else "")
+            for label, mdf, mesh in pairs]
+
+
+def _cols_from_names(named):
+    out = []
+    for label, mdf_name, mesh_name in named:
+        mdf = bpy.data.collections.get(mdf_name) if mdf_name else None
+        mesh = bpy.data.collections.get(mesh_name) if mesh_name else None
+        if mdf is not None or mesh is not None:
+            out.append((label, mdf, mesh))
+    return out
+
+
+def gather_and_check(context, game_code, pairs, natives_root, autofix_pairs=None):
     """Run the aggregated check over ``pairs`` and remember enough in
     ``_LAST_RUN`` -- a plain module dict, not Scene/ID data -- for a later
     "View Details" click to redo the check and populate the Scene-backed
@@ -505,18 +574,19 @@ def gather_and_check(context, game_code, pairs, natives_root):
     operator's ``execute()``, which is what ``MODDER_OT_PreExportCheckView``
     is for.
     """
-    report, skipped = run_checks_multi(context, game_code, pairs, natives_root)
+    report, skipped, autofix_n = run_checks_multi(context, game_code, pairs, natives_root,
+                                                  autofix_pairs)
     _LAST_RUN.clear()
     _LAST_RUN.update({
         'game': game_code,
         'root': natives_root,
-        'pairs': [(label, mdf_col.name, mesh_col.name if mesh_col else "")
-                  for label, mdf_col, mesh_col in pairs],
+        'pairs': _names(pairs),
+        'autofix_pairs': _names(autofix_pairs) if autofix_pairs else None,
     })
-    return report, skipped
+    return report, skipped, autofix_n
 
 
-def ensure_checked(op, context, game_code, pairs, natives_root):
+def ensure_checked(op, context, game_code, pairs, natives_root, autofix_pairs=None):
     """Run (or reuse) the aggregated check for ``pairs``, caching the result on
     ``op`` -- the calling batch export dialog operator, whose instance already
     lives exactly as long as the popup does -- keyed by a fingerprint of
@@ -530,29 +600,34 @@ def ensure_checked(op, context, game_code, pairs, natives_root):
     pass it to ``pre_export_report.parts_with_errors`` before
     ``draw_summary_row`` draws the total.
     """
-    fingerprint = (natives_root, tuple(
-        (label, mdf_col.name, mesh_col.name if mesh_col else "")
-        for label, mdf_col, mesh_col in pairs))
+    enabled = export_autofix.enabled_items(context, game_code)
+    fingerprint = (natives_root, tuple(_names(pairs)),
+                   tuple(_names(autofix_pairs)) if autofix_pairs else None,
+                   tuple(sorted(enabled)) if enabled is not None else None)
     if getattr(op, '_pec_fingerprint', None) != fingerprint:
-        report, skipped = gather_and_check(context, game_code, pairs, natives_root)
+        report, skipped, autofix_n = gather_and_check(context, game_code, pairs, natives_root,
+                                                      autofix_pairs)
         op._pec_fingerprint = fingerprint
         op._pec_report = report
         op._pec_summary = pr.summary(report)
+        op._pec_autofix_n = autofix_n
         op._pec_has_skips = bool(skipped)
     return op._pec_report
 
 
-def _draw_summary_label(row, n_err, n_info):
-    """The one-line verdict shared by the batch dialogs and the report."""
+def _draw_summary_label(row, n_err, n_info, n_fix=0):
+    """The one-line verdict shared by the batch dialogs and the report:
+    ``⚠ 2 类需要处理 · 1 条提示 · 导出时将自动处理 12 项``."""
+    fix = (" · " + T(_K + "sum_autofix").format(n=n_fix)) if n_fix else ""
     if n_err:
         text = T(_K + "sum_errors").format(n=n_err)
         if n_info:
             text += " · " + T(_K + "sum_infos").format(n=n_info)
-        row.label(text=text, icon='ERROR')
+        row.label(text=text + fix, icon='ERROR')
     elif n_info:
-        row.label(text=T(_K + "sum_infos").format(n=n_info), icon='INFO')
+        row.label(text=T(_K + "sum_infos").format(n=n_info) + fix, icon='INFO')
     else:
-        row.label(text=T(_K + "all_clear"), icon='CHECKMARK')
+        row.label(text=T(_K + "all_clear") + fix, icon='CHECKMARK')
 
 
 def draw_summary_row(op, layout):
@@ -563,33 +638,34 @@ def draw_summary_row(op, layout):
     layout.separator()
     row = layout.row(align=True)
     n_err, n_info = op._pec_summary
-    _draw_summary_label(row, n_err, n_info)
+    _draw_summary_label(row, n_err, n_info, getattr(op, '_pec_autofix_n', 0))
     if n_err or n_info or op._pec_has_skips:
         row.operator("modder.pre_export_check_view", text=T(_K + "btn_view_details"))
 
 
-def draw_inline_summary(op, layout, context, game_code, pairs, natives_root):
+def draw_inline_summary(op, layout, context, game_code, pairs, natives_root,
+                        autofix_pairs=None):
     """``ensure_checked`` + ``draw_summary_row``, for dialogs (MHWS, MHRS) that
     have no per-part list of their own to annotate before the summary line."""
-    ensure_checked(op, context, game_code, pairs, natives_root)
+    ensure_checked(op, context, game_code, pairs, natives_root, autofix_pairs)
     draw_summary_row(op, layout)
 
 
 def _pairs_from_last_run():
-    pairs = []
-    for label, mdf_name, mesh_name in _LAST_RUN.get('pairs', []):
-        mdf_col = bpy.data.collections.get(mdf_name)
-        if mdf_col is None:
-            continue
-        mesh_col = bpy.data.collections.get(mesh_name) or None
-        pairs.append((label, mdf_col, mesh_col))
-    return pairs
+    return [p for p in _cols_from_names(_LAST_RUN.get('pairs', [])) if p[1] is not None]
+
+
+def _autofix_pairs_from_last_run():
+    named = _LAST_RUN.get('autofix_pairs')
+    return _cols_from_names(named) if named else None
 
 
 def _rerun_and_store(context):
-    report, skipped = run_checks_multi(context, _LAST_RUN.get('game', ""),
-                                       _pairs_from_last_run(), _LAST_RUN.get('root', ""))
+    report, skipped, autofix_n = run_checks_multi(
+        context, _LAST_RUN.get('game', ""), _pairs_from_last_run(), _LAST_RUN.get('root', ""),
+        _autofix_pairs_from_last_run())
     _store(context, report, skipped)
+    _LAST_RUN['autofix_n'] = autofix_n
 
 
 class MODDER_OT_PreExportCheckView(bpy.types.Operator):
@@ -741,6 +817,7 @@ class MODDER_OT_PreExportCheck(bpy.types.Operator):
             'game': self.source_game,
             'root': natives_root,
             'pairs': [("", mdf_col.name, mesh_col.name if mesh_col else "")],
+            'autofix_pairs': None,
         })
         _rerun_and_store(context)
         bpy.ops.modder.pre_export_check_report('INVOKE_DEFAULT')
@@ -802,6 +879,11 @@ def _has_group(report, sub):
     return any(g.sub == sub for e in report for g in e.groups)
 
 
+def _listed_autofix(report):
+    """Item ids listed in the 「可自动修复」 category."""
+    return {g.sub[3:] for e in report if e.code == 'autofix' for g in e.groups}
+
+
 class MODDER_OT_PreExportCheckReport(bpy.types.Operator):
     bl_idname = "modder.pre_export_check_report"
     bl_label = "Pre-export Check Report"
@@ -854,7 +936,7 @@ class MODDER_OT_PreExportCheckReport(bpy.types.Operator):
         n_info = sum(len(g.items) for e in report for g in e.groups
                      if g.severity == pr.INFO)
 
-        _draw_summary_label(layout.row(), n_err, n_info)
+        _draw_summary_label(layout.row(), n_err, n_info, _LAST_RUN.get('autofix_n', 0))
         for note in _LAST_RUN.get('skipped', []):
             layout.label(text=note, icon='DOT')
         if not len(report):
@@ -874,6 +956,12 @@ class MODDER_OT_PreExportCheckReport(bpy.types.Operator):
                            rows=max(4, min(rows, 28)))
 
         layout.separator()
+        listed = _listed_autofix(report)
+        if listed - export_autofix.TEMPORARY:
+            layout.operator("modder.pre_export_autofix_now",
+                            text=T(_K + "btn_autofix_now"), icon='BRUSH_DATA')
+        if listed & export_autofix.TEMPORARY:
+            layout.label(text=T(_K + "autofix_temp_note"), icon='INFO')
         if _has_group(report, 'name_illegal'):
             layout.operator("modder.pre_export_check_fix",
                             text=T(_K + "btn_fix"), icon='FILE_REFRESH')
@@ -970,9 +1058,36 @@ class MODDER_OT_PreExportCheckFix(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MODDER_OT_PreExportAutofixNow(bpy.types.Operator):
+    """「立即修复」 in the report: run the auto-fix items that are switched off
+    but listed, once, without touching the export options.  Temporary items
+    (triangulation, vertex colour fill) only exist during an export and are
+    skipped.  Re-runs the check in place, like the name fix."""
+    bl_idname = "modder.pre_export_autofix_now"
+    bl_label = "Fix Now"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T(_K + "autofix_now_desc")
+
+    def execute(self, context):
+        game = _LAST_RUN.get('game', "")
+        ids = _listed_autofix(context.scene.mtk_pec_report) - export_autofix.TEMPORARY
+        enabled = export_autofix.enabled_items(context, game) or set()
+        if 'LEGACY' in enabled:
+            ids.add('LEGACY')
+        pairs = _autofix_pairs_from_last_run() or _pairs_from_last_run()
+        done = export_autofix.apply(context, game, pairs, ids)
+        _rerun_and_store(context)
+        self.report({'INFO'}, T(_K + "autofix_done").format(n=sum(done.values())))
+        return {'FINISHED'}
+
+
 classes = [PEC_ReportItem, PEC_ReportGroup, PEC_ReportEntry, MODDER_UL_PreExportCheck,
            MODDER_OT_PreExportCheck, MODDER_OT_PreExportCheckReport,
-           MODDER_OT_PreExportCheckView, MODDER_OT_PreExportCheckFix]
+           MODDER_OT_PreExportCheckView, MODDER_OT_PreExportCheckFix,
+           MODDER_OT_PreExportAutofixNow]
 
 
 def register():

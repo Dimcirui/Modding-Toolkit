@@ -3,11 +3,12 @@ from .batch_export import (
     MHWS_PARTS, DEFAULT_FILE_TYPES,
     _load_scheme, _resolve_part_file_types, _canonical_order_file_types,
     _PART_LABEL_KEYS,
-    get_binding, set_binding,
+    get_binding, set_binding, bound_pairs,
     get_mhws_armor_callback,
 )
 from ...core.i18n import T
 from ...core import pre_export_check_ops as pec
+from ...core import mod_root
 
 EXPORTER_WINDOW_WIDTH = 580
 
@@ -178,7 +179,7 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
                      icon='DOWNARROW_HLT')
 
         # ── Natives Root ──
-        natives_root = scene.get("mhws_natives_root", "")
+        natives_root = mod_root.read(scene, "mhws_natives_root")
         row = layout.row(align=True)
         row.operator("mhws.set_natives_root", text="Mod Root", icon='FILE_FOLDER')
         if natives_root:
@@ -267,39 +268,45 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
         layout.separator()
         row = layout.row(align=True)
         row.prop(settings, "mhws_use_blank_export", text=T("ui.prop.use_blank_export"), icon='FILE_BLANK')
-        row.prop(settings, "mhws_cleanup_before_export", text=T("ui.prop.cleanup_before_export"), icon='BRUSH_DATA')
-        row.prop(settings, "mhws_triangulate_face", text=T("ui.prop.triangulate_face"), icon='MOD_TRIANGULATE')
+        sub = row.row(align=True)
+        sub.prop(settings, "mhws_autofix", text=T("core.export_autofix.toggle"), icon='BRUSH_DATA')
+        # A dropdown rather than a popover: measured in 5.1, a popover has to be
+        # hovered to stay open and opens offset from its button (user's call).
+        gear = sub.row(align=True)
+        gear.enabled = settings.mhws_autofix
+        gear.prop_menu_enum(settings, "mhws_autofix_items", text="", icon='PREFERENCES')
 
-        self._draw_bonesystem(layout, settings)
-        self._draw_lua_bone_system(layout, settings, scene, armor_id, variant)
+        self._draw_body_reshape(layout, settings, scene, armor_id, variant)
 
         pairs = _gather_check_pairs(scene, armor_id, variant, active_parts)
-        pec.draw_inline_summary(self, layout, context, 'MHWS', pairs, natives_root)
+        pec.draw_inline_summary(self, layout, context, 'MHWS', pairs, natives_root,
+                                autofix_pairs=bound_pairs(scene, armor_id, variant))
 
-    def _draw_bonesystem(self, layout, settings):
+    def _draw_body_reshape(self, layout, settings, scene, armor_id, variant):
+        """Bonesystem and the Wilds lua bone system side by side: they are two
+        alternative ways to reshape the body, at most one on (the props' update
+        callbacks switch the other off), so one box shows the choice and then
+        the settings of whichever is on."""
         layout.separator()
         box = layout.box()
         row = box.row(align=True)
         row.prop(settings, "mhws_use_bonesystem",
                  text=T("mhws.batch_export_ui.use_bonesystem_label"), icon='ARMATURE_DATA')
-        if not settings.mhws_use_bonesystem:
-            return
+        row.prop(settings, "mhws_use_lua_bone_system",
+                 text=T("mhws.batch_export_ui.use_lua_bone_system_label"), icon='ARMATURE_DATA')
+        if settings.mhws_use_bonesystem:
+            self._draw_bonesystem(box, settings)
+        elif settings.mhws_use_lua_bone_system:
+            self._draw_lua_bone_system(box, settings, scene, armor_id, variant)
 
+    def _draw_bonesystem(self, box, settings):
         col = box.column(align=False)
         col.prop(settings, "mhws_bs_armature", text=T("mhws.batch_export_ui.armature_label"))
         name_row = col.row(align=True)
         name_row.prop(settings, "mhws_fbxskel_name", text=T("mhws.batch_export_ui.fbxskel_name_label"))
         name_row.operator("mhws.bonesystem_settings", text="", icon='PREFERENCES')
 
-    def _draw_lua_bone_system(self, layout, settings, scene, armor_id, variant):
-        layout.separator()
-        box = layout.box()
-        row = box.row(align=True)
-        row.prop(settings, "mhws_use_lua_bone_system",
-                 text=T("mhws.batch_export_ui.use_lua_bone_system_label"), icon='ARMATURE_DATA')
-        if not settings.mhws_use_lua_bone_system:
-            return
-
+    def _draw_lua_bone_system(self, box, settings, scene, armor_id, variant):
         box.prop(settings, "mhws_bs_armature", text=T("mhws.batch_export_ui.armature_label"))
 
         head_row = box.row(align=False)

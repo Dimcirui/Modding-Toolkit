@@ -303,6 +303,25 @@ def normalize_tex_path(path):
     return p.lstrip('/')
 
 
+#: Source-image extensions: a binding ending in one of these points at a texture
+#: that was never converted, which is a finding, not a spelling to tidy.
+_IMAGE_EXTS = ('.dds', '.png', '.tga', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff')
+
+
+def fix_tex_path(path):
+    """The path the auto-fix writes back (``docs/pre_export_check_plan.md`` §3.6).
+
+    Same as ``normalize_tex_path`` except that a path ending in a source-image
+    extension is left alone -- upstream would write ``foo.png.tex``, which only
+    hides that the texture was never built.  Empty paths are left alone too;
+    filling them is a separate fix.
+    """
+    p = (path or '').strip()
+    if not p or p.lower().endswith(_IMAGE_EXTS):
+        return path
+    return normalize_tex_path(p)
+
+
 def pair_unmatched(unmatched, unused):
     """Split dangling names into likely pairs and genuine leftovers.
 

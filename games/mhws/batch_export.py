@@ -8,6 +8,8 @@ from ..re9.batch_export import _do_export_mesh, _do_export_mdf2, _do_export_chai
 from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
 from ...core import console_export
 from ...core import export_prep
+from ...core import export_autofix
+from ...core import mod_root
 from ...core import lua_bone_system
 from ...core.i18n import T
 
@@ -130,6 +132,19 @@ def get_binding(scene, armor_id, variant, part, filetype):
 
 def set_binding(scene, armor_id, variant, part, filetype, value):
     scene[_make_key(armor_id, variant, part, filetype)] = value
+
+
+def bound_pairs(scene, armor_id, variant):
+    """``[(part_id, mdf_col, mesh_col)]`` for every part with a mesh or mdf2
+    bound -- what auto-fix runs over.  Either collection may be None: a part
+    with only a mesh still gets its weights cleaned."""
+    out = []
+    for part_id, _name in MHWS_PARTS:
+        mdf = bpy.data.collections.get(get_binding(scene, armor_id, variant, part_id, "mdf2") or "")
+        mesh = bpy.data.collections.get(get_binding(scene, armor_id, variant, part_id, "mesh") or "")
+        if mdf is not None or mesh is not None:
+            out.append((part_id, mdf, mesh))
+    return out
 
 
 def _get_blank_path(filetype):
@@ -425,71 +440,9 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
     def description(cls, context, properties):
         return T("mhws.batch_export.batch_export_desc")
 
-    def _bound_mesh_collections(self, scene, settings):
-        """Every distinct mesh collection bound to the selected armor set."""
-        armor_id = settings.mhws_selected_armor
-        variant = settings.mhws_armor_variant
-        seen = set()
-        mesh_collections = []
-        for part_id, _ in MHWS_PARTS:
-            col_name = get_binding(scene, armor_id, variant, part_id, "mesh")
-            if col_name and col_name not in seen:
-                col = bpy.data.collections.get(col_name)
-                if col:
-                    mesh_collections.append(col)
-                    seen.add(col_name)
-        return mesh_collections
-
-    def _cleanup_mesh_collections(self, context, scene, settings):
-        """Run RE Mesh cleanup operators on all bound mesh collections before export."""
-        if not re_mesh_op_available('delete_loose'):
-            self.report({'WARNING'}, T("mhws.batch_export.re_mesh_not_installed_cleanup_skip"))
-            return
-
-        mesh_collections = self._bound_mesh_collections(scene, settings)
-        if not mesh_collections:
-            return
-
-        # mode_set 需要活动物体；无活动物体时必定已在 OBJECT 模式，直接跳过即可，
-        # 否则 poll 失败抛 "上下文缺失活动物体"（手动导出有选中物体故不复现）。
-        if context.view_layer.objects.active is not None and context.mode != 'OBJECT':
-            bpy.ops.object.mode_set(mode='OBJECT')
-        bpy.ops.object.select_all(action='DESELECT')
-        for col in mesh_collections:
-            for obj in [o for o in col.objects if o.type == 'MESH']:
-                context.view_layer.objects.active = obj
-                obj.select_set(True)
-                try: call_re_mesh_op('delete_loose')
-                except Exception: pass
-                try: call_re_mesh_op('solve_repeated_uvs')
-                except Exception: pass
-                try: call_re_mesh_op('remove_zero_weight_vertex_groups')
-                except Exception: pass
-                try:
-                    call_re_mesh_op('limit_total_normalize', maxWeights='12')
-                except Exception:
-                    try:
-                        bpy.ops.object.vertex_group_limit_total(limit=12)
-                        bpy.ops.object.vertex_group_normalize_all(lock_active=False)
-                    except Exception:
-                        pass
-                obj.select_set(False)
-
     def execute(self, context):
         show_console = console_export.get_preferences(context).show_console_on_batch_export
         with console_export.kept_open_for_export(show_console):
-            return self._execute_with_triangulation(context)
-
-    def _execute_with_triangulation(self, context):
-        # Triangulation rides on the modifier stack: RE Mesh Editor exports
-        # evaluated geometry, so the mesh data is never touched and the
-        # modifiers come off again even if the export raises.
-        settings = context.scene.mhw_suite_settings
-        if not settings.mhws_triangulate_face:
-            return self._run_export(context)
-        with export_prep.triangulated_for_export(context.scene.objects, 'mhws') as touched:
-            if touched:
-                print("[MHWS] triangulating {n} face mesh(es) for export".format(n=len(touched)))
             return self._run_export(context)
 
     def _run_export(self, context):
@@ -500,10 +453,7 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
             self.report({'ERROR'}, "RE Mesh Editor not installed")
             return {'CANCELLED'}
 
-        if settings.mhws_cleanup_before_export:
-            self._cleanup_mesh_collections(context, scene, settings)
-
-        natives_root = scene.get("mhws_natives_root", "")
+        natives_root = mod_root.read(scene, "mhws_natives_root")
         if not natives_root or not os.path.isdir(natives_root):
             self.report({'ERROR'}, T("core.export_prep.set_mod_root_first"))
             return {'CANCELLED'}
@@ -534,6 +484,25 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
         base_path = variant_data["base_path"].replace("\\", "/")
         parts_mask = armor_set.get("parts_mask", 0b11111)
 
+        # Auto-fix only after every check above has passed: an export that
+        # cancels must not leave its fixes behind. Persistent fixes first (one
+        # undo step), then the temporary ones wrap the export itself and come
+        # off again even if it raises.
+        pairs = bound_pairs(scene, armor_id, variant)
+        ids = export_autofix.enabled_items(context, 'MHWS')
+        done = export_autofix.apply(context, 'MHWS', pairs, ids)
+        with export_autofix.temporary(context, 'MHWS', pairs, ids) as tmp:
+            result = self._export(context, scene, settings, natives_root, armor_id, armor_set,
+                                  variant, variant_armor_id, base_path, parts_mask)
+        fixed = {k: v for k, v in list(done.items()) + list(tmp.items()) if v}
+        if fixed:
+            print("[MHWs] auto-fix: " + ", ".join(f"{k}={v}" for k, v in fixed.items()))
+            self.report({'INFO'}, T("core.pre_export_check_ops.autofix_done").format(
+                n=sum(fixed.values())))
+        return result
+
+    def _export(self, context, scene, settings, natives_root, armor_id, armor_set,
+                variant, variant_armor_id, base_path, parts_mask):
         export_count = 0
         fail_count = 0
         skip_count = 0
@@ -599,7 +568,11 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
                 fail_count += 1
 
         # ── Lua Bone System ──
-        if settings.mhws_use_lua_bone_system:
+        # Mutually exclusive with Bonesystem; the props' update callbacks enforce
+        # it, but a .blend saved before that can still have both on.
+        if settings.mhws_use_lua_bone_system and settings.mhws_use_bonesystem:
+            self.report({'WARNING'}, T("mhws.batch_export.lua_bone_skipped_both"))
+        elif settings.mhws_use_lua_bone_system:
             ok, msg = _do_lua_bone_export(
                 context, natives_root, settings, scene, armor_id, variant, variant_armor_id)
             if ok:
@@ -630,12 +603,16 @@ class MHWS_OT_SetNativesRoot(bpy.types.Operator):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
     def execute(self, context):
-        path = self.directory.rstrip("/\\")
-        # If the user selected the natives folder itself, step up one level
-        if os.path.basename(path).lower() == "natives":
-            path = os.path.dirname(path)
+        # A root picked one level too deep (…/natives, …/natives/STM) or one
+        # too shallow (the folder holding the mod) is corrected here; see
+        # core/mod_root.py for the rules.
+        mod_root.clear_cache()
+        path, status = mod_root.normalize(self.directory.rstrip("/\\"))
         context.scene["mhws_natives_root"] = path
-        self.report({'INFO'}, f"MHWs Mod root: {path}")
+        if status == mod_root.AMBIGUOUS:
+            self.report({'WARNING'}, T("core.mod_root.ambiguous"))
+        else:
+            self.report({'INFO'}, f"MHWs Mod root: {path}")
         return {'FINISHED'}
 
 
