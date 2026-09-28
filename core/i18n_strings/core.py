@@ -1723,9 +1723,9 @@ STRINGS = {
     "core.export_autofix.toggle_tip": {
         "EN": "Before export, fix the problems that need no decision: face triangulation, "
               "weight cleanup, mirrored transforms, texture path spelling, empty texture "
-              "paths, missing vertex colours. The gear chooses which",
+              "paths, missing vertex colours, non-English material names. The gear chooses which",
         "ZH": "导出前自动修掉不需要判断的问题：面部三角化、权重清理、镜像变换、贴图路径写法、"
-              "空贴图路径、顶点色补齐。齿轮里可以选修哪些"},
+              "空贴图路径、顶点色补齐、材质名转英文。齿轮里可以选修哪些"},
     "core.export_autofix.item_triangulate": {"EN": "Triangulate Face", "ZH": "面部三角化"},
     "core.export_autofix.tip_triangulate": {
         "EN": "Temporarily triangulate meshes weighted to the head bone; removed after export",
@@ -1753,6 +1753,12 @@ STRINGS = {
               "normal-encoded ones instead of RE Mesh's near-black fill; removed after export",
         "ZH": "同一 .mesh 里有的子网格带顶点色时，导出期间给其余子网格临时写入法向顶点色，"
               "代替 RE Mesh 补的近黑色；导出后移除"},
+    "core.export_autofix.item_mat_names": {"EN": "Material Names to English", "ZH": "材质名转英文"},
+    "core.export_autofix.tip_mat_names": {
+        "EN": "Rename material names outside A-Z, 0-9 and _ (Chinese as pinyin, kana as romaji), "
+              "on the mdf material, its meshes and the Blender material together",
+        "ZH": "把含 A-Z、0-9、_ 以外字符的材质名改成英文（中文转拼音、假名转罗马音），"
+              "mdf 材质、对应网格与 Blender 材质三处一起改"},
     "core.export_autofix.item_legacy": {"EN": "Compat: Legacy Cleanup", "ZH": "兼容：旧版清理"},
     "core.export_autofix.tip_legacy": {
         "EN": "Make Weight Cleanup run RE Mesh Editor's own four cleanup operators instead, "
@@ -1764,6 +1770,7 @@ STRINGS = {
     "core.export_autofix.n_meshes": {"EN": "{n} mesh(es)", "ZH": "{n} 个网格"},
     "core.export_autofix.n_paths": {"EN": "{n} path(s)", "ZH": "{n} 条路径"},
     "core.export_autofix.n_slots": {"EN": "{n} slot(s)", "ZH": "{n} 个槽位"},
+    "core.export_autofix.n_names": {"EN": "{n} name(s)", "ZH": "{n} 处名字"},
 
     # ══════════════════════════════════════════════════════════════════════
     # core/pre_export_check_ops.py
@@ -1924,8 +1931,10 @@ STRINGS = {
         "EN": "contains a space", "ZH": "含空格"},
     "core.pre_export_check_ops.reason_dot": {
         "EN": "contains a dot", "ZH": "含点号"},
-    "core.pre_export_check_ops.reason_leading_underscore": {
-        "EN": "starts with an underscore", "ZH": "以下划线开头"},
+    "core.pre_export_check_ops.reason_non_ascii": {
+        "EN": "contains non-English characters", "ZH": "含中日文等非英文字符"},
+    "core.pre_export_check_ops.reason_symbol": {
+        "EN": "contains other symbols", "ZH": "含其他符号"},
     "core.pre_export_check_ops.reason_empty": {
         "EN": "the name is empty", "ZH": "名称为空"},
     "core.pre_export_check_ops.reason_single_underscore": {

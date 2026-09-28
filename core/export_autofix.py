@@ -44,6 +44,7 @@ ITEMS = (
     ('TEX_PATHS',   "core.export_autofix.item_tex_paths",   "core.export_autofix.tip_tex_paths",   8, True),
     ('TEX_EMPTY',   "core.export_autofix.item_tex_empty",   "core.export_autofix.tip_tex_empty",   16, True),
     ('VCOLOR',      "core.export_autofix.item_vcolor",      "core.export_autofix.tip_vcolor",      32, True),
+    ('MAT_NAMES',   "core.export_autofix.item_mat_names",   "core.export_autofix.tip_mat_names",   128, True),
     ('LEGACY',      "core.export_autofix.item_legacy",      "core.export_autofix.tip_legacy",      64, False),
 )
 LABEL_KEYS = {i: label for i, label, _tip, _bit, _on in ITEMS}
@@ -53,9 +54,11 @@ DEFAULT_MASK = sum(bit for _i, _k, _t, bit, on in ITEMS if on)
 #: "fixed now" from the report.
 TEMPORARY = {'TRIANGULATE', 'VCOLOR'}
 
-#: Items whose problem, when the item is switched off, is not worth reporting:
-#: upstream's own fixTexPath writes the same correction at mdf export.
-SILENT_WHEN_OFF = {'TEX_PATHS'}
+#: Items whose problem, when the item is switched off, is not repeated in the
+#: 「可自动修复」 category: TEX_PATHS because upstream's own fixTexPath writes the
+#: same correction at mdf export, MAT_NAMES because illegal names already have
+#: their own group and fix button in the Materials category.
+SILENT_WHEN_OFF = {'TEX_PATHS', 'MAT_NAMES'}
 
 #: Upstream ``SIX_WEIGHT_GAMES``/``EXTENDED_WEIGHT_GAMES`` put MH Wilds at 12
 #: influences per vertex (6 plus an extended buffer).
@@ -242,6 +245,73 @@ def _needs_triangulate(obj):
     return bool((counts > 3).any()) and not any(m.type == 'TRIANGULATE' for m in obj.modifiers)
 
 
+# ── Material names (also the report's 「修复不合法命名」 button) ────────────
+
+def derived_material(obj):
+    """``(material_name, how)`` for one mesh -- the object name first, the
+    Blender material as the fallback RE Mesh's exporter also uses."""
+    mat_name, how = pc.parse_mesh_name(obj.name)
+    if how != 'no_format':
+        return mat_name, how
+    mats = [m for m in obj.data.materials if m is not None]
+    if not mats:
+        return '', 'no_format'
+    # Multi-material meshes take the first, matching the exporter.
+    return pc.strip_dedup_suffix(mats[0].name), 'no_format'
+
+
+def _name_plan(mdf_col, mesh_col):
+    materials = _mdf_materials([mdf_col])
+    meshes = _mesh_objects([mesh_col]) if mesh_col is not None else []
+    return pc.plan_name_fixes(
+        [o.re_mdf_material.materialName for o in materials],
+        [(o.name, mat, how) for o in meshes for mat, how in [derived_material(o)]])
+
+
+def _count_renames(mdf_col, mesh_col):
+    plan = _name_plan(mdf_col, mesh_col)
+    return len(plan['materials']) + len(plan['objects']) + len(plan['datablocks'])
+
+
+def fix_names(mdf_col, mesh_col):
+    """Correct illegal names on one (mdf_col, mesh_col) pair in place.
+    Returns ``(n_mat, n_obj, n_data)``."""
+    materials = _mdf_materials([mdf_col])
+    meshes = _mesh_objects([mesh_col]) if mesh_col is not None else []
+    mesh_entries = [(o, *derived_material(o)) for o in meshes]
+
+    plan = pc.plan_name_fixes(
+        [o.re_mdf_material.materialName for o in materials],
+        [(o.name, mat, how) for o, mat, how in mesh_entries])
+
+    n_mat = n_obj = n_data = 0
+    for obj in materials:
+        new = plan['materials'].get(obj.re_mdf_material.materialName)
+        if new:
+            obj.re_mdf_material.materialName = new
+            n_mat += 1
+    for obj in meshes:
+        new = plan['objects'].get(obj.name)
+        if new:
+            obj.name = new
+            n_obj += 1
+    # Datablocks are renamed through the meshes that fell back to them
+    # rather than by looking the name up in bpy.data.materials: two
+    # datablocks can share a stripped name, and only the one this mesh
+    # actually uses should move.
+    for obj, mat, how in mesh_entries:
+        if how != 'no_format':
+            continue
+        new = plan['datablocks'].get(mat)
+        if not new:
+            continue
+        slots = [m for m in obj.data.materials if m is not None]
+        if slots and pc.strip_dedup_suffix(slots[0].name) != new:
+            slots[0].name = new
+            n_data += 1
+    return n_mat, n_obj, n_data
+
+
 # ── Plan ─────────────────────────────────────────────────────────────────────
 
 class Plan:
@@ -283,6 +353,8 @@ def plan(context, game, pairs):
                 n_paths += 1
     p.counts['TEX_PATHS'] = n_paths
     p.counts['TEX_EMPTY'] = len(p.empty_fixable)
+    p.counts['MAT_NAMES'] = sum(_count_renames(mdf, mesh) for _l, mdf, mesh in pairs
+                                if mdf is not None)
     return p
 
 
@@ -447,6 +519,10 @@ def apply(context, game, pairs, ids):
                         n_paths += 1
         done['TEX_PATHS'] = n_paths
         done['TEX_EMPTY'] = n_empty
+
+    if 'MAT_NAMES' in ids:
+        done['MAT_NAMES'] = sum(sum(fix_names(mdf, mesh)) for _l, mdf, mesh in pairs
+                                if mdf is not None)
 
     if any(done.values()):
         bpy.ops.ed.undo_push(message="Auto-fix Before Export")

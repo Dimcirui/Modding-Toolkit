@@ -210,17 +210,7 @@ def _mesh_objects(col):
             if o.type == 'MESH' and not o.get("MeshExportExclude")]
 
 
-def _derived_material(obj):
-    """``(material_name, how)`` for one mesh -- the object name first, the
-    Blender material as the fallback RE Mesh's exporter also uses."""
-    mat_name, how = pc.parse_mesh_name(obj.name)
-    if how != 'no_format':
-        return mat_name, how
-    mats = [m for m in obj.data.materials if m is not None]
-    if not mats:
-        return '', 'no_format'
-    # Multi-material meshes take the first, matching the exporter.
-    return pc.strip_dedup_suffix(mats[0].name), 'no_format'
+_derived_material = export_autofix.derived_material
 
 
 def _collection_items(self, context):
@@ -243,7 +233,8 @@ def _mesh_collection_items(self, context):
 _REASON_KEYS = {
     pc.SPACE:              _K + "reason_space",
     pc.DOT:                _K + "reason_dot",
-    pc.LEADING_UNDERSCORE: _K + "reason_leading_underscore",
+    pc.NON_ASCII:          _K + "reason_non_ascii",
+    pc.SYMBOL:             _K + "reason_symbol",
     pc.EMPTY:              _K + "reason_empty",
     pc.SINGLE_UNDERSCORE:  _K + "reason_single_underscore",
 }
@@ -472,6 +463,7 @@ _AUTOFIX_UNITS = {
     'VCOLOR':      "core.export_autofix.n_meshes",
     'TEX_PATHS':   "core.export_autofix.n_paths",
     'TEX_EMPTY':   "core.export_autofix.n_slots",
+    'MAT_NAMES':   "core.export_autofix.n_names",
 }
 
 
@@ -488,6 +480,8 @@ def _apply_autofix_plan(findings, fx_plan, enabled):
         if f['sub'] == 'xform_mirrored' and f['objects'] and f['objects'][0] in fx_plan.mirror_fixable:
             continue
         if f['sub'] == 'tex_empty' and f['key'] in fx_plan.empty_fixable:
+            continue
+        if f['sub'] == 'name_illegal' and 'MAT_NAMES' in enabled:
             continue
         kept.append(f)
 
@@ -992,43 +986,7 @@ class MODDER_OT_PreExportCheckReport(bpy.types.Operator):
 
 # ── Fix ──────────────────────────────────────────────────────────────────────
 
-def _fix_pair(mdf_col, mesh_col):
-    """Correct illegal names on one (mdf_col, mesh_col) pair in place.
-    Returns ``(n_mat, n_obj, n_data)``."""
-    materials = _mdf_materials(mdf_col)
-    meshes = _mesh_objects(mesh_col) if mesh_col is not None else []
-    mesh_entries = [(o, *_derived_material(o)) for o in meshes]
-
-    plan = pc.plan_name_fixes(
-        [o.re_mdf_material.materialName for o in materials],
-        [(o.name, mat, how) for o, mat, how in mesh_entries])
-
-    n_mat = n_obj = n_data = 0
-    for obj in materials:
-        new = plan['materials'].get(obj.re_mdf_material.materialName)
-        if new:
-            obj.re_mdf_material.materialName = new
-            n_mat += 1
-    for obj in meshes:
-        new = plan['objects'].get(obj.name)
-        if new:
-            obj.name = new
-            n_obj += 1
-    # Datablocks are renamed through the meshes that fell back to them
-    # rather than by looking the name up in bpy.data.materials: two
-    # datablocks can share a stripped name, and only the one this mesh
-    # actually uses should move.
-    for obj, mat, how in mesh_entries:
-        if how != 'no_format':
-            continue
-        new = plan['datablocks'].get(mat)
-        if not new:
-            continue
-        slots = [m for m in obj.data.materials if m is not None]
-        if slots and pc.strip_dedup_suffix(slots[0].name) != new:
-            slots[0].name = new
-            n_data += 1
-    return n_mat, n_obj, n_data
+_fix_pair = export_autofix.fix_names
 
 
 class MODDER_OT_PreExportCheckFix(bpy.types.Operator):
