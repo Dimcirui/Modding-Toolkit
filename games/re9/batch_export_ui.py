@@ -375,16 +375,15 @@ def _gather_check_pairs(scene, character_id, scheme, use_simplified):
     return pairs
 
 
-def _mark_group_issues(groups, entries):
-    """Set ``has_issues`` on each ``RE9_GroupListItem`` by checking whether any
-    check entry's label was prefixed with that group's pair label -- either
-    the bare group name (simplified) or ``"<group> / <entry>"`` (normal)."""
+def _mark_group_issues(groups, report):
+    """Set ``has_issues`` on each ``RE9_GroupListItem`` whose pair label carries
+    an error in the report -- either the bare group name (simplified) or
+    ``"<group> / <entry>"`` (normal)."""
+    parts = pec.pr.parts_with_errors(report)
     for item in groups:
-        prefix_group = item.group_name + " ·"
         prefix_entry = item.group_name + " / "
-        item.has_issues = any(
-            e['label'].startswith(prefix_group) or e['label'].startswith(prefix_entry)
-            for e in entries)
+        item.has_issues = any(p == item.group_name or p.startswith(prefix_entry)
+                              for p in parts)
 
 
 # ============================================================

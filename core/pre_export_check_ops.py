@@ -16,6 +16,12 @@ Three operators, because the flow has three moments:
 ``modder.pre_export_check_fix``
     Corrects illegal names and re-runs the check in place.
 
+The checks below produce flat *findings*; ``core/pre_export_report.py`` groups
+them into at most four categories, deduplicates them across parts and decides
+what the summary line counts.  See ``docs/pre_export_check_plan.md`` for which
+problems are shown at all -- the ones the exporter handles itself (weights that
+do not sum to 1, extra material slots behind a ``__`` name) are deliberately not.
+
 **Why the report lives on the Scene rather than on the operator.**  MHWME keeps
 its list in the operator's own ``CollectionProperty``, which is fine when the
 dialog only ever displays.  Here the fix button has to change the data and have
@@ -45,6 +51,7 @@ from bpy.props import (BoolProperty, CollectionProperty, EnumProperty,
 from .i18n import T
 from .compat import HAS_DIALOG_TITLE
 from . import pre_export_check as pc
+from . import pre_export_report as pr
 from .mdf_material_convert_base import _load_vanilla_art_paths
 from .mdf_port_tex import get_game_tex_config
 from .tex_file import read_tex_size
@@ -63,6 +70,40 @@ SPLIT_FACTOR = 0.35
 #: Sentinel for "no mesh collection", which is a legal choice: the user may only
 #: want the texture check.
 _NONE = "NONE"
+
+#: Group order inside each category, most actionable first.  Errors still
+#: always precede notes (pre_export_report.build_report).
+_SUB_ORDER = (
+    'tex_root_wrong', 'tex_missing', 'tex_not_pow2', 'tex_unreadable', 'tex_empty',
+    'mat_pair', 'mesh_unmatched', 'mat_unused', 'mat_duplicate', 'name_illegal',
+    'unweighted', 'xform_mirrored', 'xform_degenerate',
+)
+
+#: Category and group codes -> their i18n keys.  Spelled out rather than built
+#: by pasting the code onto a prefix: a half-built key is invisible to the table
+#: check in tests/test_ui_translated.py, so a renamed code would reach the user
+#: as a raw key string instead of failing the suite.
+_CAT_KEYS = {
+    'tex':  (_K + "cat_tex",  _K + "effect_tex",  _K + "action_tex"),
+    'mat':  (_K + "cat_mat",  _K + "effect_mat",  _K + "action_mat"),
+    'bone': (_K + "cat_bone", _K + "effect_bone", _K + "action_by_reason"),
+}
+_SUB_KEYS = {
+    'tex_root_wrong':   _K + "sub_tex_root_wrong",
+    'tex_missing':      _K + "sub_tex_missing",
+    'tex_not_pow2':     _K + "sub_tex_not_pow2",
+    'tex_unreadable':   _K + "sub_tex_unreadable",
+    'tex_empty':        _K + "sub_tex_empty",
+    'mat_pair':         _K + "sub_mat_pair",
+    'mesh_unmatched':   _K + "sub_mesh_unmatched",
+    'mat_unused':       _K + "sub_mat_unused",
+    'mat_duplicate':    _K + "sub_mat_duplicate",
+    'name_illegal':     _K + "sub_name_illegal",
+    'unweighted':       _K + "sub_unweighted",
+    'xform_mirrored':   _K + "sub_xform_mirrored",
+    'xform_degenerate': _K + "sub_xform_degenerate",
+}
+
 
 def _dialog_kwargs(title_key, confirm_key=None):
     """``title=``/``confirm_text=`` when this Blender has them (4.1+).
@@ -94,22 +135,40 @@ def _cached(key, items):
 
 # ── The report, as Scene data ────────────────────────────────────────────────
 
+class PEC_ReportItem(bpy.types.PropertyGroup):
+    text: StringProperty(name="")
+    severity: StringProperty(name="")
+
+
+class PEC_ReportGroup(bpy.types.PropertyGroup):
+    #: Group code (``tex_missing``, ``name_illegal``, ...). Kept as a code so the
+    #: fix button can ask "is there anything renameable here" without matching
+    #: on translated text.
+    sub: StringProperty(name="")
+    severity: StringProperty(name="")
+    items: CollectionProperty(type=PEC_ReportItem)
+
+
 class PEC_ReportEntry(bpy.types.PropertyGroup):
-    #: Category code (``tex_missing``, ``name_illegal``, ...). Kept next to the
-    #: display label so the fix button can ask "is there anything renameable
-    #: here" without matching on translated text.
+    """One category row of the report."""
     code: StringProperty(name="")
-    label: StringProperty(name="")
+    severity: StringProperty(name="")
     count: IntProperty(name="")
-    detail: StringProperty(name="")
+    groups: CollectionProperty(type=PEC_ReportGroup)
     #: Newline-joined object names, for the "select the problem objects" box.
     objects: StringProperty(name="")
+
+
+def _cat_label(code):
+    keys = _CAT_KEYS.get(code)
+    return T(keys[0]) if keys else code
 
 
 class MODDER_UL_PreExportCheck(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon,
                   active_data, active_propname, index):
-        layout.label(text=f"{item.label} ({item.count})")
+        layout.label(text=f"{_cat_label(item.code)} ({item.count})",
+                     icon='ERROR' if item.severity == pr.ERROR else 'INFO')
 
     def invoke(self, context, event):
         # Kills double-click-to-rename, which would otherwise let the user edit
@@ -142,8 +201,10 @@ def _mdf_materials(col):
 def _mesh_objects(col):
     # all_objects, not objects: an imported .mesh collection puts its LOD levels
     # in child collections, and those meshes export too, so their names have to
-    # be just as valid.
-    return [o for o in col.all_objects if o.type == 'MESH']
+    # be just as valid.  MeshExportExclude is skipped because the exporter skips
+    # it (upstream blender_re_mesh.py:1270) -- reporting it would be noise.
+    return [o for o in col.all_objects
+            if o.type == 'MESH' and not o.get("MeshExportExclude")]
 
 
 def _derived_material(obj):
@@ -155,8 +216,7 @@ def _derived_material(obj):
     mats = [m for m in obj.data.materials if m is not None]
     if not mats:
         return '', 'no_format'
-    # Multi-material meshes take the first, matching the exporter; the extra
-    # slots are reported separately as their own finding.
+    # Multi-material meshes take the first, matching the exporter.
     return pc.strip_dedup_suffix(mats[0].name), 'no_format'
 
 
@@ -177,10 +237,6 @@ def _mesh_collection_items(self, context):
 
 # ── The checks ───────────────────────────────────────────────────────────────
 
-#: Reason code -> its own i18n key. Spelled out rather than built by pasting the
-#: code onto a prefix: a half-built key is invisible to the table check in
-#: tests/test_ui_translated.py, so a renamed reason code would reach the user as
-#: a raw key string instead of failing the suite.
 _REASON_KEYS = {
     pc.SPACE:              _K + "reason_space",
     pc.DOT:                _K + "reason_dot",
@@ -194,171 +250,111 @@ def _reason_text(codes):
     return ", ".join(T(_REASON_KEYS[c]) for c in codes)
 
 
-def _check_textures(materials, cfg, natives_root):
-    """``[entry]`` for the texture half. Empty when nothing is wrong."""
+def _texture_findings(bindings, cfg, natives_root):
+    """``[finding]`` for the texture half, over every part at once.
+
+    *bindings* is ``[(part, material object)]``.  The verdict ("nothing custom
+    resolved -- wrong root" vs "some files are missing") is taken over all
+    parts together: the mod root is one directory, so judging it per part could
+    call it wrong for one part and fine for the next.
+    """
     tex_version = cfg["tex_version"]
     vanilla = _load_vanilla_art_paths(cfg["vanilla_asset_rel"])
 
     def exists(path):
         return os.path.isfile(pc.resolve_disk_path(natives_root, path, tex_version))
 
-    n_found = 0
-    missing = []   # (obj, material name, slot, path)
-    empty = []     # (obj, material name, slot)
-    found = {}     # path -> [obj], deduped: the same texture is usually bound
-                   # by several materials, and the file is one file
-    for obj in materials:
+    found = {}     # path -> [(part, obj)]; the same file is usually bound many times
+    missing = {}   # path -> [(part, obj)]
+    empty = []     # (part, obj, material name, slot)
+    for part, obj in bindings:
         md = obj.re_mdf_material
-        mat_name = md.materialName
         for b in md.textureBindingList_items:
-            verdict = pc.classify_tex_binding(b.path, vanilla, exists)
+            path = pc.normalize_tex_path(b.path)
+            verdict = pc.classify_tex_binding(path, vanilla, exists)
             if verdict == pc.TEX_FOUND:
-                n_found += 1
-                found.setdefault(b.path, []).append(obj)
+                found.setdefault(path, []).append((part, obj))
             elif verdict == pc.TEX_MISSING:
-                missing.append((obj, mat_name, b.textureType, b.path))
+                missing.setdefault(path, []).append((part, obj))
             elif verdict == pc.TEX_EMPTY:
-                empty.append((obj, mat_name, b.textureType))
+                empty.append((part, obj, md.materialName, b.textureType))
 
-    entries = []
-    verdict = pc.texture_verdict(n_found, len(missing))
+    out = []
+    verdict = pc.texture_verdict(len(found), len(missing))
     if verdict == pc.TEXV_ROOT_WRONG:
-        # Deduped, not the raw per-material list: every one of them is wrong
-        # for the same single reason, so the same handful of paths would
-        # otherwise repeat once per material that references them. Showing
-        # the unique paths (rather than nothing) also gives the user a way to
-        # tell the two causes apart themselves -- a root that is genuinely
-        # wrong tends to produce paths that look complete and plausible,
-        # while "just didn't build these yet" tends to be a short, specific
-        # list.
-        unique_paths = list(dict.fromkeys(p for _o, _m, _s, p in missing))
-        entries.append({
-            'code': 'tex_root_wrong',
-            'label': T(_K + "cat_tex_root_wrong"),
-            'count': len(missing),
-            'detail': T(_K + "desc_tex_root_wrong").format(n=len(missing), root=natives_root)
-                      + "\n\n" + "\n".join(unique_paths),
-            'objects': [o.name for o, _m, _s, _p in missing],
-        })
+        # One line for the whole thing -- every path fails for the same single
+        # reason -- plus the first few paths so the user can tell a wrong root
+        # (complete, plausible paths) from textures never built (a short list).
+        n = sum(len(v) for v in missing.values())
+        objs = [o.name for users in missing.values() for _p, o in users]
+        out.append(pr.finding('tex', 'tex_root_wrong',
+                              T(_K + "item_root_wrong").format(n=n, root=natives_root),
+                              key='summary', objects=objs))
+        for path in list(missing)[:3]:
+            out.append(pr.finding('tex', 'tex_root_wrong', path, key=path))
     elif verdict == pc.TEXV_MISSING:
-        entries.append({
-            'code': 'tex_missing',
-            'label': T(_K + "cat_tex_missing"),
-            'count': len(missing),
-            'detail': T(_K + "desc_tex_missing") + "\n\n" + "\n".join(
-                f"{mat}  [{slot}]  {path}" for _o, mat, slot, path in missing),
-            'objects': [o.name for o, _m, _s, _p in missing],
-        })
+        for path, users in missing.items():
+            for part, obj in users:
+                out.append(pr.finding('tex', 'tex_missing', path, key=path,
+                                      part=part, objects=[obj.name]))
 
-    entries += _check_tex_sizes(found, natives_root, tex_version)
-
-    if empty:
-        entries.append({
-            'code': 'tex_empty',
-            'label': T(_K + "cat_tex_empty"),
-            'count': len(empty),
-            'detail': T(_K + "desc_tex_empty") + "\n\n" + "\n".join(
-                f"{mat}  [{slot}]" for _o, mat, slot in empty),
-            'objects': [o.name for o, _m, _s in empty],
-        })
-    return entries
-
-
-def _check_tex_sizes(found, natives_root, tex_version):
-    """``[entry]`` for the shape of the texture files that did resolve.
-
-    Only the custom ones can be checked at all: a vanilla path lives inside the
-    game's paks, so there is no file here to read -- and no need, since the game
-    shipped it.
-
-    Reads 40 bytes per unique path (``tex_file.read_tex_size``), so this costs
-    one header read per texture the mod actually ships, not per binding.
-    """
-    bad_size = []      # (obj, path, width, height)
-    unreadable = []    # (obj, path)
-    for path, objs in found.items():
+    # Only the custom textures that resolved can be read: a vanilla path lives in
+    # the game's paks.  One 40-byte header read per unique path.
+    for path, users in found.items():
         size = read_tex_size(pc.resolve_disk_path(natives_root, path, tex_version))
-        verdict = pc.classify_tex_size(size)
-        if verdict == pc.TEXF_NOT_POW2:
-            bad_size.append((objs[0], path, size[0], size[1]))
-        elif verdict == pc.TEXF_UNREADABLE:
-            unreadable.append((objs[0], path))
+        size_verdict = pc.classify_tex_size(size)
+        if size_verdict == pc.TEXF_OK:
+            continue
+        if size_verdict == pc.TEXF_NOT_POW2:
+            sub, text = 'tex_not_pow2', f"{size[0]}×{size[1]}  {path}"
+        else:
+            sub, text = 'tex_unreadable', T(_K + "item_unreadable").format(path=path)
+        for part, obj in users:
+            out.append(pr.finding('tex', sub, text, key=path, part=part,
+                                  objects=[obj.name]))
 
-    entries = []
-    if bad_size:
-        entries.append({
-            'code': 'tex_not_pow2',
-            'label': T(_K + "cat_tex_not_pow2"),
-            'count': len(bad_size),
-            'detail': T(_K + "desc_tex_not_pow2") + "\n\n" + "\n".join(
-                f"{w}x{h}  {path}" for _o, path, w, h in bad_size),
-            'objects': [o.name for o, _p, _w, _h in bad_size],
-        })
-    if unreadable:
-        entries.append({
-            'code': 'tex_unreadable',
-            'label': T(_K + "cat_tex_unreadable"),
-            'count': len(unreadable),
-            'detail': T(_K + "desc_tex_unreadable") + "\n\n" + "\n".join(
-                path for _o, path in unreadable),
-            'objects': [o.name for o, _p in unreadable],
-        })
-    return entries
+    for part, obj, mat, slot in empty:
+        out.append(pr.finding('tex', 'tex_empty', f"{mat}  [{slot}]",
+                              key=(obj.name, slot), part=part, objects=[obj.name]))
+    return out
 
 
-def _check_transforms(meshes):
-    """``[entry]`` for object transforms the exporter cannot bake safely.
+def _check_transforms(meshes, part):
+    """``[finding]`` for object transforms the exporter cannot bake safely.
 
     Only the sign of the determinant matters -- see ``classify_transform``.
     Meshes with no authored split normals are still reported when mirrored,
     because a negative determinant also leaves the winding facing inward; they
     just lose less.
     """
-    mirrored = []    # (obj, has custom normals)
-    degenerate = []
+    out = []
     for obj in meshes:
-        verdict = pc.classify_transform(obj.matrix_world.determinant())
+        det = obj.matrix_world.determinant()
+        verdict = pc.classify_transform(det)
         if verdict == pc.XFORM_MIRRORED:
-            mirrored.append((obj, obj.data.has_custom_normals))
+            text = f"{obj.name}  det={det:.3f}"
+            if not obj.data.has_custom_normals:
+                text += "  " + T(_K + "note_no_custom_normals")
+            out.append(pr.finding('bone', 'xform_mirrored', text, key=obj.name,
+                                  part=part, objects=[obj.name]))
         elif verdict == pc.XFORM_DEGENERATE:
-            degenerate.append(obj)
-
-    entries = []
-    if mirrored:
-        entries.append({
-            'code': 'xform_mirrored',
-            'label': T(_K + "cat_xform_mirrored"),
-            'count': len(mirrored),
-            'detail': T(_K + "desc_xform_mirrored") + "\n\n" + "\n".join(
-                f"{o.name}  det={o.matrix_world.determinant():.4f}"
-                + ("" if cn else "  " + T(_K + "note_no_custom_normals"))
-                for o, cn in mirrored),
-            'objects': [o.name for o, _cn in mirrored],
-        })
-    if degenerate:
-        entries.append({
-            'code': 'xform_degenerate',
-            'label': T(_K + "cat_xform_degenerate"),
-            'count': len(degenerate),
-            'detail': T(_K + "desc_xform_degenerate") + "\n\n" + "\n".join(
-                o.name for o in degenerate),
-            'objects': [o.name for o in degenerate],
-        })
-    return entries
+            out.append(pr.finding('bone', 'xform_degenerate',
+                                  T(_K + "item_degenerate").format(obj=obj.name),
+                                  key=obj.name, part=part, objects=[obj.name]))
+    return out
 
 
-def _check_weight_sums(meshes):
-    """``[entry]`` 权重总和不为 1 的顶点。
+def _check_weights(meshes, part):
+    """``[finding]`` for vertices that carry no usable deform weight.
 
-    只报不改：这里是导出前的最后一道网，真正该动手的时机是导入之后、任何刷权重之前
-    （modder.normalize_deform_weights，或标准化流程里的"先归一化权重"勾选项）。
-
-    到了导出这一步其实已经不致命——RE Mesh Editor 与 mod3 的写出都是先
-    ``/ weightSums`` 再量化到 255 / 1023。真正致命的是**完全没有形变权重**的顶点：
-    两个导出器都把 ``weightSums == 0`` 的行写成全 0，那些顶点在游戏里会留在原点。
-    所以两者分成两条报，严重程度不同。
+    Weights that merely fail to sum to 1 are *not* reported: upstream RE Mesh
+    divides by the sum and then adds the rounding gap to each row's largest
+    weight (``file_re_mesh.py:1796-1810``).  What does break is a vertex with
+    nothing left once the exporter has dropped weights below
+    ``pc.EXPORT_MIN_WEIGHT`` -- its row comes out all zero, then gets the whole
+    255 added to slot 0, so in game it follows bone index 0.
     """
-    off, unweighted = [], []
+    out = []
     for obj in meshes:
         arm = obj.find_armature()
         if arm is None:
@@ -366,174 +362,132 @@ def _check_weight_sums(meshes):
         idx = weight_utils.deform_group_indices(obj, arm)
         if not idx:
             continue
-        n_off = n_zero = 0
-        worst = 1.0
+        n = 0
         for v in obj.data.vertices:
-            rows = [g.weight for g in v.groups if g.group in idx]
-            if not rows:
-                continue
-            total = sum(rows)
-            verdict = weight_utils.classify_weight_sum(total)
-            if verdict == "unweighted":
-                n_zero += 1
-            elif verdict != "ok":
-                n_off += 1
-                if abs(total - 1.0) > abs(worst - 1.0):
-                    worst = total
-        if n_off:
-            off.append((obj, n_off, worst))
-        if n_zero:
-            unweighted.append((obj, n_zero))
-
-    entries = []
-    if off:
-        entries.append({
-            'code': 'weight_not_normalized',
-            'label': T(_K + "cat_weight_not_normalized"),
-            'count': sum(n for _o, n, _w in off),
-            'detail': T(_K + "desc_weight_not_normalized") + "\n\n" + "\n".join(
-                f"{o.name}  {n} vert(s), worst sum {w:.4f}" for o, n, w in off),
-            'objects': [o.name for o, _n, _w in off],
-        })
-    if unweighted:
-        entries.append({
-            'code': 'weight_unweighted',
-            'label': T(_K + "cat_weight_unweighted"),
-            'count': sum(n for _o, n in unweighted),
-            'detail': T(_K + "desc_weight_unweighted") + "\n\n" + "\n".join(
-                f"{o.name}  {n} vert(s)" for o, n in unweighted),
-            'objects': [o.name for o, _n in unweighted],
-        })
-    return entries
+            if not any(g.group in idx and g.weight >= pc.EXPORT_MIN_WEIGHT for g in v.groups):
+                n += 1
+        if n:
+            out.append(pr.finding('bone', 'unweighted',
+                                  T(_K + "item_unweighted").format(obj=obj.name, n=n),
+                                  key=obj.name, part=part, objects=[obj.name]))
+    return out
 
 
-def _check_names_and_matching(materials, meshes):
-    """``[entry]`` for everything that is about names: matching in both
-    directions, legality on both sides, duplicates, and multi-material meshes."""
-    entries = []
+def _check_names_and_matching(materials, meshes, part):
+    """``[finding]`` for everything that is about names: matching in both
+    directions, legality on both sides, and duplicates.
+
+    One problem is reported once: a half-done rename becomes a single "mesh
+    wants X, mdf has Y" line rather than a dangling mesh *and* a dangling
+    material, and a pair whose names match once legalised is left to the
+    illegal-name group, whose fix button resolves it.
+    """
+    out = []
     mat_names = [o.re_mdf_material.materialName for o in materials]
     mat_by_name = {}
     for o in materials:
         mat_by_name.setdefault(o.re_mdf_material.materialName, []).append(o)
-
     mesh_entries = [(o, *_derived_material(o)) for o in meshes]
 
-    # ── matching, both directions ──
-    if meshes:
-        pairs = [(o.name, mat) for o, mat, _how in mesh_entries]
-        unmatched, unused = pc.match_meshes_to_materials(pairs, mat_names)
-        if unmatched:
-            entries.append({
-                'code': 'mesh_unmatched',
-                'label': T(_K + "cat_mesh_unmatched"),
-                'count': len(unmatched),
-                'detail': T(_K + "desc_mesh_unmatched") + "\n\n" + "\n".join(
-                    f"{obj}  ->  {mat or T(_K + 'no_name')}" for obj, mat in unmatched),
-                'objects': [obj for obj, _m in unmatched],
-            })
-        if unused:
-            entries.append({
-                'code': 'mat_unmatched',
-                'label': T(_K + "cat_mat_unmatched"),
-                'count': len(unused),
-                'detail': T(_K + "desc_mat_unmatched") + "\n\n" + "\n".join(unused),
-                'objects': [o.name for n in unused for o in mat_by_name.get(n, [])],
-            })
-
-    # ── duplicates: each name plus how many times it repeats ──
-    dupes = pc.duplicate_material_names(mat_names)
-    if dupes:
-        entries.append({
-            'code': 'mat_duplicate',
-            'label': T(_K + "cat_mat_duplicate"),
-            'count': len(dupes),
-            'detail': T(_K + "desc_mat_duplicate") + "\n\n" + "\n".join(
-                f"{n}  ×{mat_names.count(n)}" for n in dupes),
-            'objects': [o.name for n in dupes for o in mat_by_name.get(n, [])],
-        })
-
     # ── legality, both sides ──
-    bad = []      # (display line, object name)
+    illegal_names = set()
     for obj in materials:
         name = obj.re_mdf_material.materialName
         problems = pc.name_problems(name)
         if problems:
-            bad.append((T(_K + "side_mdf") + f"  {name}  --  {_reason_text(problems)}", obj.name))
+            illegal_names.add(name)
+            out.append(pr.finding(
+                'mat', 'name_illegal',
+                f"{T(_K + 'side_mdf')} {name} — {_reason_text(problems)}",
+                key=('mdf', obj.name), part=part, objects=[obj.name]))
     for obj, mat, how in mesh_entries:
         problems = list(pc.name_problems(mat))
         if how == 'single_underscore':
             problems.insert(0, pc.SINGLE_UNDERSCORE)
         if problems:
-            bad.append((T(_K + "side_mesh") + f"  {obj.name}  --  {_reason_text(problems)}",
-                        obj.name))
-    if bad:
-        entries.append({
-            'code': 'name_illegal',
-            'label': T(_K + "cat_name_illegal"),
-            'count': len(bad),
-            'detail': T(_K + "desc_name_illegal") + "\n\n" + "\n".join(line for line, _o in bad),
-            'objects': [o for _line, o in bad],
-        })
+            illegal_names.add(mat)
+            out.append(pr.finding(
+                'mat', 'name_illegal',
+                f"{T(_K + 'side_mesh')} {obj.name} — {_reason_text(problems)}",
+                key=('mesh', obj.name), part=part, objects=[obj.name]))
 
-    # ── multi-material meshes ──
-    multi = [o for o in meshes if len([m for m in o.data.materials if m is not None]) > 1]
-    if multi:
-        entries.append({
-            'code': 'mesh_multi',
-            'label': T(_K + "cat_mesh_multi"),
-            'count': len(multi),
-            'detail': T(_K + "desc_mesh_multi") + "\n\n" + "\n".join(o.name for o in multi),
-            'objects': [o.name for o in multi],
-        })
-    return entries
+    # ── matching, both directions ──
+    if meshes:
+        pairs = [(o.name, mat) for o, mat, _how in mesh_entries]
+        unmatched, unused = pc.match_meshes_to_materials(pairs, mat_names)
+        paired, rest_meshes, rest_mats = pc.pair_unmatched(unmatched, unused)
+        for obj_name, want, have in paired:
+            if (want in illegal_names or have in illegal_names) \
+                    and pc.fix_name(want) == pc.fix_name(have):
+                continue    # the name fix makes them match
+            out.append(pr.finding(
+                'mat', 'mat_pair',
+                T(_K + "item_pair").format(mesh=want or T(_K + "no_name"), mdf=have),
+                key=(obj_name, have), part=part,
+                objects=[obj_name] + [o.name for o in mat_by_name.get(have, [])]))
+        for obj_name, want in rest_meshes:
+            out.append(pr.finding(
+                'mat', 'mesh_unmatched',
+                T(_K + "item_mesh_unmatched").format(obj=obj_name,
+                                                     mat=want or T(_K + "no_name")),
+                key=obj_name, part=part, objects=[obj_name]))
+        for name in rest_mats:
+            out.append(pr.finding(
+                'mat', 'mat_unused', T(_K + "item_mat_unused").format(mat=name),
+                key=name, part=part,
+                objects=[o.name for o in mat_by_name.get(name, [])]))
+
+    # ── duplicates, each name with how often it repeats ──
+    for name in pc.duplicate_material_names(mat_names):
+        out.append(pr.finding(
+            'mat', 'mat_duplicate',
+            T(_K + "item_mat_duplicate").format(mat=name, n=mat_names.count(name)),
+            key=name, part=part, objects=[o.name for o in mat_by_name.get(name, [])]))
+    return out
 
 
-def run_checks(context, game_code, mdf_col, mesh_col, natives_root):
-    """``(entries, skipped)`` -- the findings, and the human-readable reason for
-    each check that did not run."""
-    materials = _mdf_materials(mdf_col)
-    meshes = _mesh_objects(mesh_col) if mesh_col is not None else []
-
-    entries = []
-    skipped = []
-
+def _skipped_notes(game_code, natives_root, any_without_mesh):
+    notes = []
     cfg = _tex_config(game_code)
     if cfg is None:
-        skipped.append(T(_K + "skip_tex_no_config").format(game=game_code))
+        notes.append(T(_K + "skip_tex_no_config").format(game=game_code))
     elif not natives_root:
-        skipped.append(T(_K + "skip_tex_no_root"))
-    else:
-        entries += _check_textures(materials, cfg, natives_root)
-
-    if mesh_col is None:
-        skipped.append(T(_K + "skip_match_no_mesh"))
-    entries += _check_names_and_matching(materials, meshes)
-    entries += _check_transforms(meshes)
-    entries += _check_weight_sums(meshes)
-    return entries, skipped
+        notes.append(T(_K + "skip_tex_no_root"))
+    if any_without_mesh:
+        notes.append(T(_K + "skip_match_no_mesh"))
+    return notes
 
 
 def run_checks_multi(context, game_code, pairs, natives_root):
-    """``(entries, skipped)`` aggregated over several ``(label, mdf_col,
-    mesh_col)`` pairs -- one call per part/entry of a batch export.
+    """``(report, skipped)`` over ``(part label, mdf_col, mesh_col)`` pairs.
 
-    Every entry's label is prefixed with which pair it came from, so two parts
-    both reporting e.g. "Missing Textures" stay distinguishable in the flat
-    report list. ``skipped`` is collected once: which checks run does not vary
-    per pair (it depends on the game and the shared mod root only), so
-    repeating the same reason once per part would just be noise.
+    A single-pair run passes ``""`` as the label, which keeps the part prefix
+    off every line.  ``skipped`` is the human-readable reason for each check
+    that did not run; it depends on the game and the shared mod root only, so
+    it is collected once rather than once per part.
     """
-    all_entries = []
-    skipped = []
+    findings = []
+    bindings = []
     for label, mdf_col, mesh_col in pairs:
-        entries, pair_skipped = run_checks(context, game_code, mdf_col, mesh_col, natives_root)
-        for e in entries:
-            e = dict(e)
-            e['label'] = f"{label} · {e['label']}"
-            all_entries.append(e)
-        if not skipped:
-            skipped = pair_skipped
-    return all_entries, skipped
+        materials = _mdf_materials(mdf_col)
+        meshes = _mesh_objects(mesh_col) if mesh_col is not None else []
+        bindings += [(label, o) for o in materials]
+        findings += _check_names_and_matching(materials, meshes, label)
+        findings += _check_weights(meshes, label)
+        findings += _check_transforms(meshes, label)
+
+    cfg = _tex_config(game_code)
+    if cfg is not None and natives_root:
+        findings += _texture_findings(bindings, cfg, natives_root)
+
+    skipped = _skipped_notes(game_code, natives_root,
+                             any(mesh_col is None for _l, _m, mesh_col in pairs))
+    return pr.build_report(findings, _SUB_ORDER), skipped
+
+
+def run_checks(context, game_code, mdf_col, mesh_col, natives_root):
+    """Single-pair form of ``run_checks_multi``, for the standalone dialog."""
+    return run_checks_multi(context, game_code, [("", mdf_col, mesh_col)], natives_root)
 
 
 def gather_and_check(context, game_code, pairs, natives_root):
@@ -551,7 +505,7 @@ def gather_and_check(context, game_code, pairs, natives_root):
     operator's ``execute()``, which is what ``MODDER_OT_PreExportCheckView``
     is for.
     """
-    entries, skipped = run_checks_multi(context, game_code, pairs, natives_root)
+    report, skipped = run_checks_multi(context, game_code, pairs, natives_root)
     _LAST_RUN.clear()
     _LAST_RUN.update({
         'game': game_code,
@@ -559,7 +513,7 @@ def gather_and_check(context, game_code, pairs, natives_root):
         'pairs': [(label, mdf_col.name, mesh_col.name if mesh_col else "")
                   for label, mdf_col, mesh_col in pairs],
     })
-    return entries, skipped
+    return report, skipped
 
 
 def ensure_checked(op, context, game_code, pairs, natives_root):
@@ -572,36 +526,46 @@ def ensure_checked(op, context, game_code, pairs, natives_root):
     recomputing unconditionally on every draw() would make picking a
     collection feel laggy on a large batch.
 
-    Returns the entries list, so a caller that wants a per-part breakdown
-    (e.g. an issue icon next to each part in its own list) can inspect it
-    before ``draw_summary_row`` draws the total.
+    Returns the report, so a caller that flags rows in its own part list can
+    pass it to ``pre_export_report.parts_with_errors`` before
+    ``draw_summary_row`` draws the total.
     """
     fingerprint = (natives_root, tuple(
         (label, mdf_col.name, mesh_col.name if mesh_col else "")
         for label, mdf_col, mesh_col in pairs))
     if getattr(op, '_pec_fingerprint', None) != fingerprint:
-        entries, skipped = gather_and_check(context, game_code, pairs, natives_root)
+        report, skipped = gather_and_check(context, game_code, pairs, natives_root)
         op._pec_fingerprint = fingerprint
-        op._pec_entries = entries
-        op._pec_total = sum(e['count'] for e in entries)
+        op._pec_report = report
+        op._pec_summary = pr.summary(report)
         op._pec_has_skips = bool(skipped)
-    return op._pec_entries
+    return op._pec_report
+
+
+def _draw_summary_label(row, n_err, n_info):
+    """The one-line verdict shared by the batch dialogs and the report."""
+    if n_err:
+        text = T(_K + "sum_errors").format(n=n_err)
+        if n_info:
+            text += " · " + T(_K + "sum_infos").format(n=n_info)
+        row.label(text=text, icon='ERROR')
+    elif n_info:
+        row.label(text=T(_K + "sum_infos").format(n=n_info), icon='INFO')
+    else:
+        row.label(text=T(_K + "all_clear"), icon='CHECKMARK')
 
 
 def draw_summary_row(op, layout):
     """The one-line summary + "view details" button meant to be the very last
     thing a batch export dialog draws, right above Blender's own OK/Cancel.
-    Call ``ensure_checked`` first so ``op._pec_total``/``_pec_has_skips`` are
+    Call ``ensure_checked`` first so ``op._pec_summary``/``_pec_has_skips`` are
     current."""
     layout.separator()
     row = layout.row(align=True)
-    if op._pec_total:
-        row.label(text=T(_K + "n_issues").format(n=op._pec_total), icon='ERROR')
+    n_err, n_info = op._pec_summary
+    _draw_summary_label(row, n_err, n_info)
+    if n_err or n_info or op._pec_has_skips:
         row.operator("modder.pre_export_check_view", text=T(_K + "btn_view_details"))
-    else:
-        row.label(text=T(_K + "all_clear"), icon='CHECKMARK')
-        if op._pec_has_skips:
-            row.operator("modder.pre_export_check_view", text=T(_K + "btn_view_details"))
 
 
 def draw_inline_summary(op, layout, context, game_code, pairs, natives_root):
@@ -609,6 +573,23 @@ def draw_inline_summary(op, layout, context, game_code, pairs, natives_root):
     have no per-part list of their own to annotate before the summary line."""
     ensure_checked(op, context, game_code, pairs, natives_root)
     draw_summary_row(op, layout)
+
+
+def _pairs_from_last_run():
+    pairs = []
+    for label, mdf_name, mesh_name in _LAST_RUN.get('pairs', []):
+        mdf_col = bpy.data.collections.get(mdf_name)
+        if mdf_col is None:
+            continue
+        mesh_col = bpy.data.collections.get(mesh_name) or None
+        pairs.append((label, mdf_col, mesh_col))
+    return pairs
+
+
+def _rerun_and_store(context):
+    report, skipped = run_checks_multi(context, _LAST_RUN.get('game', ""),
+                                       _pairs_from_last_run(), _LAST_RUN.get('root', ""))
+    _store(context, report, skipped)
 
 
 class MODDER_OT_PreExportCheckView(bpy.types.Operator):
@@ -629,32 +610,30 @@ class MODDER_OT_PreExportCheckView(bpy.types.Operator):
         return T(_K + "report_desc")
 
     def execute(self, context):
-        pairs = []
-        for label, mdf_name, mesh_name in _LAST_RUN.get('pairs', []):
-            mdf_col = bpy.data.collections.get(mdf_name)
-            if mdf_col is None:
-                continue
-            mesh_col = bpy.data.collections.get(mesh_name) or None
-            pairs.append((label, mdf_col, mesh_col))
-        entries, skipped = run_checks_multi(
-            context, _LAST_RUN.get('game', ""), pairs, _LAST_RUN.get('root', ""))
-        _store(context, entries, skipped)
+        _rerun_and_store(context)
         bpy.ops.modder.pre_export_check_report('INVOKE_DEFAULT')
         return {'FINISHED'}
 
 
-def _store(context, entries, skipped):
+def _store(context, report, skipped):
     scene = context.scene
     scene.mtk_pec_report.clear()
-    for e in entries:
-        item = scene.mtk_pec_report.add()
-        item.code = e['code']
-        item.label = e['label']
-        item.count = e['count']
-        item.detail = e['detail']
-        # dict.fromkeys, not set(): the report should list objects in the order
-        # they were found, and a set would reshuffle it differently each run.
-        item.objects = "\n".join(dict.fromkeys(e['objects']))
+    used_by = T(_K + "item_used_by")
+    joiner = T(_K + "part_joiner")
+    for cat in report:
+        entry = scene.mtk_pec_report.add()
+        entry.code = cat['code']
+        entry.severity = cat['severity']
+        entry.count = cat['count']
+        entry.objects = "\n".join(cat['objects'])
+        for grp in cat['groups']:
+            g = entry.groups.add()
+            g.sub = grp['sub']
+            g.severity = grp['severity']
+            for it in grp['items']:
+                row = g.items.add()
+                row.text = pr.item_line(it, used_by=used_by, joiner=joiner)
+                row.severity = it['severity']
     scene.mtk_pec_report_index = 0
     _LAST_RUN['skipped'] = skipped
 
@@ -757,15 +736,13 @@ class MODDER_OT_PreExportCheck(bpy.types.Operator):
         cfg = _tex_config(self.source_game)
         natives_root = context.scene.get(cfg["natives_root_key"], "") if cfg else ""
 
-        entries, skipped = run_checks(context, self.source_game, mdf_col, mesh_col, natives_root)
         _LAST_RUN.clear()
         _LAST_RUN.update({
             'game': self.source_game,
-            'mdf': mdf_col.name,
-            'mesh': mesh_col.name if mesh_col else "",
             'root': natives_root,
+            'pairs': [("", mdf_col.name, mesh_col.name if mesh_col else "")],
         })
-        _store(context, entries, skipped)
+        _rerun_and_store(context)
         bpy.ops.modder.pre_export_check_report('INVOKE_DEFAULT')
         return {'FINISHED'}
 
@@ -821,6 +798,10 @@ def _wrap_width(context):
     return max(10, int((box_px - padding_px) / (px_per_unit * ui_scale)))
 
 
+def _has_group(report, sub):
+    return any(g.sub == sub for e in report for g in e.groups)
+
+
 class MODDER_OT_PreExportCheckReport(bpy.types.Operator):
     bl_idname = "modder.pre_export_check_report"
     bl_label = "Pre-export Check Report"
@@ -844,15 +825,36 @@ class MODDER_OT_PreExportCheckReport(bpy.types.Operator):
             self, width=WINDOW_SIZE,
             **_dialog_kwargs(_K + "report_title", _K + "confirm_done"))
 
+    def _draw_detail(self, box, entry, width):
+        """Consequence, what to do, then each group. Returns rows drawn, so the
+        category list can be made as tall as the detail beside it."""
+        rows = 0
+        keys = _CAT_KEYS.get(entry.code)
+        if keys:
+            for key in keys[1:]:
+                for chunk in _wrap_line(T(key), width):
+                    box.label(text=chunk)
+                    rows += 1
+        for grp in entry.groups:
+            box.separator()
+            title = T(_SUB_KEYS.get(grp.sub, grp.sub))
+            box.label(text=f"{title} ({len(grp.items)})",
+                      icon='ERROR' if grp.severity == pr.ERROR else 'INFO')
+            rows += 2
+            for it in grp.items:
+                for chunk in _wrap_line(it.text, width - 2):
+                    box.label(text="    " + chunk)
+                    rows += 1
+        return rows
+
     def draw(self, context):
         layout = self.layout
         report = context.scene.mtk_pec_report
-        total = sum(e.count for e in report)
+        n_err = sum(1 for e in report if e.severity == pr.ERROR)
+        n_info = sum(len(g.items) for e in report for g in e.groups
+                     if g.severity == pr.INFO)
 
-        if not len(report):
-            layout.label(text=T(_K + "all_clear"), icon='CHECKMARK')
-        else:
-            layout.label(text=T(_K + "n_issues").format(n=total), icon='ERROR')
+        _draw_summary_label(layout.row(), n_err, n_info)
         for note in _LAST_RUN.get('skipped', []):
             layout.label(text=note, icon='DOT')
         if not len(report):
@@ -862,30 +864,17 @@ class MODDER_OT_PreExportCheckReport(bpy.types.Operator):
         split = layout.split(factor=SPLIT_FACTOR)
         col1, col2 = split.column(), split.column()
 
-        row_count = 2
         idx = min(context.scene.mtk_pec_report_index, len(report) - 1)
-        item = report[idx]
-        width = _wrap_width(context)
-
-        box = col2.box()
-        for line in item.detail.splitlines():
-            line = line.strip()
-            if not line:
-                box.separator()
-                row_count += 1
-                continue
-            for chunk in _wrap_line(line, width):
-                box.label(text=chunk)
-                row_count += 1
+        rows = 2 + self._draw_detail(col2.box(), report[idx], _wrap_width(context))
 
         # rows follows the detail length so the list never ends up a stub next
         # to a tall box -- and because it scrolls, nothing has to be truncated.
         col1.template_list("MODDER_UL_PreExportCheck", "", context.scene, "mtk_pec_report",
                            context.scene, "mtk_pec_report_index",
-                           rows=max(6, min(row_count, 28)))
+                           rows=max(4, min(rows, 28)))
 
         layout.separator()
-        if any(e.code == 'name_illegal' for e in report):
+        if _has_group(report, 'name_illegal'):
             layout.operator("modder.pre_export_check_fix",
                             text=T(_K + "btn_fix"), icon='FILE_REFRESH')
             layout.label(text=T(_K + "fix_datablock_note"), icon='INFO')
@@ -964,46 +953,26 @@ class MODDER_OT_PreExportCheckFix(bpy.types.Operator):
         return T(_K + "fix_desc")
 
     def execute(self, context):
-        batch_pairs = _LAST_RUN.get('pairs')
+        pairs = _pairs_from_last_run()
+        if not pairs:
+            self.report({'ERROR'}, T(_K + "no_mdf_collection"))
+            return {'CANCELLED'}
         n_mat = n_obj = n_data = 0
-
-        if batch_pairs:
-            # Batch mode: fix every pair, then re-check all of them together --
-            # same shape as the single-pair path below, just looped.
-            check_pairs = []
-            for label, mdf_name, mesh_name in batch_pairs:
-                mdf_col = bpy.data.collections.get(mdf_name)
-                if mdf_col is None:
-                    continue
-                mesh_col = bpy.data.collections.get(mesh_name) or None
-                a, b, c = _fix_pair(mdf_col, mesh_col)
-                n_mat += a; n_obj += b; n_data += c
-                check_pairs.append((label, mdf_col, mesh_col))
-            entries, skipped = run_checks_multi(context, _LAST_RUN.get('game', ""), check_pairs,
-                                                _LAST_RUN.get('root', ""))
-        else:
-            mdf_col = bpy.data.collections.get(_LAST_RUN.get('mdf', ""))
-            if mdf_col is None:
-                self.report({'ERROR'}, T(_K + "no_mdf_collection"))
-                return {'CANCELLED'}
-            mesh_col = bpy.data.collections.get(_LAST_RUN.get('mesh', "")) or None
-            n_mat, n_obj, n_data = _fix_pair(mdf_col, mesh_col)
-            entries, skipped = run_checks(context, _LAST_RUN.get('game', ""), mdf_col, mesh_col,
-                                          _LAST_RUN.get('root', ""))
+        for _label, mdf_col, mesh_col in pairs:
+            a, b, c = _fix_pair(mdf_col, mesh_col)
+            n_mat += a; n_obj += b; n_data += c
 
         # Re-run in place: the popup is still open (an operator button does not
         # close it), so rewriting the Scene collection is all the refresh the
         # report needs.
-        _store(context, entries, skipped)
-        _LAST_RUN['skipped'] = skipped
-
+        _rerun_and_store(context)
         self.report({'INFO'}, T(_K + "fix_done").format(mat=n_mat, obj=n_obj, data=n_data))
         return {'FINISHED'}
 
 
-classes = [PEC_ReportEntry, MODDER_UL_PreExportCheck, MODDER_OT_PreExportCheck,
-           MODDER_OT_PreExportCheckReport, MODDER_OT_PreExportCheckView,
-           MODDER_OT_PreExportCheckFix]
+classes = [PEC_ReportItem, PEC_ReportGroup, PEC_ReportEntry, MODDER_UL_PreExportCheck,
+           MODDER_OT_PreExportCheck, MODDER_OT_PreExportCheckReport,
+           MODDER_OT_PreExportCheckView, MODDER_OT_PreExportCheckFix]
 
 
 def register():

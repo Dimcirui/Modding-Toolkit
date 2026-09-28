@@ -95,6 +95,13 @@ XFORM_DEGENERATE = 'degenerate'  # a collapsed axis: nothing to export from
 WEIGHT_SUM_EPS = 1e-4
 
 
+#: 上游 RE Mesh 导出时丢弃低于这个值的权重（``blender_re_mesh.py:1587/1597``，
+#: 注释说再低引擎就会把顶点甩到原点）。所以「有没有有效权重」要在滤掉它们之后判：
+#: 一个顶点的权重全都小于它，导出后照样是全零行——而全零行在 ``file_re_mesh.py:1810``
+#: 被把差额 255 整个加到第 0 格，顶点 100% 跟着骨骼索引 0 走。
+EXPORT_MIN_WEIGHT = 0.002
+
+
 def classify_weight_sum(total, eps=WEIGHT_SUM_EPS):
     """``"ok"`` / ``"unweighted"`` / ``"under"`` / ``"over"``。
 
@@ -257,6 +264,72 @@ def plan_name_fixes(material_names, mesh_entries):
             objects[obj_name] = rebuilt
 
     return {'materials': materials, 'objects': objects, 'datablocks': datablocks}
+
+
+def normalize_tex_path(path):
+    """What the path becomes once the exporter has written it.
+
+    Upstream RE Mesh's ``fixTexPath`` (``modules/mdf/blender_re_mdf.py:405``) runs
+    on every binding at mdf export, so judging the raw string would report paths
+    the exporter fixes on its own.  Mirrored rule for rule -- including the parts
+    that look odd, because they are what actually gets written:
+
+    - backslashes become ``/``
+    - everything from the first ``.tex`` on is cut and ``.tex`` re-appended --
+      case-sensitive, and *unconditionally*, so ``foo.png`` is written as
+      ``foo.png.tex`` (which then, correctly, resolves to nothing)
+    - if some path segment is exactly ``natives`` (any case), it and the segment
+      after it go, along with everything before; a ``natives`` substring inside
+      another segment leaves the path alone (upstream's lookup finds no index and
+      its ``except`` returns the path unchanged)
+    - ``.rtex`` is left untouched
+
+    Two deliberate differences, both about *classifying* rather than exporting:
+    an empty path stays empty (upstream would write ``.tex``; the check reports
+    empties as their own group), and a leading ``/`` is dropped, as
+    ``resolve_disk_path`` does anyway.  ``tests/test_pre_export_report.py`` runs
+    upstream's own source against this over a set of paths.
+    """
+    p = (path or '').strip()
+    if not p or p.endswith('.rtex'):
+        return p
+    p = p.replace('\\', '/')
+    p = p.split('.tex')[0] + '.tex'
+    if 'natives' in p.lower():
+        parts = [s for s in p.split('/') if s]
+        idx = next((i for i, s in enumerate(parts) if s.lower() == 'natives'), None)
+        if idx is not None:
+            p = '/'.join(parts[idx + 2:])
+    return p.lstrip('/')
+
+
+def pair_unmatched(unmatched, unused):
+    """Split dangling names into likely pairs and genuine leftovers.
+
+    *unmatched* is ``[(object_name, derived_material_name)]`` for meshes whose
+    material is missing, *unused* the mdf material names no mesh asks for.  A
+    half-done rename leaves one of each, and reporting them as two separate
+    problems hides that they are the same one.  Pairs are taken in order of
+    confidence: names equal ignoring case, then names equal once both are
+    legalised, then -- only when exactly one is left on each side -- the two
+    leftovers.  Returns ``(pairs, rest_meshes, rest_materials)`` with
+    ``pairs = [(object_name, derived_name, mdf_name)]``.
+    """
+    meshes = list(unmatched)
+    mats = list(unused)
+    pairs = []
+    for key in (lambda n: (n or '').lower(), lambda n: fix_name(n or '').lower()):
+        for entry in list(meshes):
+            want = key(entry[1])
+            hit = next((m for m in mats if key(m) == want), None)
+            if hit is not None:
+                pairs.append((entry[0], entry[1], hit))
+                meshes.remove(entry)
+                mats.remove(hit)
+    if len(meshes) == 1 and len(mats) == 1:
+        pairs.append((meshes[0][0], meshes[0][1], mats[0]))
+        meshes, mats = [], []
+    return pairs, meshes, mats
 
 
 def classify_tex_binding(path, vanilla_set, exists_fn):

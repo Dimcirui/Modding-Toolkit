@@ -1759,8 +1759,7 @@ STRINGS = {
     "core.pre_export_check_ops.run_match": {
         "EN": "Check that meshes and materials match", "ZH": "检查网格与材质是否匹配"},
     "core.pre_export_check_ops.run_names": {
-        "EN": "Check naming, duplicate materials and multi-material meshes",
-        "ZH": "检查命名、重复材质与多材质网格"},
+        "EN": "Check naming and duplicate materials", "ZH": "检查命名与重复材质"},
     "core.pre_export_check_ops.skip_tex_no_root": {
         "EN": "Skip the texture check — Mod Root is not set",
         "ZH": "跳过贴图检查 —— 未设置 Mod 根目录"},
@@ -1771,126 +1770,87 @@ STRINGS = {
         "EN": "Skip material matching — no Mesh collection chosen",
         "ZH": "跳过材质匹配 —— 未选择 Mesh 集合"},
 
-    # ── Category headings (the scrollable left column) ─────────────────────
-    "core.pre_export_check_ops.cat_tex_missing": {
-        "EN": "Missing Textures", "ZH": "贴图缺失"},
-    "core.pre_export_check_ops.cat_tex_root_wrong": {
-        "EN": "No Texture Found At All", "ZH": "找不到任何贴图"},
-    "core.pre_export_check_ops.cat_tex_empty": {
-        "EN": "Empty Texture Path", "ZH": "贴图路径为空"},
-    "core.pre_export_check_ops.cat_tex_not_pow2": {
-        "EN": "Texture Size Not A Power Of Two", "ZH": "贴图边长不是 2 的幂"},
-    "core.pre_export_check_ops.cat_tex_unreadable": {
-        "EN": "Not A Readable .tex", "ZH": "无法识别为 .tex"},
-    "core.pre_export_check_ops.cat_mesh_unmatched": {
-        "EN": "Dangling Meshes", "ZH": "悬空网格"},
-    "core.pre_export_check_ops.cat_mat_unmatched": {
-        "EN": "Dangling Materials", "ZH": "悬空材质"},
-    "core.pre_export_check_ops.cat_mat_duplicate": {
-        "EN": "Duplicate Materials", "ZH": "重复材质"},
-    "core.pre_export_check_ops.cat_name_illegal": {
-        "EN": "Illegal Names", "ZH": "命名不合法"},
-    "core.pre_export_check_ops.cat_mesh_multi": {
-        "EN": "Multi-material Meshes", "ZH": "多材质网格"},
-    "core.pre_export_check_ops.cat_weight_not_normalized": {
-        "EN": "Weights not normalized", "ZH": "权重未归一化"},
-    "core.pre_export_check_ops.desc_weight_not_normalized": {
-        "EN": "These vertices' bone-deform weights do not sum to 1. Both exporters "
-              "divide by the sum before quantising, so this does not break the export "
-              "-- but it is a hazard while editing: painting on such a vertex makes "
-              "Auto Normalize scale the leftovers up, turning invisible residue into "
-              "visible influences. Fix it with Normalize Deform Weights.",
-        "ZH": "这些顶点的骨骼形变权重总和不为 1。两个导出器都会先除以总和再量化，"
-              "所以导出本身不会坏——但它在编辑期是隐患：在这种顶点上刷一笔，"
-              "Auto Normalize 会把残留按比例放大，幽灵权重就从看不见变成看得见的"
-              "错误影响。用「归一化形变权重」修。"},
-    "core.pre_export_check_ops.cat_weight_unweighted": {
-        "EN": "Vertices with no deform weight", "ZH": "没有形变权重的顶点"},
-    "core.pre_export_check_ops.desc_weight_unweighted": {
-        "EN": "These vertices carry no bone-deform weight at all. Normalizing cannot "
-              "help (0/0), and both exporters write an all-zero weight row for them, "
-              "so in game they stay at the rig origin. They need weights assigned.",
-        "ZH": "这些顶点完全没有骨骼形变权重。归一化救不了（0/0），而两个导出器都会"
-              "为它们写出全零的权重行，进游戏后会留在骨架原点。必须补权重。"},
-    "core.pre_export_check_ops.cat_xform_mirrored": {
-        "EN": "Mirrored Transform (Normals Will Die)", "ZH": "镜像变换（法向会全废）"},
-    "core.pre_export_check_ops.cat_xform_degenerate": {
-        "EN": "Collapsed Transform", "ZH": "变换已塌缩"},
+    # ── Categories (the scrollable left column). At most four: grouping the
+    #    old flat list of thirteen is the point -- see docs/pre_export_check_plan.md
+    "core.pre_export_check_ops.cat_tex": {"EN": "Textures", "ZH": "贴图"},
+    "core.pre_export_check_ops.cat_mat": {"EN": "Materials", "ZH": "材质"},
+    "core.pre_export_check_ops.cat_bone": {"EN": "Bones & Weights", "ZH": "骨骼与权重"},
 
-    # ── Category detail (the right column) ────────────────────────────────
-    "core.pre_export_check_ops.desc_tex_missing": {
-        "EN": "These texture paths are neither vanilla assets nor present under the Mod "
-              "Root. The game cannot load them.",
-        "ZH": "以下贴图路径既不是原版资源，也不在 Mod 根目录下，游戏无法加载。"},
-    "core.pre_export_check_ops.desc_tex_root_wrong": {
-        "EN": "None of the {n} custom texture path(s) could be found under:\n{root}\n"
-              "Either the Mod Root points at the wrong folder, or the textures have not "
-              "been built yet -- every one of them is failing for the same single reason. "
-              "The unique path(s), to help tell the two apart:",
-        "ZH": "全部 {n} 条自定义贴图路径都无法在下面的目录中找到：\n{root}\n"
-              "要么是 Mod 根目录选错了位置，要么是贴图还没做好——它们失败的原因完全相同。"
-              "去重后的路径，方便自行判断是哪一种："},
-    "core.pre_export_check_ops.desc_xform_mirrored": {
-        "EN": "These objects have a mirrored world transform (a negative determinant -- "
-              "an applied mirror, or an odd number of negative scale axes). RE Mesh "
-              "bakes the object transform into the mesh it writes, and that bake does "
-              "not carry the custom split normals across a mirror: a normal is stored "
-              "relative to a basis derived from the surrounding geometry, and mirroring "
-              "flips the basis. Measured on one face mesh with only the matrix's sign "
-              "changing, 76% of corners came out more than 90 degrees off. The winding "
-              "is not reordered, so triangulating first does not help -- that guards a "
-              "different mechanism. Fix it with Safe Apply Base Transform before exporting.",
-        "ZH": "以下物体的世界变换是镜像的（行列式为负——应用过镜像，或负缩放轴个数为奇数）。"
-              "RE Mesh 会把物体变换烘进导出的网格，而这一步无法让自定义拆分法向跳过镜像："
-              "法向存的是在「由周围几何推出的基底」里的编码，镜像会翻转这个基底。"
-              "实测一张脸，只改矩阵行列式的正负，76% 的角点就偏出 90 度以上。"
-              "绕序并没有被重排，所以先三角化没用——那个选项防的是另一套机制。"
-              "导出前用「安全应用基础变换」修掉。"},
-    "core.pre_export_check_ops.desc_xform_degenerate": {
-        "EN": "These objects have a collapsed world transform -- at least one scale axis "
-              "is zero, so the mesh has no volume to export.",
-        "ZH": "以下物体的世界变换已塌缩——至少有一个缩放轴为零，网格没有体积可导。"},
+    # ── Each category's two header lines: what happens, then what to do ────
+    "core.pre_export_check_ops.effect_tex": {
+        "EN": "The game will load forever (stuck on a black screen) or even crash.",
+        "ZH": "进游戏会无限加载（卡黑屏），甚至崩溃。"},
+    "core.pre_export_check_ops.action_tex": {
+        "EN": "Build the missing textures under the Mod Root, or correct the paths.",
+        "ZH": "把缺的贴图生成到 Mod 根目录下，或修正路径。"},
+    "core.pre_export_check_ops.effect_mat": {
+        "EN": "The export fails or the game hangs on loading; even if it loads, the "
+              "model turns black or shows a yellow-white checkerboard.",
+        "ZH": "无法正常导出或游戏卡加载；即使能进游戏，模型也会整个变黑或显示为黄白棋盘格。"},
+    "core.pre_export_check_ops.action_mat": {
+        "EN": "Make the part after __ in each mesh name match an mdf material name.",
+        "ZH": "让网格名 __ 后面的部分与 mdf 材质名一致。"},
+    "core.pre_export_check_ops.effect_bone": {
+        "EN": "The export fails, physics stops working, or the model deforms badly in game.",
+        "ZH": "无法正常导出，或物理失效，或进游戏后模型严重变形。"},
+    "core.pre_export_check_ops.action_by_reason": {
+        "EN": "Handle each line as its reason says.",
+        "ZH": "按每条后面写的原因处理。"},
+
+    # ── Groups inside a category ───────────────────────────────────────────
+    "core.pre_export_check_ops.sub_tex_root_wrong": {
+        "EN": "None Found At All", "ZH": "一张都找不到"},
+    "core.pre_export_check_ops.sub_tex_missing": {"EN": "Not Found", "ZH": "找不到"},
+    "core.pre_export_check_ops.sub_tex_not_pow2": {
+        "EN": "Size Not a Power of Two", "ZH": "边长不是 2 的幂"},
+    "core.pre_export_check_ops.sub_tex_unreadable": {
+        "EN": "Not a Valid .tex", "ZH": "不是有效的 .tex"},
+    "core.pre_export_check_ops.sub_tex_empty": {"EN": "Empty Path", "ZH": "空路径"},
+    "core.pre_export_check_ops.sub_mat_pair": {
+        "EN": "Names Don't Match", "ZH": "名字对不上"},
+    "core.pre_export_check_ops.sub_mesh_unmatched": {
+        "EN": "Material Missing From the mdf", "ZH": "网格要的材质不存在"},
+    "core.pre_export_check_ops.sub_mat_unused": {
+        "EN": "Material No Mesh Uses", "ZH": "mdf 里的材质没人用"},
+    "core.pre_export_check_ops.sub_mat_duplicate": {
+        "EN": "Duplicate Names", "ZH": "重名"},
+    "core.pre_export_check_ops.sub_name_illegal": {
+        "EN": "Illegal Names", "ZH": "命名不合法"},
+    "core.pre_export_check_ops.sub_unweighted": {
+        "EN": "Vertices With No Usable Weight", "ZH": "没有有效权重的顶点"},
+    "core.pre_export_check_ops.sub_xform_mirrored": {
+        "EN": "Mirrored Transform", "ZH": "镜像变换"},
+    "core.pre_export_check_ops.sub_xform_degenerate": {
+        "EN": "Collapsed Transform", "ZH": "变换塌缩"},
+
+    # ── Item lines ─────────────────────────────────────────────────────────
+    "core.pre_export_check_ops.item_root_wrong": {
+        "EN": "No custom texture found under the Mod Root ({n} in total): {root}",
+        "ZH": "Mod 根目录下找不到任何自定义贴图（共 {n} 条）：{root}"},
+    "core.pre_export_check_ops.item_unreadable": {
+        "EN": "{path} — probably a renamed png/dds",
+        "ZH": "{path} — 可能是改了后缀的 png/dds"},
+    "core.pre_export_check_ops.item_pair": {
+        "EN": "Mesh wants \"{mesh}\", the mdf has \"{mdf}\"",
+        "ZH": "网格要「{mesh}」，mdf 里是「{mdf}」"},
+    "core.pre_export_check_ops.item_mesh_unmatched": {
+        "EN": "{obj} — no \"{mat}\" in the mdf", "ZH": "{obj} — mdf 里没有「{mat}」"},
+    "core.pre_export_check_ops.item_mat_unused": {
+        "EN": "\"{mat}\" in the mdf — no mesh uses it",
+        "ZH": "mdf 里的「{mat}」— 没有网格使用"},
+    "core.pre_export_check_ops.item_mat_duplicate": {
+        "EN": "\"{mat}\" appears {n} times in the mdf", "ZH": "mdf 里「{mat}」出现 {n} 次"},
+    "core.pre_export_check_ops.item_unweighted": {
+        "EN": "{obj} — {n} vertex(es)", "ZH": "{obj} — {n} 个顶点"},
+    "core.pre_export_check_ops.item_degenerate": {
+        "EN": "{obj} — a scale axis is 0", "ZH": "{obj} — 有一个缩放轴是 0"},
     "core.pre_export_check_ops.note_no_custom_normals": {
         "EN": "(no authored normals -- only the winding is wrong)",
         "ZH": "（无自定义法向——只有绕序是错的）"},
-    "core.pre_export_check_ops.desc_tex_empty": {
-        "EN": "These texture slots have no path filled in at all.",
-        "ZH": "以下贴图槽位没有填写任何路径。"},
-    "core.pre_export_check_ops.desc_tex_not_pow2": {
-        "EN": "Both sides of a texture must be a power of two (256, 512, 1024, 2048 "
-              "...). These files are not, so the game may load them wrong or not at "
-              "all. Only the mod's own textures are checked -- vanilla ones live in "
-              "the game's paks.",
-        "ZH": "贴图的长和宽都必须是 2 的幂（256、512、1024、2048……）。"
-              "以下文件不满足，游戏可能加载异常或直接加载不出来。"
-              "只检查 mod 自己的贴图——原版贴图在游戏 pak 里。"},
-    "core.pre_export_check_ops.desc_tex_unreadable": {
-        "EN": "These files exist under the Mod Root but have no readable .tex header. "
-              "Most often this is a .png or .dds that was renamed to .tex instead of "
-              "being converted.",
-        "ZH": "以下文件在 Mod 根目录下存在，但读不出 .tex 文件头。"
-              "最常见的原因是把 .png 或 .dds 直接改了后缀，而不是真正做了转换。"},
-    "core.pre_export_check_ops.desc_mesh_unmatched": {
-        "EN": "These meshes derive a material name that no material in the mdf "
-              "collection provides, so they will not export correctly.",
-        "ZH": "以下网格推导出的材质名，在 mdf 集合中找不到对应材质，导出会出问题。"},
-    "core.pre_export_check_ops.desc_mat_unmatched": {
-        "EN": "No mesh asks for these materials. Usually this is a rename that only got "
-              "done on one side.",
-        "ZH": "没有任何网格使用这些材质，通常是改名只改了一侧。"},
-    "core.pre_export_check_ops.desc_mat_duplicate": {
-        "EN": "These material names appear more than once in this mdf collection:",
-        "ZH": "本 mdf 集合中以下材质名重复出现："},
-    "core.pre_export_check_ops.desc_name_illegal": {
-        "EN": "Spaces, dots and a leading underscore all break the export. The fix "
-              "button corrects the mdf material and its meshes together, so a name that "
-              "matched before still matches afterwards.",
-        "ZH": "空格、点号、开头的下划线都会导致导出出错。"
-              "修复按钮会同时修正 mdf 材质和对应网格，原本匹配的名字修完仍然匹配。"},
-    "core.pre_export_check_ops.desc_mesh_multi": {
-        "EN": "These meshes carry more than one material. Only the first is exported, so "
-              "the result may look wrong in game.",
-        "ZH": "以下网格存在多材质，导出只取第一个，实际表现可能会出现异常。"},
+    # One item shared by several parts: "<text> — used by Body, Waist"
+    "core.pre_export_check_ops.item_used_by": {
+        "EN": " — used by {parts}", "ZH": " — {parts}在用"},
+    "core.pre_export_check_ops.part_joiner": {"EN": ", ", "ZH": "、"},
 
     # ── Reason codes from core/pre_export_check.py ────────────────────────
     "core.pre_export_check_ops.reason_space": {
@@ -1911,9 +1871,10 @@ STRINGS = {
     # ── Report dialog ─────────────────────────────────────────────────────
     "core.pre_export_check_ops.report_desc": {
         "EN": "Result of the pre-export check", "ZH": "导出前检查的结果"},
-    "core.pre_export_check_ops.n_issues": {
-        "EN": "Found {n} issue(s) to deal with before exporting",
-        "ZH": "发现 {n} 处需要在导出前处理的问题"},
+    # Counts categories and notes, never vertices (docs/pre_export_check_plan.md §1.3)
+    "core.pre_export_check_ops.sum_errors": {
+        "EN": "{n} categor(ies) to fix before exporting", "ZH": "{n} 类需要在导出前处理"},
+    "core.pre_export_check_ops.sum_infos": {"EN": "{n} note(s)", "ZH": "{n} 条提示"},
     "core.pre_export_check_ops.all_clear": {
         "EN": "No problems found", "ZH": "未发现问题"},
     "core.pre_export_check_ops.btn_fix": {
