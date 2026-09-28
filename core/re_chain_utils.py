@@ -312,6 +312,55 @@ def _decompose_chains(head_pb, armature, physics_bones):
     return paths
 
 
+def _existing_chain_paths(col):
+    """已在 col 里的每条链的骨骼序列，读法与导出器相同：从 Chain Group 起逐级跟
+    RE_CHAIN_NODE 子对象，取各节点 BoneName 约束的 subtarget。子组与 jiggle 不跟。"""
+    paths = set()
+    for grp in col.all_objects:
+        if grp.get("TYPE") != "RE_CHAIN_CHAINGROUP":
+            continue
+        seq = []
+        node = next((c for c in grp.children if c.get("TYPE") == "RE_CHAIN_NODE"), None)
+        while node is not None:
+            con = node.constraints.get("BoneName")
+            seq.append(con.subtarget if con else "")
+            node = next((c for c in node.children if c.get("TYPE") == "RE_CHAIN_NODE"), None)
+        if seq:
+            paths.add(tuple(seq))
+    return paths
+
+
+def _collect_chain_entries(chain_heads, armature, physics_bones, existing=()):
+    """把各链首分解出的路径收成 [(head_pb, paths, path)]，同一条骨骼序列只留一份。
+
+    去重不能省：分叉骨的物理子骨同时被标成 branch_head，而 _decompose_chains 从
+    主链首往下走时本来就会把每条分支拆出来，于是分支会作为链首再被分解一次——
+    每条分支生成两遍，嵌套分叉里的生成三遍。head 排在 branch_head 前面，重复的
+    路径就留主链首那份（GUESS 模式按链首分类，结果因此是确定的）。
+
+    existing 是目标集合里已有链的骨骼序列，重复点生成时不再叠一份。
+    返回 (entries, 跳过的重复条数)。
+    """
+    ordered = sorted(chain_heads, key=lambda pb: pb.get("chain_role") != "head")
+    seen = set(existing)
+    entries = []
+    dup = 0
+    for head_pb in ordered:
+        paths = _decompose_chains(head_pb, armature, physics_bones)
+        for path in paths:
+            if len(path) < 2:
+                print(f"[ChainGen] skip single-bone path: {path[0] if path else '?'} "
+                      f"(RE Chain requires at least head + tail)", file=sys.stderr)
+                continue
+            key = tuple(path)
+            if key in seen:
+                dup += 1
+                continue
+            seen.add(key)
+            entries.append((head_pb, paths, path))
+    return entries, dup
+
+
 def _is_valid_chain_collection(col):
     """与 RE Chain Editor 的 filterChainCollection 逻辑一致"""
     t = col.get("~TYPE", "")
@@ -682,18 +731,12 @@ def auto_create_re_chains(context, armature, config: REChainConfig):
         chain_heads = [pb for pb in armature.pose.bones if pb.get("chain_role") in ("head", "branch_head")]
 
     t_decompose = time.perf_counter()
-    all_entries = []
-    for head_pb in chain_heads:
-        paths = _decompose_chains(head_pb, armature, physics_bones)
-        for path in paths:
-            if len(path) < 2:
-                print(f"[ChainGen] skip single-bone path: {path[0] if path else '?'} "
-                      f"(RE Chain requires at least head + tail)", file=sys.stderr)
-                continue
-            all_entries.append((head_pb, paths, path))
+    all_entries, dup = _collect_chain_entries(
+        chain_heads, armature, physics_bones, _existing_chain_paths(col))
     t_decompose = time.perf_counter() - t_decompose
     print(f"[ChainGen] _decompose_chains: {t_decompose:.4f}s  "
-          f"({len(chain_heads)} heads -> {len(all_entries)} paths)", file=sys.stderr)
+          f"({len(chain_heads)} heads -> {len(all_entries)} paths, "
+          f"{dup} duplicate(s) skipped)", file=sys.stderr)
 
     created = 0
     skipped = 0
