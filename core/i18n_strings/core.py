@@ -1706,6 +1706,11 @@ STRINGS = {
     "core.ref_model_ops.import_failed": {
         "EN": "Import produced no armature", "ZH": "导入后未得到骨架"},
     "core.ref_model_ops.posed": {"EN": "T-posed", "ZH": "已转 T-Pose"},
+    "core.ref_model_ops.mesh_collection": {
+        "EN": "Create Mesh Collection", "ZH": "创建 Mesh 集合"},
+    "core.ref_model_ops.mesh_collection_skipped": {
+        "EN": "RE Mesh Editor not found, so no mesh collection was created",
+        "ZH": "未找到 RE Mesh Editor，未创建 Mesh 集合"},
     "core.ref_model_ops.done": {
         "EN": "Imported {name}: {facial} facial bone(s) merged, {aux} auxiliary, {pose}",
         "ZH": "已导入 {name}：合并面部骨 {facial} 根，辅助骨 {aux} 根，{pose}"},
