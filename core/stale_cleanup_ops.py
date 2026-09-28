@@ -30,6 +30,11 @@ class MODDER_OT_CleanStaleFiles(bpy.types.Operator):
         return T("core.stale_cleanup_ops.desc")
 
     def invoke(self, context, event):
+        _lines, problem = stale_cleanup.manifest_status()
+        if problem and problem[0] == "stale":
+            self.report({'ERROR'}, T("core.stale_cleanup_ops.stale_manifest").format(
+                listed=problem[1] or "?", installed=problem[2] or "?"))
+            return {'CANCELLED'}
         self._manifest = stale_cleanup.read_manifest()
         if self._manifest is None:
             self.report({'ERROR'}, T("core.stale_cleanup_ops.no_manifest"))

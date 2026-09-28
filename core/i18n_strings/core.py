@@ -1997,3 +1997,9 @@ STRINGS = {
               "the Modding Toolkit panel",
         "ZH": "请先阅读并确认跨游戏移植使用须知（面板中的“移植”一组）"},
 }
+    "core.stale_cleanup_ops.stale_manifest": {
+        "EN": "MANIFEST.txt is for {listed}, but {installed} is installed -- the built-in "
+              "updater does not refresh it. Reinstall from the release zip first; with an "
+              "old list, files this version needs would be deleted",
+        "ZH": "MANIFEST.txt 属于 {listed}，但当前安装的是 {installed} —— 内置更新器不会更新清单。"
+              "请先用发布版 zip 重装；按旧清单比对会把本版本需要的文件当成残留删掉"},
