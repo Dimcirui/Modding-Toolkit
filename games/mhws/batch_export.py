@@ -147,6 +147,58 @@ def bound_pairs(scene, armor_id, variant):
     return out
 
 
+def bound_physics(scene, armor_id, variant, armor_set=None):
+    """``[PhysPart]`` for every active part with a chain2 or clsp bound -- what
+    the physics check and the constraint-target auto-fix run over.  A slot the
+    armor set does not export for that part counts as unbound."""
+    from ...core.pre_export_physics import PhysPart
+    mask = armor_set.get("parts_mask", 0b11111) if armor_set else 0b11111
+    out = []
+    for part_id, part_name in MHWS_PARTS:
+        if not (mask & (1 << (int(part_id) - 1))):
+            continue
+        fts = _resolve_part_file_types(armor_set, part_id) if armor_set else DEFAULT_FILE_TYPES
+
+        def col(ft):
+            if ft not in fts:
+                return None
+            return bpy.data.collections.get(get_binding(scene, armor_id, variant, part_id, ft) or "")
+
+        chain, clsp = col("chain2"), col("clsp")
+        if chain is None and clsp is None:
+            continue
+        mesh = bpy.data.collections.get(get_binding(scene, armor_id, variant, part_id, "mesh") or "")
+        out.append(PhysPart(T(_PART_LABEL_KEYS.get(part_id, part_name)), part_id,
+                            chain, clsp, mesh, "clsp" in fts))
+    return out
+
+
+_base_bones = []
+
+
+def base_bone_names():
+    """Bone names of the vanilla player skeleton (the bundled reference
+    fbxskel): the game always has these, so a collider on one of them resolves
+    even when the part being exported does not carry the bone."""
+    if not _base_bones:
+        from .fbxskel import _parse_fbxskel
+        try:
+            with open(_REFERENCE_FBXSKEL, "rb") as fh:
+                _base_bones.extend(b["name"] for b in _parse_fbxskel(fh.read()))
+        except (OSError, RuntimeError):
+            _base_bones.append("")      # read once; an empty name matches nothing
+    return frozenset(n for n in _base_bones if n)
+
+
+def physics_context(scene, armor_id, variant, armor_set=None):
+    """What the pre-export check needs to judge this armor's physics."""
+    def bind_clsp(part_id, collection_name):
+        set_binding(bpy.context.scene, armor_id, variant, part_id, "clsp", collection_name)
+    return {'parts': bound_physics(scene, armor_id, variant, armor_set),
+            'runtime_bones': base_bone_names(),
+            'bind_clsp': bind_clsp}
+
+
 def _get_blank_path(filetype):
     """Return the path to the built-in blank file for the given filetype."""
     addon_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -490,7 +542,8 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
         # off again even if it raises.
         pairs = bound_pairs(scene, armor_id, variant)
         ids = export_autofix.enabled_items(context, 'MHWS')
-        done = export_autofix.apply(context, 'MHWS', pairs, ids)
+        done = export_autofix.apply(context, 'MHWS', pairs, ids,
+                                    bound_physics(scene, armor_id, variant, armor_set))
         with export_autofix.temporary(context, 'MHWS', pairs, ids) as tmp:
             result = self._export(context, scene, settings, natives_root, armor_id, armor_set,
                                   variant, variant_armor_id, base_path, parts_mask)

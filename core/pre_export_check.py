@@ -638,6 +638,82 @@ def duplicate_material_names(material_names):
     return dupes
 
 
+# ── Physics chains ───────────────────────────────────────────────────────────
+
+def driven_bones(terminal, count, parent_of):
+    """The bones a chain group drives in game, head first.
+
+    A .chain / .chain2 group stores only its last node's bone and its node
+    count; the engine takes that bone and walks up its parents (upstream's
+    importer rebuilds a chain exactly this way, ``getBoneParentsRecursive``).
+    The nodes' own bone constraints are never written.  *parent_of* maps a bone
+    name to its parent's name (None at a root).  Returns None when the walk
+    runs out of ancestors first.
+    """
+    out = [terminal]
+    while len(out) < count:
+        parent = parent_of.get(out[-1])
+        if parent is None:
+            return None
+        out.append(parent)
+    return out[::-1]
+
+
+def unique_casefold_match(name, names):
+    """The one name in *names* equal to *name* ignoring case, or None.  Bone
+    references are hashed case-sensitively, so ``Hair_L_02`` misses a bone
+    called ``hair_l_02`` -- but two candidates would be a guess."""
+    want = name.casefold()
+    hits = [n for n in names if n.casefold() == want and n != name]
+    return hits[0] if len(hits) == 1 else None
+
+
+def _contiguous_in(inner, outer):
+    n = len(inner)
+    return any(outer[i:i + n] == inner for i in range(len(outer) - n + 1))
+
+
+def chain_overlaps(chains):
+    """How the chains of one collection share bones.
+
+    *chains* is ``[(name, bone sequence)]``.  Each sequence is compared without
+    its last bone: a chain's tail may be the next chain's head, and that is how
+    one chain continues another, not an overlap.  Returns
+    ``(duplicates, contained, crossing)``:
+
+    - ``duplicates``: ``[(kept, [dropped, ...])]`` -- the same bones; the first
+      by name is the one kept
+    - ``contained``: ``[(inner, outer)]`` -- inner's bones run, in order, inside
+      outer's, so inner only drives bones outer already drives
+    - ``crossing``: ``[(a, b, n_shared)]`` -- share bones, neither inside the other
+    """
+    bodies = sorted(((name, tuple(seq[:-1])) for name, seq in chains if len(seq) > 1),
+                    key=lambda c: c[0])
+    by_body = {}
+    for name, body in bodies:
+        by_body.setdefault(body, []).append(name)
+    duplicates = [(names[0], names[1:]) for names in by_body.values() if len(names) > 1]
+    live = [(names[0], body) for body, names in by_body.items()]
+    live.sort(key=lambda c: c[0])
+
+    contained, crossing = [], []
+    inner_names = set()
+    for name, body in live:
+        outer = next((o for o, ob in live if o != name and len(ob) > len(body)
+                      and _contiguous_in(body, ob)), None)
+        if outer is not None:
+            contained.append((name, outer))
+            inner_names.add(name)
+    # A contained chain is about to be removed, so what it crosses is noise.
+    rest = [(n, b) for n, b in live if n not in inner_names]
+    for i, (a, ab) in enumerate(rest):
+        for b, bb in rest[i + 1:]:
+            shared = len(set(ab) & set(bb))
+            if shared:
+                crossing.append((a, b, shared))
+    return duplicates, contained, crossing
+
+
 def resolve_disk_path(natives_root, mdf_path, tex_version):
     """Where a binding's ``.tex`` should sit under the user's mod root.
 

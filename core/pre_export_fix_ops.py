@@ -614,11 +614,195 @@ class MODDER_OT_PecQuickGenerate(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# ── Physics ──────────────────────────────────────────────────────────────────
+
+def _physics():
+    return (pec._physics_from_last_run() or {}).get('parts') or []
+
+
+def _run_armatures():
+    return pec.export_armatures(_pairs(), pec._autofix_pairs_from_last_run(),
+                                pec._physics_from_last_run())
+
+
+def _keep_world_reparent(obj, parent):
+    """Hang *obj* under *parent* without moving it: the parent inverse absorbs
+    the difference, so the object's own transform (and the constraints on top
+    of it) stay as they were."""
+    from mathutils import Matrix
+    before = (obj.parent.matrix_world @ obj.matrix_parent_inverse
+              if obj.parent is not None else Matrix.Identity(4))
+    obj.parent = parent
+    obj.parent_type = 'OBJECT'
+    obj.matrix_parent_inverse = parent.matrix_world.inverted() @ before
+
+
+class MODDER_OT_PecPhysReparent(bpy.types.Operator):
+    """「挂到首个合法父级」 (docs §5.4): a group under the collection's first
+    Settings, a Settings, Wind, collider or link under the Header.  A node has
+    no sure answer -- which group it belongs to -- and is left to the user."""
+    bl_idname = "modder.pec_phys_reparent"
+    bl_label = "Move Under the First Valid Parent"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T(_K + "phys_reparent_desc")
+
+    def execute(self, context):
+        from . import pre_export_physics as pphys
+        _object_mode(context)
+        context.view_layer.update()
+        n = 0
+        for p in _physics():
+            if p.chain is None:
+                continue
+            objs = list(p.chain.all_objects)
+            for obj, code in pphys.structure_problems(p.chain, 'chain2'):
+                target = pphys.reparent_target(obj, objs) if code == 'parent' else None
+                if target is not None and target is not obj:
+                    _keep_world_reparent(obj, target)
+                    n += 1
+        return _finish(self, context, "phys_reparent_done", n)
+
+
+class MODDER_OT_PecPhysRetarget(bpy.types.Operator):
+    """「改指向同名骨骼」: a node or collider pointing at a bone that exists
+    only under different capitals is pointed at that bone.  The name is hashed
+    case-sensitively, so the old reference found nothing in game."""
+    bl_idname = "modder.pec_phys_retarget"
+    bl_label = "Retarget to Matching Bone"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T(_K + "phys_retarget_desc")
+
+    def execute(self, context):
+        from . import pre_export_physics as pphys
+        extra = (pec._LAST_RUN.get('physics') or {}).get('runtime_bones', ())
+        n = 0
+        for _obj, con, ref, names in pphys.missing_refs(_physics(), _run_armatures(), extra):
+            hit = pc.unique_casefold_match(ref, names)
+            if hit:
+                con.subtarget = hit
+                n += 1
+        return _finish(self, context, "phys_retarget_done", n)
+
+
+class MODDER_OT_PecPhysDedupe(bpy.types.Operator):
+    """「清除重复链」: of chains driving the same bones the first by name stays;
+    a chain lying inside another goes."""
+    bl_idname = "modder.pec_phys_dedupe"
+    bl_label = "Remove Duplicate Chains"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T(_K + "phys_dedupe_desc")
+
+    def execute(self, context):
+        from . import pre_export_physics as pphys
+        _object_mode(context)
+        n = 0
+        # Removing one layer can leave another chain contained; a few passes
+        # settle any real scene.
+        for _ in range(4):
+            names = pphys.overlap_plan(_physics())
+            if not names:
+                break
+            n += pphys.delete_groups(names)
+        return _finish(self, context, "phys_removed", n)
+
+
+class MODDER_OT_PecPhysRemoveSingle(bpy.types.Operator):
+    """「清除无用链」: groups with a single node, which simulate nothing."""
+    bl_idname = "modder.pec_phys_remove_single"
+    bl_label = "Remove Useless Chains"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T(_K + "phys_single_desc")
+
+    def execute(self, context):
+        from . import pre_export_physics as pphys
+        _object_mode(context)
+        n = pphys.delete_groups(pphys.single_node_groups(_physics()))
+        return _finish(self, context, "phys_removed", n)
+
+
+class MODDER_OT_PecPhysSelectCrossing(bpy.types.Operator):
+    """「选中这些链」: crossing chains are not fixed automatically -- which one
+    should own the shared bones is the user's call."""
+    bl_idname = "modder.pec_phys_select_crossing"
+    bl_label = "Select These Chains"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T(_K + "phys_select_desc")
+
+    def execute(self, context):
+        from . import pre_export_physics as pphys
+        _object_mode(context)
+        objs = [bpy.data.objects[n] for n in pphys.crossing_groups(_physics())
+                if n in bpy.data.objects]
+        for o in context.view_layer.objects:
+            o.select_set(False)
+        picked = []
+        for o in objs:
+            try:
+                o.select_set(True)
+                picked.append(o)
+            except RuntimeError:
+                pass        # hidden or excluded: not selectable
+        if picked:
+            context.view_layer.objects.active = picked[0]
+        self.report({'INFO'}, T(_K + "phys_select_done").format(n=len(picked)))
+        return {'FINISHED'}
+
+
+class MODDER_OT_PecPhysBindClsp(bpy.types.Operator):
+    """「绑定 clsp」: bind the part's clsp slot to its chain2 collection.
+    Upstream's clsp export only collects the colliders in whatever collection
+    it is given (``blender_re_clsp.py:630-642``) and needs no header, so the
+    chain2 collection works as it is."""
+    bl_idname = "modder.pec_phys_bind_clsp"
+    bl_label = "Bind clsp"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return T(_K + "phys_bind_desc")
+
+    def execute(self, context):
+        from . import pre_export_physics as pphys
+        named = pec._LAST_RUN.get('physics') or {}
+        bind = named.get('bind_clsp')
+        if not callable(bind):
+            self.report({'ERROR'}, T(_K + "phys_bind_unavailable"))
+            return {'CANCELLED'}
+        bound = {}
+        for p in _physics():
+            if p.chain is not None and p.clsp is None and p.clsp_slot and pphys.colliders_in(p.chain):
+                bind(p.part_id, p.chain.name)
+                bound[p.part_id] = p.chain.name
+        # The re-run reads the parts from _LAST_RUN; bring the stored names up
+        # to date, since the dialog that owns the bindings is not redrawn yet.
+        named['parts'] = [(l, pid, c, bound.get(pid, s), m, slot)
+                          for l, pid, c, s, m, slot in named.get('parts', [])]
+        return _finish(self, context, "phys_bind_done", len(bound))
+
+
 classes = [MODDER_OT_PecAlignNames, MODDER_OT_PecSeparateRecheck,
            MODDER_OT_PecFixUnusedByBlender, MODDER_OT_PecDeleteUnused,
            MODDER_OT_PecUpdateOutdated, PEC_QuickGenRow, MODDER_OT_PecQuickGenerate,
            MODDER_OT_PecAsciiBones, MODDER_OT_PecSelectUnweighted,
-           MODDER_OT_PecFixTextures]
+           MODDER_OT_PecFixTextures,
+           MODDER_OT_PecPhysReparent, MODDER_OT_PecPhysRetarget, MODDER_OT_PecPhysDedupe,
+           MODDER_OT_PecPhysRemoveSingle, MODDER_OT_PecPhysSelectCrossing,
+           MODDER_OT_PecPhysBindClsp]
 
 
 def register():

@@ -1723,9 +1723,10 @@ STRINGS = {
     "core.export_autofix.toggle_tip": {
         "EN": "Before export, fix the problems that need no decision: face triangulation, "
               "weight cleanup, mirrored transforms, texture path spelling, empty texture "
-              "paths, missing vertex colours, non-English material names. The gear chooses which",
+              "paths, missing vertex colours, non-English material names, physics constraint "
+              "targets. The gear chooses which",
         "ZH": "导出前自动修掉不需要判断的问题：面部三角化、权重清理、镜像变换、贴图路径写法、"
-              "空贴图路径、顶点色补齐、材质名转英文。齿轮里可以选修哪些"},
+              "空贴图路径、顶点色补齐、材质名转英文、物理约束目标补齐。齿轮里可以选修哪些"},
     "core.export_autofix.item_triangulate": {"EN": "Triangulate Face", "ZH": "面部三角化"},
     "core.export_autofix.tip_triangulate": {
         "EN": "Temporarily triangulate meshes weighted to the head bone; removed after export",
@@ -1759,6 +1760,13 @@ STRINGS = {
               "on the mdf material, its meshes and the Blender material together",
         "ZH": "把含 A-Z、0-9、_ 以外字符的材质名改成英文（中文转拼音、假名转罗马音），"
               "mdf 材质、对应网格与 Blender 材质三处一起改"},
+    "core.export_autofix.item_phys_target": {
+        "EN": "Physics Constraint Targets", "ZH": "物理约束目标补齐"},
+    "core.export_autofix.tip_phys_target": {
+        "EN": "Give chain and clsp bone constraints that name a bone but no armature the "
+              "armature that has that bone; RE Chain Editor refuses to export them otherwise",
+        "ZH": "给写了骨骼、却没设目标骨架的 chain / clsp 骨骼约束补上含这根骨的骨架；"
+              "否则 RE Chain Editor 拒绝导出"},
     "core.export_autofix.item_legacy": {"EN": "Compat: Legacy Cleanup", "ZH": "兼容：旧版清理"},
     "core.export_autofix.tip_legacy": {
         "EN": "Make Weight Cleanup run RE Mesh Editor's own four cleanup operators instead, "
@@ -1771,6 +1779,89 @@ STRINGS = {
     "core.export_autofix.n_paths": {"EN": "{n} path(s)", "ZH": "{n} 条路径"},
     "core.export_autofix.n_slots": {"EN": "{n} slot(s)", "ZH": "{n} 个槽位"},
     "core.export_autofix.n_names": {"EN": "{n} name(s)", "ZH": "{n} 处名字"},
+    "core.export_autofix.n_constraints": {"EN": "{n} constraint(s)", "ZH": "{n} 个约束"},
+
+    # ══════════════════════════════════════════════════════════════════════
+    # core/pre_export_physics.py -- the report's physics lines
+    # ══════════════════════════════════════════════════════════════════════
+    "core.pre_export_physics.st_no_header": {"EN": "no Header", "ZH": "没有 Header"},
+    "core.pre_export_physics.st_many_headers": {
+        "EN": "{n} Headers; only one is allowed", "ZH": "有 {n} 个 Header，只能有一个"},
+    "core.pre_export_physics.st_header_parented": {
+        "EN": "the Header cannot have a parent", "ZH": "Header 不能挂在别的对象下"},
+    "core.pre_export_physics.st_node_no_frame": {"EN": "node has no Frame", "ZH": "节点没有 Frame"},
+    "core.pre_export_physics.st_node_many_frames": {
+        "EN": "node has more than one Frame", "ZH": "节点挂了多个 Frame"},
+    "core.pre_export_physics.st_parent": {
+        "EN": "in the wrong place; it belongs under {want}", "ZH": "挂错了层级，应挂在 {want} 下"},
+    "core.pre_export_physics.st_no_constraint": {
+        "EN": "no bone constraint", "ZH": "缺少骨骼约束"},
+    "core.pre_export_physics.st_constraint_no_bone": {
+        "EN": "its bone constraint names no bone", "ZH": "骨骼约束没填骨骼"},
+    "core.pre_export_physics.st_constraint_no_target": {
+        "EN": "its bone constraint has no armature", "ZH": "骨骼约束没有目标骨架"},
+    "core.pre_export_physics.st_group_empty": {"EN": "group has no node", "ZH": "Group 里没有节点"},
+    "core.pre_export_physics.st_capsule_single": {
+        "EN": "shape is Capsule but it has only one end", "ZH": "形状设成胶囊，但只有一端"},
+    "core.pre_export_physics.st_capsule_no_start": {
+        "EN": "capsule has no start point", "ZH": "胶囊缺起点"},
+    "core.pre_export_physics.st_capsule_no_end": {
+        "EN": "capsule has no end point", "ZH": "胶囊缺终点"},
+    "core.pre_export_physics.st_capsule_many_start": {
+        "EN": "capsule has more than one start point", "ZH": "胶囊有多个起点"},
+    "core.pre_export_physics.st_capsule_many_end": {
+        "EN": "capsule has more than one end point", "ZH": "胶囊有多个终点"},
+    "core.pre_export_physics.st_link_not_group": {
+        "EN": "an end of the link is not a Group", "ZH": "Link 的端点不是 Group"},
+    "core.pre_export_physics.want_group": {"EN": "a Group or a node", "ZH": "Group 或节点"},
+    "core.pre_export_physics.want_settings": {"EN": "a Settings", "ZH": "Settings"},
+    "core.pre_export_physics.want_header": {"EN": "the Header", "ZH": "Header"},
+    "core.pre_export_physics.want_header_or_wind": {
+        "EN": "the Header or a Wind", "ZH": "Header 或 Wind"},
+    "core.pre_export_physics.item_many_chains": {
+        "EN": "{ftype} · {n} chains point at bones that are not on the armature: {names}, ... "
+              "(is the right mesh bound?)",
+        "ZH": "{ftype} · 共 {n} 条链的骨骼不在骨架里：{names} 等（是不是绑错了 mesh？）"},
+    "core.pre_export_physics.item_many_colliders": {
+        "EN": "{ftype} · {n} colliders point at bones that do not exist: {names}, ...",
+        "ZH": "{ftype} · 共 {n} 个碰撞体的骨骼找不到：{names} 等"},
+    "core.pre_export_physics.item_single_node": {
+        "EN": "Group \"{grp}\" — only 1 node", "ZH": "Group「{grp}」— 只有 1 个节点"},
+    "core.pre_export_physics.item_terminal_missing": {
+        "EN": "Group \"{grp}\" — its last bone {bones} is not on the armature; the whole chain does nothing",
+        "ZH": "Group「{grp}」— 末端骨骼 {bones} 不在骨架里，整条链不生效"},
+    "core.pre_export_physics.item_terminal_empty": {
+        "EN": "Group \"{grp}\" — its last node names no bone; the whole chain does nothing",
+        "ZH": "Group「{grp}」— 末端节点没有指定骨骼，整条链不生效"},
+    "core.pre_export_physics.item_node_missing": {
+        "EN": "Group \"{grp}\" — not on the armature: {bones}",
+        "ZH": "Group「{grp}」— 骨架里没有 {bones}"},
+    "core.pre_export_physics.item_path": {
+        "EN": "Group \"{grp}\" — the nodes don't follow the bone hierarchy; in game it drives "
+              "{first} … {last} ({n} bones)",
+        "ZH": "Group「{grp}」— 节点与骨骼层级对不上，游戏里实际驱动 {first} … {last}（共 {n} 根）"},
+    "core.pre_export_physics.item_path_short": {
+        "EN": "Group \"{grp}\" — {n} nodes, more than there are bones above its last one",
+        "ZH": "Group「{grp}」— {n} 个节点，比末端骨骼往上的骨骼还多"},
+    "core.pre_export_physics.item_no_weight": {
+        "EN": "Group \"{grp}\" — none of its bones carries mesh weights; physics moves nothing",
+        "ZH": "Group「{grp}」— 这些骨骼都没带网格权重，物理带不动模型"},
+    "core.pre_export_physics.item_duplicate": {
+        "EN": "\"{b}\" drives the same bones as \"{a}\"", "ZH": "「{b}」与「{a}」是同一段骨骼"},
+    "core.pre_export_physics.item_contained": {
+        "EN": "\"{a}\" lies inside \"{b}\"; those bones are driven twice",
+        "ZH": "「{a}」在「{b}」里面，同一段骨骼被驱动两次"},
+    "core.pre_export_physics.item_crossing": {
+        "EN": "\"{a}\" and \"{b}\" share {n} bone(s)", "ZH": "「{a}」与「{b}」共用 {n} 根骨骼"},
+    "core.pre_export_physics.item_collider_bone": {
+        "EN": "collider \"{obj}\" → \"{bone}\" — no such bone",
+        "ZH": "碰撞体「{obj}」→「{bone}」— 找不到这根骨骼"},
+    "core.pre_export_physics.item_link_dangling": {
+        "EN": "Link \"{link}\" — its end \"{grp}\" is not a group of this chain2; the link is ignored",
+        "ZH": "Link「{link}」— 端点「{grp}」不在这个 chain2 里，连接会被忽略"},
+    "core.pre_export_physics.item_clsp_unbound": {
+        "EN": "chain2 has {n} collider(s) but no clsp is bound; by default they have no effect",
+        "ZH": "chain2 里有 {n} 个碰撞体，但没绑定 clsp，默认不生效"},
 
     # ══════════════════════════════════════════════════════════════════════
     # core/pre_export_fix_ops.py -- the pre-export report's fix buttons
@@ -1856,6 +1947,42 @@ STRINGS = {
         "ZH": "{n} 个材质生成失败，详见系统控制台"},
     "core.pre_export_fix_ops.quick_done": {
         "EN": "Generated {n} material(s)", "ZH": "已生成 {n} 个材质"},
+    "core.pre_export_fix_ops.phys_reparent_desc": {
+        "EN": "Move chain objects hung in the wrong place under their first valid parent, "
+              "keeping where they are: a group under the first Settings; Settings, Wind, "
+              "colliders and links under the Header",
+        "ZH": "把挂错层级的 chain 对象挂到首个合法父级下，位置不变：Group 挂到第一个 Settings 下；"
+              "Settings、Wind、碰撞体与 Link 挂到 Header 下"},
+    "core.pre_export_fix_ops.phys_reparent_done": {
+        "EN": "Moved {n} object(s)", "ZH": "已移动 {n} 个对象"},
+    "core.pre_export_fix_ops.phys_retarget_desc": {
+        "EN": "Point nodes and colliders at the bone whose name differs only in capitals",
+        "ZH": "把节点与碰撞体改指向只差大小写的那根骨骼"},
+    "core.pre_export_fix_ops.phys_retarget_done": {
+        "EN": "Retargeted {n} reference(s)", "ZH": "已改指向 {n} 处"},
+    "core.pre_export_fix_ops.phys_dedupe_desc": {
+        "EN": "Delete chains that drive the same bones as another (the first by name stays) "
+              "and chains that lie inside another",
+        "ZH": "删掉与另一条驱动同一段骨骼的链（保留名字最前的一条），以及被另一条包含的链"},
+    "core.pre_export_fix_ops.phys_single_desc": {
+        "EN": "Delete chain groups with a single node, which simulate nothing",
+        "ZH": "删掉只有 1 个节点的 Group，它们什么也不模拟"},
+    "core.pre_export_fix_ops.phys_removed": {
+        "EN": "Removed {n} chain(s)", "ZH": "已删除 {n} 条链"},
+    "core.pre_export_fix_ops.phys_select_desc": {
+        "EN": "Select the chain groups that share bones, to decide which one keeps them",
+        "ZH": "选中共用骨骼的 Group，由你决定骨骼归哪条链"},
+    "core.pre_export_fix_ops.phys_select_done": {
+        "EN": "Selected {n} chain(s)", "ZH": "已选中 {n} 条链"},
+    "core.pre_export_fix_ops.phys_bind_desc": {
+        "EN": "Bind each part's clsp slot to its chain2 collection, so the colliders in it "
+              "are exported as the clsp",
+        "ZH": "把各部位的 clsp 槽位绑定到它的 chain2 集合，让里面的碰撞体作为 clsp 导出"},
+    "core.pre_export_fix_ops.phys_bind_done": {
+        "EN": "Bound clsp on {n} part(s)", "ZH": "已为 {n} 个部位绑定 clsp"},
+    "core.pre_export_fix_ops.phys_bind_unavailable": {
+        "EN": "Binding clsp works from the batch export dialog",
+        "ZH": "请从批量导出对话框里使用「绑定 clsp」"},
 
     # ══════════════════════════════════════════════════════════════════════
     # core/pre_export_check_ops.py
@@ -1917,6 +2044,7 @@ STRINGS = {
     "core.pre_export_check_ops.cat_tex": {"EN": "Textures", "ZH": "贴图"},
     "core.pre_export_check_ops.cat_mat": {"EN": "Materials", "ZH": "材质"},
     "core.pre_export_check_ops.cat_bone": {"EN": "Bones & Weights", "ZH": "骨骼与权重"},
+    "core.pre_export_check_ops.cat_phys": {"EN": "Physics", "ZH": "物理"},
     "core.pre_export_check_ops.cat_autofix": {"EN": "Auto-fixable", "ZH": "可自动修复"},
 
     # ── Each category's two header lines: what happens, then what to do ────
@@ -1936,6 +2064,10 @@ STRINGS = {
     "core.pre_export_check_ops.effect_bone": {
         "EN": "The export fails, physics stops working, or the model deforms badly in game.",
         "ZH": "无法正常导出，或物理失效，或进游戏后模型严重变形。"},
+    "core.pre_export_check_ops.effect_phys": {
+        "EN": "Physics does nothing (hair and skirts hang still or clip), or the physics file "
+              "does not export.",
+        "ZH": "物理不生效（头发、裙摆不动或穿模），或者物理文件导不出来。"},
     "core.pre_export_check_ops.effect_autofix": {
         "EN": "Export would fix these on its own, but the matching options are off.",
         "ZH": "这些问题导出时本可以自动处理，但对应的选项关着。"},
@@ -1957,6 +2089,26 @@ STRINGS = {
         "ZH": "按每条后面写的原因处理。"},
 
     # ── Groups inside a category ───────────────────────────────────────────
+    "core.pre_export_check_ops.sub_phys_structure": {"EN": "Structure Errors", "ZH": "结构错误"},
+    "core.pre_export_check_ops.sub_phys_parent": {"EN": "In the Wrong Place", "ZH": "层级挂错"},
+    "core.pre_export_check_ops.sub_phys_bone_retarget": {
+        "EN": "Bone Name Differs Only in Case", "ZH": "骨骼名只差大小写"},
+    "core.pre_export_check_ops.sub_phys_bone_missing": {
+        "EN": "Node Bone Not Found", "ZH": "节点指向的骨骼不存在"},
+    "core.pre_export_check_ops.sub_phys_bone_path": {
+        "EN": "Nodes Don't Follow the Bones", "ZH": "节点与骨骼层级对不上"},
+    "core.pre_export_check_ops.sub_phys_collider_bone": {
+        "EN": "Collider Bone Not Found", "ZH": "碰撞体指向的骨骼不存在"},
+    "core.pre_export_check_ops.sub_phys_no_weight": {
+        "EN": "Chain Moves No Mesh", "ZH": "整条链都没有权重"},
+    "core.pre_export_check_ops.sub_phys_duplicate": {"EN": "Duplicate Chains", "ZH": "重复链"},
+    "core.pre_export_check_ops.sub_phys_crossing": {"EN": "Crossing Chains", "ZH": "交叉链"},
+    "core.pre_export_check_ops.sub_phys_clsp_unbound": {
+        "EN": "Colliders but No clsp", "ZH": "碰撞体在 chain2 里，clsp 没绑定"},
+    "core.pre_export_check_ops.sub_phys_link_dangling": {
+        "EN": "Link to Nowhere", "ZH": "chainlink 端点悬空"},
+    "core.pre_export_check_ops.sub_phys_single_node": {
+        "EN": "Single-node Chains", "ZH": "单节点链"},
     "core.pre_export_check_ops.sub_tex_root_wrong": {
         "EN": "None Found At All", "ZH": "一张都找不到"},
     "core.pre_export_check_ops.sub_tex_missing": {"EN": "Not Found", "ZH": "找不到"},
@@ -2057,6 +2209,17 @@ STRINGS = {
         "EN": "Compared with the vanilla layout snapshot {snap}; after a game update it may be the snapshot that is old",
         "ZH": "对照的是 {snap} 的原版快照；游戏更新后也可能是快照过时了"},
     "core.pre_export_check_ops.btn_fix_textures": {"EN": "Fix Textures", "ZH": "修复贴图"},
+    "core.pre_export_check_ops.btn_phys_reparent": {
+        "EN": "Move Under the First Valid Parent", "ZH": "挂到首个合法父级"},
+    "core.pre_export_check_ops.btn_phys_retarget": {
+        "EN": "Retarget to Matching Bone", "ZH": "改指向同名骨骼"},
+    "core.pre_export_check_ops.btn_phys_dedupe": {
+        "EN": "Remove Duplicate Chains", "ZH": "清除重复链"},
+    "core.pre_export_check_ops.btn_phys_select_crossing": {
+        "EN": "Select These Chains", "ZH": "选中这些链"},
+    "core.pre_export_check_ops.btn_phys_bind_clsp": {"EN": "Bind clsp", "ZH": "绑定 clsp"},
+    "core.pre_export_check_ops.btn_phys_remove_single": {
+        "EN": "Remove Useless Chains", "ZH": "清除无用链"},
     "core.pre_export_check_ops.btn_ascii_bones": {
         "EN": "Rename to English and Sync References", "ZH": "转成英文名并同步引用"},
     "core.pre_export_check_ops.btn_select_unweighted": {

@@ -3,7 +3,7 @@ from .batch_export import (
     MHWS_PARTS, DEFAULT_FILE_TYPES,
     _load_scheme, _resolve_part_file_types, _canonical_order_file_types,
     _PART_LABEL_KEYS,
-    get_binding, set_binding, bound_pairs,
+    get_binding, set_binding, bound_pairs, physics_context,
     get_mhws_armor_callback,
 )
 from ...core.i18n import T
@@ -286,7 +286,8 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
             hints['tex_base_hint'] = base[len("natives/STM/Art/"):]
         pec.draw_inline_summary(self, layout, context, 'MHWS', pairs, natives_root,
                                 autofix_pairs=bound_pairs(scene, armor_id, variant),
-                                hints=hints)
+                                hints=hints,
+                                physics=physics_context(scene, armor_id, variant, armor_set))
 
     def _draw_body_reshape(self, layout, settings, scene, armor_id, variant):
         """Bonesystem and the Wilds lua bone system side by side: they are two

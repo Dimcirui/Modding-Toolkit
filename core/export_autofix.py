@@ -45,6 +45,7 @@ ITEMS = (
     ('TEX_EMPTY',   "core.export_autofix.item_tex_empty",   "core.export_autofix.tip_tex_empty",   16, True),
     ('VCOLOR',      "core.export_autofix.item_vcolor",      "core.export_autofix.tip_vcolor",      32, True),
     ('MAT_NAMES',   "core.export_autofix.item_mat_names",   "core.export_autofix.tip_mat_names",   128, True),
+    ('PHYS_TARGET', "core.export_autofix.item_phys_target", "core.export_autofix.tip_phys_target", 256, True),
     ('LEGACY',      "core.export_autofix.item_legacy",      "core.export_autofix.tip_legacy",      64, False),
 )
 LABEL_KEYS = {i: label for i, label, _tip, _bit, _on in ITEMS}
@@ -326,14 +327,26 @@ class Plan:
         self.counts = {}
         self.mirror_fixable = set()     # object names
         self.empty_fixable = set()      # (material object name, slot)
+        self.target_fixable = set()     # chain object names
 
     def pending(self, ids):
         return {i: n for i, n in self.counts.items() if i in ids and n}
 
 
-def plan(context, game, pairs):
+def _armatures(mesh_cols, physics):
+    from .pre_export_physics import collection_armature
+    out = []
+    for col in list(mesh_cols) + [p.mesh for p in physics or []]:
+        arm = collection_armature(col)
+        if arm is not None and arm not in out:
+            out.append(arm)
+    return out
+
+
+def plan(context, game, pairs, physics=None):
     """Read-only: count what every item would do over *pairs*
-    (``(label, mdf_col, mesh_col)``).  Safe to call from ``draw()``."""
+    (``(label, mdf_col, mesh_col)``) and *physics* (``[PhysPart]``).  Safe to
+    call from ``draw()``."""
     p = Plan()
     mdf_cols, mesh_cols = _cols(pairs)
     meshes = _mesh_objects(mesh_cols)
@@ -359,6 +372,10 @@ def plan(context, game, pairs):
     p.counts['TEX_EMPTY'] = len(p.empty_fixable)
     p.counts['MAT_NAMES'] = sum(_count_renames(mdf, mesh) for _l, mdf, mesh in pairs
                                 if mdf is not None)
+    if physics:
+        from .pre_export_physics import target_fixes
+        p.target_fixable = {o.name for o, _c, _a in target_fixes(physics, _armatures(mesh_cols, physics))}
+    p.counts['PHYS_TARGET'] = len(p.target_fixable)
     return p
 
 
@@ -470,8 +487,9 @@ def _legacy_cleanup(context, mesh_cols):
             obj.select_set(False)
 
 
-def apply(context, game, pairs, ids):
-    """Make the persistent fixes in *ids* over *pairs* and push one undo step.
+def apply(context, game, pairs, ids, physics=None):
+    """Make the persistent fixes in *ids* over *pairs* (and *physics*, the
+    ``[PhysPart]`` of a dialog that binds chain2 / clsp) and push one undo step.
 
     Returns ``{id: count}`` of what was actually changed.  Temporary items are
     ignored here -- see ``temporary()``.
@@ -528,6 +546,13 @@ def apply(context, game, pairs, ids):
     if 'MAT_NAMES' in ids:
         done['MAT_NAMES'] = sum(sum(fix_names(mdf, mesh)) for _l, mdf, mesh in pairs
                                 if mdf is not None)
+
+    if 'PHYS_TARGET' in ids and physics:
+        from .pre_export_physics import target_fixes
+        fixes = target_fixes(physics, _armatures(mesh_cols, physics))
+        for _obj, con, arm in fixes:
+            con.target = arm
+        done['PHYS_TARGET'] = len(fixes)
 
     if any(done.values()):
         bpy.ops.ed.undo_push(message="Auto-fix Before Export")

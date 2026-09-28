@@ -54,6 +54,7 @@ from . import pre_export_check as pc
 from . import pre_export_report as pr
 from . import export_autofix
 from . import mdf_layouts
+from . import pre_export_physics as pphys
 from .mdf_material_convert_base import _load_vanilla_art_paths
 from .mdf_port_tex import get_game_tex_config
 from .tex_file import read_tex_size
@@ -81,6 +82,9 @@ _SUB_ORDER = (
     'mat_outdated', 'name_illegal', 'mesh_multi_color', 'mat_snapshot_stale',
     'mesh_structure', 'bone_non_ascii', 'vgroup_no_bone', 'unweighted',
     'xform_mirrored', 'xform_degenerate',
+    'phys_structure', 'phys_parent', 'phys_bone_retarget', 'phys_bone_missing', 'phys_bone_path',
+    'phys_collider_bone', 'phys_no_weight', 'phys_duplicate', 'phys_crossing',
+    'phys_clsp_unbound', 'phys_link_dangling', 'phys_single_node',
 )
 
 #: Category and group codes -> their i18n keys.  Spelled out rather than built
@@ -91,6 +95,7 @@ _CAT_KEYS = {
     'tex':  (_K + "cat_tex",  _K + "effect_tex",  _K + "action_tex"),
     'mat':  (_K + "cat_mat",  _K + "effect_mat",  _K + "action_mat"),
     'bone': (_K + "cat_bone", _K + "effect_bone", _K + "action_by_reason"),
+    'phys': (_K + "cat_phys", _K + "effect_phys", _K + "action_by_reason"),
     'autofix': (_K + "cat_autofix", _K + "effect_autofix", _K + "action_autofix"),
 }
 _SUB_KEYS = {
@@ -116,6 +121,18 @@ _SUB_KEYS = {
     'vgroup_no_bone':   _K + "sub_vgroup_no_bone",
     'xform_mirrored':   _K + "sub_xform_mirrored",
     'xform_degenerate': _K + "sub_xform_degenerate",
+    'phys_structure':   _K + "sub_phys_structure",
+    'phys_parent':      _K + "sub_phys_parent",
+    'phys_bone_retarget': _K + "sub_phys_bone_retarget",
+    'phys_bone_missing': _K + "sub_phys_bone_missing",
+    'phys_bone_path':   _K + "sub_phys_bone_path",
+    'phys_collider_bone': _K + "sub_phys_collider_bone",
+    'phys_no_weight':   _K + "sub_phys_no_weight",
+    'phys_duplicate':   _K + "sub_phys_duplicate",
+    'phys_crossing':    _K + "sub_phys_crossing",
+    'phys_clsp_unbound': _K + "sub_phys_clsp_unbound",
+    'phys_link_dangling': _K + "sub_phys_link_dangling",
+    'phys_single_node': _K + "sub_phys_single_node",
     **{'af_' + i: label for i, label in export_autofix.LABEL_KEYS.items()},
 }
 
@@ -881,7 +898,7 @@ def _skipped_notes(game_code, natives_root, any_without_mesh):
 
 #: Auto-fix items whose problem is a real error when left unfixed; the rest
 #: (triangulation, weight tidying, vertex colour fill) are notes.
-_AUTOFIX_SEVERE = {'MIRROR', 'TEX_EMPTY'}
+_AUTOFIX_SEVERE = {'MIRROR', 'TEX_EMPTY', 'PHYS_TARGET'}
 
 _AUTOFIX_UNITS = {
     'TRIANGULATE': "core.export_autofix.n_meshes",
@@ -891,6 +908,7 @@ _AUTOFIX_UNITS = {
     'TEX_PATHS':   "core.export_autofix.n_paths",
     'TEX_EMPTY':   "core.export_autofix.n_slots",
     'MAT_NAMES':   "core.export_autofix.n_names",
+    'PHYS_TARGET': "core.export_autofix.n_constraints",
 }
 
 
@@ -910,6 +928,9 @@ def _apply_autofix_plan(findings, fx_plan, enabled):
             continue
         if f['sub'] == 'name_illegal' and 'MAT_NAMES' in enabled:
             continue
+        if (f['sub'] == 'phys_structure' and f['key'][2:] == ('constraint_no_target',)
+                and f['key'][1] in fx_plan.target_fixable):
+            continue
         kept.append(f)
 
     on = fx_plan.pending(enabled - {'LEGACY'})
@@ -923,7 +944,21 @@ def _apply_autofix_plan(findings, fx_plan, enabled):
     return kept, sum(on.values())
 
 
-def run_checks_multi(context, game_code, pairs, natives_root, autofix_pairs=None):
+def export_armatures(pairs, autofix_pairs=None, physics=None):
+    """Every armature this export writes against, once: the mesh collections'
+    own, over the check pairs, the auto-fix pairs (mesh-only parts) and the
+    physics parts."""
+    out = []
+    cols = [m for _l, _d, m in list(pairs) + list(autofix_pairs or [])]
+    cols += [p.mesh for p in (physics or {}).get('parts', [])]
+    for col in cols:
+        arm = pphys.collection_armature(col)
+        if arm is not None and arm not in out:
+            out.append(arm)
+    return out
+
+
+def run_checks_multi(context, game_code, pairs, natives_root, autofix_pairs=None, physics=None):
     """``(report, skipped, autofix_n)`` over ``(part label, mdf_col, mesh_col)`` pairs.
 
     A single-pair run passes ``""`` as the label, which keeps the part prefix
@@ -934,6 +969,8 @@ def run_checks_multi(context, game_code, pairs, natives_root, autofix_pairs=None
 
     *autofix_pairs* is what auto-fix itself runs over -- the batch dialogs pass
     every bound part, including mesh-only ones the check pairs leave out.
+    *physics* is ``{'parts': [PhysPart], 'runtime_bones': names, ...}`` from a
+    dialog that binds chain2 / clsp (MHWS), else None.
     """
     findings = []
     bindings = []
@@ -955,6 +992,9 @@ def run_checks_multi(context, game_code, pairs, natives_root, autofix_pairs=None
         findings += _check_weights(meshes, label, arm)
         findings += _check_transforms(meshes, label)
     findings += _check_bone_names(armatures, part_of_arm)
+    if physics:
+        findings += pphys.check(physics.get('parts'), export_armatures(pairs, autofix_pairs, physics),
+                                physics.get('runtime_bones', ()))
 
     cfg = _tex_config(game_code)
     if cfg is not None and natives_root:
@@ -963,7 +1003,8 @@ def run_checks_multi(context, game_code, pairs, natives_root, autofix_pairs=None
     autofix_n = 0
     enabled = export_autofix.enabled_items(context, game_code)
     if enabled is not None:
-        fx_plan = export_autofix.plan(context, game_code, autofix_pairs or pairs)
+        fx_plan = export_autofix.plan(context, game_code, autofix_pairs or pairs,
+                                      (physics or {}).get('parts'))
         findings, autofix_n = _apply_autofix_plan(findings, fx_plan, enabled)
 
     skipped = _skipped_notes(game_code, natives_root,
@@ -991,7 +1032,25 @@ def _cols_from_names(named):
     return out
 
 
-def gather_and_check(context, game_code, pairs, natives_root, autofix_pairs=None, hints=None):
+def _physics_names(physics):
+    """*physics* with its collections replaced by names, for ``_LAST_RUN``."""
+    if not physics:
+        return None
+    n = lambda c: c.name if c is not None else ""
+    return dict(physics, parts=[(p.label, p.part_id, n(p.chain), n(p.clsp), n(p.mesh), p.clsp_slot)
+                                for p in physics.get('parts', [])])
+
+
+def _physics_from_names(named):
+    if not named:
+        return None
+    get = lambda name: bpy.data.collections.get(name) if name else None
+    return dict(named, parts=[pphys.PhysPart(label, pid, get(c), get(s), get(m), slot)
+                              for label, pid, c, s, m, slot in named.get('parts', [])])
+
+
+def gather_and_check(context, game_code, pairs, natives_root, autofix_pairs=None, hints=None,
+                     physics=None):
     """Run the aggregated check over ``pairs`` and remember enough in
     ``_LAST_RUN`` -- a plain module dict, not Scene/ID data -- for a later
     "View Details" click to redo the check and populate the Scene-backed
@@ -1007,13 +1066,14 @@ def gather_and_check(context, game_code, pairs, natives_root, autofix_pairs=None
     is for.
     """
     report, skipped, autofix_n = run_checks_multi(context, game_code, pairs, natives_root,
-                                                  autofix_pairs)
+                                                  autofix_pairs, physics)
     _LAST_RUN.clear()
     _LAST_RUN.update({
         'game': game_code,
         'root': natives_root,
         'pairs': _names(pairs),
         'autofix_pairs': _names(autofix_pairs) if autofix_pairs else None,
+        'physics': _physics_names(physics),
     })
     # Context only the calling dialog knows, for the fix buttons -- e.g. the
     # armor's folder as the last-resort texture path for quick generate.
@@ -1022,7 +1082,7 @@ def gather_and_check(context, game_code, pairs, natives_root, autofix_pairs=None
 
 
 def ensure_checked(op, context, game_code, pairs, natives_root, autofix_pairs=None,
-                   hints=None):
+                   hints=None, physics=None):
     """Run (or reuse) the aggregated check for ``pairs``, caching the result on
     ``op`` -- the calling batch export dialog operator, whose instance already
     lives exactly as long as the popup does -- keyed by a fingerprint of
@@ -1037,12 +1097,14 @@ def ensure_checked(op, context, game_code, pairs, natives_root, autofix_pairs=No
     ``draw_summary_row`` draws the total.
     """
     enabled = export_autofix.enabled_items(context, game_code)
+    named = _physics_names(physics)
     fingerprint = (natives_root, tuple(_names(pairs)),
                    tuple(_names(autofix_pairs)) if autofix_pairs else None,
-                   tuple(sorted(enabled)) if enabled is not None else None)
+                   tuple(sorted(enabled)) if enabled is not None else None,
+                   tuple(named['parts']) if named else None)
     if getattr(op, '_pec_fingerprint', None) != fingerprint:
         report, skipped, autofix_n = gather_and_check(context, game_code, pairs, natives_root,
-                                                      autofix_pairs, hints)
+                                                      autofix_pairs, hints, physics)
         op._pec_fingerprint = fingerprint
         op._pec_report = report
         op._pec_summary = pr.summary(report)
@@ -1080,10 +1142,10 @@ def draw_summary_row(op, layout):
 
 
 def draw_inline_summary(op, layout, context, game_code, pairs, natives_root,
-                        autofix_pairs=None, hints=None):
+                        autofix_pairs=None, hints=None, physics=None):
     """``ensure_checked`` + ``draw_summary_row``, for dialogs (MHWS, MHRS) that
     have no per-part list of their own to annotate before the summary line."""
-    ensure_checked(op, context, game_code, pairs, natives_root, autofix_pairs, hints)
+    ensure_checked(op, context, game_code, pairs, natives_root, autofix_pairs, hints, physics)
     draw_summary_row(op, layout)
 
 
@@ -1096,10 +1158,14 @@ def _autofix_pairs_from_last_run():
     return _cols_from_names(named) if named else None
 
 
+def _physics_from_last_run():
+    return _physics_from_names(_LAST_RUN.get('physics'))
+
+
 def _rerun_and_store(context):
     report, skipped, autofix_n = run_checks_multi(
         context, _LAST_RUN.get('game', ""), _pairs_from_last_run(), _LAST_RUN.get('root', ""),
-        _autofix_pairs_from_last_run())
+        _autofix_pairs_from_last_run(), _physics_from_last_run())
     _store(context, report, skipped)
     _LAST_RUN['autofix_n'] = autofix_n
 
@@ -1330,6 +1396,12 @@ _ACTIONS = {
     'tex_not_pow2':       ("modder.pec_fix_textures",       "btn_fix_textures",   'TEXTURE'),
     'tex_unreadable':     ("modder.pec_fix_textures",       "btn_fix_textures",   'TEXTURE'),
     'unweighted':         ("modder.pec_select_unweighted",  "btn_select_unweighted", 'RESTRICT_SELECT_OFF'),
+    'phys_parent':        ("modder.pec_phys_reparent",      "btn_phys_reparent",  'CON_CHILDOF'),
+    'phys_bone_retarget': ("modder.pec_phys_retarget",      "btn_phys_retarget",  'BONE_DATA'),
+    'phys_duplicate':     ("modder.pec_phys_dedupe",        "btn_phys_dedupe",    'TRASH'),
+    'phys_crossing':      ("modder.pec_phys_select_crossing", "btn_phys_select_crossing", 'RESTRICT_SELECT_OFF'),
+    'phys_clsp_unbound':  ("modder.pec_phys_bind_clsp",     "btn_phys_bind_clsp", 'LINKED'),
+    'phys_single_node':   ("modder.pec_phys_remove_single", "btn_phys_remove_single", 'TRASH'),
 }
 
 
@@ -1342,6 +1414,9 @@ def _draw_actions(layout, report, entry):
         if action is None or action[0] in drawn:
             continue
         if action[0] == "modder.pec_quick_generate" and generator_for(_LAST_RUN.get('game', "")) is None:
+            continue
+        if action[0] == "modder.pec_phys_bind_clsp" and not callable(
+                (_LAST_RUN.get('physics') or {}).get('bind_clsp')):
             continue
         layout.operator(action[0], text=T(_K + action[1]), icon=action[2])
         drawn.add(action[0])
@@ -1529,7 +1604,8 @@ class MODDER_OT_PreExportAutofixNow(bpy.types.Operator):
         if 'LEGACY' in enabled:
             ids.add('LEGACY')
         pairs = _autofix_pairs_from_last_run() or _pairs_from_last_run()
-        done = export_autofix.apply(context, game, pairs, ids)
+        done = export_autofix.apply(context, game, pairs, ids,
+                                    (_physics_from_last_run() or {}).get('parts'))
         _rerun_and_store(context)
         self.report({'INFO'}, T(_K + "autofix_done").format(n=sum(done.values())))
         return {'FINISHED'}
