@@ -1058,6 +1058,18 @@ class SingletonUpdater:
                             print("Failed to pre-remove " + file)
                             self.print_trace()
 
+        # Modding-Toolkit: built-in presets the user edited are not overwritten.
+        # The rule lives in core/preset_guard.py; any failure here falls back to
+        # the stock behaviour rather than aborting the update.
+        try:
+            from .core import preset_guard
+            preset_hashes = preset_guard.load_hashes(merger, base)
+        except Exception:
+            preset_guard = None
+            preset_hashes = None
+            self.print_trace()
+        kept_presets = []
+
         # Walk through the temp addon sub folder for replacements
         # this implements the overwrite rules, which apply after
         # the above pre-removal rules. This also performs the
@@ -1075,6 +1087,19 @@ class SingletonUpdater:
                 # Blender default: overwrite .py's, don't overwrite the rest.
                 dest_file = os.path.join(dest_path, file)
                 srcFile = os.path.join(path, file)
+
+                if os.path.isfile(dest_file) and preset_hashes is not None:
+                    rel = os.path.relpath(dest_file, base).replace(os.sep, "/")
+                    try:
+                        keep = preset_guard.is_user_modified(
+                            rel, dest_file, preset_hashes)
+                    except Exception:
+                        keep = False
+                        self.print_trace()
+                    if keep:
+                        kept_presets.append(rel)
+                        print("Kept user-edited preset, not overwritten: " + rel)
+                        continue
 
                 # Decide to replace if file already exists, and copy new over.
                 if os.path.isfile(dest_file):
@@ -1098,6 +1123,12 @@ class SingletonUpdater:
                     os.rename(srcFile, dest_file)
                     self.print_verbose(
                         "New file " + os.path.basename(dest_file))
+
+        # Recorded for a post-update notice; the new official versions of these
+        # files are discarded with the staging folder below.
+        if kept_presets:
+            self._json["kept_presets"] = kept_presets
+            self.save_updater_json()
 
         # now remove the temp staging folder and downloaded zip
         try:
