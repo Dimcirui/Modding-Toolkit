@@ -6,7 +6,8 @@ import shutil
 from ...core.i18n import T
 from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
 from ...core import console_export
-from ...core import export_prep
+from ...core import export_autofix
+from ...core import mod_root
 
 
 def _get_export_schemes_dir():
@@ -123,6 +124,27 @@ def resolve_mesh_mdf2(scene, character_id, group, entry, use_simplified):
     return mesh_col, mdf2_col
 
 
+def bound_pairs(scene, scheme, use_simplified):
+    """``[(group name, mdf_col, mesh_col)]`` for every distinct mesh / mdf2
+    pair this batch exports -- what auto-fix runs over.  Wider than the check's
+    pairs: an entry with only a mesh bound still gets its weights cleaned.
+    Reads through ``resolve_mesh_mdf2`` like the export loop, so both modes
+    (and simplified mode's shared "empty" binding) resolve the same way."""
+    character_id = scheme["character_id"]
+    out, seen = [], set()
+    for group in scheme.get("groups", []):
+        for entry in group["entries"]:
+            mesh_name, mdf_name = resolve_mesh_mdf2(scene, character_id, group, entry, use_simplified)
+            mesh = bpy.data.collections.get(mesh_name) if mesh_name else None
+            mdf = bpy.data.collections.get(mdf_name) if mdf_name else None
+            key = (mdf.name if mdf else None, mesh.name if mesh else None)
+            if (mdf is None and mesh is None) or key in seen:
+                continue
+            seen.add(key)
+            out.append((group["name"], mdf, mesh))
+    return out
+
+
 MESH_SETTINGS = {
     "exportAllLODs": True,
     "autoSolveRepeatedUVs": True,
@@ -198,18 +220,6 @@ class RE4_OT_BatchExport(bpy.types.Operator):
     def execute(self, context):
         show_console = console_export.get_preferences(context).show_console_on_batch_export
         with console_export.kept_open_for_export(show_console):
-            return self._execute_with_triangulation(context)
-
-    def _execute_with_triangulation(self, context):
-        # Triangulation rides on the modifier stack: RE Mesh Editor exports
-        # evaluated geometry, so the mesh data is never touched and the
-        # modifiers come off again even if the export raises.
-        settings = context.scene.mhw_suite_settings
-        if not settings.re4_triangulate_face:
-            return self._run_export(context)
-        with export_prep.triangulated_for_export(context.scene.objects, 're4') as touched:
-            if touched:
-                print("[RE4] triangulating {n} face mesh(es) for export".format(n=len(touched)))
             return self._run_export(context)
 
     def _run_export(self, context):
@@ -220,7 +230,7 @@ class RE4_OT_BatchExport(bpy.types.Operator):
             self.report({'ERROR'}, "RE Mesh Editor not installed")
             return {'CANCELLED'}
 
-        natives_root = scene.get("re4_natives_root", "")
+        natives_root = mod_root.read(scene, "re4_natives_root")
         if not natives_root or not os.path.isdir(natives_root):
             self.report({'ERROR'}, "Set natives root directory first")
             return {'CANCELLED'}
@@ -235,6 +245,23 @@ class RE4_OT_BatchExport(bpy.types.Operator):
             self.report({'ERROR'}, f"Failed to load: {scheme_file}")
             return {'CANCELLED'}
 
+        # Auto-fix only after every check above has passed: an export that
+        # cancels must not leave its fixes behind. Persistent fixes first (one
+        # undo step), then the temporary ones wrap the export itself and come
+        # off again even if it raises.
+        pairs = bound_pairs(scene, scheme, scene.get("re4_use_simplified", True))
+        ids = export_autofix.enabled_items(context, 'RE4')
+        done = export_autofix.apply(context, 'RE4', pairs, ids)
+        with export_autofix.temporary(context, 'RE4', pairs, ids) as tmp:
+            result = self._export(context, scene, settings, natives_root, scheme)
+        fixed = {k: v for k, v in list(done.items()) + list(tmp.items()) if v}
+        if fixed:
+            print("[RE4] auto-fix: " + ", ".join(f"{k}={v}" for k, v in fixed.items()))
+            self.report({'INFO'}, T("core.pre_export_check_ops.autofix_done").format(
+                n=sum(fixed.values())))
+        return result
+
+    def _export(self, context, scene, settings, natives_root, scheme):
         character_id = scheme["character_id"]
         base_path = scheme["base_path"].replace("\\", "/")
         use_simplified = scene.get("re4_use_simplified", True)
@@ -512,11 +539,16 @@ class RE4_OT_SetNativesRoot(bpy.types.Operator):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
     def execute(self, context):
-        path = self.directory.rstrip("/\\")
-        if os.path.basename(path).lower() == "natives":
-            path = os.path.dirname(path)
+        # A root picked one level too deep (…/natives, …/natives/STM) or one
+        # too shallow (the folder holding the mod) is corrected here; see
+        # core/mod_root.py for the rules.
+        mod_root.clear_cache()
+        path, status = mod_root.normalize(self.directory.rstrip("/\\"))
         context.scene["re4_natives_root"] = path
-        self.report({'INFO'}, f"RE4 Mod root: {path}")
+        if status == mod_root.AMBIGUOUS:
+            self.report({'WARNING'}, T("core.mod_root.ambiguous"))
+        else:
+            self.report({'INFO'}, f"RE4 Mod root: {path}")
         return {'FINISHED'}
 
 

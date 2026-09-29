@@ -465,11 +465,21 @@ class PEC_QuickGenRow(bpy.types.PropertyGroup):
     preset: EnumProperty(name="", items=_quick_presets)
 
 
-def _art_base(path):
-    """The generator's base path (under Art/) of a binding path."""
+def _art_base(path, gen_cls=None):
+    """The generator's base path of a binding path: its folder, less whatever
+    the generator puts in front of the base path itself (``Art/`` for MHWS,
+    ``_Chainsaw/Character/ch/`` for RE4), so the generator does not add it twice."""
     p = pc.normalize_tex_path(path)
     d = p.rsplit('/', 1)[0] if '/' in p else ""
-    return d[4:] if d.lower().startswith("art/") else d
+    prefixes = []
+    if gen_cls is None or gen_cls._use_art_prefix:
+        prefixes.append("art/")
+    if gen_cls is not None and gen_cls._path_fixed_prefix:
+        prefixes.append(gen_cls._path_fixed_prefix.strip('/').lower() + '/')
+    for pre in prefixes:
+        if d.lower().startswith(pre):
+            d = d[len(pre):]
+    return d
 
 
 def default_base_path(game, mdf_col, settings):
@@ -477,6 +487,8 @@ def default_base_path(game, mdf_col, settings):
     textures already live (most common folder), the generator panel's own
     field, then the batch export scheme's folder for this armor."""
     from collections import Counter
+    from .mdf_generator_base import generator_for
+    gen_cls = generator_for(game)
     cfg = pec._tex_config(game)
     vanilla = set()
     if cfg is not None:
@@ -487,7 +499,7 @@ def default_base_path(game, mdf_col, settings):
         for b in obj.re_mdf_material.textureBindingList_items:
             p = pc.normalize_tex_path(b.path)
             if p and p.lower() not in vanilla and "null" not in p.lower():
-                base = _art_base(p)
+                base = _art_base(p, gen_cls)
                 if base:
                     counts[base] += 1
     if counts:

@@ -17,8 +17,9 @@ Every item has two halves:
     it (face triangulation rides on a modifier, filled vertex colours on a layer
     that is removed afterwards).
 
-Scope is MHWS for now (``enabled_items`` returns None for other games, which
-keeps their exporters on their own cleanup/triangulate toggles).
+Scope: MHWS, MHRS, RE4, RE9 (``GAME_ITEMS``).  The other three get every item
+whose rule does not depend on the game; ``enabled_items`` returns None for any
+other game, which keeps its exporter on its own toggles.
 """
 
 import json
@@ -49,7 +50,27 @@ ITEMS = (
     ('LEGACY',      "core.export_autofix.item_legacy",      "core.export_autofix.tip_legacy",      64, False),
 )
 LABEL_KEYS = {i: label for i, label, _tip, _bit, _on in ITEMS}
-DEFAULT_MASK = sum(bit for _i, _k, _t, bit, on in ITEMS if on)
+
+#: The items each game offers.  MHRS / RE4 / RE9 leave out two:
+#: - VCOLOR: the near-black fill it prevents is upstream's and game-independent,
+#:   but what it writes instead (world normals, MHW Model Editor's encoding) was
+#:   only decided for MHWS; nobody has checked what these games' shaders read.
+#: - PHYS_TARGET: their dialogs do not hand the physics bindings over yet.
+_PORTABLE = ('TRIANGULATE', 'WEIGHTS', 'MIRROR', 'TEX_PATHS', 'TEX_EMPTY', 'MAT_NAMES', 'LEGACY')
+GAME_ITEMS = {
+    'MHWS': tuple(i for i, *_rest in ITEMS),
+    'MHRS': _PORTABLE,
+    'RE4':  _PORTABLE,
+    'RE9':  _PORTABLE,
+}
+
+
+def default_mask(game):
+    """The ENUM_FLAG default for *game*'s settings property: the items that are
+    on by default, among those the game offers."""
+    offered = GAME_ITEMS.get(game, ())
+    return sum(bit for i, _k, _t, bit, on in ITEMS if on and i in offered)
+
 
 #: Items that only exist for the duration of the export and so cannot be
 #: "fixed now" from the report.
@@ -62,8 +83,15 @@ TEMPORARY = {'TRIANGULATE', 'VCOLOR'}
 SILENT_WHEN_OFF = {'TEX_PATHS', 'MAT_NAMES'}
 
 #: Upstream ``SIX_WEIGHT_GAMES``/``EXTENDED_WEIGHT_GAMES`` put MH Wilds at 12
-#: influences per vertex (6 plus an extended buffer).
+#: influences per vertex (6 plus an extended buffer).  Every other game gets 8
+#: and no extended buffer, and a 9th influence is not trimmed but refused
+#: (``MaxWeightsPerVertexExceeded``, ``blender_re_mesh.py:1013-1025/1622-1625``).
 MAX_INFLUENCES = {'MHWS': 12}
+DEFAULT_INFLUENCES = 8
+
+
+def max_influences(game):
+    return MAX_INFLUENCES.get(game, DEFAULT_INFLUENCES)
 
 #: Residual (degrees) above which a mirror fix is taken back.  The carried
 #: normals come back with INT16 re-encode error only; anything past this means
@@ -78,15 +106,22 @@ MIRROR_FAILED = set()
 #: Game code -> key in upstream's tex_bindings_null.json.
 _NULL_TABLE_GAME = {'MHWS': 'MHWILDS', 'RE4': 'RE4', 'RE9': 'RE9', 'MHRS': 'MHRSB'}
 
-_enum_cache = []
+_enum_cache = {}
 
 
-def enum_items(self, context):
-    """Items for the gear's ENUM_FLAG dropdown, translated at draw time.
-    Cached module-side: Blender keeps no reference to a callback's strings."""
-    from .i18n import T
-    _enum_cache[:] = [(i, T(label), T(tip), bit) for i, label, tip, bit, _on in ITEMS]
-    return _enum_cache
+def enum_items_for(game):
+    """The items callback for *game*'s gear ENUM_FLAG dropdown, translated at
+    draw time.  Cached module-side: Blender keeps no reference to a callback's
+    strings."""
+    offered = GAME_ITEMS[game]
+
+    def items(self, context):
+        from .i18n import T
+        cache = _enum_cache.setdefault(game, [])
+        cache[:] = [(i, T(label), T(tip), bit) for i, label, tip, bit, _on in ITEMS if i in offered]
+        return cache
+    return items
+
 
 
 # ── Settings ─────────────────────────────────────────────────────────────────
@@ -94,12 +129,27 @@ def enum_items(self, context):
 def enabled_items(context, game):
     """The set of item ids switched on for *game*, or None when *game* has no
     auto-fix (its exporter keeps its own toggles)."""
-    if game != 'MHWS':
+    offered = GAME_ITEMS.get(game)
+    if offered is None:
         return None
     s = context.scene.mhw_suite_settings
-    if not s.mhws_autofix:
+    prefix = game.lower()
+    if not getattr(s, prefix + "_autofix"):
         return set()
-    return set(s.mhws_autofix_items)
+    return set(getattr(s, prefix + "_autofix_items")) & set(offered)
+
+
+def draw_toggle(layout, settings, game):
+    """The 「导出前自动修正」 toggle and its gear, for a batch export dialog."""
+    from .i18n import T
+    prefix = game.lower()
+    sub = layout.row(align=True)
+    sub.prop(settings, prefix + "_autofix", text=T("core.export_autofix.toggle"), icon='BRUSH_DATA')
+    # A dropdown rather than a popover: measured in 5.1, a popover has to be
+    # hovered to stay open and opens offset from its button (user's call).
+    gear = sub.row(align=True)
+    gear.enabled = getattr(settings, prefix + "_autofix")
+    gear.prop_menu_enum(settings, prefix + "_autofix_items", text="", icon='PREFERENCES')
 
 
 # ── Shared scans ─────────────────────────────────────────────────────────────
@@ -147,10 +197,11 @@ def _weight_issues(obj, max_influences):
 
     Loose vertices and edges, empty groups (not referenced by a modifier),
     deform weights below the exporter's cut-off, vertices over the influence
-    limit, and deform weights that do not sum to 1.
+    limit (``refused``: still over it once the exporter drops its cut-off, so
+    the export refuses the mesh), and deform weights that do not sum to 1.
     """
     me = obj.data
-    out = {'loose': 0, 'empty_groups': 0, 'tiny': 0, 'over': 0, 'unnormalized': 0}
+    out = {'loose': 0, 'empty_groups': 0, 'tiny': 0, 'over': 0, 'refused': 0, 'unnormalized': 0}
 
     n_loops = np.zeros(len(me.vertices), np.int32)
     corner_verts = np.empty(len(me.loops), np.int32)
@@ -176,6 +227,9 @@ def _weight_issues(obj, max_influences):
             out['tiny'] += 1
         if len(live) > max_influences:
             out['over'] += 1
+            # What the exporter itself counts, after dropping its cut-off.
+            if sum(1 for w in live if w >= pc.EXPORT_MIN_WEIGHT) > max_influences:
+                out['refused'] += 1
         if pc.classify_weight_sum(sum(rows)) in ("under", "over"):
             out['unnormalized'] += 1
     keep = _modifier_groups(obj)
@@ -328,6 +382,7 @@ class Plan:
         self.mirror_fixable = set()     # object names
         self.empty_fixable = set()      # (material object name, slot)
         self.target_fixable = set()     # chain object names
+        self.weights_refused = 0        # meshes the exporter would refuse as they are
 
     def pending(self, ids):
         return {i: n for i, n in self.counts.items() if i in ids and n}
@@ -350,11 +405,13 @@ def plan(context, game, pairs, physics=None):
     p = Plan()
     mdf_cols, mesh_cols = _cols(pairs)
     meshes = _mesh_objects(mesh_cols)
-    limit = MAX_INFLUENCES.get(game, 12)
+    limit = max_influences(game)
 
     p.counts['TRIANGULATE'] = sum(
         1 for o in export_prep.find_head_meshes(meshes, game.lower()) if _needs_triangulate(o))
-    p.counts['WEIGHTS'] = sum(1 for o in meshes if any(_weight_issues(o, limit).values()))
+    issues = [_weight_issues(o, limit) for o in meshes]
+    p.counts['WEIGHTS'] = sum(1 for i in issues if any(i.values()))
+    p.weights_refused = sum(1 for i in issues if i['refused'])
     p.counts['LEGACY'] = 0      # a variant of WEIGHTS, never counted on its own
     p.mirror_fixable = {o.name for o in meshes if _mirror_fixable(o)}
     p.counts['MIRROR'] = len(p.mirror_fixable)
@@ -376,6 +433,11 @@ def plan(context, game, pairs, physics=None):
         from .pre_export_physics import target_fixes
         p.target_fixable = {o.name for o, _c, _a in target_fixes(physics, _armatures(mesh_cols, physics))}
     p.counts['PHYS_TARGET'] = len(p.target_fixable)
+    # An item the game does not offer is neither pending nor fixable.
+    offered = GAME_ITEMS.get(game, ())
+    for i in p.counts:
+        if i not in offered:
+            p.counts[i] = 0
     return p
 
 
@@ -457,7 +519,7 @@ def _fix_mirror(context, obj):
     return True
 
 
-def _legacy_cleanup(context, mesh_cols):
+def _legacy_cleanup(context, mesh_cols, limit):
     """The pre-v2 「导出前清理」, kept verbatim as the compat item: RE Mesh
     Editor's own four operators, one object at a time, on direct members."""
     from .re_mesh_compat import call_re_mesh_op, re_mesh_op_available
@@ -477,10 +539,10 @@ def _legacy_cleanup(context, mesh_cols):
                 except Exception:
                     pass
             try:
-                call_re_mesh_op('limit_total_normalize', maxWeights='12')
+                call_re_mesh_op('limit_total_normalize', maxWeights=str(limit))
             except Exception:
                 try:
-                    bpy.ops.object.vertex_group_limit_total(limit=12)
+                    bpy.ops.object.vertex_group_limit_total(limit=limit)
                     bpy.ops.object.vertex_group_normalize_all(lock_active=False)
                 except Exception:
                     pass
@@ -499,12 +561,12 @@ def apply(context, game, pairs, ids, physics=None):
     if context.view_layer.objects.active is not None and context.mode != 'OBJECT':
         bpy.ops.object.mode_set(mode='OBJECT')
     meshes = _mesh_objects(mesh_cols)
-    limit = MAX_INFLUENCES.get(game, 12)
+    limit = max_influences(game)
 
     if 'WEIGHTS' in ids:
         if 'LEGACY' in ids:
             n = sum(1 for o in meshes if any(_weight_issues(o, limit).values()))
-            _legacy_cleanup(context, mesh_cols)
+            _legacy_cleanup(context, mesh_cols, limit)
         else:
             n = 0
             for obj in meshes:

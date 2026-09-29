@@ -62,7 +62,7 @@ def resolve_chain_sources(results):
 #: it; the export panel still offers all three.
 _FORCED_EXPORT_SETTINGS = {
     "mhrs_use_blank_export": True,
-    "mhrs_cleanup_before_export": True,
+    "mhrs_autofix": True,
     "mhrs_skeleton_mode": {'LUA'},
 }
 

@@ -1724,9 +1724,9 @@ STRINGS = {
         "EN": "Before export, fix the problems that need no decision: face triangulation, "
               "weight cleanup, mirrored transforms, texture path spelling, empty texture "
               "paths, missing vertex colours, non-English material names, physics constraint "
-              "targets. The gear chooses which",
+              "targets (vertex colours and physics targets: MH Wilds only). The gear chooses which",
         "ZH": "导出前自动修掉不需要判断的问题：面部三角化、权重清理、镜像变换、贴图路径写法、"
-              "空贴图路径、顶点色补齐、材质名转英文、物理约束目标补齐。齿轮里可以选修哪些"},
+              "空贴图路径、顶点色补齐、材质名转英文、物理约束目标补齐（顶点色与物理两项仅荒野）。齿轮里可以选修哪些"},
     "core.export_autofix.item_triangulate": {"EN": "Triangulate Face", "ZH": "面部三角化"},
     "core.export_autofix.tip_triangulate": {
         "EN": "Temporarily triangulate meshes weighted to the head bone; removed after export",
@@ -1734,8 +1734,10 @@ STRINGS = {
     "core.export_autofix.item_weights": {"EN": "Weight Cleanup", "ZH": "权重清理"},
     "core.export_autofix.tip_weights": {
         "EN": "Remove loose geometry and empty vertex groups, drop deform weights under 0.002, "
-              "keep at most 12 per vertex, normalise. Deform groups only",
-        "ZH": "删孤立点与空顶点组，清掉低于 0.002 的形变权重，每顶点最多保留 12 个，再归一化。只动形变组"},
+              "keep at most as many per vertex as the game takes (12 in MH Wilds, 8 elsewhere), "
+              "normalise. Deform groups only",
+        "ZH": "删孤立点与空顶点组，清掉低于 0.002 的形变权重，每顶点最多保留游戏允许的个数"
+              "（荒野 12 个，其他 8 个），再归一化。只动形变组"},
     "core.export_autofix.item_mirror": {"EN": "Mirrored Transforms", "ZH": "镜像变换"},
     "core.export_autofix.tip_mirror": {
         "EN": "Apply a mirrored object transform with its split normals kept",

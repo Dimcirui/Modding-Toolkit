@@ -2,11 +2,13 @@ import bpy
 
 from ...core.i18n import T
 from ...core import pre_export_check_ops as pec
+from ...core import export_autofix
+from ...core import mod_root
 from .batch_export import (
     MHRS_PARTS, MHRS_PART_LABEL_KEYS,
     _load_scheme, _resolve_part_file_types, _canonical_order_file_types,
     get_binding, set_binding,
-    get_mhrs_armor_callback,
+    get_mhrs_armor_callback, bound_pairs,
 )
 
 EXPORTER_WINDOW_WIDTH = 580
@@ -173,7 +175,7 @@ class MHRS_OT_BatchExportDialog(bpy.types.Operator):
                      icon='DOWNARROW_HLT')
 
         # ── Natives Root ──
-        natives_root = scene.get("mhrs_natives_root", "")
+        natives_root = mod_root.read(scene, "mhrs_natives_root")
         row = layout.row(align=True)
         row.operator("mhrs.set_natives_root", text="Mod Root", icon='FILE_FOLDER')
         if natives_root:
@@ -257,13 +259,13 @@ class MHRS_OT_BatchExportDialog(bpy.types.Operator):
         layout.separator()
         row = layout.row(align=True)
         row.prop(settings, "mhrs_use_blank_export", text=T("ui.prop.use_blank_export"), icon='FILE_BLANK')
-        row.prop(settings, "mhrs_cleanup_before_export", text=T("ui.prop.cleanup_before_export"), icon='BRUSH_DATA')
-        row.prop(settings, "mhrs_triangulate_face", text=T("ui.prop.triangulate_face"), icon='MOD_TRIANGULATE')
+        export_autofix.draw_toggle(row, settings, 'MHRS')
 
         self._draw_shadow(layout, settings, scene, armor_id, gender, parts_mask)
 
         pairs = _gather_check_pairs(scene, armor_id, gender, active_parts)
-        pec.draw_inline_summary(self, layout, context, 'MHRS', pairs, natives_root)
+        pec.draw_inline_summary(self, layout, context, 'MHRS', pairs, natives_root,
+                                autofix_pairs=bound_pairs(scene, armor_id, gender))
 
     def _draw_shadow(self, layout, settings, scene=None, armor_id=None, gender=None, parts_mask=None):
         layout.separator()

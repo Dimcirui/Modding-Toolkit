@@ -8,6 +8,7 @@ from .batch_export import (
 )
 from ...core.i18n import T
 from ...core import pre_export_check_ops as pec
+from ...core import export_autofix
 from ...core import mod_root
 
 EXPORTER_WINDOW_WIDTH = 580
@@ -268,13 +269,7 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
         layout.separator()
         row = layout.row(align=True)
         row.prop(settings, "mhws_use_blank_export", text=T("ui.prop.use_blank_export"), icon='FILE_BLANK')
-        sub = row.row(align=True)
-        sub.prop(settings, "mhws_autofix", text=T("core.export_autofix.toggle"), icon='BRUSH_DATA')
-        # A dropdown rather than a popover: measured in 5.1, a popover has to be
-        # hovered to stay open and opens offset from its button (user's call).
-        gear = sub.row(align=True)
-        gear.enabled = settings.mhws_autofix
-        gear.prop_menu_enum(settings, "mhws_autofix_items", text="", icon='PREFERENCES')
+        export_autofix.draw_toggle(row, settings, 'MHWS')
 
         self._draw_body_reshape(layout, settings, scene, armor_id, variant)
 

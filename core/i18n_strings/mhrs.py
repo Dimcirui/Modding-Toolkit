@@ -68,8 +68,6 @@ STRINGS = {
               "named natives, its parent is used automatically",
         "ZH": "选择 MHRS Mod 根目录（natives 的上级）。若选中的文件夹本身名为 natives，自动取其上级"},
 
-    "mhrs.batch_export.remesh_not_installed": {
-        "EN": "RE Mesh Editor not installed, skipping pre-export cleanup", "ZH": "RE Mesh Editor 未安装，跳过导出前清理"},
     "mhrs.batch_export.load_scheme_failed": {"EN": "Could not load the armor pack", "ZH": "无法加载装备包"},
     "mhrs.batch_export.armor_not_found_in_scheme": {
         "EN": "Not found in armor pack: {id}", "ZH": "在装备包中未找到: {id}"},

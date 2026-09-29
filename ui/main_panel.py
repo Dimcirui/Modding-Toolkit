@@ -355,15 +355,21 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     )
     mhws_autofix_items: bpy.props.EnumProperty(
         name="Auto-fix Items",
-        items=export_autofix.enum_items,
+        items=export_autofix.enum_items_for('MHWS'),
         options={'ENUM_FLAG'},
-        default=export_autofix.DEFAULT_MASK,
+        default=export_autofix.default_mask('MHWS'),
     )
-    re9_triangulate_face: bpy.props.BoolProperty(
-        name="Triangulate Face Mesh",
-        description="Before export, temporarily add a Triangulate modifier to meshes weighted to the head bone. "
-                     "RE Mesh Editor's exporter otherwise breaks face shading. The mesh data itself is not modified",
-        default=False,
+    # 「导出前自动修正」, same as MHWS's (replaces the old triangulate toggle).
+    re9_autofix: bpy.props.BoolProperty(
+        name="Auto-fix Before Export",
+        description="Fix the problems that need no decision before exporting; the gear chooses which",
+        default=True,
+    )
+    re9_autofix_items: bpy.props.EnumProperty(
+        name="Auto-fix Items",
+        items=export_autofix.enum_items_for('RE9'),
+        options={'ENUM_FLAG'},
+        default=export_autofix.default_mask('RE9'),
     )
     re9_use_blank_export: bpy.props.BoolProperty(
         name="Use Blank Model for Unselected",
@@ -392,17 +398,17 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         description="For slots with no collection selected, copy in the built-in blank file instead of skipping",
         default=False,
     )
-    mhrs_triangulate_face: bpy.props.BoolProperty(
-        name="Triangulate Face Mesh",
-        description="Before export, temporarily add a Triangulate modifier to meshes weighted to the head bone. "
-                     "RE Mesh Editor's exporter otherwise breaks face shading. The mesh data itself is not modified",
-        default=False,
-    )
-    mhrs_cleanup_before_export: bpy.props.BoolProperty(
-        name="Clean Mesh Before Export",
-        description="Before export, run on all bound mesh collections: remove loose geometry, fix duplicate UVs, "
-                     "clear zero-weight vertex groups, limit and normalize weights (requires RE Mesh Editor)",
+    # 「导出前自动修正」, same as MHWS's (replaces the old triangulate toggle).
+    mhrs_autofix: bpy.props.BoolProperty(
+        name="Auto-fix Before Export",
+        description="Fix the problems that need no decision before exporting; the gear chooses which",
         default=True,
+    )
+    mhrs_autofix_items: bpy.props.EnumProperty(
+        name="Auto-fix Items",
+        items=export_autofix.enum_items_for('MHRS'),
+        options={'ENUM_FLAG'},
+        default=export_autofix.default_mask('MHRS'),
     )
     #: How the armour's proportions reach the game.  One enum rather than two
     #: checkboxes because the two are mutually exclusive in the game, not merely
@@ -433,11 +439,17 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         description="Select character export scheme for RE4",
         items=get_re4_schemes_callback
     )
-    re4_triangulate_face: bpy.props.BoolProperty(
-        name="Triangulate Face Mesh",
-        description="Before export, temporarily add a Triangulate modifier to meshes weighted to the head bone. "
-                     "RE Mesh Editor's exporter otherwise breaks face shading. The mesh data itself is not modified",
-        default=False,
+    # 「导出前自动修正」, same as MHWS's (replaces the old triangulate toggle).
+    re4_autofix: bpy.props.BoolProperty(
+        name="Auto-fix Before Export",
+        description="Fix the problems that need no decision before exporting; the gear chooses which",
+        default=True,
+    )
+    re4_autofix_items: bpy.props.EnumProperty(
+        name="Auto-fix Items",
+        items=export_autofix.enum_items_for('RE4'),
+        options={'ENUM_FLAG'},
+        default=export_autofix.default_mask('RE4'),
     )
     re4_use_blank_export: bpy.props.BoolProperty(
         name="Use Blank Model for Unselected",

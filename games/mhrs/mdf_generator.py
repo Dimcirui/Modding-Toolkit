@@ -12,6 +12,7 @@ from ...core.mdf_generator_base import (
     load_preset_enum_items,
     _find_meshes_by_material, mesh_collection_poll,
     MdfGenRefreshBase, MdfGenProcessBase,
+    register_generator, unregister_generator,
 )
 
 # ── MHRS constants ──────────────────────────────────────────────────────────────
@@ -251,9 +252,12 @@ def register():
         bpy.utils.register_class(cls)
     bpy.types.Scene.mhrs_mdf_generator = bpy.props.PointerProperty(
         type=MHRSGenSettings)
+    # For the pre-export check's 「使用生成器快捷生成」
+    register_generator('MHRS', MHRS_OT_MdfGenProcess)
 
 
 def unregister():
+    unregister_generator('MHRS')
     del bpy.types.Scene.mhrs_mdf_generator
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

@@ -3,13 +3,15 @@ import os
 from bpy.props import BoolProperty, CollectionProperty, IntProperty, StringProperty
 from ...core.i18n import T
 from ...core import pre_export_check_ops as pec
+from ...core import export_autofix
+from ...core import mod_root
 from .batch_export import (
     _load_scheme, _get_binding, _set_binding,
     _get_enabled, _set_enabled, get_schemes_callback,
     _get_simplified_group_binding, _set_simplified_group_binding,
     _set_simplified_empty_binding,
     _get_native_skeletons_dir,
-    resolve_mesh_mdf2,
+    resolve_mesh_mdf2, bound_pairs,
 )
 
 EXPORTER_WINDOW_WIDTH = 600
@@ -425,7 +427,7 @@ class RE9_OT_BatchExportDialog(bpy.types.Operator):
         layout.prop(settings, "re9_export_scheme", text="Character")
 
         # Natives root
-        natives_root = scene.get("re9_natives_root", "")
+        natives_root = mod_root.read(scene, "re9_natives_root")
         row = layout.row(align=True)
         row.operator("re9.set_natives_root", text="Natives Root", icon='FILE_FOLDER')
         if natives_root:
@@ -485,12 +487,13 @@ class RE9_OT_BatchExportDialog(bpy.types.Operator):
         op_c.scheme_file = scheme_file
 
         layout.prop(settings, "re9_use_blank_export", text=T("ui.prop.use_blank_export"), icon='FILE_BLANK')
-        layout.prop(settings, "re9_triangulate_face", text=T("ui.prop.triangulate_face"), icon='MOD_TRIANGULATE')
+        export_autofix.draw_toggle(layout, settings, 'RE9')
 
         # Run the check before the list draws, so each row can carry its own
         # issue icon; the summary line at the bottom reuses the same result.
         pairs = _gather_check_pairs(scene, character_id, scheme, use_simplified)
-        entries = pec.ensure_checked(self, context, 'RE9', pairs, natives_root)
+        entries = pec.ensure_checked(self, context, 'RE9', pairs, natives_root,
+                                     autofix_pairs=bound_pairs(scene, scheme, use_simplified))
         _mark_group_issues(self.groups, entries)
 
         layout.separator()

@@ -12,6 +12,7 @@ from ...core.mdf_generator_base import (
     load_preset_enum_items,
     _find_meshes_by_material, mesh_collection_poll,
     MdfGenRefreshBase, MdfGenProcessBase,
+    register_generator, unregister_generator,
 )
 
 # ── RE4 constants ──────────────────────────────────────────────────────────────
@@ -252,9 +253,12 @@ def register():
         bpy.utils.register_class(cls)
     bpy.types.Scene.re4_mdf_generator = bpy.props.PointerProperty(
         type=RE4GenSettings)
+    # For the pre-export check's 「使用生成器快捷生成」
+    register_generator('RE4', RE4_OT_MdfGenProcess)
 
 
 def unregister():
+    unregister_generator('RE4')
     del bpy.types.Scene.re4_mdf_generator
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

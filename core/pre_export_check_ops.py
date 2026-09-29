@@ -218,7 +218,7 @@ _LAST_RUN = {}
 
 def _tex_config(game_code):
     """The game's texture config, but only when it can actually support the
-    texture check -- see the module docstring on MHRS."""
+    texture check -- see the module docstring on the vanilla path list."""
     cfg = get_game_tex_config(game_code)
     if cfg is None or not cfg.get("vanilla_asset_rel"):
         return None
@@ -900,6 +900,13 @@ def _skipped_notes(game_code, natives_root, any_without_mesh):
 #: (triangulation, weight tidying, vertex colour fill) are notes.
 _AUTOFIX_SEVERE = {'MIRROR', 'TEX_EMPTY', 'PHYS_TARGET'}
 
+
+def _autofix_severe(item_id, fx_plan):
+    # Weight tidying is a note -- except when a vertex is over the game's
+    # influence limit even after the exporter's own cut-off, which the exporter
+    # refuses rather than trims (8 outside MH Wilds).
+    return item_id in _AUTOFIX_SEVERE or (item_id == 'WEIGHTS' and fx_plan.weights_refused)
+
 _AUTOFIX_UNITS = {
     'TRIANGULATE': "core.export_autofix.n_meshes",
     'WEIGHTS':     "core.export_autofix.n_meshes",
@@ -940,7 +947,7 @@ def _apply_autofix_plan(findings, fx_plan, enabled):
         kept.append(pr.finding(
             'autofix', 'af_' + item_id,
             T(export_autofix.LABEL_KEYS[item_id]) + " — " + T(_AUTOFIX_UNITS[item_id]).format(n=n),
-            severity=pr.ERROR if item_id in _AUTOFIX_SEVERE else pr.INFO, key=item_id))
+            severity=pr.ERROR if _autofix_severe(item_id, fx_plan) else pr.INFO, key=item_id))
     return kept, sum(on.values())
 
 
