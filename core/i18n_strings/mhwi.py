@@ -472,4 +472,21 @@ STRINGS = {
                                   "ZH": "已将 {n} 个网格的显示条件设为 {gid}"},
     "mhwi.operators.disp_renamed_suffix": {"EN": "; {n} renamed to mod3 format first",
                                             "ZH": "；其中 {n} 个先重命名为 mod3 格式"},
+    "mhwi.operators.add_facial_bones_desc": {
+        "EN": "Graft the facial bones from the native character skeleton onto the current skeleton",
+        "ZH": "将原生角色骨架的表情骨骼移植到当前骨架"},
+    "mhwi.operators.facial_bones_warning": {
+        "EN": "Using this feature will clear any existing facial bones!", "ZH": "使用该功能将清除原本存在的表情骨！"},
+    "mhwi.operators.facial_target_armature": {"EN": "Skeleton", "ZH": "骨架"},
+    "mhwi.operators.facial_no_reference": {
+        "EN": "Select a reference character (add the file to assets/reference_skeletons/mhwi/)",
+        "ZH": "请选择参考角色（添加文件到 assets/reference_skeletons/mhwi/）"},
+    "mhwi.operators.facial_no_head_bone": {
+        "EN": "Head bone {bone} not found on the target skeleton; facial bones attach to it",
+        "ZH": "目标骨架中未找到头骨 {bone}，表情骨需要挂在它下面"},
+    "mhwi.operators.facial_ref_import_failed": {
+        "EN": "Failed to import reference skeleton: {name}", "ZH": "参考骨架导入失败: {name}"},
+    "mhwi.operators.facial_ref_empty": {
+        "EN": "No facial bones found under {bone} on the reference skeleton",
+        "ZH": "参考骨架中 {bone} 之下没有表情骨"},
 }

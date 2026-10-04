@@ -3,7 +3,7 @@ import time
 import bpy
 import re
 from ...core.i18n import T
-from ...core import bone_utils, facial_maps, weight_utils
+from ...core import bone_utils, facial_bones, facial_maps, ref_skeleton, weight_utils
 from ...core.bone_mapper import BoneMapManager, resolve_preset
 from ...core.standard_ops import _build_fuzzy_preset_bones, _run_bone_color_refresh
 from ...core.re_chain_utils import _patch_chain_cleanup, _straighten_chain_orientations, _build_physics_bones_set
@@ -1054,8 +1054,144 @@ class MHWI_OT_EndfieldFaceRename(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# ==========================================
+# 一键添加表情骨 (从原生角色骨架移植表情骨到目标骨架)
+# ==========================================
+# MHWI 的面部没有统一的根：头骨下直接并列挂着一百多根表情骨（眉、眼睑、嘴唇、
+# 舌、牙……），所以把头骨的每个子级都当作一个移植根。不提供假头法——MHWI 骨名是
+# 纯编号，没有哪根是"上眼睑"的名字信号，也没有实测过它的睑缘支点位置。
+_MHWI_HEAD_BONE_ID = "004"
+
+
+def _mhwi_bone_prefix(arm_obj):
+    """目标骨架用的是 MhBone_ 还是 bonefunction_（mod3 导入有两种命名）。"""
+    names = [b.name for b in arm_obj.data.bones]
+    if any(n.startswith("MhBone_") for n in names):
+        return "MhBone_"
+    if any(n.startswith("bonefunction_") for n in names):
+        return "bonefunction_"
+    return None
+
+
+class MHWI_OT_AddFacialBones(bpy.types.Operator):
+    bl_idname = "mhwi.add_facial_bones"
+    bl_label = "Add Facial Bones"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    target_armature: bpy.props.EnumProperty(
+        name="Skeleton",
+        description="Select the skeleton to add facial bones to",
+        items=bone_utils.get_armature_enum_items,
+    )
+    reference_character: bpy.props.EnumProperty(
+        name="Reference Character",
+        description="Select the reference character skeleton to source facial bones from",
+        items=lambda self, ctx: ref_skeleton.get_reference_skeleton_items('mhwi'),
+    )
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.operators.add_facial_bones_desc")
+
+    @classmethod
+    def poll(cls, context):
+        return any(o.type == 'ARMATURE' for o in bpy.data.objects)
+
+    def invoke(self, context, event):
+        active = context.active_object
+        if active and active.type == 'ARMATURE':
+            self.target_armature = active.name
+        return context.window_manager.invoke_props_dialog(self, width=380)
+
+    def draw(self, context):
+        layout = self.layout
+        note = layout.row()
+        note.active = False
+        note.label(text=T("mhwi.operators.facial_bones_warning"))
+        layout.separator()
+        layout.prop(self, "target_armature", text=T("mhwi.operators.facial_target_armature"))
+        layout.prop(self, "reference_character", text=T("core.re_chain_utils.reference_character"))
+
+    def execute(self, context):
+        target_arm = bpy.data.objects.get(self.target_armature)
+        if target_arm is None or target_arm.type != 'ARMATURE':
+            self.report({'WARNING'}, T("core.re_chain_utils.select_valid_armature"))
+            return {'CANCELLED'}
+
+        if not self.reference_character or self.reference_character == 'NONE':
+            self.report({'ERROR'}, T("mhwi.operators.facial_no_reference"))
+            return {'CANCELLED'}
+
+        prefix = _mhwi_bone_prefix(target_arm)
+        head_name = f"{prefix}{_MHWI_HEAD_BONE_ID}" if prefix else None
+        if head_name is None or head_name not in target_arm.data.bones:
+            self.report({'ERROR'}, T("mhwi.operators.facial_no_head_bone").format(
+                bone=f"MhBone_{_MHWI_HEAD_BONE_ID}"))
+            return {'CANCELLED'}
+
+        if context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+        ref_arm_obj = ref_skeleton.import_reference_armature('mhwi', self.reference_character)
+        if ref_arm_obj is None:
+            self.report({'ERROR'}, T("mhwi.operators.facial_ref_import_failed").format(
+                name=self.reference_character))
+            return {'CANCELLED'}
+
+        try:
+            # 参考骨架一律是 MhBone_ 命名；目标若是 bonefunction_，先对齐命名，
+            # 否则按名字对齐和父级挂接都找不到对应骨骼
+            if prefix != "MhBone_":
+                for b in ref_arm_obj.data.bones:
+                    if b.name.startswith("MhBone_"):
+                        b.name = prefix + b.name[len("MhBone_"):]
+
+            # 只让头骨及以上的骨骼参与对齐。表情骨本身要整体照搬参考的坐标，
+            # 目标上同名的旧表情骨马上就会被清掉，不该反过来拉动参考
+            bone_utils.align_armatures_by_name(
+                target_arm, ref_arm_obj, mode='POS_ONLY',
+                skip_fn=lambda n: n != head_name and not _is_head_ancestor(target_arm, n, head_name))
+
+            ref_head = ref_arm_obj.data.bones.get(head_name)
+            roots = [] if ref_head is None else [
+                c.name for c in ref_head.children if not c.name.lower().endswith("_end")]
+            created = facial_bones.graft_facial_bones(ref_arm_obj, target_arm, roots)
+            if created == 0:
+                self.report({'WARNING'}, T("mhwi.operators.facial_ref_empty").format(bone=head_name))
+                return {'CANCELLED'}
+        finally:
+            # 参考骨架只用来取移植数据，用完即清除
+            if context.mode != 'OBJECT':
+                bpy.ops.object.mode_set(mode='OBJECT')
+            ref_data = ref_arm_obj.data
+            if ref_arm_obj.name in bpy.data.objects:
+                bpy.data.objects.remove(ref_arm_obj, do_unlink=True)
+            if ref_data.users == 0:
+                bpy.data.armatures.remove(ref_data)
+
+        bpy.context.view_layer.objects.active = target_arm
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.select_all(action='DESELECT')
+        target_arm.select_set(True)
+
+        self.report({'INFO'}, T("core.facial_bones.facial_bones_added").format(n=created))
+        return {'FINISHED'}
+
+
+def _is_head_ancestor(arm_obj, bone_name, head_name):
+    """bone_name 是否在 head_name 的祖先链上（只对齐 脊柱→头 这一段，不碰面部）。"""
+    head = arm_obj.data.bones.get(head_name)
+    p = head.parent if head else None
+    while p is not None:
+        if p.name == bone_name:
+            return True
+        p = p.parent
+    return False
+
+
 # 注册所有类
 classes = [
+    MHWI_OT_AddFacialBones,
     MHWI_OT_AlignNonPhysics,
     MHWI_OT_AutoCreateChains,
     MHWI_RegionAssignment,

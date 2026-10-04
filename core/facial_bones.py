@@ -27,11 +27,22 @@ def collect_facial_subtree(ref_arm, root_bone_name):
 def graft_facial_bones(ref_arm, target_arm, root_bone_name):
     """将 ref_arm 的 root_bone_name 及其所有子级完整移植到 target_arm。
 
+    root_bone_name 可以是单个骨骼名，也可以是骨骼名序列（MHWI 的面部没有统一的根，
+    头骨下直接挂着一百多根并列的表情骨，每根都当作一个子树根）。
+
     直接照搬来源世界坐标下的 head/tail/roll（不做竖直化，也不加尾骨），
     并按来源层级关系重建父子链；根骨骼本身挂到目标骨架中与来源同名的父级骨骼上。
     会先清除 target_arm 中已存在的同名旧骨骼。返回新建骨骼数。
     """
-    subtree_names, root_parent_name = collect_facial_subtree(ref_arm, root_bone_name)
+    root_names = [root_bone_name] if isinstance(root_bone_name, str) else list(root_bone_name)
+    subtree_names = []
+    root_parents = {}
+    for root in root_names:
+        names, parent_name = collect_facial_subtree(ref_arm, root)
+        if not names:
+            continue
+        subtree_names.extend(names)
+        root_parents[root] = parent_name
     if not subtree_names:
         return 0
 
@@ -78,7 +89,8 @@ def graft_facial_bones(ref_arm, target_arm, root_bone_name):
         eb = edit_bones.get(name)
         if eb is None or name not in src_data:
             continue
-        if name == root_bone_name:
+        if name in root_parents:
+            root_parent_name = root_parents[name]
             if root_parent_name and root_parent_name in edit_bones:
                 eb.parent = edit_bones[root_parent_name]
         else:

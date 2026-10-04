@@ -163,6 +163,8 @@ SECTIONS = {
             op("mhwi.align_non_physics", "ui.main_panel.btn_align_non_physics",
                'BONE_DATA'),
             _face_weights('MHWI'),
+            op("mhwi.add_facial_bones", "ui.main_panel.btn_add_facial_bones",
+               'SHAPEKEY_DATA'),
             op("mhwi.set_mesh_display_condition",
                "mhwi.operators.btn_set_display_condition", 'HIDE_OFF'),
         ],
