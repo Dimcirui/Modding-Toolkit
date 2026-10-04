@@ -1,0 +1,382 @@
+{
+  "preset_info": {
+    "name": "RE6",
+    "type": "Y_PRESET",
+    "version": "2.0"
+  },
+  "mappings": {
+    "pelvis": {
+      "main": [
+        "RE6Bone_015"
+      ],
+      "aux": [
+        "RE6Bone_066",
+        "RE6Bone_067"
+      ]
+    },
+    "spine_01": {
+      "main": [
+        "RE6Bone_001"
+      ],
+      "aux": []
+    },
+    "spine_02": {
+      "main": [
+        "RE6Bone_002"
+      ],
+      "aux": []
+    },
+    "neck": {
+      "main": [
+        "RE6Bone_003"
+      ],
+      "aux": []
+    },
+    "head": {
+      "main": [
+        "RE6Bone_004"
+      ],
+      "aux": []
+    },
+    "clavicle_L": {
+      "main": [
+        "RE6Bone_010"
+      ],
+      "aux": [
+        "RE6Bone_064"
+      ]
+    },
+    "upperarm_L": {
+      "main": [
+        "RE6Bone_011"
+      ],
+      "aux": []
+    },
+    "forearm_L": {
+      "main": [
+        "RE6Bone_012"
+      ],
+      "aux": []
+    },
+    "hand_L": {
+      "main": [
+        "RE6Bone_013"
+      ],
+      "aux": []
+    },
+    "clavicle_R": {
+      "main": [
+        "RE6Bone_005"
+      ],
+      "aux": [
+        "RE6Bone_062"
+      ]
+    },
+    "upperarm_R": {
+      "main": [
+        "RE6Bone_006"
+      ],
+      "aux": []
+    },
+    "forearm_R": {
+      "main": [
+        "RE6Bone_007"
+      ],
+      "aux": []
+    },
+    "hand_R": {
+      "main": [
+        "RE6Bone_008"
+      ],
+      "aux": []
+    },
+    "thigh_L": {
+      "main": [
+        "RE6Bone_020"
+      ],
+      "aux": []
+    },
+    "shin_L": {
+      "main": [
+        "RE6Bone_021"
+      ],
+      "aux": []
+    },
+    "foot_L": {
+      "main": [
+        "RE6Bone_022"
+      ],
+      "aux": []
+    },
+    "toe_L": {
+      "main": [
+        "RE6Bone_023"
+      ],
+      "aux": []
+    },
+    "thigh_R": {
+      "main": [
+        "RE6Bone_016"
+      ],
+      "aux": []
+    },
+    "shin_R": {
+      "main": [
+        "RE6Bone_017"
+      ],
+      "aux": []
+    },
+    "foot_R": {
+      "main": [
+        "RE6Bone_018"
+      ],
+      "aux": []
+    },
+    "toe_R": {
+      "main": [
+        "RE6Bone_019"
+      ],
+      "aux": []
+    },
+    "thumb_01_L": {
+      "main": [
+        "RE6Bone_040"
+      ],
+      "aux": []
+    },
+    "thumb_02_L": {
+      "main": [
+        "RE6Bone_041"
+      ],
+      "aux": []
+    },
+    "thumb_03_L": {
+      "main": [
+        "RE6Bone_042"
+      ],
+      "aux": []
+    },
+    "index_01_L": {
+      "main": [
+        "RE6Bone_043"
+      ],
+      "aux": []
+    },
+    "index_02_L": {
+      "main": [
+        "RE6Bone_044"
+      ],
+      "aux": []
+    },
+    "index_03_L": {
+      "main": [
+        "RE6Bone_045"
+      ],
+      "aux": []
+    },
+    "middle_01_L": {
+      "main": [
+        "RE6Bone_046"
+      ],
+      "aux": []
+    },
+    "middle_02_L": {
+      "main": [
+        "RE6Bone_047"
+      ],
+      "aux": []
+    },
+    "middle_03_L": {
+      "main": [
+        "RE6Bone_048"
+      ],
+      "aux": []
+    },
+    "ring_01_L": {
+      "main": [
+        "RE6Bone_050"
+      ],
+      "aux": []
+    },
+    "ring_02_L": {
+      "main": [
+        "RE6Bone_051"
+      ],
+      "aux": []
+    },
+    "ring_03_L": {
+      "main": [
+        "RE6Bone_052"
+      ],
+      "aux": []
+    },
+    "pinky_01_L": {
+      "main": [
+        "RE6Bone_053"
+      ],
+      "aux": []
+    },
+    "pinky_02_L": {
+      "main": [
+        "RE6Bone_054"
+      ],
+      "aux": []
+    },
+    "pinky_03_L": {
+      "main": [
+        "RE6Bone_055"
+      ],
+      "aux": []
+    },
+    "thumb_01_R": {
+      "main": [
+        "RE6Bone_024"
+      ],
+      "aux": []
+    },
+    "thumb_02_R": {
+      "main": [
+        "RE6Bone_025"
+      ],
+      "aux": []
+    },
+    "thumb_03_R": {
+      "main": [
+        "RE6Bone_026"
+      ],
+      "aux": []
+    },
+    "index_01_R": {
+      "main": [
+        "RE6Bone_027"
+      ],
+      "aux": []
+    },
+    "index_02_R": {
+      "main": [
+        "RE6Bone_028"
+      ],
+      "aux": []
+    },
+    "index_03_R": {
+      "main": [
+        "RE6Bone_029"
+      ],
+      "aux": []
+    },
+    "middle_01_R": {
+      "main": [
+        "RE6Bone_030"
+      ],
+      "aux": []
+    },
+    "middle_02_R": {
+      "main": [
+        "RE6Bone_031"
+      ],
+      "aux": []
+    },
+    "middle_03_R": {
+      "main": [
+        "RE6Bone_032"
+      ],
+      "aux": []
+    },
+    "ring_01_R": {
+      "main": [
+        "RE6Bone_034"
+      ],
+      "aux": []
+    },
+    "ring_02_R": {
+      "main": [
+        "RE6Bone_035"
+      ],
+      "aux": []
+    },
+    "ring_03_R": {
+      "main": [
+        "RE6Bone_036"
+      ],
+      "aux": []
+    },
+    "pinky_01_R": {
+      "main": [
+        "RE6Bone_037"
+      ],
+      "aux": []
+    },
+    "pinky_02_R": {
+      "main": [
+        "RE6Bone_038"
+      ],
+      "aux": []
+    },
+    "pinky_03_R": {
+      "main": [
+        "RE6Bone_039"
+      ],
+      "aux": []
+    },
+    "upperarm_twist_01_L": {
+      "main": [
+        "RE6Bone_072"
+      ],
+      "aux": []
+    },
+    "forearm_twist_01_L": {
+      "main": [
+        "RE6Bone_073"
+      ],
+      "aux": []
+    },
+    "upperarm_twist_01_R": {
+      "main": [
+        "RE6Bone_070"
+      ],
+      "aux": []
+    },
+    "forearm_twist_01_R": {
+      "main": [
+        "RE6Bone_071"
+      ],
+      "aux": []
+    },
+    "palm_L": {
+      "main": [
+        "RE6Bone_049"
+      ],
+      "aux": []
+    },
+    "elbow_L": {
+      "main": [
+        "RE6Bone_065"
+      ],
+      "aux": []
+    },
+    "knee_L": {
+      "main": [
+        "RE6Bone_069"
+      ],
+      "aux": []
+    },
+    "palm_R": {
+      "main": [
+        "RE6Bone_033"
+      ],
+      "aux": []
+    },
+    "elbow_R": {
+      "main": [
+        "RE6Bone_063"
+      ],
+      "aux": []
+    },
+    "knee_R": {
+      "main": [
+        "RE6Bone_068"
+      ],
+      "aux": []
+    }
+  }
+}
