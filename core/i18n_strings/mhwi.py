@@ -489,4 +489,6 @@ STRINGS = {
     "mhwi.operators.facial_ref_empty": {
         "EN": "No facial bones found under {bone} on the reference skeleton",
         "ZH": "参考骨架中 {bone} 之下没有表情骨"},
+    "mhwi.operators.facial_ref_female": {"EN": "Female", "ZH": "女性"},
+    "mhwi.operators.facial_ref_male": {"EN": "Male", "ZH": "男性"},
 }

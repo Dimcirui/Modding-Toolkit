@@ -16,8 +16,9 @@ def get_reference_skeleton_dir(game_code):
 _ref_skeleton_item_caches = {}
 
 
-def get_reference_skeleton_items(game_code):
-    """扫描 assets/reference_skeletons/<game_code>/ 下的 .fbx 文件，供 EnumProperty 使用。"""
+def get_reference_skeleton_items(game_code, labels=None):
+    """扫描 assets/reference_skeletons/<game_code>/ 下的 .fbx 文件，供 EnumProperty 使用。
+    labels: {文件名: 显示名}，没列出的文件用文件名（不含扩展名）作显示名。"""
     cache = _ref_skeleton_item_caches.setdefault(game_code, [])
     cache.clear()
     d = get_reference_skeleton_dir(game_code)
@@ -25,7 +26,7 @@ def get_reference_skeleton_items(game_code):
         for fname in sorted(os.listdir(d)):
             if fname.lower().endswith(".fbx"):
                 stem = os.path.splitext(fname)[0]
-                cache.append((fname, stem, ""))
+                cache.append((fname, (labels or {}).get(fname, stem), ""))
     if not cache:
         cache.append(("NONE", "无可用参考骨架", ""))
     return cache
