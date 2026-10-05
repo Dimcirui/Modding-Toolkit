@@ -209,7 +209,7 @@ STRINGS = {
     "ui.main_panel.btn_apply_inverse":            {"EN": "◀ Inverse (B→A)", "ZH": "◀ 逆向 (B→A)"},
     "ui.main_panel.btn_tex_process":              {"EN": "Texture Processing", "ZH": "贴图处理"},
     "ui.main_panel.btn_align_non_physics":        {"EN": "Align Non-Physics Bones", "ZH": "对齐非物理骨骼"},
-    "ui.main_panel.btn_split_physics_bones":      {"EN": "Split & Rename Physics Bones", "ZH": "拆分并重命名物理骨"},
+    "ui.main_panel.btn_split_physics_bones":      {"EN": "Rename Physics Bones", "ZH": "重命名物理骨"},
     "ui.main_panel.btn_mrl3_tex_processor":       {"EN": "MRL3 Processor", "ZH": "MRL3 处理器"},
     "ui.main_panel.btn_mrl3_generator":           {"EN": "MRL3 Generator", "ZH": "MRL3 生成器"},
     # ── shared property labels drawn via prop(text=...) ────────────────────

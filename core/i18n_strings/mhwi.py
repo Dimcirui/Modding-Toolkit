@@ -101,14 +101,14 @@ STRINGS = {
 
     # ── MHWI_OT_SplitPhysicsBones ────────────────────────────────────────────
     "mhwi.operators.split_physics_bones_desc": {
-        "EN": "Split physics bones into parts and rename them to MhBone_xxx, meshes included.\n"
+        "EN": "Rename physics bones to MhBone_xxx; split into parts (meshes included) only when they do not fit.\n"
               "Already processed and it fits: renumbered incrementally right away -- bones whose ID fits keep it.\n"
               "Otherwise a dialog asks what to make of it: with the unlock plugin required, everything follows the\n"
               "no-limit rules (300-511); without it, choose body (no limit) or another part (physics 150-199,\n"
               "tails 200-245 then 260-299). Body over 255 bones in total is split; another part that does not fit\n"
               "is refused -- make it body, require the plugin, or simplify it yourself.\n"
               "With several armatures selected, the processed ones that fit are renumbered and the rest listed.",
-        "ZH": "把物理骨按部位拆分并重命名为 MhBone_xxx，网格一起处理。\n"
+        "ZH": "把物理骨重命名为 MhBone_xxx；装不下时才按部位拆分（网格一起处理）。\n"
               "已处理过且装得下：直接增量重新编号——编号已合规的骨保持不动。\n"
               "其余情况弹窗确认要做成什么：要求玩家装解锁插件时一律按无限制规则（300~511）；\n"
               "不要求时选 body（无限制）或其他部位（物理 150~199，末端 200~245、满了接 260~299）。\n"
