@@ -1363,8 +1363,13 @@ def register():
         type=MHWI_RegionAssignment
     )
     bpy.types.Scene.mhwi_body_capacity = bpy.props.IntProperty(default=150)
+    # 游戏端的解锁插件：装了以后 arm / wst / leg 与 body 等同（300–512，各受 255 总数限制）。
+    # 插件在游戏侧，Blender 里探测不到，只能由用户声明。移植的名额估算和拆分共用这一个值。
+    bpy.types.Scene.mhwi_physics_unlocked = bpy.props.BoolProperty(
+        name="Physics Unlock Plugin", default=False)
 
 def unregister():
+    del bpy.types.Scene.mhwi_physics_unlocked
     del bpy.types.Scene.mhwi_region_assignments
     del bpy.types.Scene.mhwi_body_capacity
     for cls in reversed(classes):

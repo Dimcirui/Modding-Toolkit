@@ -203,6 +203,36 @@ STRINGS = {
     "core.standard_ops.graft_fork_summary": {
         "EN": "MHWI fork handling: dropped {stubs} empty chain root(s) / light trunk(s), picked {auto_continue} continuation(s), kept {branch_forks} fork(s) as branch chains",
         "ZH": "MHWI 分叉处理: 删除 {stubs} 个空链首/很轻的主干，自动选定 {auto_continue} 处主链延续，{branch_forks} 处分叉保留为分支链"},
+    "core.standard_ops.graft_unlocked_plugin": {
+        "EN": "Physics bone unlock plugin installed (arm / wst / leg same as body)",
+        "ZH": "已装物理骨解锁插件（arm / wst / leg 与 body 等同）"},
+    "core.standard_ops.graft_dissolve_centre": {
+        "EN": "Dissolve front centre chain (weights to left / right chains)",
+        "ZH": "拆掉正前方中央链（权重分给左右两条链）"},
+    "core.standard_ops.graft_dissolve_centre_named": {
+        "EN": "Dissolve front centre chain: {names}",
+        "ZH": "拆掉正前方中央链: {names}"},
+    "core.standard_ops.graft_decimate": {
+        "EN": "Decimate chains (keep ends, drop every other bone)",
+        "ZH": "抽稀物理链（保留首尾，隔一根删一根）"},
+    "core.standard_ops.graft_budget_header": {
+        "EN": "Estimated MHWI slots (base skeleton {base} bones):",
+        "ZH": "MHWI 名额估算（本体 {base} 根骨）："},
+    "core.standard_ops.graft_budget_line": {
+        "EN": "Estimated slots: {slots}",
+        "ZH": "名额估算: {slots}"},
+    "core.standard_ops.graft_budget_over": {
+        "EN": "{n} bone(s) fit in no slot",
+        "ZH": "还有 {n} 根骨放不下"},
+    "core.standard_ops.graft_budget_fits": {
+        "EN": "Everything fits",
+        "ZH": "全部放得下"},
+    "core.standard_ops.graft_helpers_note": {
+        "EN": "{n} helper bone(s) without any weight will not be grafted",
+        "ZH": "{n} 根整条都没权重的辅助骨不移植"},
+    "core.standard_ops.graft_simplify_summary": {
+        "EN": "Simplify: {helpers} helper bone(s) not grafted, {centre} centre chain(s) dissolved, {decimated} bone(s) decimated",
+        "ZH": "精简: {helpers} 根辅助骨不移植，拆掉 {centre} 条中央链，抽稀删掉 {decimated} 根"},
     "core.standard_ops.graft_fork_skipped": {
         "EN": "{n} second-level branch(es) get no chain (bones and weights kept, physics-free): {names}",
         "ZH": "{n} 处第二层分支不生成链（骨骼与权重保留，无物理）: {names}"},

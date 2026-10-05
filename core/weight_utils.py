@@ -51,6 +51,36 @@ def merge_vertex_groups(mesh_objects, merge_map):
                 vg.remove(delete_vg)
 
 
+def split_vertex_groups(mesh_objects, splits):
+    """把 splits {被拆组名: share} 里每个组的权重按顶点位置拆给若干目标组，再删掉被拆组。
+
+    *share(world_co)* 返回 [(目标组名, 比例), ...]，比例之和应为 1。和 merge_vertex_groups
+    一样按顶点扫一遍、先收集再写入；目标组不存在会新建。"""
+    for obj in mesh_objects:
+        vg = obj.vertex_groups
+        sources = {vg[name].index: share for name, share in splits.items() if name in vg}
+        if not sources:
+            continue
+        mw = obj.matrix_world
+        pending = {}
+        for vert in obj.data.vertices:
+            for g in vert.groups:
+                share = sources.get(g.group)
+                if share is None or not g.weight:
+                    continue
+                for target, frac in share(mw @ vert.co):
+                    if frac > 0:
+                        pending.setdefault(target, []).append((vert.index, g.weight * frac))
+        for target, entries in pending.items():
+            target_vg = vg.get(target) or vg.new(name=target)
+            for vert_index, weight in entries:
+                target_vg.add([vert_index], weight, 'ADD')
+        for name in splits:
+            src_vg = vg.get(name)
+            if src_vg is not None:
+                vg.remove(src_vg)
+
+
 def bone_weight_mass(mesh_objects, names):
     """{骨名: 该骨在所有网格上的顶点权重之和}，只统计 names 里的骨，缺省为 0.0。"""
     wanted = set(names)
