@@ -160,6 +160,8 @@ SECTIONS = {
                'EXPORT', needs='mhw_model'),
         ],
         'rig': [
+            op("mhwi.preprocess_model", "ui.main_panel.btn_mhwi_preprocess",
+               'ARMATURE_DATA', needs='mhw_model'),
             op("mhwi.align_non_physics", "ui.main_panel.btn_align_non_physics",
                'BONE_DATA'),
             _face_weights('MHWI'),

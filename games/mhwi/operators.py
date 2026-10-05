@@ -3,8 +3,10 @@ import time
 import bpy
 import re
 from ...core.i18n import T
-from ...core import bone_utils, facial_bones, facial_maps, fork_resolver, ref_skeleton, weight_utils
-from ...core.bone_mapper import BoneMapManager, resolve_preset
+from ...core import (bone_utils, facial_bones, facial_maps, fork_resolver, preprocess_align,
+                     ref_model_ops, ref_skeleton, weight_utils)
+from ...core.bone_mapper import BoneMapManager, auto_detect_preset, resolve_preset
+from ...core.mhwi_port import SOLE_OFFSET_Z
 from ...core.standard_ops import _build_fuzzy_preset_bones, _run_bone_color_refresh
 from ...core.re_chain_utils import _patch_chain_cleanup, _straighten_chain_orientations
 
@@ -44,6 +46,118 @@ class MHWI_OT_AlignNonPhysics(bpy.types.Operator):
             source_armature, target_armature, skip_fn=_is_mhwi_physics)
         skip = sum(1 for b in target_armature.data.bones if _is_mhwi_physics(b.name))
         self.report({'INFO'}, T("mhwi.operators.align_done").format(aligned=aligned, skip=skip))
+        return {'FINISHED'}
+
+
+# ==========================================
+# 1.5 一键导入并对齐 MHWI 模型
+# ==========================================
+class MHWI_OT_PreprocessModel(bpy.types.Operator):
+    """The MHWS one-click flow, with the reference first moved onto the ground.
+
+    ``mhws.preprocess_model`` scales the source by the ratio of the two rigs' arm heights
+    in *world Z*.  That only means something when both stand on z=0, and MHWI's reference
+    does not: its origin is the pelvis, 1.0468 m above the sole (``SOLE_OFFSET_Z`` -- the
+    same constant the MHWI -> MHWS port lifts its models by).  So the reference goes up by
+    that much, the Wilds steps run unchanged, and both rigs come back down together.
+    """
+    bl_idname = "mhwi.preprocess_model"
+    bl_label = "One-Click Import & Align MHWI Model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    male: bpy.props.BoolProperty(
+        name="Male Reference",
+        description="Align to the male hunter body instead of the female one",
+        default=False,
+    )
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("mhwi.operators.preprocess_model_desc")
+
+    @classmethod
+    def poll(cls, context):
+        return (context.active_object is not None
+                and context.active_object.type == 'ARMATURE')
+
+    @staticmethod
+    def _select(context, *objs):
+        bpy.ops.object.select_all(action='DESELECT')
+        for o in objs:
+            o.select_set(True)
+        context.view_layer.objects.active = objs[-1]
+
+    def execute(self, context):
+        settings = context.scene.mhw_suite_settings
+        source = context.active_object
+        if context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+        # 1. which preset is the source (MMD / VRChat only)
+        detected = preprocess_align.detect_source_preset(source)
+        if detected is None:
+            self.report({'WARNING'}, T("mhws.operators.mmd_vrchat_only"))
+            return {'CANCELLED'}
+        settings.import_preset_enum = detected
+        settings.pose_import_preset_enum = detected
+
+        # 2. MMD stands in A-pose; the reference is a T-pose rig
+        if detected == "MMD.json":
+            self._select(context, source)
+            bpy.ops.modder.mmd_a_to_tpose()
+
+        # 3. import the reference (MHWI's is natively T-pose, and has no facial bones to
+        #    merge), then put its soles on z=0 so the world-Z comparison below is fair
+        model = "male" if self.male else "female"
+        ok, reason = ref_model_ops.model_available("MHWI", model)
+        if not ok:
+            self.report({'ERROR'}, T(reason))
+            return {'CANCELLED'}
+        ref = ref_model_ops.import_model("MHWI", model)
+        if ref is None:
+            self.report({'ERROR'}, T("core.ref_model_ops.import_failed"))
+            return {'CANCELLED'}
+        ref_z0 = ref.location.z
+        ref.location.z = ref_z0 + SOLE_OFFSET_Z
+        context.view_layer.update()
+
+        y_preset = auto_detect_preset(ref, False, prefer_game="MHWI")
+        if y_preset is None:
+            self.report({'WARNING'}, T("mhwi.operators.no_mhwi_preset_detected"))
+            ref.location.z = ref_z0
+            return {'CANCELLED'}
+        settings.target_preset_enum = y_preset
+
+        # 4. scale so the arms stand at the same height.  Setting the object scale is what
+        #    ``transform.resize`` does to a lone selected object, without needing a 3D
+        #    view to run in.  Applying it afterwards is what the Wilds flow does -- note
+        #    that ``transform_apply`` also bakes location and rotation by default.
+        scale = preprocess_align.arm_scale(source, ref, detected, y_preset)
+        self._select(context, source)
+        source.scale = tuple(c * scale for c in source.scale)
+        bpy.ops.object.transform_apply(scale=True)
+
+        # 5. Y offset
+        context.view_layer.update()
+        dy = preprocess_align.arm_offset_y(source, ref, detected, y_preset)
+        if abs(dy) > 1e-4:
+            source.location.y += dy
+            self._select(context, *[c for c in source.children if c.type == 'MESH'], source)
+            bpy.ops.object.transform_apply(location=True, rotation=False, scale=False)
+
+        # 6. skeleton alignment: source selected, reference active
+        self._select(context, source, ref)
+        bpy.ops.modder.universal_snap()
+
+        # 7. both back down.  The reference returns to exactly where it was imported; the
+        #    source follows by the same amount so the two stay aligned.
+        ref.location.z = ref_z0
+        source.location.z -= SOLE_OFFSET_Z
+        self._select(context, *[c for c in source.children if c.type == 'MESH'], source)
+        bpy.ops.object.transform_apply(location=True, rotation=False, scale=False)
+        self._select(context, source, ref)
+
+        self.report({'INFO'}, T("mhws.operators.preprocess_done"))
         return {'FINISHED'}
 
 
@@ -1233,6 +1347,7 @@ def _is_head_ancestor(arm_obj, bone_name, head_name):
 classes = [
     MHWI_OT_AddFacialBones,
     MHWI_OT_AlignNonPhysics,
+    MHWI_OT_PreprocessModel,
     MHWI_OT_AutoCreateChains,
     MHWI_RegionAssignment,
     MHWI_OT_SplitPhysicsBones,

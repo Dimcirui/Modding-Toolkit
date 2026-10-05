@@ -34,6 +34,20 @@ STRINGS = {
         "EN": "Aligned: {aligned}, skipped physics bones: {skip}",
         "ZH": "对齐: {aligned}, 跳过物理骨: {skip}"},
 
+    # ── MHWI_OT_PreprocessModel ──────────────────────────────────────────────
+    "mhwi.operators.preprocess_model_desc": {
+        "EN": "Auto-detect MMD/VRChat -> pose correction -> import the MHWI reference body -> lift it so its "
+              "soles stand on the ground -> arm-height scale and Y-offset calibration -> skeleton alignment "
+              "-> lower both back together.\n"
+              "The reference ends up reshaped to the model's proportions. Requires the MHW Model Editor add-on.",
+        "ZH": "自动检测 MMD/VRChat → 姿态修正 → 导入猎人参考身体 → 把它抬到脚底着地 → 按手臂高度缩放、"
+              "校准 Y 偏移 → 骨架对齐 → 两边一起放回原位。\n"
+              "对齐后参考骨架会被吸附成这具模型的比例。需要 MHW Model Editor 插件。"},
+    "mhwi.operators.no_mhwi_preset_detected": {
+        "EN": "Could not auto-detect an MHWI bone preset; please manually select the target preset in the panel "
+              "and retry",
+        "ZH": "未能自动检测到猎人骨骼预设，请在面板中手动选择目标预设后重试"},
+
     # ── MHWI_OT_AutoCreateChains ─────────────────────────────────────────────
     "mhwi.operators.auto_create_chains_desc": {
         "EN": "In Pose Mode, automatically create CTC Chains from the chain_role property of "

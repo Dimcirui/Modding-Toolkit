@@ -250,6 +250,7 @@ STRINGS = {
     "ui.main_panel.btn_pre_export_check":         {"EN": "Matching Check", "ZH": "匹配检查"},
     "ui.main_panel.btn_batch_import":             {"EN": "Batch Import", "ZH": "批量导入"},
     "ui.main_panel.btn_mhws_preprocess":          {"EN": "One-Click Import & Align Wilds Model", "ZH": "一键导入并对齐荒野模型"},
+    "ui.main_panel.btn_mhwi_preprocess":          {"EN": "One-Click Import & Align MHWI Model", "ZH": "一键导入并对齐猎人模型"},
     "ui.main_panel.btn_mhws_optimize_skeleton":   {"EN": "Optimize Wilds Skeleton", "ZH": "优化荒野骨架"},
     "ui.main_panel.btn_mhws_optimize_aux":        {"EN": "Optimize Auxiliary Bones & Weights", "ZH": "优化辅助骨骼及权重"},
     "ui.main_panel.btn_add_facial_bones":         {"EN": "One-Click Add Facial Bones", "ZH": "一键添加表情骨"},
