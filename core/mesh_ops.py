@@ -16,6 +16,7 @@ import ...` before the move; the depth changed, the target module did not.
 
 import bpy
 import re
+import unicodedata
 
 from .i18n import T, get_lang
 from . import weight_utils
@@ -172,19 +173,102 @@ class MHW_OT_ShapeKeyToWeights(bpy.types.Operator):
 
         self.report({'INFO'}, T("ui.main_panel.sk_info_generated").format(name=active_kb.name, n=result))
         return {'FINISHED'}
-# (shape_key_name, direction_xyz, part_id, mhwi_vg, mhws_vg, re4_vg, re9_vg)
+# (slot, direction_xyz, part_id, mhwi_vg, mhws_vg, re4_vg, re9_vg)
 # part_id is an internal English identifier (translated for display via
 # _MMD_FACE_PART_KEYS below); it used to be the raw Chinese label itself.
+# slot says which shape key drives the row; the key itself is looked up in the
+# scheme tables below, so one row can be fed by several alternative keys.
 _MMD_FACE_ENTRIES = [
-    ("ウィンク２",  ( 0,  0, -1), "l_upper_eyelid", "MhBone_321", "L_UpEyeLid_LOD01",    "L_U_Eyelid3",   "L_UprLdEdge_02"),
-    ("ウィンク２",  ( 0,  0,  1), "l_lower_eyelid", "MhBone_325", "L_LoEyeLid_LOD01",    "L_D_Eyelid3",   "L_LwrLdEdge_02"),
-    ("ｳｨﾝｸ２右",  ( 0,  0, -1), "r_upper_eyelid", "MhBone_334", "R_UpEyeLid_LOD01",    "R_U_Eyelid3",   "R_UprLdEdge_02"),
-    ("ｳｨﾝｸ２右",  ( 0,  0,  1), "r_lower_eyelid", "MhBone_338", "R_LoEyeLid_LOD01",    "R_D_Eyelid3",   "R_LwrLdEdge_02"),
-    ("あ",          ( 0,  0,  1), "upper_lip",      "MhBone_381", "C_upLip_T_LOD01",     "C_UpperLip",    "C_UprLp_02"),
-    ("あ",          ( 0,  0, -1), "lower_lip",      "MhBone_388", "C_loLip_T_LOD01",     "C_LowerLip",    "C_LwrLp_02"),
-    ("あ",          ( 1,  0,  0), "l_mouth_corner", "MhBone_384", "L_cornerLip_B_LOD01", "L_MouthCorner", "L_LipCorner_02"),
-    ("あ",          (-1,  0,  0), "r_mouth_corner", "MhBone_385", "R_cornerLip_B_LOD01", "R_MouthCorner", "R_LipCorner_02"),
+    ("eye_l", ( 0,  0, -1), "l_upper_eyelid", "MhBone_321", "L_UpEyeLid_LOD01",    "L_U_Eyelid3",   "L_UprLdEdge_02"),
+    ("eye_l", ( 0,  0,  1), "l_lower_eyelid", "MhBone_325", "L_LoEyeLid_LOD01",    "L_D_Eyelid3",   "L_LwrLdEdge_02"),
+    ("eye_r", ( 0,  0, -1), "r_upper_eyelid", "MhBone_334", "R_UpEyeLid_LOD01",    "R_U_Eyelid3",   "R_UprLdEdge_02"),
+    ("eye_r", ( 0,  0,  1), "r_lower_eyelid", "MhBone_338", "R_LoEyeLid_LOD01",    "R_D_Eyelid3",   "R_LwrLdEdge_02"),
+    ("mouth", ( 0,  0,  1), "upper_lip",      "MhBone_381", "C_upLip_T_LOD01",     "C_UpperLip",    "C_UprLp_02"),
+    ("mouth", ( 0,  0, -1), "lower_lip",      "MhBone_388", "C_loLip_T_LOD01",     "C_LowerLip",    "C_LwrLp_02"),
+    ("mouth", ( 1,  0,  0), "l_mouth_corner", "MhBone_384", "L_cornerLip_B_LOD01", "L_MouthCorner", "L_LipCorner_02"),
+    ("mouth", (-1,  0,  0), "r_mouth_corner", "MhBone_385", "R_cornerLip_B_LOD01", "R_MouthCorner", "R_LipCorner_02"),
 ]
+
+# Which MMD shape key feeds each slot, in order of preference. A scheme is used only
+# as a whole: if any eye of a pair has no usable key, BOTH eyes move to the next
+# scheme, so the two sides never come from different shapes.
+# slot -> (key name, split by side). "Split by side" is for a key that moves both
+# eyes at once: one eye's group is cut out of it with an X-sign mask (+X = the
+# character's left).
+#
+# The order and the exclusions were measured on one MMD face mesh, by weighted
+# overlap of each candidate's weight field with the primary key's:
+#   eyes   まばたき 1.00/1.00 (upper/lower lid, identical to ウィンク２ per side),
+#          なごみ 0.95/0.82, ウィンク = 笑い 0.91/0.76. はぅ, じと目, はちゅ目 etc.
+#          barely move the lower lid (overlap <= 0.21), so they are not offered.
+#   mouth  あ２ 0.95, えー 0.94, ワ 0.92, え 0.87. い moves only the corners
+#          (lips 0.15/0.09) and お/う/▲ only the lips (corners 0.05): none of them
+#          can stand in for あ on its own.
+_MMD_EYE_SCHEMES = [
+    {"eye_l": ("ウィンク２", False), "eye_r": ("ウィンク２右", False)},
+    {"eye_l": ("まばたき",   True),  "eye_r": ("まばたき",   True)},
+    {"eye_l": ("ウィンク",   False), "eye_r": ("ウィンク右", False)},
+    {"eye_l": ("なごみ",     True),  "eye_r": ("なごみ",     True)},
+    {"eye_l": ("笑い",       True),  "eye_r": ("笑い",       True)},
+]
+_MMD_MOUTH_SCHEMES = [
+    {"mouth": (name, False)} for name in ("あ", "あ２", "えー", "ワ", "え")
+]
+_MMD_SLOT_SIDE = {"eye_l": 1, "eye_r": -1}
+
+
+def _mmd_norm(name):
+    """Shape-key name as compared by the face-weights lookup. NFKC folds half-width
+    kana (ｳｨﾝｸ) and full-width digits/punctuation (２, ！) onto one spelling, so
+    "ｳｨﾝｸ２右" and "ウィンク2右" are the same key."""
+    return unicodedata.normalize("NFKC", name).strip()
+
+
+def _mmd_key_lookup(shape_keys):
+    """{normalised name: key block}, the reference (basis) key excluded. The first
+    of several keys that normalise to the same name wins."""
+    lookup = {}
+    for kb in shape_keys.key_blocks:
+        if kb.name == shape_keys.reference_key.name:
+            continue
+        lookup.setdefault(_mmd_norm(kb.name), kb)
+    return lookup
+
+
+def _mmd_params(part_id):
+    if part_id in _MMD_FACE_MOUTH_LABELS:
+        return _MMD_FACE_MOUTH_PARAMS
+    return _MMD_FACE_FIXED_PARAMS[part_id in _MMD_FACE_UPPER_EYELID_LABELS]
+
+
+def _mmd_pick_scheme(obj, basis_kb, lookup, rows, schemes):
+    """Choose the first scheme every row of which has a key that actually deforms the
+    mesh; failing that, the earliest scheme with the most working rows (so a model that
+    has only one eye's key still gets that eye, as before).
+
+    Returns (plan, scheme_index) where plan is [(row, key block or None, side)] with
+    None meaning that row has no usable key.
+    """
+    best = None
+    for idx, scheme in enumerate(schemes):
+        plan, ok = [], 0
+        for row in rows:
+            slot, direction, part_id = row[0], row[1], row[2]
+            key_name, by_side = scheme[slot]
+            kb = lookup.get(_mmd_norm(key_name))
+            side = _MMD_SLOT_SIDE[slot] if by_side else None
+            if kb is not None and weight_utils.shape_key_to_weights(
+                    obj, kb, basis_kb, direction=direction, side=side, dry_run=True,
+                    **_mmd_params(part_id)) is not None:
+                ok += 1
+            else:
+                kb = None
+            plan.append((row, kb, side))
+        if best is None or ok > best[0]:
+            best = (ok, idx, plan)
+        if ok == len(rows):
+            break
+    return best[2], best[1]
 _MMD_FACE_GAME_COL = {'MHWI': 3, 'MHWS': 4, 'RE4': 5, 'RE9': 6}
 # The RE4 skeleton carries two complete sets of eyelid bones -- L_U_Eyelid01-04
 # and L_U_Eyelid1-4 -- and every reference character has both. Which set the
@@ -288,35 +372,39 @@ class MHW_OT_MMDFaceWeights(bpy.types.Operator):
         if context.mode != 'OBJECT':
             bpy.ops.object.mode_set(mode='OBJECT')
 
-        key_blocks = obj.data.shape_keys.key_blocks
         basis_kb = obj.data.shape_keys.reference_key
         vg_col = _MMD_FACE_GAME_COL[self.target_game]
+        lookup = _mmd_key_lookup(obj.data.shape_keys)
 
-        done, skipped = [], []
-        for sk_name, direction, part_id, *vg_names in _MMD_FACE_ENTRIES:
-            kb = key_blocks.get(sk_name)
-            if kb is None:
-                skipped.append(part_id)
-                continue
-            target_vg = vg_names[vg_col - 3]
-            if self.target_game == 'RE4':
-                target_vg = _mmd_re4_vg_name(target_vg, self.re4_character)
-            if part_id in _MMD_FACE_MOUTH_LABELS:
-                params = _MMD_FACE_MOUTH_PARAMS
-            else:
-                params = _MMD_FACE_FIXED_PARAMS[part_id in _MMD_FACE_UPPER_EYELID_LABELS]
-
-            result = weight_utils.shape_key_to_weights(
-                obj, kb, basis_kb,
-                sync_seams=self.sync_seams,
-                direction=direction,
-                vg_name=target_vg,
-                **params,
-            )
-            if result is None:
-                skipped.append(part_id)
-            else:
-                done.append(part_id)
+        done, skipped, fallback_keys = [], [], []
+        for slots, schemes in ((("eye_l", "eye_r"), _MMD_EYE_SCHEMES),
+                               (("mouth",), _MMD_MOUTH_SCHEMES)):
+            rows = [r for r in _MMD_FACE_ENTRIES if r[0] in slots]
+            plan, scheme_idx = _mmd_pick_scheme(obj, basis_kb, lookup, rows, schemes)
+            used = []
+            for (slot, direction, part_id, *vg_names), kb, side in plan:
+                if kb is None:
+                    skipped.append(part_id)
+                    continue
+                target_vg = vg_names[vg_col - 3]
+                if self.target_game == 'RE4':
+                    target_vg = _mmd_re4_vg_name(target_vg, self.re4_character)
+                result = weight_utils.shape_key_to_weights(
+                    obj, kb, basis_kb,
+                    sync_seams=self.sync_seams,
+                    direction=direction,
+                    vg_name=target_vg,
+                    side=side,
+                    **_mmd_params(part_id),
+                )
+                if result is None:
+                    skipped.append(part_id)
+                else:
+                    done.append(part_id)
+                    if kb.name not in used:
+                        used.append(kb.name)
+            if scheme_idx > 0:
+                fallback_keys.extend(used)
 
         if not done:
             self.report({'WARNING'}, T("ui.main_panel.mmd_warn_no_valid_shapekeys"))
@@ -328,6 +416,8 @@ class MHW_OT_MMDFaceWeights(bpy.types.Operator):
         if skipped:
             skipped_labels = [T(_MMD_FACE_PART_KEYS[p]) for p in skipped]
             msg += T("ui.main_panel.mmd_info_skipped_suffix").format(parts=join_sep.join(skipped_labels))
+        if fallback_keys:
+            msg += T("ui.main_panel.mmd_info_fallback_suffix").format(keys=join_sep.join(fallback_keys))
         self.report({'INFO'}, msg)
         return {'FINISHED'}
 class MHW_OT_CylindricalFaceNormals(bpy.types.Operator):

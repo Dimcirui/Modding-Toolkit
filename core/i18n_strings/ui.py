@@ -292,6 +292,7 @@ STRINGS = {
     "ui.main_panel.mmd_warn_no_valid_shapekeys":  {"EN": "No valid shape keys found; check the MMD shape key names", "ZH": "未找到任何有效形态键，请检查 MMD 形态键名称"},
     "ui.main_panel.mmd_info_generated":           {"EN": "Generated {n} facial vertex group(s): {parts}", "ZH": "已生成 {n} 个表情顶点组：{parts}"},
     "ui.main_panel.mmd_info_skipped_suffix":      {"EN": "; skipped: {parts}", "ZH": "；跳过：{parts}"},
+    "ui.main_panel.mmd_info_fallback_suffix":     {"EN": "; used fallback shape keys: {keys}", "ZH": "；已改用备用形态键：{keys}"},
 
     # ── MHW_OT_CylindricalFaceNormals / MHW_OT_ResetFaceNormals ──────────────────
     "ui.main_panel.btn_cylindrical_face_normals": {"EN": "Cylindrical Face Normals (Toon)", "ZH": "面法向柱面化 (三渲二)"},

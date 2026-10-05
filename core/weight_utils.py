@@ -207,7 +207,8 @@ def _interior_depths(me):
 def shape_key_to_weights(obj, active_kb, basis_kb, ignore_threshold=0.001,
                          weight_strength=1.0, smooth_factor=0.5,
                          smooth_iters=10, sync_seams=True, direction=None,
-                         vg_name=None, surface_ref=False, interior_falloff=None):
+                         vg_name=None, surface_ref=False, interior_falloff=None,
+                         side=None, dry_run=False):
     """
     Convert a shape key to a vertex group using normalized, Laplacian-smoothed weights.
 
@@ -229,6 +230,14 @@ def shape_key_to_weights(obj, active_kb, basis_kb, ignore_threshold=0.001,
     interior_falloff: optional (d0, d1) in local units. Interior vertices (see
     _interior_depths) keep full weight up to depth d0, then fade linearly to 0 at d1.
 
+    side: +1 / -1 keeps only vertices whose rest position lies on the +X / -X side of the
+    object's world origin. For a key that moves both eyes at once (blink), this is how one
+    eye's group is cut out of it.
+
+    dry_run: stop after the displacement scan and return what a real run would return,
+    without touching vertex groups -- lets a caller test whether a key is usable before
+    committing to it.
+
     Returns the number of affected vertices, or None if no valid displacement is found.
     """
     vertices = obj.data.vertices
@@ -241,7 +250,7 @@ def shape_key_to_weights(obj, active_kb, basis_kb, ignore_threshold=0.001,
     world_mat3 = obj.matrix_world.to_3x3() if filter_dir is not None else None
 
     seam_groups = []
-    if sync_seams:
+    if sync_seams and not dry_run:
         coincident = {}
         for i, v in enumerate(vertices):
             key = (round(v.co.x, 5), round(v.co.y, 5), round(v.co.z, 5))
@@ -263,7 +272,11 @@ def shape_key_to_weights(obj, active_kb, basis_kb, ignore_threshold=0.001,
                     sub.append([v_idx])
             seam_groups.extend(sg for sg in sub if len(sg) > 1)
 
+    mat_world = obj.matrix_world if side is not None else None
+
     for i in range(v_count):
+        if side is not None and (mat_world @ basis_kb.data[i].co).x * side <= 0:
+            continue
         disp = active_kb.data[i].co - basis_kb.data[i].co
         if filter_dir is not None:
             val = (world_mat3 @ disp).dot(filter_dir)
@@ -280,6 +293,8 @@ def shape_key_to_weights(obj, active_kb, basis_kb, ignore_threshold=0.001,
 
     if valid_count == 0 or max_val == 0:
         return None
+    if dry_run:
+        return valid_count
 
     depths = (_interior_depths(obj.data)
               if surface_ref or interior_falloff is not None else None)
