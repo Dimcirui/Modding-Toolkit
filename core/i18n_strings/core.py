@@ -66,9 +66,25 @@ STRINGS = {
         "EN": "Clear the chain_role mark on selected bones, reverting them to regular body bones (deep blue)",
         "ZH": "清除选中骨骼的 chain_role 标记，恢复为普通体骨（深蓝色）"},
     "core.standard_ops.merge_into_parent_desc": {
-        "EN": "Merge selected bone vertex weights into its parent bone and delete the selected bone.\n"
+        "EN": "Merge into the parent: the bone's vertex weights go to its parent bone and the bone is deleted.\n"
+              "Armature in Pose/Edit Mode: works on the selected bones.\n"
+              "Mesh active: works on its active vertex group -- the bone of that name in the armature the mesh is\n"
+              "parented to, or else the one its Armature modifier uses.\n"
               "For cleaning up functional root bones (connector bones without physics simulation, such as hair_root)",
-        "ZH": "将选中骨骼的顶点权重合并到其父骨骼，并删除选中骨骼。\n用于清理功能性根骨（如 hair_root 等无物理模拟的连接器骨骼）"},
+        "ZH": "合并到父级：把骨骼的顶点权重并进它的父骨，并删除这根骨骼。\n"
+              "骨架在姿态/编辑模式：处理选中的骨骼。\n"
+              "活动物体是网格：处理它的活动顶点组——在网格的父级骨架（没有就用姿态修改器绑的骨架）里找同名骨骼。\n"
+              "用于清理功能性根骨（如 hair_root 等无物理模拟的连接器骨骼）"},
+    "core.standard_ops.merge_no_active_vgroup": {
+        "EN": "This mesh has no active vertex group", "ZH": "这个网格没有活动顶点组"},
+    "core.standard_ops.merge_mesh_needs_armature": {
+        "EN": "Bind the mesh to an armature first!", "ZH": "请先给网格绑定一个骨架！"},
+    "core.standard_ops.merge_vgroup_no_bone": {
+        "EN": "Armature {armature} has no bone named {group}",
+        "ZH": "骨架 {armature} 里没有名为 {group} 的骨骼"},
+    "core.standard_ops.merge_armature_hidden": {
+        "EN": "Armature {armature} is hidden; unhide it first",
+        "ZH": "骨架 {armature} 被隐藏了，请先取消隐藏"},
 
     # ── Shared error / status fragments ─────────────────────────────────────
     "core.standard_ops.correctives_merged": {

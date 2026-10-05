@@ -1965,9 +1965,21 @@ class MODDER_OT_MergeIntoParent(bpy.types.Operator):
     def description(cls, context, properties):
         return T("core.standard_ops.merge_into_parent_desc")
 
+    @staticmethod
+    def _armature_of_mesh(obj):
+        """网格挂着的骨架：先看父级，再看姿态修改器绑的骨架；都没有返回 None。"""
+        if obj.parent is not None and obj.parent.type == 'ARMATURE':
+            return obj.parent
+        for m in obj.modifiers:
+            if m.type == 'ARMATURE' and m.object is not None and m.object.type == 'ARMATURE':
+                return m.object
+        return None
+
     def execute(self, context):
-        arm_obj = context.active_object
-        if not arm_obj or arm_obj.type != 'ARMATURE':
+        obj = context.active_object
+        if obj is not None and obj.type == 'MESH':
+            return self._from_vertex_group(context, obj)
+        if not obj or obj.type != 'ARMATURE':
             self.report({'ERROR'}, T("core.standard_ops.select_armature_first"))
             return {'CANCELLED'}
 
@@ -1980,7 +1992,7 @@ class MODDER_OT_MergeIntoParent(bpy.types.Operator):
             return {'CANCELLED'}
 
         bpy.ops.object.mode_set(mode='OBJECT')
-        bones_data = arm_obj.data.bones
+        bones_data = obj.data.bones
         pairs = []
         for name in selected_names:
             bone = bones_data.get(name)
@@ -1990,7 +2002,48 @@ class MODDER_OT_MergeIntoParent(bpy.types.Operator):
         if not pairs:
             self.report({'WARNING'}, T("core.standard_ops.no_valid_parent_bone"))
             return {'CANCELLED'}
+        self._merge(context, obj, pairs)
+        return {'FINISHED'}
 
+    def _from_vertex_group(self, context, mesh_obj):
+        """选中的是网格：取它的活动顶点组，找到同名骨骼，连骨带权重一起并进父骨。
+        Blender 里一个网格同时只有一个活动顶点组，所以一次合并一根。"""
+        vg = mesh_obj.vertex_groups.active
+        if vg is None:
+            self.report({'ERROR'}, T("core.standard_ops.merge_no_active_vgroup"))
+            return {'CANCELLED'}
+        arm_obj = self._armature_of_mesh(mesh_obj)
+        if arm_obj is None:
+            self.report({'ERROR'}, T("core.standard_ops.merge_mesh_needs_armature"))
+            return {'CANCELLED'}
+        if not arm_obj.visible_get():
+            # 隐藏的骨架进不了编辑模式（mode_set 的 poll 会失败）
+            self.report({'ERROR'}, T("core.standard_ops.merge_armature_hidden").format(
+                armature=arm_obj.name))
+            return {'CANCELLED'}
+        bone = arm_obj.data.bones.get(vg.name)
+        if bone is None:
+            self.report({'ERROR'}, T("core.standard_ops.merge_vgroup_no_bone").format(
+                group=vg.name, armature=arm_obj.name))
+            return {'CANCELLED'}
+        if bone.parent is None:
+            self.report({'WARNING'}, T("core.standard_ops.no_valid_parent_bone"))
+            return {'CANCELLED'}
+
+        mode = context.mode
+        restore = {'PAINT_WEIGHT': 'WEIGHT_PAINT', 'EDIT_MESH': 'EDIT'}.get(mode, 'OBJECT')
+        if mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+        self._merge(context, arm_obj, [(bone.parent.name, bone.name)])
+        # 合并过程中活动物体被切到了骨架上；回到用户原来的网格和模式，好接着点下一个组
+        context.view_layer.objects.active = mesh_obj
+        if restore != 'OBJECT':
+            bpy.ops.object.mode_set(mode=restore)
+        return {'FINISHED'}
+
+    def _merge(self, context, arm_obj, pairs):
+        # 下面要进骨架的编辑模式：从网格进来时活动物体还是网格
+        context.view_layer.objects.active = arm_obj
         # 断开子骨连接，防止删除父骨后子骨位置被吸附
         bpy.ops.object.mode_set(mode='EDIT')
         edit_bones = arm_obj.data.edit_bones
@@ -2012,7 +2065,6 @@ class MODDER_OT_MergeIntoParent(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='OBJECT')
 
         self.report({'INFO'}, T("core.standard_ops.merged_into_parent").format(n=len(pairs)))
-        return {'FINISHED'}
 
 
 classes = [

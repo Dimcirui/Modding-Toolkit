@@ -169,7 +169,7 @@ STRINGS = {
     "ui.main_panel.btn_remove_non_base_bones":    {"EN": "Remove Non-Base Bones [X]", "ZH": "剔除非基础骨骼 [X]"},
     "ui.main_panel.btn_rename_bones_to_target":   {"EN": "Rename Base Bones [X+Y]", "ZH": "基础骨骼改名 [X+Y]"},
     "ui.main_panel.btn_smart_graft":              {"EN": "Graft Physics Bones [X+Y, dual armature]", "ZH": "移植物理骨骼 [X+Y, 双骨架]"},
-    "ui.main_panel.btn_merge_into_parent":        {"EN": "Merge into Parent Bone", "ZH": "合并到父骨"},
+    "ui.main_panel.btn_merge_into_parent":        {"EN": "Merge into Parent", "ZH": "合并到父级"},
     "ui.main_panel.btn_mark_main_continue":       {"EN": "Mark as Main Chain Continuation", "ZH": "标记为主链延伸"},
     "ui.main_panel.btn_clear_chain_role":         {"EN": "Clear Mark", "ZH": "清除标记"},
     "ui.main_panel.btn_refresh_bone_colors":      {"EN": "Refresh Bone Colors", "ZH": "刷新骨骼颜色"},
