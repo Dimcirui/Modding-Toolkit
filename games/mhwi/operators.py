@@ -504,7 +504,7 @@ def _collect_physics_bones(armature, preset_bones):
     return physics
 
 
-# 溢出路径部位分配选项
+# 部位分配选项
 _SLOT_ITEMS = [
     ('body', "body", ""),
     ('arm',  "arm",  ""),
@@ -512,59 +512,65 @@ _SLOT_ITEMS = [
     ('leg',  "leg",  ""),
 ]
 
-# 溢出路径 ID 范围
-_SLOT_ID_RANGE = {
-    'body': (300, 512),
-    'arm':  (150, 200),
-    'wst':  (150, 200),
-    'leg':  (150, 200),
-}
+_MHBONE_RE = re.compile(r"^MhBone_(\d+)$")
+
+
 def _is_tail_bone(bone, physics_bones_set):
     """尾骨骼：在物理骨集合中没有物理子骨的骨骼（即链末端）。"""
     return not any(c.name in physics_bones_set for c in bone.children)
 
 
-def _assign_next_id(used_ids, id_range):
-    """在 id_range 内找下一个未使用的 ID。"""
-    start, end = id_range
-    for i in range(start, end + 1):
-        if i not in used_ids:
-            return i
-    return None
+def _mhbone_id(name):
+    m = _MHBONE_RE.match(name)
+    return int(m.group(1)) if m else None
 
 
-def _count_rename_failures(armature, physics_bones_ordered, id_range, also_exclude=None):
-    """预检重命名会失败的骨骼数量（不实际改名）。
-    返回 (成功数, 失败数)。
+def _in_ranges(idx, ranges):
+    return any(a <= idx <= b for a, b in ranges)
 
-    also_exclude: 额外要从 used_ids 中排除的骨骼名集合。
-    用于多批次顺序重命名时，前一批次的骨骼在执行时已离开当前范围，
-    预检阶段需显式告知本函数忽略这些骨骼的当前 ID。
-    """
-    # 待重命名骨骼即将释放自身 ID，不应计入"已占用"
-    physics_bones_set = set(physics_bones_ordered)
-    if also_exclude:
-        physics_bones_set |= set(also_exclude)
-    used_ids = set()
-    for b in armature.data.bones:
-        if b.name.startswith("MhBone_") and b.name not in physics_bones_set:
-            try:
-                idx = int(b.name.split("_")[-1])
-                if id_range[0] <= idx <= id_range[1]:
-                    used_ids.add(idx)
-            except (ValueError, IndexError):
-                pass
-    success = 0
-    fail = 0
-    existing_names = {b.name for b in armature.data.bones}
-    for name in physics_bones_ordered:
-        new_id = _assign_next_id(used_ids, id_range)
-        if new_id is None or name not in existing_names:
-            fail += 1
-            continue
-        used_ids.add(new_id)
-        success += 1
-    return success, fail
+
+def _rename_batches(armature, physics, rule):
+    """按编号规则把物理骨分成 [(骨名序列, 编号范围), ...]。
+
+    *rule* 为 ``'BODY'``：全部进 300–511。``'SLOT'``（不装插件的 arm / wst / leg）：非末端
+    进 150–199——只有这一段有物理；末端放哪都行，只要不占 150–199，先 200–249 再 300–511。"""
+    budget = mhwi_physics_budget
+    if rule == 'BODY':
+        return [(list(physics), budget.BODY_IDS)]
+    ps = set(physics)
+    bones = armature.data.bones
+    non_tail = [n for n in physics if not _is_tail_bone(bones[n], ps)]
+    tail = [n for n in physics if _is_tail_bone(bones[n], ps)]
+    return [(non_tail, budget.SLOT_PHYSICS_IDS), (tail, budget.SLOT_TAIL_IDS)]
+
+
+def _plan_renumber(armature, batches):
+    """给每批骨分配编号，返回 [(旧名, 新名或 None), ...]。
+
+    只有**不参与这次改名**的 MhBone 才算占用编号（本体骨，比如参考骨架自带的 249–253）；
+    这次要改的骨不管现在叫什么都会让出编号。若按批次各算各的占用，某根尾骨此刻恰好叫
+    MhBone_150，改非末端时 150 就会被当成占用跳过，白白少一个有物理的编号。"""
+    renaming = {n for names, _r in batches for n in names}
+    used = {i for i in (_mhbone_id(b.name) for b in armature.data.bones
+                        if b.name not in renaming) if i is not None}
+    out = []
+    for names, ranges in batches:
+        free = (i for a, b in ranges for i in range(a, b + 1) if i not in used)
+        for n in names:
+            new_id = next(free, None)
+            if new_id is None:
+                out.append((n, None))
+            else:
+                used.add(new_id)
+                out.append((n, f"MhBone_{new_id:03d}"))
+    return out
+
+
+def _count_rename_failures(armature, batches):
+    """预检：(成功数, 失败数)，不改名。"""
+    plan = _plan_renumber(armature, batches)
+    fail = sum(1 for _o, new in plan if new is None)
+    return len(plan) - fail, fail
 
 
 def _child_meshes(armature):
@@ -572,9 +578,8 @@ def _child_meshes(armature):
     return [obj for obj in armature.children_recursive if obj.type == 'MESH']
 
 
-def _rename_physics_bones(armature, physics_bones_ordered, id_range):
-    """将 physics_bones_ordered（骨骼名列表）重命名为 MhBone_xxx，使用 id_range 范围。
-    返回 (成功数, 失败数)。
+def _rename_physics_bones(armature, batches):
+    """按 *batches*（见 _rename_batches）把物理骨重命名为 MhBone_xxx，返回 (成功数, 失败数)。
 
     采用两步改名（临时名 → 正式名）避免同序列内的命名冲突：
     若直接逐一改名，前面的骨骼抢占了后面骨骼的当前名称对应的 ID，
@@ -585,28 +590,7 @@ def _rename_physics_bones(armature, physics_bones_ordered, id_range):
     网格额外做一次同名顶点组的手动改名（已被自动同步的网格此时对应顶点组已
     不存在，手动步骤会直接跳过，不会重复处理或产生冲突）。
     """
-    # 待重命名骨骼即将释放自身 ID，不应计入"已占用"
-    physics_bones_set = set(physics_bones_ordered)
-    used_ids = set()
-    for b in armature.data.bones:
-        if b.name.startswith("MhBone_") and b.name not in physics_bones_set:
-            try:
-                idx = int(b.name.split("_")[-1])
-                if id_range[0] <= idx <= id_range[1]:
-                    used_ids.add(idx)
-            except (ValueError, IndexError):
-                pass
-
-    # 预先计算每根骨骼的目标名称
-    assignments = []  # [(old_name, new_name | None), ...]
-    for name in physics_bones_ordered:
-        new_id = _assign_next_id(used_ids, id_range)
-        if new_id is None:
-            assignments.append((name, None))
-        else:
-            assignments.append((name, f"MhBone_{new_id:03d}"))
-            used_ids.add(new_id)
-
+    assignments = _plan_renumber(armature, batches)
     child_meshes = _child_meshes(armature)
 
     success = 0
@@ -647,6 +631,35 @@ def _rename_physics_bones(armature, physics_bones_ordered, id_range):
 
     bpy.ops.object.mode_set(mode='OBJECT')
     return success, fail
+
+
+def _slot_suffix(name):
+    base = name[:-5] if name.endswith('.mod3') else name
+    for slot in mhwi_physics_budget.SLOTS:
+        if base.endswith('_' + slot):
+            return slot
+    return None
+
+
+def _rename_rule(armature, physics, unlocked):
+    """这副骨架用哪套编号：``'BODY'``（300–511）还是 ``'SLOT'``（不装插件的小部位）。
+
+    1. 勾了解锁插件：一律 BODY。
+    2. 已经有编号的看**非末端骨**的编号：有一根在 300 以上就是 BODY，都在 150–299 就是
+       SLOT。只看非末端，因为不装插件时末端骨也可以放到 300+，看全部会把小部位误判成
+       body，物理骨就会被编到没有物理的 300+ 上。
+    3. 都还是原名（手动拆的骨架）：按骨架名后缀，_body 或没有后缀是 BODY，其余 SLOT。"""
+    if unlocked:
+        return 'BODY'
+    ps = set(physics)
+    bones = armature.data.bones
+    ids = [i for i in (_mhbone_id(n) for n in physics if not _is_tail_bone(bones[n], ps))
+           if i is not None]
+    if any(i >= 300 for i in ids):
+        return 'BODY'
+    if any(150 <= i < 300 for i in ids):
+        return 'SLOT'
+    return 'SLOT' if _slot_suffix(armature.name) in ('arm', 'wst', 'leg') else 'BODY'
 
 
 def _make_slot_name(original_name, slot):
@@ -769,6 +782,17 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
         if not physics:
             self.report({'INFO'}, T("mhwi.operators.no_physics_bones_found"))
             return {'CANCELLED'}
+        # 已经拆过的部位骨架（拆完又手动加了骨）：不再拆，只按该部位的规则重新编号。
+        # 否则它总数 <=255 会走"直接重命名"，没装插件的 arm / wst / leg 会被编到没有
+        # 物理的 300+ 上。
+        if _slot_suffix(armature.name) is not None:
+            unlocked = getattr(context.scene, "mhwi_physics_unlocked", False)
+            rule = _rename_rule(armature, physics, unlocked)
+            context.view_layer.objects.active = armature
+            s, f = _rename_physics_bones(armature, _rename_batches(armature, physics, rule))
+            self.report({'INFO'}, T("mhwi.operators.renumber_only").format(
+                name=armature.name, success=s, fail=f))
+            return {'FINISHED'}
         plan = physics_split.plan_split(armature, mapper, physics)
         _SPLIT_PREVIEW.clear()
         _SPLIT_PREVIEW[armature.name] = plan
@@ -833,12 +857,13 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
         # 快速路径 + 直接重命名：一步到位
         if self.is_fast_path and self.fast_mode == 'DIRECT':
             context.view_layer.objects.active = armature
-            s, f = _count_rename_failures(armature, physics, _SLOT_ID_RANGE['body'])
+            batches = _rename_batches(armature, physics, 'BODY')
+            s, f = _count_rename_failures(armature, batches)
             if f > 0:
                 self.report({'ERROR'},
                     T("mhwi.operators.exceeds_bone_count").format(n=f))
                 return {'CANCELLED'}
-            success, fail = _rename_physics_bones(armature, physics, _SLOT_ID_RANGE['body'])
+            success, fail = _rename_physics_bones(armature, batches)
             self.report({'INFO'}, T("mhwi.operators.rename_done").format(success=success, fail=fail))
             return {'FINISHED'}
 
@@ -899,10 +924,25 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
 
         armature.name = _make_slot_name(base_name, 'body')
         armature.data.name = armature.name
+
+        # 拆完直接重命名：每根骨属于哪个部位、用哪套编号，拆分自己最清楚，不用再从骨架名
+        # 反推。容量检查已经保证编号够用。
+        renamed = rename_fail = 0
+        for slot, arm_obj in slot_arms.items():
+            names = [n for n in physics if slot_of_bone[n] == slot]
+            if not names:
+                continue
+            rule = 'BODY' if unlocked or slot == 'body' else 'SLOT'
+            context.view_layer.objects.active = arm_obj
+            s, f = _rename_physics_bones(arm_obj, _rename_batches(arm_obj, names, rule))
+            renamed += s
+            rename_fail += f
         context.view_layer.objects.active = armature
 
         self.report({'INFO'}, T("mhwi.operators.split_done").format(
             n=len(slot_arms), names=T("mhwi.operators.list_sep").join(slot_arms)))
+        self.report({'WARNING'} if rename_fail else {'INFO'},
+                    T("mhwi.operators.rename_done").format(success=renamed, fail=rename_fail))
         self.report({'INFO'}, T("mhwi.operators.split_mesh_summary").format(
             moved=moved, split=split, verts=touched))
         if not found_mod3:
@@ -926,33 +966,15 @@ class MHWI_OT_BatchRenamePhysicsBones(bpy.types.Operator):
         return any(obj.type == 'ARMATURE' for obj in context.selected_objects)
 
     @staticmethod
-    def _is_body_slot(name):
-        base = name[:-5] if name.endswith('.mod3') else name
-        return base.endswith('_body')
-
-    @staticmethod
     def _count_failures_for_armature(mapper, arm_obj, unlocked=False):
         """预检单个骨架的失败数，但不实际改名。"""
         preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
         physics = _collect_physics_bones(arm_obj, preset_bones)
         if not physics:
             return 0
-
-        # 装了解锁插件：arm / wst / leg 与 body 等同，都用 300–512，不分末端骨
-        if unlocked or MHWI_OT_BatchRenamePhysicsBones._is_body_slot(arm_obj.name):
-            _, f = _count_rename_failures(arm_obj, physics, _SLOT_ID_RANGE['body'])
-            return f
-        else:
-            physics_set = set(physics)
-            non_tail = [n for n in physics
-                        if not _is_tail_bone(arm_obj.data.bones[n], physics_set)]
-            tail = [n for n in physics
-                    if _is_tail_bone(arm_obj.data.bones[n], physics_set)]
-            _, f1 = _count_rename_failures(arm_obj, non_tail, (150, 200))
-            # tail 的预检需排除 non_tail：执行时 non_tail 已先行重命名离开 (201, 245)，
-            # 若 non_tail 当前有 ID 落在该范围，不应计为 tail 的冲突
-            _, f2 = _count_rename_failures(arm_obj, tail, (201, 245), also_exclude=non_tail)
-            return f1 + f2
+        rule = _rename_rule(arm_obj, physics, unlocked)
+        _, f = _count_rename_failures(arm_obj, _rename_batches(arm_obj, physics, rule))
+        return f
 
     def invoke(self, context, _event):
         mapper = BoneMapManager()
@@ -997,23 +1019,11 @@ class MHWI_OT_BatchRenamePhysicsBones(bpy.types.Operator):
             if not physics:
                 continue
 
-            if (getattr(context.scene, "mhwi_physics_unlocked", False)
-                    or self._is_body_slot(arm_obj.name)):
-                s, f = _rename_physics_bones(arm_obj, physics, _SLOT_ID_RANGE['body'])
-                total_success += s
-                total_fail += f
-            else:
-                physics_set = set(physics)
-                non_tail = [n for n in physics
-                            if not _is_tail_bone(arm_obj.data.bones[n], physics_set)]
-                tail = [n for n in physics
-                        if _is_tail_bone(arm_obj.data.bones[n], physics_set)]
-                s, f = _rename_physics_bones(arm_obj, non_tail, (150, 200))
-                total_success += s
-                total_fail += f
-                s, f = _rename_physics_bones(arm_obj, tail, (201, 245))
-                total_success += s
-                total_fail += f
+            rule = _rename_rule(arm_obj, physics,
+                                getattr(context.scene, "mhwi_physics_unlocked", False))
+            s, f = _rename_physics_bones(arm_obj, _rename_batches(arm_obj, physics, rule))
+            total_success += s
+            total_fail += f
 
         self.report({'INFO'}, T("mhwi.operators.rename_done").format(success=total_success, fail=total_fail))
         return {'FINISHED'}

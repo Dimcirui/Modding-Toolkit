@@ -4,10 +4,12 @@
 --------
 - 每个部位的 mod3 总骨数上限 255，其中本体骨（参考模型 86 根）每个部位都有一份，所以
   一个部位能放的物理骨 = 255 − 本体骨数。
-- **不装解锁插件**：只有 body 用 300–512，受的就是上面这个总数限制；arm / wst / leg
-  的非末端骨只能用 150–200（51 个），末端骨用 201–245（45 个）。末端骨没有物理、只标
-  结束，挪出 150–199 是为了多省出名额。
-- **装了解锁插件**：arm / wst / leg 与 body 等同，都用 300–512，各自受 255 总数限制。
+- **不装解锁插件**：只有 body 用 300–511，受的就是上面这个总数限制；arm / wst / leg
+  上**物理实际生效的只有 150–199（50 个）**。末端骨没有物理、只标结束，放在哪都行，
+  只要不占 150–199——这里先放 200–249，满了放 300–511。所以小部位的硬约束只有两条：
+  非末端 ≤ 50，总数 ≤ 255 − 本体骨数；末端骨没有单独的上限。
+  （早先的代码把非末端写成 150–200 共 51 个，第 51 根落在 200 上，游戏里没有物理。）
+- **装了解锁插件**：arm / wst / leg 与 body 等同，都用 300–511，各自受 255 总数限制。
 - 头盔槽另有用途（helmface）、本身无物理，不参与。
 
 末端骨按移植后的样子数：有权重的叶骨会补一根 ``_End``（叶骨本身变成非末端骨），没权重
@@ -17,9 +19,13 @@
 from dataclasses import dataclass, field
 
 BONE_LIMIT = 255
-SLOT_NON_TAIL = 51      # 150–200
-SLOT_TAIL = 45          # 201–245
 SLOTS = ("body", "arm", "wst", "leg")
+
+#: 编号范围（含两端）。重命名按这里分配，名额按这里算。
+BODY_IDS = ((300, 511),)
+SLOT_PHYSICS_IDS = ((150, 199),)            # 不装插件时 arm / wst / leg 物理生效的范围
+SLOT_TAIL_IDS = ((200, 249), (300, 511))    # 末端骨：只要不占 150–199，放哪都行
+SLOT_NON_TAIL = sum(b - a + 1 for a, b in SLOT_PHYSICS_IDS)     # 50
 
 
 @dataclass
@@ -38,7 +44,7 @@ class Item:
 @dataclass
 class Packing:
     used: dict = field(default_factory=dict)      # 槽位 -> (非末端, 末端)
-    capacity: dict = field(default_factory=dict)  # 槽位 -> (非末端上限, 末端上限)；None 表示与非末端共用总数
+    capacity: dict = field(default_factory=dict)  # 槽位 -> (非末端上限或 None, 总数上限)
     placed: dict = field(default_factory=dict)    # 链首 -> 槽位
     overflow: list = field(default_factory=list)  # 放不下的 Item
 
@@ -122,19 +128,19 @@ def pack(items, base_bones, unlocked, region_slot=None, spare="leg"):
     room = BONE_LIMIT - base_bones
     p = Packing()
     if unlocked:
-        p.capacity = {s: (room, None) for s in SLOTS}
+        p.capacity = {s: (None, room) for s in SLOTS}
     else:
-        p.capacity = {"body": (room, None)}
-        p.capacity.update({s: (SLOT_NON_TAIL, SLOT_TAIL) for s in SLOTS[1:]})
+        p.capacity = {"body": (None, room)}
+        p.capacity.update({s: (SLOT_NON_TAIL, room) for s in SLOTS[1:]})
     p.used = {s: (0, 0) for s in SLOTS}
     regions_in = {s: set() for s in SLOTS}
 
     def fits(slot, item):
         nt, t = p.used[slot]
-        cap_nt, cap_t = p.capacity[slot]
-        if cap_t is None:
-            return nt + t + item.total <= cap_nt
-        return nt + item.non_tail <= cap_nt and t + item.tail <= cap_t
+        cap_nt, cap_total = p.capacity[slot]
+        if nt + t + item.total > cap_total:
+            return False
+        return cap_nt is None or nt + item.non_tail <= cap_nt
 
     def fill(slot):
         nt, t = p.used[slot]

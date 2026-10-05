@@ -906,11 +906,19 @@ def _plan_graft_simplify(source_arm, physics, mesh_objects, src_mapper,
 
 
 def _slot_text(packing, slot):
+    """``body 120/169``；不装插件的小部位另注物理骨（非末端）的用量：``arm 90/169 (物理 50/50)``。"""
     nt, t = packing.used[slot]
-    cap_nt, cap_t = packing.capacity[slot]
-    if cap_t is None:
-        return f"{slot} {nt + t}/{cap_nt}"
-    return f"{slot} {nt}/{cap_nt} + {t}/{cap_t}"
+    cap_nt, cap_total = packing.capacity[slot]
+    text = f"{slot} {nt + t}/{cap_total}"
+    if cap_nt is not None:
+        text += " " + T("core.standard_ops.graft_slot_physics").format(n=nt, cap=cap_nt)
+    return text
+
+
+def _slot_full(packing, slot):
+    nt, t = packing.used[slot]
+    cap_nt, cap_total = packing.capacity[slot]
+    return nt + t >= cap_total or (cap_nt is not None and nt >= cap_nt)
 
 
 def _budget_text(packing):
@@ -926,9 +934,7 @@ def _draw_budget(layout, plan, base, unlocked):
     packing = mhwi_physics_budget.pack(plan.items, base, unlocked)
     layout.label(text=T("core.standard_ops.graft_budget_header").format(base=base))
     for slot in mhwi_physics_budget.SLOTS:
-        nt, t = packing.used[slot]
-        cap_nt, cap_t = packing.capacity[slot]
-        full = (nt + t >= cap_nt) if cap_t is None else (nt >= cap_nt or t >= cap_t)
+        full = _slot_full(packing, slot)
         layout.label(text=_slot_text(packing, slot), icon='ERROR' if full and packing.overflow
                      else 'CHECKMARK')
     if packing.overflow:
