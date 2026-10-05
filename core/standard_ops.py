@@ -884,9 +884,24 @@ def _plan_graft_simplify(source_arm, physics, mesh_objects, src_mapper,
             p = p.parent
         return p is None or p.name not in final
 
-    plan.items = mhwi_physics_budget.tree_items(
-        [n for n in final if is_root(n)], eff_children, got_weight,
+    roots = [n for n in final if is_root(n)]
+    items = mhwi_physics_budget.tree_items(
+        roots, eff_children, got_weight,
         fork_ends={c.nodes[-1] for c in res.chains if c.ends_at_fork})
+    # 和拆分一样按权重交叉并组再装：共用顶点的链拆不开，按单条链估会过于乐观
+    # （莉奈娅：单链估全放得下，拆分时三块裙摆各超 51 根非末端，实际差 66 根）。
+    owner = {}
+    for r in roots:
+        for n in physics_simplify.depth_index(r, children_of, phys | plan.centre_nodes):
+            owner[n] = r
+    for c in plan.centres:
+        for n in physics_simplify.depth_index(c.head, children_of, phys | plan.centre_nodes):
+            owner[n] = owner.get(c.left, c.left)
+    if mesh_objects:
+        mass, pair = weight_utils.co_weight(mesh_objects, owner)
+        groups = mhwi_physics_budget.group_roots(roots, pair, mass)
+        items = mhwi_physics_budget.merge_items(groups, {i.root: i for i in items})
+    plan.items = items
     return plan
 
 

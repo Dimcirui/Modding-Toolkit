@@ -7,7 +7,9 @@ from ...core import (bone_utils, facial_bones, facial_maps, fork_resolver, prepr
                      ref_model_ops, ref_skeleton, weight_utils)
 from ...core.bone_mapper import BoneMapManager, auto_detect_preset, resolve_preset
 from ...core.mhwi_port import SOLE_OFFSET_Z
-from ...core.standard_ops import _build_fuzzy_preset_bones, _run_bone_color_refresh
+from ...core.standard_ops import _build_fuzzy_preset_bones, _run_bone_color_refresh, _slot_text
+from ...core import mhwi_physics_budget
+from . import physics_split
 from ...core.re_chain_utils import _patch_chain_cleanup, _straighten_chain_orientations
 
 
@@ -502,35 +504,6 @@ def _collect_physics_bones(armature, preset_bones):
     return physics
 
 
-# 解剖区域映射：标准骨骼名 → 区域
-_REGION_MAP = {
-    "head":   {"head"},
-    "arms":   {
-        "clavicle_L", "upperarm_L", "forearm_L", "hand_L",
-        "thumb_01_L", "thumb_02_L", "thumb_03_L",
-        "index_01_L", "index_02_L", "index_03_L",
-        "middle_01_L", "middle_02_L", "middle_03_L",
-        "ring_01_L", "ring_02_L", "ring_03_L",
-        "pinky_01_L", "pinky_02_L", "pinky_03_L",
-        "clavicle_R", "upperarm_R", "forearm_R", "hand_R",
-        "thumb_01_R", "thumb_02_R", "thumb_03_R",
-        "index_01_R", "index_02_R", "index_03_R",
-        "middle_01_R", "middle_02_R", "middle_03_R",
-        "ring_01_R", "ring_02_R", "ring_03_R",
-        "pinky_01_R", "pinky_02_R", "pinky_03_R",
-    },
-    "torso":  {"pelvis", "spine_01", "spine_02", "spine_03", "neck"},
-    "legs":   {
-        "thigh_L", "shin_L", "foot_L", "toe_L",
-        "thigh_R", "shin_R", "foot_R", "toe_R",
-    },
-}
-# 反向查找：标准键 → 区域
-_STD_TO_REGION = {}
-for _region, _keys in _REGION_MAP.items():
-    for _k in _keys:
-        _STD_TO_REGION[_k] = _region
-
 # 溢出路径部位分配选项
 _SLOT_ITEMS = [
     ('body', "body", ""),
@@ -546,40 +519,9 @@ _SLOT_ID_RANGE = {
     'wst':  (150, 200),
     'leg':  (150, 200),
 }
-_SLOT_CAPACITY = {
-    'body': 150,   # 实际受总骨骼数255限制，快速路径已处理，此处仅用于溢出UI显示
-    'arm':  50,
-    'wst':  50,
-    'leg':  50,
-}
-
-# 溢出路径区域分配方案存储（场景属性，供 UI 读取）
-_overflow_regions = []   # list of dict: {region, bone_count, slot}
-
-
 def _is_tail_bone(bone, physics_bones_set):
     """尾骨骼：在物理骨集合中没有物理子骨的骨骼（即链末端）。"""
     return not any(c.name in physics_bones_set for c in bone.children)
-
-
-def _classify_region(bone, _armature, preset_bones, mapper):
-    """沿父链向上找最近基础骨，映射到解剖区域。找不到则返回 'torso'（兜底）。"""
-    parent = bone.parent
-    while parent:
-        if parent.name in preset_bones:
-            std_key = mapper.reverse_mapping.get(parent.name)
-            if std_key:
-                return _STD_TO_REGION.get(std_key, "torso")
-            # 尝试模糊映射
-            from ...core.bone_mapper import _normalize_bone_name
-            norm = _normalize_bone_name(parent.name)
-            for std_key, entry in mapper.mapping_data.items():
-                for cand in entry.get("main", []) + entry.get("aux", []):
-                    if _normalize_bone_name(cand) == norm:
-                        return _STD_TO_REGION.get(std_key, "torso")
-            return "torso"
-        parent = parent.parent
-    return None  # 孤立骨骼
 
 
 def _assign_next_id(used_ids, id_range):
@@ -715,15 +657,17 @@ def _make_slot_name(original_name, slot):
     return f"{original_name}{suffix}"
 
 
-def _duplicate_armature(source, new_name):
-    """复制骨架对象并重命名，加入与原对象相同的集合，返回新对象。"""
+def _duplicate_armature(source, new_name, collection):
+    """复制骨架对象并重命名，放进 *collection*，返回新对象。
+
+    不能和原骨架放在同一个集合：MHW Model Editor 按 .mod3 集合导出，集合里有两个骨架
+    会报 MoreThanOneArmature。"""
     new_data = source.data.copy()
     new_obj = source.copy()
     new_obj.data = new_data
     new_obj.name = new_name
     new_data.name = new_name
-    for col in source.users_collection:
-        col.objects.link(new_obj)
+    collection.objects.link(new_obj)
     return new_obj
 
 
@@ -741,7 +685,7 @@ def _delete_bones(context, armature, bone_names):
     bpy.ops.object.mode_set(mode='OBJECT')
 
 
-# 溢出路径：存储区域分配方案的属性组
+# 装了解锁插件时各区域（head / upper / lower）的去向，场景属性，供弹窗读写
 class MHWI_RegionAssignment(bpy.types.PropertyGroup):
     region: bpy.props.StringProperty()
     bone_count: bpy.props.IntProperty()
@@ -757,6 +701,30 @@ def _get_split_fast_mode_items(self, context):
         ('DIRECT', T("mhwi.operators.fast_mode_direct"), T("mhwi.operators.fast_mode_direct_desc")),
         ('SPLIT',  T("mhwi.operators.fast_mode_split"),  T("mhwi.operators.fast_mode_split_desc")),
     ]
+
+
+#: invoke 算好的拆分规划，给弹窗 draw 用（draw 每帧都会调，不能重算权重）。键是骨架名。
+_SPLIT_PREVIEW = {}
+
+_REGION_LABEL = {
+    "head": "mhwi.operators.region_head",
+    "upper": "mhwi.operators.region_upper",
+    "lower": "mhwi.operators.region_lower",
+}
+
+
+def _draw_split_packing(layout, plan, packing):
+    box = layout.box()
+    box.label(text=T("core.standard_ops.graft_budget_header").format(base=plan.base_bones))
+    for slot in mhwi_physics_budget.SLOTS:
+        nt, t = packing.used[slot]
+        if not nt and not t and slot != "body":
+            continue
+        box.label(text=_slot_text(packing, slot), icon='CHECKMARK')
+    if packing.overflow:
+        names = T("mhwi.operators.list_sep").join(i.root for i in packing.overflow[:4])
+        box.label(text=T("mhwi.operators.split_overflow").format(
+            n=packing.overflow_bones, names=names), icon='ERROR')
 
 
 class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
@@ -781,183 +749,164 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
             and context.active_object.type == 'ARMATURE'
         )
 
-    def _compute_assignments(self, context, armature, physics_bones, preset_bones, mapper):
-        """计算区域→槽位分配方案，写入 scene.mhwi_region_assignments。"""
-        total_bones = len(armature.data.bones)
-        physics_bones_set = set(physics_bones)
-        context.scene.mhwi_body_capacity = 255 - (total_bones - len(physics_bones))
-
-        region_bones = {"head": [], "arms": [], "torso": [], "legs": []}
-        for name in physics_bones:
-            bone = armature.data.bones.get(name)
-            if bone is None:
-                continue
-            region = _classify_region(bone, armature, preset_bones, mapper)
-            if region in region_bones:
-                region_bones[region].append(name)
-
-        non_empty = {r: b for r, b in region_bones.items() if b}
-        sorted_regions = sorted(non_empty.items(), key=lambda x: -len(x[1]))
-        slot_iter = iter(['arm', 'wst', 'leg'])
-
-        assignments = context.scene.mhwi_region_assignments
-        assignments.clear()
-        for i, (region, bones) in enumerate(sorted_regions):
-            item = assignments.add()
-            item.region = region
-            if i == 0:
-                item.bone_count = len(bones)
-                item.slot = 'body'
-            else:
-                item.bone_count = sum(
-                    1 for n in bones
-                    if not _is_tail_bone(armature.data.bones[n], physics_bones_set)
-                )
-                item.slot = next(slot_iter, 'leg')
-        return non_empty
-
-    def _draw_slot_table(self, layout, context):
-        """绘制区域→槽位分配表和容量状态。"""
-        assignments = context.scene.mhwi_region_assignments
-        slot_counts = {'body': 0, 'arm': 0, 'wst': 0, 'leg': 0}
-        for item in assignments:
-            slot_counts[item.slot] += item.bone_count
-
-        region_labels = {
-            "head": "mhwi.operators.region_head",
-            "arms": "mhwi.operators.region_arms",
-            "torso": "mhwi.operators.region_torso",
-            "legs": "mhwi.operators.region_legs",
-        }
-        box = layout.box()
-        row = box.row()
-        row.label(text=T("mhwi.operators.col_region"))
-        row.label(text=T("mhwi.operators.col_bone_count"))
-        row.label(text=T("mhwi.operators.col_target_slot"))
-        for item in assignments:
-            row = box.row()
-            row.label(text=T(region_labels.get(item.region, item.region)))
-            row.label(text=str(item.bone_count))
-            row.prop(item, "slot", text="")
-
-        layout.separator()
-        layout.label(text=T("mhwi.operators.capacity_status"))
-        cap_row = layout.row()
-        body_capacity = context.scene.mhwi_body_capacity
-        for slot, capacity in _SLOT_CAPACITY.items():
-            cap = body_capacity if slot == 'body' else capacity
-            count = slot_counts.get(slot, 0)
-            icon = 'ERROR' if count > cap else 'CHECKMARK'
-            cap_row.label(text=f"{slot}: {count}/{cap}", icon=icon)
-        for slot, capacity in _SLOT_CAPACITY.items():
-            cap = body_capacity if slot == 'body' else capacity
-            if slot_counts.get(slot, 0) > cap:
-                layout.label(text=T("mhwi.operators.capacity_exceeded").format(slot=slot.upper()), icon='ERROR')
-
-    def invoke(self, context, _event):
-        armature = context.active_object
+    def _physics(self, armature):
         mapper = BoneMapManager()
         if not mapper.load_preset("mhwi_world.json", is_import_x=True):
             self.report({'ERROR'}, T("mhwi.operators.cannot_load_world_preset"))
-            return {'CANCELLED'}
+            return None, None
         preset_bones = _build_fuzzy_preset_bones(mapper, armature)
-        physics_bones = _collect_physics_bones(armature, preset_bones)
-        if not physics_bones:
+        return mapper, _collect_physics_bones(armature, preset_bones)
+
+    @staticmethod
+    def _region_slot(context):
+        return {item.region: item.slot for item in context.scene.mhwi_region_assignments}
+
+    def invoke(self, context, _event):
+        armature = context.active_object
+        mapper, physics = self._physics(armature)
+        if mapper is None:
+            return {'CANCELLED'}
+        if not physics:
             self.report({'INFO'}, T("mhwi.operators.no_physics_bones_found"))
             return {'CANCELLED'}
-
+        plan = physics_split.plan_split(armature, mapper, physics)
+        _SPLIT_PREVIEW.clear()
+        _SPLIT_PREVIEW[armature.name] = plan
         self.is_fast_path = len(armature.data.bones) <= 255
-        non_empty = self._compute_assignments(context, armature, physics_bones, preset_bones, mapper)
-        if not non_empty:
-            self.report({'WARNING'}, T("mhwi.operators.isolated_physics_bones"))
-            return {'CANCELLED'}
 
-        return context.window_manager.invoke_props_dialog(self, width=400)
+        assignments = context.scene.mhwi_region_assignments
+        previous = {item.region: item.slot for item in assignments}
+        assignments.clear()
+        for region in physics_split.REGIONS:
+            item = assignments.add()
+            item.region = region
+            item.bone_count = plan.region_totals[region]
+            item.slot = previous.get(region, physics_split.DEFAULT_REGION_SLOT[region])
+        return context.window_manager.invoke_props_dialog(
+            self, width=440, title=T("ui.main_panel.btn_split_physics_bones"))
 
     def draw(self, context):
         layout = self.layout
+        scene = context.scene
         if self.is_fast_path:
             layout.label(text=T("mhwi.operators.fast_path_prompt"))
             layout.prop(self, "fast_mode", expand=True)
             if self.fast_mode == 'DIRECT':
                 return
             layout.separator()
-            layout.label(text=T("mhwi.operators.confirm_region_targets"))
         else:
             layout.label(text=T("mhwi.operators.over_255_prompt"))
-        self._draw_slot_table(layout, context)
+        layout.prop(scene, "mhwi_physics_unlocked",
+                    text=T("core.standard_ops.graft_unlocked_plugin"))
+        plan = _SPLIT_PREVIEW.get(context.active_object.name)
+        if plan is None:
+            return
+        unlocked = scene.mhwi_physics_unlocked
+        if unlocked:
+            layout.label(text=T("mhwi.operators.confirm_region_targets"))
+            box = layout.box()
+            row = box.row()
+            row.label(text=T("mhwi.operators.col_region"))
+            row.label(text=T("mhwi.operators.col_bone_count"))
+            row.label(text=T("mhwi.operators.col_target_slot"))
+            for item in scene.mhwi_region_assignments:
+                row = box.row()
+                row.label(text=T(_REGION_LABEL.get(item.region, item.region)))
+                row.label(text=str(item.bone_count))
+                row.prop(item, "slot", text="")
+            layout.label(text=T("mhwi.operators.split_spare_note").format(
+                slot=physics_split.SPARE_SLOT))
+        else:
+            layout.label(text=T("mhwi.operators.split_auto_pack"))
+        packing = physics_split.pack(plan, unlocked, self._region_slot(context))
+        _draw_split_packing(layout, plan, packing)
 
     def execute(self, context):
         armature = context.active_object
-        mapper = BoneMapManager()
-        if not mapper.load_preset("mhwi_world.json", is_import_x=True):
-            self.report({'ERROR'}, T("mhwi.operators.cannot_load_world_preset"))
+        mapper, physics = self._physics(armature)
+        if mapper is None:
             return {'CANCELLED'}
-        preset_bones = _build_fuzzy_preset_bones(mapper, armature)
-        physics_bones = _collect_physics_bones(armature, preset_bones)
+        if not physics:
+            self.report({'INFO'}, T("mhwi.operators.no_physics_bones_found"))
+            return {'CANCELLED'}
 
         # 快速路径 + 直接重命名：一步到位
         if self.is_fast_path and self.fast_mode == 'DIRECT':
             context.view_layer.objects.active = armature
-            s, f = _count_rename_failures(armature, physics_bones, _SLOT_ID_RANGE['body'])
+            s, f = _count_rename_failures(armature, physics, _SLOT_ID_RANGE['body'])
             if f > 0:
                 self.report({'ERROR'},
                     T("mhwi.operators.exceeds_bone_count").format(n=f))
                 return {'CANCELLED'}
-            success, fail = _rename_physics_bones(armature, physics_bones, _SLOT_ID_RANGE['body'])
+            success, fail = _rename_physics_bones(armature, physics, _SLOT_ID_RANGE['body'])
             self.report({'INFO'}, T("mhwi.operators.rename_done").format(success=success, fail=fail))
             return {'FINISHED'}
 
-        # 拆分路径
-        assignments = context.scene.mhwi_region_assignments
-        region_slot = {item.region: item.slot for item in assignments}
+        plan = physics_split.plan_split(armature, mapper, physics)
+        unlocked = getattr(context.scene, "mhwi_physics_unlocked", False)
+        packing = physics_split.pack(plan, unlocked, self._region_slot(context))
+        if packing.overflow:
+            names = T("mhwi.operators.list_sep").join(i.root for i in packing.overflow[:4])
+            self.report({'ERROR'}, T("mhwi.operators.split_overflow").format(
+                n=packing.overflow_bones, names=names))
+            return {'CANCELLED'}
+        slot_of_bone = physics_split.slot_of_bones(plan, packing)
+        slots = mhwi_physics_budget.SLOTS
+        used = sorted(set(slot_of_bone.values()) | {"body"}, key=slots.index)
 
-        # 溢出路径容量验证
-        if not self.is_fast_path:
-            slot_counts = {'body': 0, 'arm': 0, 'wst': 0, 'leg': 0}
-            for item in assignments:
-                slot_counts[item.slot] += item.bone_count
-            body_capacity = context.scene.mhwi_body_capacity
-            for slot, capacity in _SLOT_CAPACITY.items():
-                cap = body_capacity if slot == 'body' else capacity
-                if slot_counts.get(slot, 0) > cap:
-                    self.report({'ERROR'}, T("mhwi.operators.slot_capacity_exceeded").format(
-                        slot=slot.upper(), count=slot_counts[slot], cap=cap))
-                    return {'CANCELLED'}
+        meshes = physics_split.child_meshes(armature)
+        # 面的归属要在动骨架之前、按原始权重算
+        face_slot = {m: physics_split.face_slots(m, slot_of_bone) for m in meshes}
 
-        # 按槽位收集骨骼
-        slot_bones = {}
-        for name in physics_bones:
-            bone = armature.data.bones.get(name)
-            if bone is None:
-                continue
-            region = _classify_region(bone, armature, preset_bones, mapper)
-            if region is None:
-                continue
-            slot = region_slot.get(region, 'body')
-            slot_bones.setdefault(slot, []).append(name)
+        base_name = armature.name
+        slot_arms, slot_cols, found_mod3 = {"body": armature}, {}, True
+        for slot in used[1:]:
+            cols, parent_of, ok = physics_split.make_slot_collections(context, armature, slot)
+            found_mod3 = found_mod3 and ok
+            slot_cols[slot] = (cols, parent_of)
+            slot_arms[slot] = _duplicate_armature(
+                armature, _make_slot_name(base_name, slot), cols.target_for(armature, parent_of))
+        for slot, arm_obj in slot_arms.items():
+            _delete_bones(context, arm_obj, [n for n in physics if slot_of_bone[n] != slot])
 
-        # 复制非 body 槽骨架（在修改原骨架前）
-        slot_armatures = {'body': armature}
-        for slot in slot_bones:
-            if slot != 'body':
-                slot_armatures[slot] = _duplicate_armature(
-                    armature, _make_slot_name(armature.name, slot)
-                )
+        moved = split = touched = 0
+        for obj in meshes:
+            fs = face_slot[obj]
+            present = sorted(set(fs) or {"body"}, key=slots.index)
+            keeper = "body" if "body" in present else present[0]
+            for slot in present:
+                if slot == keeper:
+                    continue
+                cols, parent_of = slot_cols[slot]
+                copy = obj.copy()
+                copy.data = obj.data.copy()
+                cols.target_for(obj, parent_of).objects.link(copy)
+                physics_split.retarget_mesh(copy, slot_arms[slot])
+                physics_split.keep_faces(copy, [s == slot for s in fs])
+                touched += physics_split.fold_foreign_weights(copy, slot, plan, slot_of_bone)
+            if len(present) > 1:
+                physics_split.keep_faces(obj, [s == keeper for s in fs])
+                split += 1
+            if keeper != "body":
+                cols, parent_of = slot_cols[keeper]
+                target = cols.target_for(obj, parent_of)
+                for col in list(obj.users_collection):
+                    col.objects.unlink(obj)
+                target.objects.link(obj)
+                physics_split.retarget_mesh(obj, slot_arms[keeper])
+                moved += 1
+            touched += physics_split.fold_foreign_weights(obj, keeper, plan, slot_of_bone)
 
-        # 每个槽位骨架删除非本槽物理骨
-        for slot, arm_obj in slot_armatures.items():
-            slot_phys = set(slot_bones.get(slot, []))
-            other_phys = [n for n in physics_bones if n not in slot_phys]
-            _delete_bones(context, arm_obj, other_phys)
-
-        # 原骨架重命名为 _body
-        armature.name = _make_slot_name(armature.name, 'body')
+        armature.name = _make_slot_name(base_name, 'body')
         armature.data.name = armature.name
-
         context.view_layer.objects.active = armature
+
         self.report({'INFO'}, T("mhwi.operators.split_done").format(
-            n=len(slot_armatures), names=T("mhwi.operators.list_sep").join(slot_armatures.keys())))
+            n=len(slot_arms), names=T("mhwi.operators.list_sep").join(slot_arms)))
+        self.report({'INFO'}, T("mhwi.operators.split_mesh_summary").format(
+            moved=moved, split=split, verts=touched))
+        if not found_mod3:
+            self.report({'WARNING'}, T("mhwi.operators.split_no_mod3"))
         return {'FINISHED'}
 
 
@@ -982,14 +931,15 @@ class MHWI_OT_BatchRenamePhysicsBones(bpy.types.Operator):
         return base.endswith('_body')
 
     @staticmethod
-    def _count_failures_for_armature(mapper, arm_obj):
+    def _count_failures_for_armature(mapper, arm_obj, unlocked=False):
         """预检单个骨架的失败数，但不实际改名。"""
         preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
         physics = _collect_physics_bones(arm_obj, preset_bones)
         if not physics:
             return 0
 
-        if MHWI_OT_BatchRenamePhysicsBones._is_body_slot(arm_obj.name):
+        # 装了解锁插件：arm / wst / leg 与 body 等同，都用 300–512，不分末端骨
+        if unlocked or MHWI_OT_BatchRenamePhysicsBones._is_body_slot(arm_obj.name):
             _, f = _count_rename_failures(arm_obj, physics, _SLOT_ID_RANGE['body'])
             return f
         else:
@@ -1013,7 +963,8 @@ class MHWI_OT_BatchRenamePhysicsBones(bpy.types.Operator):
         armatures = [obj for obj in context.selected_objects if obj.type == 'ARMATURE']
         total_fail = 0
         for arm_obj in armatures:
-            total_fail += self._count_failures_for_armature(mapper, arm_obj)
+            total_fail += self._count_failures_for_armature(
+                mapper, arm_obj, getattr(context.scene, "mhwi_physics_unlocked", False))
 
         if total_fail == 0:
             return self.execute(context)
@@ -1046,7 +997,8 @@ class MHWI_OT_BatchRenamePhysicsBones(bpy.types.Operator):
             if not physics:
                 continue
 
-            if self._is_body_slot(arm_obj.name):
+            if (getattr(context.scene, "mhwi_physics_unlocked", False)
+                    or self._is_body_slot(arm_obj.name)):
                 s, f = _rename_physics_bones(arm_obj, physics, _SLOT_ID_RANGE['body'])
                 total_success += s
                 total_fail += f

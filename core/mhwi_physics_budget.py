@@ -27,6 +27,8 @@ class Item:
     root: str
     non_tail: int
     tail: int
+    roots: tuple = ()           # 合并成组时组内全部链首；单棵子树时为空
+    region: str = ""            # head / upper / lower，拆分时用来就近归类
 
     @property
     def total(self):
@@ -71,12 +73,52 @@ def tree_items(roots, children_of, weighted, fork_ends=()):
     return items
 
 
-def pack(items, base_bones, unlocked):
-    """把各子树装进四个部位，大的先放。
+def group_roots(roots, pair_mass, root_mass, threshold=0.10):
+    """把权重交叉明显的子树并成一组：同一组必须进同一个部位，否则网格拆开后会撕裂。
 
-    不装插件：能进 arm / wst / leg 的优先放进去（放进已经最满、但还放得下的那个，把整块
-    空间留给后面的大块），放不下的进 body。装了插件：四个部位都是 body 那样的总数上限。
-    这里只回答"放不放得下"；按头 / 上身 / 下身归类是拆分时的事。"""
+    *pair_mass* {(链首a, 链首b): 两者在同一顶点上较小一方权重之和}，*root_mass* {链首: 整
+    棵子树的权重量}。交叉量 >= *threshold* × 两者中较小的权重量才合并：零星几个顶点的
+    交叉（实测多数模型 0.1%–2% 的顶点）拆开时改挂锚点骨就行，不值得把两大块绑死。"""
+    parent = {r: r for r in roots}
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for (a, b), w in pair_mass.items():
+        if a in parent and b in parent:
+            small = min(root_mass.get(a, 0.0), root_mass.get(b, 0.0))
+            if small > 0 and w >= threshold * small:
+                parent[find(a)] = find(b)
+    groups = {}
+    for r in roots:
+        groups.setdefault(find(r), []).append(r)
+    return list(groups.values())
+
+
+def merge_items(groups, items_by_root):
+    """按 group_roots 的分组把单棵子树的 Item 合并；区域取权重最大的那一类（按骨数）。"""
+    out = []
+    for roots in groups:
+        parts = [items_by_root[r] for r in roots]
+        by_region = {}
+        for it in parts:
+            by_region[it.region] = by_region.get(it.region, 0) + it.total
+        out.append(Item(roots[0], sum(i.non_tail for i in parts), sum(i.tail for i in parts),
+                        roots=tuple(roots), region=max(by_region, key=by_region.get)))
+    return out
+
+
+def pack(items, base_bones, unlocked, region_slot=None, spare="leg"):
+    """把各组装进四个部位，大的先放。
+
+    不装插件：能进 arm / wst / leg 的优先放进去（同区域已经在的那个小槽优先，其次放进
+    已经最满、但还放得下的那个，把整块空间留给后面的大块），放不下的进 body。
+
+    装了插件：四个部位都是 body 那样的总数上限。给了 *region_slot*（区域 -> 槽位）时
+    按区域就近放，放不下先进 *spare*，再放任何还有空的槽；没给时只回答放不放得下。"""
     room = BONE_LIMIT - base_bones
     p = Packing()
     if unlocked:
@@ -85,6 +127,7 @@ def pack(items, base_bones, unlocked):
         p.capacity = {"body": (room, None)}
         p.capacity.update({s: (SLOT_NON_TAIL, SLOT_TAIL) for s in SLOTS[1:]})
     p.used = {s: (0, 0) for s in SLOTS}
+    regions_in = {s: set() for s in SLOTS}
 
     def fits(slot, item):
         nt, t = p.used[slot]
@@ -97,18 +140,28 @@ def pack(items, base_bones, unlocked):
         nt, t = p.used[slot]
         return nt + t
 
-    order = SLOTS if unlocked else SLOTS[1:] + ("body",)
+    def choose(item):
+        if unlocked:
+            if region_slot:
+                order = [region_slot.get(item.region), spare] + list(SLOTS)
+                return next((s for s in order if s in p.used and fits(s, item)), None)
+            cands = [s for s in SLOTS if fits(s, item)]
+            return max(cands, key=fill) if cands else None
+        small = [s for s in SLOTS[1:] if fits(s, item)]
+        same = [s for s in small if item.region and item.region in regions_in[s]]
+        if same:
+            return max(same, key=fill)
+        if small:
+            return max(small, key=fill)
+        return "body" if fits("body", item) else None
+
     for item in sorted(items, key=lambda i: -i.total):
-        cands = [s for s in order if fits(s, item)]
-        if not cands:
+        slot = choose(item)
+        if slot is None:
             p.overflow.append(item)
             continue
-        if unlocked:
-            slot = max(cands, key=fill)
-        else:
-            small = [s for s in cands if s != "body"]
-            slot = max(small, key=fill) if small else "body"
         nt, t = p.used[slot]
         p.used[slot] = (nt + item.non_tail, t + item.tail)
         p.placed[item.root] = slot
+        regions_in[slot].add(item.region)
     return p

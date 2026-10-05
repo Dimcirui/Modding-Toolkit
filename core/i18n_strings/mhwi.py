@@ -101,11 +101,13 @@ STRINGS = {
 
     # ── MHWI_OT_SplitPhysicsBones ────────────────────────────────────────────
     "mhwi.operators.split_physics_bones_desc": {
-        "EN": "Split physics bones into separate armatures by body region (bones are not renamed).\n"
-              "Armature object names get a region suffix (_body/_arm/_wst/_leg).\n"
+        "EN": "Split physics bones into separate armatures by part, meshes included (bones are not renamed).\n"
+              "Each part gets its own .mod3 collection; armature names get a suffix (_body/_arm/_wst/_leg).\n"
+              "Chains sharing vertices stay in one part; faces go to the part whose physics weights they carry.\n"
               "When total bone count is <=255, direct rename or split are both available; >255 requires splitting.",
-        "ZH": "将物理骨骼按部位拆分到不同骨架（不重命名骨骼）。\n"
-              "骨架对象名会加上部位后缀（_body/_arm/_wst/_leg）。\n"
+        "ZH": "将物理骨骼按部位拆分到不同骨架，网格一起拆（不重命名骨骼）。\n"
+              "每个部位单独一个 .mod3 集合；骨架对象名会加上部位后缀（_body/_arm/_wst/_leg）。\n"
+              "共用顶点的链留在同一部位；面跟着它所带的物理权重归到对应部位。\n"
               "骨架总数 ≤255 时可选直接重命名或拆分；>255 时必须拆分。"},
     "mhwi.operators.fast_mode_direct": {"EN": "Direct Rename", "ZH": "直接重命名"},
     "mhwi.operators.fast_mode_direct_desc": {
@@ -116,40 +118,44 @@ STRINGS = {
         "EN": "Split the armature by region, then process with \"Batch Rename\" afterward",
         "ZH": "按部位拆分骨架，后续用「一键重命名」处理"},
     "mhwi.operators.region_head": {"EN": "Head", "ZH": "头部"},
-    "mhwi.operators.region_arms": {"EN": "Arms", "ZH": "双臂"},
-    "mhwi.operators.region_torso": {"EN": "Torso", "ZH": "躯干"},
-    "mhwi.operators.region_legs": {"EN": "Legs", "ZH": "双腿"},
+    "mhwi.operators.region_upper": {"EN": "Upper Body", "ZH": "上半身"},
+    "mhwi.operators.region_lower": {"EN": "Lower Body", "ZH": "下半身"},
     "mhwi.operators.col_region": {"EN": "Region", "ZH": "区域"},
     "mhwi.operators.col_bone_count": {"EN": "Physics Bones", "ZH": "物理骨数"},
     "mhwi.operators.col_target_slot": {"EN": "Target Slot", "ZH": "目标部位"},
-    "mhwi.operators.capacity_status": {"EN": "Capacity status:", "ZH": "容量状态："},
-    "mhwi.operators.capacity_exceeded": {
-        "EN": "Warning: {slot} exceeds capacity limit, please adjust allocation",
-        "ZH": "警告：{slot} 超出容量限制，请调整分配"},
     "mhwi.operators.cannot_load_world_preset": {
         "EN": "Cannot load the Monster Hunter World preset", "ZH": "无法加载怪猎世界预设"},
     "mhwi.operators.no_physics_bones_found": {
         "EN": "No physics bones found to process", "ZH": "未找到需要处理的物理骨骼"},
-    "mhwi.operators.isolated_physics_bones": {
-        "EN": "All physics bones are isolated bones, cannot auto-assign regions",
-        "ZH": "物理骨骼均为孤立骨骼，无法自动分配区域"},
     "mhwi.operators.fast_path_prompt": {
         "EN": "Physics bone count is within the body limit — how to proceed?",
         "ZH": "物理骨数未超出 body 限制范围，如何处理？"},
     "mhwi.operators.confirm_region_targets": {
         "EN": "Please confirm the target slot for each region:", "ZH": "请确认各区域的目标部位："},
     "mhwi.operators.over_255_prompt": {
-        "EN": "Total bone count exceeds 255; please assign a target slot for each region:",
-        "ZH": "总骨骼数超过 255，请分配各区域的目标部位："},
+        "EN": "Total bone count exceeds 255; physics bones must be split across parts:",
+        "ZH": "总骨骼数超过 255，物理骨需要拆分到多个部位："},
     "mhwi.operators.exceeds_bone_count": {
         "EN": "Currently over by {n} bone(s) (ID range insufficient); please use split mode instead",
         "ZH": "当前超出了 {n} 个骨骼（ID 范围不足），请改用拆分模式"},
     "mhwi.operators.rename_done": {
         "EN": "Rename complete: {success} succeeded, {fail} failed",
         "ZH": "重命名完成：成功 {success} 根，失败 {fail} 根"},
-    "mhwi.operators.slot_capacity_exceeded": {
-        "EN": "{slot} exceeds capacity limit ({count}/{cap}); please adjust allocation first",
-        "ZH": "{slot} 超出容量限制（{count}/{cap}），请先调整分配"},
+    "mhwi.operators.split_overflow": {
+        "EN": "{n} bone(s) fit in no part (largest: {names}); decimate when grafting, or install the unlock plugin",
+        "ZH": "还有 {n} 根骨放不下（最大的几组：{names}）；移植时勾选抽稀，或装解锁插件"},
+    "mhwi.operators.split_spare_note": {
+        "EN": "What does not fit its region's part goes to {slot}, then to any part with room",
+        "ZH": "放不进本区域部位的先进 {slot}，再进任何还有空的部位"},
+    "mhwi.operators.split_auto_pack": {
+        "EN": "Without the plugin, groups are packed by size: arm / wst / leg first, the rest into body",
+        "ZH": "未装插件：按大小自动装箱，arm / wst / leg 优先，放不下的进 body"},
+    "mhwi.operators.split_mesh_summary": {
+        "EN": "Meshes: {moved} moved whole, {split} split by face; {verts} vertex(es) had another part's physics weight moved to its anchor bone",
+        "ZH": "网格：整块移走 {moved} 个，按面拆开 {split} 个；{verts} 个顶点上别的部位的物理权重改挂到锚点骨"},
+    "mhwi.operators.split_no_mod3": {
+        "EN": "The armature is not inside a .mod3 collection; each new part was put in a plain collection — move it into its own .mod3 collection before exporting",
+        "ZH": "骨架不在 .mod3 集合里，新部位放进了普通集合；导出前请各自放进单独的 .mod3 集合"},
     "mhwi.operators.split_done": {
         "EN": "Split complete: {n} armature(s) generated ({names})",
         "ZH": "拆分完成：已生成 {n} 个骨架（{names}）"},
@@ -158,10 +164,10 @@ STRINGS = {
     "mhwi.operators.batch_rename_desc": {
         "EN": "Batch-rename physics bones on all selected armatures to the MhBone_xxx format.\n"
               "Armatures with names containing _body use the 300-512 range; others use 150-200 "
-              "(non-tail) + 201-245 (tail).\n"
+              "(non-tail) + 201-245 (tail), or 300-512 too when the unlock plugin is ticked.\n"
               "Run \"Split Physics Bones\" first to split armatures, then run this operation.",
         "ZH": "对选中的所有骨架批量重命名物理骨骼为 MhBone_xxx 格式。\n"
-              "名称含 _body 的骨架使用 300~512 范围；其他骨架使用 150~200（非尾骨）+ 201~245（尾骨）范围。\n"
+              "名称含 _body 的骨架使用 300~512 范围；其他骨架使用 150~200（非尾骨）+ 201~245（尾骨）范围，勾选了解锁插件时同样用 300~512。\n"
               "请先用「拆分物理骨」完成骨架拆分，再运行此操作。"},
     "mhwi.operators.warning_label": {"EN": "Warning", "ZH": "警告"},
     "mhwi.operators.batch_rename_over_limit": {

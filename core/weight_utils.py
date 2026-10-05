@@ -51,6 +51,32 @@ def merge_vertex_groups(mesh_objects, merge_map):
                 vg.remove(delete_vg)
 
 
+def co_weight(mesh_objects, owner):
+    """按 *owner* {顶点组名: 归属键} 统计权重交叉。
+
+    返回 (mass, pair)：mass {键: 权重总和}；pair {(键a, 键b): 同一顶点上两者较小一方的
+    权重之和}，键按字典序排。用来判断哪些物理子树共用顶点、拆开会撕裂。"""
+    mass, pair = {}, {}
+    for obj in mesh_objects:
+        idx = {vg.index: owner[vg.name] for vg in obj.vertex_groups if vg.name in owner}
+        if not idx:
+            continue
+        for v in obj.data.vertices:
+            per = {}
+            for g in v.groups:
+                k = idx.get(g.group)
+                if k is not None and g.weight > 0:
+                    per[k] = per.get(k, 0.0) + g.weight
+            for k, w in per.items():
+                mass[k] = mass.get(k, 0.0) + w
+            if len(per) > 1:
+                ks = sorted(per)
+                for i, a in enumerate(ks):
+                    for b in ks[i + 1:]:
+                        pair[(a, b)] = pair.get((a, b), 0.0) + min(per[a], per[b])
+    return mass, pair
+
+
 def split_vertex_groups(mesh_objects, splits):
     """把 splits {被拆组名: share} 里每个组的权重按顶点位置拆给若干目标组，再删掉被拆组。
 
