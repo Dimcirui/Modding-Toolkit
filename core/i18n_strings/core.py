@@ -200,6 +200,12 @@ STRINGS = {
     "core.standard_ops.graft_done": {
         "EN": "Graft complete: processed {n} bone(s) (including auto-generated end bones)",
         "ZH": "移植完成: 处理 {n} 根骨骼 (含自动生成的末端骨)"},
+    "core.standard_ops.graft_fork_summary": {
+        "EN": "MHWI fork handling: dropped {stubs} light trunk(s), picked {auto_continue} continuation(s), kept {branch_forks} fork(s) as branch chains",
+        "ZH": "MHWI 分叉处理: 删除 {stubs} 个很轻的主干，自动选定 {auto_continue} 处主链延续，{branch_forks} 处分叉保留为分支链"},
+    "core.standard_ops.graft_fork_skipped": {
+        "EN": "{n} second-level branch(es) get no chain (bones and weights kept, physics-free): {names}",
+        "ZH": "{n} 处第二层分支不生成链（骨骼与权重保留，无物理）: {names}"},
     "core.standard_ops.merge_physics_done": {
         "EN": "Physics weight downgrade complete: merged {groups} physics vertex group(s) across {meshes} mesh(es)",
         "ZH": "物理权重降级完成: 在 {meshes} 个网格上合并了 {groups} 个物理顶点组"},

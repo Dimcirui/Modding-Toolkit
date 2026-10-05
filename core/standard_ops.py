@@ -3,7 +3,11 @@ from .i18n import T
 from .bone_mapper import (BoneMapManager, STANDARD_BONE_NAMES, _normalize_bone_name,
                           auto_detect_preset, resolve_preset, standard_keys, is_aux_key,
                           AUX_PARENT)
-from . import weight_utils, bone_utils, chain_classifier, twist_chain
+from . import weight_utils, bone_utils, chain_classifier, twist_chain, fork_resolver
+
+#: 用户手动指定、刷新角色时不能被拓扑检测覆盖的角色。no_chain 是分叉判定把超过层数
+#: 的子树标成"不生成链"用的。
+_STICKY_ROLES = ("main_continue", "no_chain")
 
 
 def _build_fuzzy_preset_bones(mapper, arm_obj):
@@ -55,6 +59,10 @@ def _apply_bone_color(pb, role):
         pb.color.custom.normal = (1.0, 0.70, 0.10)
         pb.color.custom.select = (1.0, 0.85, 0.40)
         pb.color.custom.active = (1.0, 0.95, 0.70)
+    elif role == "no_chain":
+        pb.color.custom.normal = (0.45, 0.45, 0.45)
+        pb.color.custom.select = (0.65, 0.65, 0.65)
+        pb.color.custom.active = (0.85, 0.85, 0.85)
     else:  # body / _End / untagged
         pb.color.custom.normal = (0.18, 0.42, 0.90)
         pb.color.custom.select = (0.45, 0.65, 1.00)
@@ -730,6 +738,22 @@ class MODDER_OT_UniversalSnap(bpy.types.Operator):
         self.report({'INFO'}, T("core.standard_ops.snap_done").format(n=aligned_count))
         return {'FINISHED'}
 
+def _resolve_graft_forks(source_arm, physics_set, mesh_objects):
+    """对来源骨架的物理骨跑分叉判定，返回 (节点树, 判定结果)。
+
+    权重量取来源网格的顶点组；没有绑定网格时 masses 为 None，stub 规则因此不会触发
+    （没数据就不删骨）。手动标了 main_continue 的子骨按标记走。"""
+    masses = weight_utils.bone_weight_mass(mesh_objects, physics_set) if mesh_objects else None
+    mw = source_arm.matrix_world
+    pose = source_arm.pose.bones
+    nodes = fork_resolver.nodes_from_bones(
+        source_arm.data.bones, physics_set,
+        head_of=lambda n: tuple(mw @ pose[n].head),
+        masses=masses,
+        is_marker=lambda n: pose[n].get("chain_role") == "main_continue")
+    return nodes, fork_resolver.resolve(nodes)
+
+
 class MODDER_OT_SmartGraftBones(bpy.types.Operator):
     bl_idname = "modder.smart_graft"
     bl_label = "3. Graft Physics Bones (+End Bone)"
@@ -834,11 +858,42 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
             list(existing_protected | current_tgt_bones)
         )
 
+        # 收集源骨架的绑定网格对象：尾骨权重检测、分叉判定的权重量都要用
+        mesh_objects = [o for o in bpy.data.objects
+                        if o.type == 'MESH'
+                        and any(m.type == 'ARMATURE' and m.object == source_arm
+                                for m in o.modifiers)]
+
+        # --- 4.7 分叉判定（仅目标为 MHWI）---
+        # MHWI 的 CTC 链不能分叉，且几乎没人手动标主链延续，所以这里按拓扑自动判定：
+        # 主干很轻就删、一支明显是延续就当延续、其余各自成链，第二层分支不生成链。
+        fork_nodes = fork_res = None
+        dropped, auto_continue, skipped_set, promoted_heads = {}, set(), set(), set()
+        if tgt_mapper.preset_info.get("game_code") == "MHWI":
+            fork_nodes, fork_res = _resolve_graft_forks(
+                source_arm, physics_bones_set, mesh_objects)
+            auto_continue = set(fork_res.continues)
+            for root in fork_res.skipped:
+                skipped_set.update(fork_resolver.subtree(fork_nodes, root))
+            for name in fork_res.dropped:
+                # 权重并进最近的、不会被删的祖先；链首的 can_drop 保证它有非物理父骨
+                anc = source_arm.data.bones[name].parent
+                while anc is not None and anc.name in fork_res.dropped:
+                    anc = anc.parent
+                if anc is not None:
+                    dropped[name] = anc.name
+            if dropped:
+                promoted_heads = {c for n in dropped for c in fork_nodes[n].children
+                                  if c not in dropped}
+                weight_utils.merge_vertex_groups(mesh_objects, dropped)
+                physics_bones_names = [n for n in physics_bones_names if n not in dropped]
+                physics_bones_set -= set(dropped)
+
         # --- 5. 核心移植逻辑 ---
         bpy.context.view_layer.objects.active = target_arm
         bpy.ops.object.mode_set(mode='EDIT')
         edit_bones = target_arm.data.edit_bones
-        
+
         tgt_mat_inv = target_arm.matrix_world.inverted()
         import mathutils
 
@@ -874,12 +929,6 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
         # (此时所有基础物理骨已创建，位置对应 Source Head)
         end_bone_names = []  # 记录本次生成的 End 骨骼名，供 Phase 7 着色使用
 
-        # 收集源骨架的绑定网格对象，用于尾骨权重检测
-        mesh_objects = [o for o in bpy.data.objects
-                        if o.type == 'MESH'
-                        and any(m.type == 'ARMATURE' and m.object == source_arm
-                                for m in o.modifiers)]
-
         for p_name in physics_bones_names:
             src_bone = source_arm.data.bones.get(p_name)
 
@@ -891,11 +940,14 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
             is_leaf = len(physics_children) == 0
             is_fork = len(physics_children) >= 2
             has_main_continue_child = any(
-                source_arm.pose.bones.get(c.name) and
-                source_arm.pose.bones[c.name].get("chain_role") == "main_continue"
+                c.name in auto_continue or (
+                    source_arm.pose.bones.get(c.name) and
+                    source_arm.pose.bones[c.name].get("chain_role") == "main_continue")
                 for c in physics_children
             )
-            if is_leaf:
+            if p_name in skipped_set:
+                needs_end = False   # 不生成链的子树，补 _End 没有意义
+            elif is_leaf:
                 needs_end = weight_utils.bone_has_weights(p_name, mesh_objects)
             elif is_fork and not has_main_continue_child:
                 needs_end = True
@@ -951,6 +1003,9 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
             if not src_bone or not src_bone.parent: continue
             
             src_p_name = src_bone.parent.name
+            # 被判定删掉的主干不在目标里：子骨改挂到它最近的、仍然存在的祖先上
+            while src_p_name in dropped:
+                src_p_name = source_arm.data.bones[src_p_name].parent.name
             target_parent_name = None
 
             # A. 父级是物理骨
@@ -984,6 +1039,12 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
             tgt_pb = target_arm.pose.bones.get(tgt_name)
             if src_pb and tgt_pb:
                 role = src_pb.get("chain_role")
+                if src_name in skipped_set:
+                    role = "no_chain"
+                elif src_name in auto_continue:
+                    role = "main_continue"
+                elif src_name in promoted_heads:
+                    role = "head"   # 父骨（被删的主干）没了，它现在是主链首
                 if role:
                     tgt_pb["chain_role"] = role
                 _apply_bone_color(tgt_pb, tgt_pb.get("chain_role", "body"))
@@ -994,6 +1055,14 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
 
         bpy.ops.object.mode_set(mode='OBJECT')
         self.report({'INFO'}, T("core.standard_ops.graft_done").format(n=created_count))
+        if fork_res is not None:
+            stats = fork_resolver.summary(fork_res)
+            if any(stats.values()):
+                self.report({'INFO'}, T("core.standard_ops.graft_fork_summary").format(**stats))
+            if fork_res.skipped:
+                names = ", ".join(fork_res.skipped[:5]) + ("…" if len(fork_res.skipped) > 5 else "")
+                self.report({'WARNING'}, T("core.standard_ops.graft_fork_skipped").format(
+                    n=len(fork_res.skipped), names=names))
         return {'FINISHED'}
 
 
@@ -1322,7 +1391,7 @@ def _detect_chain_roles(arm_obj, preset_bones, protected_bones=None):
         if is_main_head:
             pb["chain_role"] = "head"
         elif is_branch_head:
-            if current_role != "main_continue":
+            if current_role not in _STICKY_ROLES:
                 pb["chain_role"] = "branch_head"
         elif current_role in ("head", "branch_head"):
             del pb["chain_role"]
@@ -1356,7 +1425,7 @@ def _refresh_chain_roles_local(arm_obj, preset_bones, merged_pairs):
             if is_main_head:
                 pb["chain_role"] = "head"
             elif is_branch_head:
-                if current_role != "main_continue":
+                if current_role not in _STICKY_ROLES:
                     pb["chain_role"] = "branch_head"
             elif current_role in ("head", "branch_head"):
                 del pb["chain_role"]

@@ -3,45 +3,11 @@ from mathutils import Vector
 
 from . import pose_bake, twist_chain
 
-def merge_weights_and_delete_bones(armature_obj, bone_pairs):
-    """
-    bone_pairs: List of (keep_bone_name, delete_bone_name)
-    """
-    # 构建辅助结构：被删除骨骼集合，以及子→父映射
-    deleted_set = {delete for _, delete in bone_pairs}
-    child_to_parent = {child: parent for parent, child in bone_pairs}
+def merge_vertex_groups(mesh_objects, merge_map):
+    """把 merge_map {被合并组名: 目标组名} 里每个组的权重累加进目标组，再删掉被合并组。
 
-    def find_final_target(bone_name):
-        """沿父骨链向上，找到第一个不被删除的骨骼（最终存活祖先）。"""
-        visited = set()
-        current = bone_name
-        while current in deleted_set and current not in visited:
-            visited.add(current)
-            parent = child_to_parent.get(current)
-            if parent is None:
-                break
-            current = parent
-        return current
-
-    # 为每个被删除骨骼，直接计算其最终存活祖先（跳过中间已删除的骨骼）
-    merge_map = {delete: find_final_target(parent)
-                 for parent, delete in bone_pairs}
-
-    # 1. 找到受该骨架影响的所有网格
-    # 主：通过姿态修改器绑定
-    bound_meshes = {o for o in bpy.data.objects
-                    if o.type == 'MESH' and
-                    any(m.type == 'ARMATURE' and m.object == armature_obj for m in o.modifiers)}
-    # 补充：未绑定修改器但作为该骨架子级、且含有待删除骨骼同名顶点组的网格
-    delete_names = set(merge_map.keys())
-    extra_meshes = {o for o in bpy.data.objects
-                    if o.type == 'MESH' and o not in bound_meshes and
-                    o.parent == armature_obj and
-                    any(vg.name in delete_names for vg in o.vertex_groups)}
-    mesh_objects = bound_meshes | extra_meshes
-
-    # 2. 遍历网格，将每个被删除骨骼的权重直接合并到其最终存活祖先
-    #
+    只动顶点组，不碰骨骼——骨架不在手边（或骨骼本来就不打算建）时也能用。目标组不
+    存在会新建。"""
     # 按**顶点**扫一遍，而不是「每根待删骨 × 全部顶点」。后者是这里原本的写法，代价
     # O(待删骨数 × 顶点数)，且每个顶点都要靠 vertex_group.weight() 抛 RuntimeError 来
     # 判断「不在这个组里」—— 异常在 Python 里极贵。合并整套表情骨时这是 370 × 全网格
@@ -83,6 +49,64 @@ def merge_weights_and_delete_bones(armature_obj, bone_pairs):
             delete_vg = vg.get(delete)
             if delete_vg is not None:
                 vg.remove(delete_vg)
+
+
+def bone_weight_mass(mesh_objects, names):
+    """{骨名: 该骨在所有网格上的顶点权重之和}，只统计 names 里的骨，缺省为 0.0。"""
+    wanted = set(names)
+    mass = dict.fromkeys(wanted, 0.0)
+    for obj in mesh_objects:
+        idx2name = {vg.index: vg.name for vg in obj.vertex_groups if vg.name in wanted}
+        if not idx2name:
+            continue
+        for vert in obj.data.vertices:
+            for g in vert.groups:
+                n = idx2name.get(g.group)
+                if n is not None:
+                    mass[n] += g.weight
+    return mass
+
+
+def merge_weights_and_delete_bones(armature_obj, bone_pairs):
+    """
+    bone_pairs: List of (keep_bone_name, delete_bone_name)
+    """
+    # 构建辅助结构：被删除骨骼集合，以及子→父映射
+    deleted_set = {delete for _, delete in bone_pairs}
+    child_to_parent = {child: parent for parent, child in bone_pairs}
+
+    def find_final_target(bone_name):
+        """沿父骨链向上，找到第一个不被删除的骨骼（最终存活祖先）。"""
+        visited = set()
+        current = bone_name
+        while current in deleted_set and current not in visited:
+            visited.add(current)
+            parent = child_to_parent.get(current)
+            if parent is None:
+                break
+            current = parent
+        return current
+
+    # 为每个被删除骨骼，直接计算其最终存活祖先（跳过中间已删除的骨骼）
+    merge_map = {delete: find_final_target(parent)
+                 for parent, delete in bone_pairs}
+
+    # 1. 找到受该骨架影响的所有网格
+    # 主：通过姿态修改器绑定
+    bound_meshes = {o for o in bpy.data.objects
+                    if o.type == 'MESH' and
+                    any(m.type == 'ARMATURE' and m.object == armature_obj for m in o.modifiers)}
+    # 补充：未绑定修改器但作为该骨架子级、且含有待删除骨骼同名顶点组的网格
+    delete_names = set(merge_map.keys())
+    extra_meshes = {o for o in bpy.data.objects
+                    if o.type == 'MESH' and o not in bound_meshes and
+                    o.parent == armature_obj and
+                    any(vg.name in delete_names for vg in o.vertex_groups)}
+    mesh_objects = bound_meshes | extra_meshes
+
+    # 2. 遍历网格，将每个被删除骨骼的权重直接合并到其最终存活祖先
+    #    （按顶点扫描的实现与耗时实测见 merge_vertex_groups）
+    merge_vertex_groups(mesh_objects, merge_map)
 
     # 3. 删除骨骼
     bpy.context.view_layer.objects.active = armature_obj
