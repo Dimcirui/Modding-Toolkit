@@ -11,6 +11,16 @@
 1. **marker**   子骨里有手动标了 ``main_continue`` 的：照标记走，优先级最高。
 2. **stub**     F 本身就是链首（主干只有 F 这 1 节）且权重量相对后代可忽略：删掉 F，
                 它的子骨各自升为链首。权重由调用方并进 F 的父骨。
+
+stub 之外还有一条不需要分叉的规则：**静态链首**——链首只有 1 个子骨、且几乎没有权重
+（VRC 的公共 root：``Breast_root``、``Belt_Root`` 这类只用来挂链的空骨）。它同样删掉、
+子骨升为链首；升上来的链首若仍是静态的就继续删，所以多层空骨前缀
+（``Backhair → Backhair_rotate → Backhair_pb``）会一路删到第一根有权重的骨。
+单子骨的阈值比分叉严得多：分叉处的轻主干删了只是把几支拆开，单子骨删的是整条链的第一节，
+所以只删真正的空骨，带一点权重的（MMD 裙摆最上一排常见）照旧保留。
+
+删链首不会让链失去物理：CTC 链首的位置跟随父骨，但朝向由下一个节点的模拟位置决定，
+``Breast_root → Breast`` 删掉 root 后 ``[Breast, Breast_End]`` 照样摆。
 3. **dominant** 有一支的深度 >= ``dominant_depth_ratio`` × 第二深的：它是主链延续。
 4. **collinear** 深度不够悬殊时，若有一支与主干几乎同向、其余都明显偏离：它是主链延续。
 5. **branches** 都不满足：主干在 F 收尾，每个子骨各自成链（下一层）。
@@ -33,6 +43,8 @@ from dataclasses import dataclass, field
 class Params:
     #: F 的权重量 <= 比例 × 其全部后代的权重量 时视为"很轻"
     light_mass_ratio: float = 0.15
+    #: 单子骨链首的权重量 <= 比例 × 其全部后代的权重量 时视为空骨（静态链首）
+    static_mass_ratio: float = 0.01
     #: 最深一支的深度 >= 比例 × 第二深的，则它是延续
     dominant_depth_ratio: float = 2.0
     #: 同向判定：最同向的一支偏离主干不超过该角度，且其余都不小于 other_min
@@ -174,6 +186,22 @@ def resolve(nodes, params=None):
         below = sum(sub_mass(c) for c in node.children)
         return node.mass <= p.light_mass_ratio * below
 
+    def is_static_head(n):
+        node = nodes[n]
+        if node.mass is None or not node.can_drop or len(node.children) != 1:
+            return False
+        below = sub_mass(node.children[0])
+        return below > 0 and node.mass <= p.static_mass_ratio * below
+
+    def drop_head(n):
+        """删掉链首 n，子骨各自作为第 0 层链首重新走。升上来的链首记下 n 的位置当主干起点。"""
+        res.dropped[n] = nodes[n].parent
+        origin = nodes[n].anchor_head or nodes[n].head
+        for c in nodes[n].children:
+            if nodes[c].anchor_head is None:
+                nodes[c].anchor_head = origin
+            walk(c, 0)
+
     def rank_key(feat):
         d, m, dev = feat
         return (d, m, -(dev if dev is not None else 180.0))
@@ -201,6 +229,9 @@ def resolve(nodes, params=None):
                 res.chains.append(Chain(level, chain))
                 return
             if len(kids) == 1:
+                if level == 0 and len(chain) == 1 and is_static_head(cur):
+                    drop_head(cur)
+                    return
                 cur = kids[0]
                 continue
 
@@ -215,9 +246,7 @@ def resolve(nodes, params=None):
                 keep, fork.outcome = marked[0], "marker"
             elif level == 0 and len(chain) == 1 and is_stub(cur):
                 fork.outcome = "stub"
-                res.dropped[cur] = nodes[cur].parent
-                for c in kids:
-                    walk(c, 0)
+                drop_head(cur)
                 return
             else:
                 keep, fork.outcome = pick_dominant(feat)

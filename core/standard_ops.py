@@ -810,16 +810,16 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
         # 用 get_matches_for_standard 做模糊匹配，与对齐功能保持一致，
         # 避免命名习惯不同的基础骨（如 UpperLeg.L vs UpperLeg_L）被误判为物理骨
         src_to_std = {}
-        all_preset_bones_src = set()
 
         for std_key in src_mapper.mapping_data.keys():
             main_actual, aux_actuals = src_mapper.get_matches_for_standard(source_arm, std_key)
             if main_actual:
                 src_to_std[main_actual] = std_key
-                all_preset_bones_src.add(main_actual)
+            elif std_key in source_arm.data.bones:
+                # 与 _build_fuzzy_preset_bones 的回退一致：骨架已标准化，骨名就是标准键
+                src_to_std[std_key] = std_key
             for aux_actual in aux_actuals:
                 src_to_std[aux_actual] = std_key
-                all_preset_bones_src.add(aux_actual)
 
         std_to_tgt_bone = {}
         for std_key, entry in tgt_mapper.mapping_data.items():
@@ -828,7 +828,11 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
                 std_to_tgt_bone[std_key] = mains[0]
 
         # --- 4. 筛选物理骨 ---
-        # 只要不在预设里的，都算物理骨
+        # 只要不在预设里的，都算物理骨。"预设里"必须和拆分 / 重命名用同一个判定
+        # （_build_fuzzy_preset_bones：含 exclude 与姿态修正骨），否则 MMD 的
+        # 全ての親 / センター / 足IK 在这里被当成物理骨移植过去，到拆分时又不算物理骨。
+        # src_to_std 仍只收 main / aux：被排除的骨在目标上没有对应，父级重建时越过它们。
+        all_preset_bones_src = _build_fuzzy_preset_bones(src_mapper, source_arm)
         physics_bones_names = [b.name for b in source_arm.data.bones if b.name not in all_preset_bones_src]
         physics_bones_set = set(physics_bones_names) # 用于快速查找
 
@@ -896,6 +900,8 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
 
         tgt_mat_inv = target_arm.matrix_world.inverted()
         import mathutils
+        tgt_root_name = next((eb.name for eb in edit_bones
+                              if eb.parent is None and eb.name in current_tgt_bones), None)
 
         created_count = 0
         new_bones_map = {} # {src_name: new_bone_name}
@@ -1011,22 +1017,21 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
             # A. 父级是物理骨
             if src_p_name in new_bones_map:
                 target_parent_name = new_bones_map[src_p_name]
-            # B. 父级是映射骨 (Main/Aux)
-            elif src_p_name in src_to_std:
-                std_key = src_to_std[src_p_name]
-                if std_key in std_to_tgt_bone:
-                    target_parent_name = std_to_tgt_bone[std_key]
+            # B. 父级是映射骨 (Main/Aux)，或是被预设排除的非物理骨（exclude / 姿态修正骨）：
+            #    沿父链向上找第一根在目标骨架上有对应的映射骨。目标骨架没有该标准骨
+            #    （如 spine_03 在 MHWI/MHWS 中不存在）时也是同样往上走。
+            else:
+                walk = source_arm.data.bones.get(src_p_name)
+                while walk:
+                    std_key = src_to_std.get(walk.name)
+                    if std_key in std_to_tgt_bone:
+                        target_parent_name = std_to_tgt_bone[std_key]
+                        break
+                    walk = walk.parent
                 else:
-                    # 目标骨架没有该标准骨（如 spine_03 在 MHWI/MHWS 中不存在）
-                    # 沿源预设骨父链向上查找第一个有目标映射的祖先
-                    walk = source_arm.data.bones.get(src_p_name)
-                    while walk and walk.parent:
-                        walk = walk.parent
-                        if walk.name in src_to_std:
-                            fallback_key = src_to_std[walk.name]
-                            if fallback_key in std_to_tgt_bone:
-                                target_parent_name = std_to_tgt_bone[fallback_key]
-                                break
+                    # 一路到顶都没有映射骨：挂在模型根上（MMD 的 全ての親 下直接挂翅膀），
+                    # 目标上对应的就是骨架根
+                    target_parent_name = tgt_root_name
 
             if target_parent_name and target_parent_name in edit_bones:
                 eb.parent = edit_bones[target_parent_name]
