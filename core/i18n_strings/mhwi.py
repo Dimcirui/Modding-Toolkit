@@ -36,12 +36,17 @@ STRINGS = {
 
     # ── MHWI_OT_AutoCreateChains ─────────────────────────────────────────────
     "mhwi.operators.auto_create_chains_desc": {
-        "EN": "In Pose Mode, automatically create a CTC Chain for each linear chain based on "
-              "the chain_role property of physics bones.\n"
-              "Chains with branches are skipped and reported; resolve branches manually, then run again.\n"
+        "EN": "In Pose Mode, automatically create CTC Chains from the chain_role property of "
+              "physics bones.\n"
+              "A CTC chain must be linear, so forks are split: a branch marked as the main-chain "
+              "continuation (or picked by Graft) carries on through the fork, every other branch "
+              "becomes its own chain. Only one level of branches is built; sub-branches tagged "
+              "no_chain are left without a chain and reported.\n"
               "Requires the MHW Model Editor add-on.",
-        "ZH": "在姿态模式下，根据物理骨骼的 chain_role 属性自动为每条线性链创建 CTC Chain。\n"
-              "存在分叉的链会被跳过并报告，需用户手动处理分叉后再次运行。\n"
+        "ZH": "在姿态模式下，根据物理骨骼的 chain_role 属性自动创建 CTC Chain。\n"
+              "CTC 的一条链必须是线性的，所以分叉会被拆开：标为主链延伸（或移植时自动选定）的一支"
+              "穿过分叉继续，其余分支各自另起一条链。只生成单层分支；标为 no_chain 的子分支"
+              "不生成链，并会在结果里报告。\n"
               "需要 MHW Model Editor 插件。"},
     "mhwi.operators.auto_refresh_name": {
         "EN": "Create Directly (auto-refresh bone colors)", "ZH": "直接创建（自动刷新骨骼颜色）"},
@@ -56,11 +61,6 @@ STRINGS = {
     "mhwi.operators.no_markers_hint": {
         "EN": "It's recommended to mark chains manually with the physics chain tools first.",
         "ZH": "建议先使用物理链工具手动标记后再使用此功能。"},
-    "mhwi.operators.branch_detected": {
-        "EN": "{n} chain(s) have branches ({names}); CTC doesn't support branching chains. "
-              "Mark the branch direction with \"Mark as Main Chain Continue\" and try again",
-        "ZH": "检测到 {n} 条链存在分叉（{names}），CTC 不支持分叉链，"
-              "请使用【标记为主链延伸】标记分叉方向后重试"},
     "mhwi.operators.auto_create_ctc_failed": {
         "EN": "Failed to auto-create CTC Collection", "ZH": "自动创建 CTC Collection 失败"},
     "mhwi.operators.collection_not_found": {
@@ -75,8 +75,14 @@ STRINGS = {
         "EN": "{n} chain(s) created", "ZH": "已创建 {n} 条链"},
     "mhwi.operators.chains_skipped_existing": {
         "EN": "{n} already existed, skipped", "ZH": "已存在跳过 {n} 条"},
-    "mhwi.operators.chains_skipped_branch": {
-        "EN": "{n} skipped due to branching: {names}", "ZH": "因分叉跳过 {n} 条: {names}"},
+    "mhwi.operators.chains_failed": {
+        "EN": "{n} failed to create: {names}", "ZH": "创建失败 {n} 条: {names}"},
+    "mhwi.operators.chains_too_short": {
+        "EN": "{n} too short (a chain needs at least 2 bones): {names}",
+        "ZH": "太短跳过 {n} 条（一条链至少 2 根骨）: {names}"},
+    "mhwi.operators.chains_no_chain": {
+        "EN": "{n} sub-branch(es) got no chain (bones and weights kept, physics-free): {names}",
+        "ZH": "{n} 处子分支不生成链（骨骼与权重保留，无物理）: {names}"},
     "mhwi.operators.list_sep": {"EN": ", ", "ZH": "，"},
 
     # ── MHWI_OT_SplitPhysicsBones ────────────────────────────────────────────

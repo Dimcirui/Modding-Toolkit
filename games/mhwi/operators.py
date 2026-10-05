@@ -3,10 +3,10 @@ import time
 import bpy
 import re
 from ...core.i18n import T
-from ...core import bone_utils, facial_bones, facial_maps, ref_skeleton, weight_utils
+from ...core import bone_utils, facial_bones, facial_maps, fork_resolver, ref_skeleton, weight_utils
 from ...core.bone_mapper import BoneMapManager, resolve_preset
 from ...core.standard_ops import _build_fuzzy_preset_bones, _run_bone_color_refresh
-from ...core.re_chain_utils import _patch_chain_cleanup, _straighten_chain_orientations, _build_physics_bones_set
+from ...core.re_chain_utils import _patch_chain_cleanup, _straighten_chain_orientations
 
 
 def _is_mhwi_physics(name):
@@ -82,22 +82,39 @@ def _get_existing_chain_heads(col):
     return heads
 
 
-def _has_branch(head_pb, physics_bones, armature):
-    """检测以 head_pb 为根的物理链是否存在分叉（任意骨骼有 >1 个物理子骨）。
-    _End 骨骼不计入物理子骨。"""
-    def walk(pb):
-        children = [
-            c for c in pb.bone.children
-            if c.name in physics_bones and not c.name.endswith("_End")
-        ]
-        if len(children) > 1:
-            return True
-        for child_bone in children:
-            child_pb = armature.pose.bones.get(child_bone.name)
-            if child_pb and walk(child_pb):
-                return True
-        return False
-    return walk(head_pb)
+def _detach_bones(armature, names):
+    """进编辑模式，把 names 里的骨骼临时摘成无父骨，返回 {名: (父名, 是否相连)} 供接回。
+    结束时停在姿态模式。
+
+    摘的是父子关系，不是位置：编辑骨的头尾存的是骨架空间坐标，断开相连之后再改父级
+    不会移动骨骼。"""
+    saved = {}
+    bpy.ops.object.mode_set(mode='EDIT')
+    edit_bones = armature.data.edit_bones
+    for name in names:
+        eb = edit_bones.get(name)
+        if eb is None:
+            continue
+        saved[name] = (eb.parent.name if eb.parent else None, eb.use_connect)
+        eb.use_connect = False
+        eb.parent = None
+    bpy.ops.object.mode_set(mode='POSE')
+    return saved
+
+
+def _reattach_bones(armature, saved):
+    """_detach_bones 的逆操作。先挂父级、再恢复相连（相连会把头吸到父骨尾部，而原本
+    就是相连的，位置本来就在那里）。结束时停在姿态模式。"""
+    bpy.ops.object.mode_set(mode='EDIT')
+    edit_bones = armature.data.edit_bones
+    for name, (parent_name, connected) in saved.items():
+        eb = edit_bones.get(name)
+        parent = edit_bones.get(parent_name) if parent_name else None
+        if eb is None or parent is None:
+            continue
+        eb.parent = parent
+        eb.use_connect = connected
+    bpy.ops.object.mode_set(mode='POSE')
 
 
 class MHWI_OT_AutoCreateChains(bpy.types.Operator):
@@ -112,7 +129,7 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
     has_no_markers: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
     auto_refresh: bpy.props.BoolProperty(
         name="Create Directly (auto-refresh bone colors)",
-        description="Automatically run bone color refresh first, then attempt to create. Still aborts if branches remain",
+        description="Automatically run bone color refresh first, then attempt to create",
         default=False,
     )
 
@@ -205,17 +222,6 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
             if not ok:
                 self.report({'ERROR'}, msg)
                 return {'CANCELLED'}
-            # CTC 不支持分叉链，刷新后做预检，有分叉则中止
-            physics_bones = _build_physics_bones_set(context, armature)
-            refreshed_heads = [pb for pb in armature.pose.bones
-                               if pb.get("chain_role") in ("head", "branch_head")]
-            branched = [pb.name for pb in refreshed_heads
-                        if _has_branch(pb, physics_bones, armature)]
-            if branched:
-                names = ", ".join(branched[:5]) + ("…" if len(branched) > 5 else "")
-                self.report({'ERROR'},
-                    T("mhwi.operators.branch_detected").format(n=len(branched), names=names))
-                return {'CANCELLED'}
 
         if self.auto_create_collection:
             result = bpy.ops.mhw_ctc.create_ctc_collection(collectionName=self.collection_name)
@@ -257,34 +263,54 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
         col = context.scene.mhw_ctc_toolpanel.ctcCollection
         existing_heads = _get_existing_chain_heads(col)
 
-        chain_heads = [
-            pb for pb in armature.pose.bones
-            if pb.get("chain_role") in ("head", "branch_head")
-        ]
-        if not chain_heads:
+        pose_bones = armature.pose.bones
+        if not any(pb.get("chain_role") in ("head", "branch_head") for pb in pose_bones):
             self.report({'WARNING'}, T("mhwi.operators.no_chain_heads"))
             return {'CANCELLED'}
 
-        print(f"[ChainGen CTC] {len(chain_heads)} heads -> {len(chain_heads)} chains (linear only)",
+        # CTC 一条链必须是线性的，所以分叉在这里拆成若干线性链：主链延续穿过分叉，
+        # 其余分支另起一条链（单层）；no_chain 的子树不生成。见 core/fork_resolver。
+        #
+        # 参与规划的只取带链首标记的骨及其全部后代，不用上面的 physics_bones：重命名成
+        # MhBone_xxx 之后，导入预设未必还认得出基础骨，那个集合可能把整副身体都算进去。
+        plan_set, stack = set(), [b for b in armature.data.bones
+                                  if pose_bones[b.name].get("chain_role") in ("head", "branch_head")]
+        while stack:
+            b = stack.pop()
+            if b.name not in plan_set:
+                plan_set.add(b.name)
+                stack.extend(b.children)
+        mw = armature.matrix_world
+        plan = fork_resolver.plan_ctc_chains(
+            armature.data.bones, plan_set,
+            role_of=lambda n: pose_bones[n].get("chain_role"),
+            head_of=lambda n: tuple(mw @ pose_bones[n].head))
+        to_create = [c for c in plan.chains if c[0] not in existing_heads]
+        skipped_existing = len(plan.chains) - len(to_create)
+
+        print(f"[ChainGen CTC] {len(plan.chains)} chains planned "
+              f"({len(to_create)} to create), {len(plan.too_short)} too short, "
+              f"{len(plan.no_chain_roots) + len(plan.skipped)} subtree(s) without chain",
               file=sys.stderr)
+
+        # create_chain_from_bone 取起始骨的全部后代，并拒绝多子骨的节点：把每条链上
+        # 不属于该链的子骨临时摘走，建完再接回，它看到的后代就恰好是链本身。
+        detach = fork_resolver.children_to_detach(armature.data.bones, to_create)
+        saved_parents = {}
 
         _patches = _patch_chain_cleanup(disable=True)
 
         created = 0
-        skipped_existing = 0
-        skipped_branch = []
+        failed = []
 
         t_loop = time.perf_counter()
         try:
-            for idx, head_pb in enumerate(chain_heads, 1):
-                if head_pb.name in existing_heads:
-                    skipped_existing += 1
-                    continue
-
-                if _has_branch(head_pb, physics_bones, armature):
-                    skipped_branch.append(head_pb.name)
-                    print(f"[ChainGen CTC] Chain {idx:3d}/{len(chain_heads)}  skipped (branch)  head={head_pb.name}",
-                          file=sys.stderr)
+            if detach:
+                saved_parents = _detach_bones(armature, detach)
+            for idx, names in enumerate(to_create, 1):
+                head_pb = pose_bones.get(names[0])
+                if head_pb is None:
+                    failed.append(names[0])
                     continue
 
                 bpy.ops.pose.select_all(action='DESELECT')
@@ -302,13 +328,14 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
                 if result == {'FINISHED'}:
                     created += 1
                 else:
-                    skipped_branch.append(head_pb.name)
+                    failed.append(names[0])
 
-                bones = sum(1 for _ in armature.pose.bones.get(head_pb.name).children_recursive) + 1 if armature.pose.bones.get(head_pb.name) else "?"
-                print(f"[ChainGen CTC] Chain {idx:3d}/{len(chain_heads)}  "
-                      f"create={t_chain:.4f}s  bones~{bones}  head={head_pb.name}",
+                print(f"[ChainGen CTC] Chain {idx:3d}/{len(to_create)}  "
+                      f"create={t_chain:.4f}s  bones={len(names)}  head={names[0]}",
                       file=sys.stderr)
         finally:
+            if saved_parents:
+                _reattach_bones(armature, saved_parents)
             _patch_chain_cleanup(disable=False)
             if _patches and created > 0:
                 mod, _align, _color = _patches[0]
@@ -318,16 +345,26 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
         t_loop = time.perf_counter() - t_loop
         t_total = time.perf_counter() - t_total
         print(f"[ChainGen CTC] --- loop: {t_loop:.4f}s  total: {t_total:.4f}s  "
-              f"created={created}  skipped_existing={skipped_existing}  skipped_branch={len(skipped_branch)} ---",
+              f"created={created}  skipped_existing={skipped_existing}  failed={len(failed)} ---",
               file=sys.stderr)
+
+        def _names(items):
+            return ", ".join(items[:5]) + ("…" if len(items) > 5 else "")
 
         msg_parts = [T("mhwi.operators.chains_created").format(n=created)]
         if skipped_existing:
             msg_parts.append(T("mhwi.operators.chains_skipped_existing").format(n=skipped_existing))
-        if skipped_branch:
-            msg_parts.append(T("mhwi.operators.chains_skipped_branch").format(
-                n=len(skipped_branch), names=", ".join(skipped_branch)))
+        if failed:
+            msg_parts.append(T("mhwi.operators.chains_failed").format(
+                n=len(failed), names=_names(failed)))
+        if plan.too_short:
+            msg_parts.append(T("mhwi.operators.chains_too_short").format(
+                n=len(plan.too_short), names=_names(plan.too_short)))
         self.report({'INFO'}, T("mhwi.operators.list_sep").join(msg_parts))
+        no_chain = plan.no_chain_roots + plan.skipped
+        if no_chain:
+            self.report({'WARNING'}, T("mhwi.operators.chains_no_chain").format(
+                n=len(no_chain), names=_names(no_chain)))
         return {'FINISHED'}
 
 

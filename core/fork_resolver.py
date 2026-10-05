@@ -254,6 +254,95 @@ def resolve(nodes, params=None):
     return res
 
 
+#: 带这些角色的子骨说明它在分叉处另有去向；分叉处一个没有角色的叶子就是嫁接补的 _End
+_ROLES_AT_FORK = ("head", "branch_head", "main_continue")
+
+
+@dataclass
+class CtcPlan:
+    chains: list = field(default_factory=list)        # 每条链的骨骼名序列（分叉收尾的链末尾带 _End）
+    too_short: list = field(default_factory=list)     # 不足 2 根骨、无法成链的链首
+    no_chain_roots: list = field(default_factory=list)  # 被 no_chain 标记、不生成链的子树根
+    skipped: list = field(default_factory=list)       # 判定里因层数用尽跳过的子树根
+    resolution: Resolution = None
+
+
+def plan_ctc_chains(bones, physics, role_of, head_of, params=None):
+    """MHWI CTC 生成用：算出要建哪些链，每条链按顺序有哪些骨。
+
+    CTC 一条链必须是线性的，但分支可以另起一条链（链首的父骨是另一条链的节点）。
+    所以先把树判定成若干线性链（见 ``resolve``），再补上两件拓扑上的杂事：
+
+    - no_chain 角色的子树整棵排除（嫁接已判定它不生成链）；
+    - 嫁接在分叉处补的 _End 骨（分叉的子骨里没有角色的叶子；重命名成 MhBone_xxx 之后
+      名字已认不出来，只能靠结构）不进树，在链因分叉收尾时作为末节点接上。
+
+    这里不删骨：``can_drop`` 一律 False，stub 规则不会触发。
+
+    *bones*：带 name / parent / children 的 Bone 序列；*role_of(name)*：chain_role 或 None。
+    """
+    by_name = {b.name: b for b in bones}
+    phys = {n for n in physics if n in by_name}
+
+    # no_chain 子树整棵排除
+    excluded, roots, stack = set(), [], []
+    for n in phys:
+        if role_of(n) == "no_chain" and (by_name[n].parent is None
+                                         or role_of(by_name[n].parent.name) != "no_chain"):
+            roots.append(n)
+    for r in roots:
+        stack.append(r)
+    while stack:
+        n = stack.pop()
+        if n in excluded:
+            continue
+        excluded.add(n)
+        stack.extend(c.name for c in by_name[n].children if c.name in phys)
+    phys -= excluded
+
+    # 分叉处的 _End：叶子、没有角色，且至少有一个兄弟带角色
+    end_of = {}
+    for n in phys:
+        kids = [c.name for c in by_name[n].children if c.name in phys]
+        if len(kids) < 2 or not any(role_of(k) in _ROLES_AT_FORK for k in kids):
+            continue
+        tails = [k for k in kids if not by_name[k].children and role_of(k) is None]
+        if tails:
+            end_of[n] = tails[0]
+    tree_phys = phys - set(end_of.values())
+
+    nodes = nodes_from_bones(bones, tree_phys, head_of,
+                             is_marker=lambda n: role_of(n) == "main_continue")
+    for node in nodes.values():
+        node.can_drop = False
+    res = resolve(nodes, params)
+
+    plan = CtcPlan(no_chain_roots=sorted(roots), skipped=list(res.skipped), resolution=res)
+    for ch in res.chains:
+        names = list(ch.nodes)
+        if ch.ends_at_fork and names[-1] in end_of:
+            names.append(end_of[names[-1]])
+        if len(names) < 2:
+            plan.too_short.append(names[0])
+        else:
+            plan.chains.append(names)
+    return plan
+
+
+def children_to_detach(bones, chains):
+    """这些链里每个节点除了链上的下一节之外的所有子骨。
+
+    MHW Model Editor 的 ``create_chain_from_bone`` 取起始骨的**全部后代**，并拒绝任何
+    有多个子骨的节点。把这些子骨临时摘走（建完再接回），它看到的后代就恰好是链本身。"""
+    by_name = {b.name: b for b in bones}
+    out = set()
+    for names in chains:
+        for i, n in enumerate(names):
+            nxt = names[i + 1] if i + 1 < len(names) else None
+            out.update(c.name for c in by_name[n].children if c.name != nxt)
+    return out
+
+
 def subtree(nodes, root):
     """root 及其全部后代的名字。"""
     out, stack = [], [root]
