@@ -905,6 +905,17 @@ def _plan_graft_simplify(source_arm, physics, mesh_objects, src_mapper,
     return plan
 
 
+def mhwi_unlock_prefs(context=None):
+    """装着 ``mhwi_physics_unlocked`` 的偏好对象，给 ``layout.prop`` 用。"""
+    from .console_export import get_preferences
+    return get_preferences(context)
+
+
+def mhwi_physics_unlocked(context=None):
+    """这个 mod 是否要求玩家装解锁插件（插件偏好，永久保存）。"""
+    return bool(getattr(mhwi_unlock_prefs(context), "mhwi_physics_unlocked", False))
+
+
 def _slot_text(packing, slot):
     """``body 120/169``；不装插件的小部位另注物理骨和末端骨的用量：
     ``arm 90/169 (物理 50/50，末端 40/86)``。"""
@@ -1079,7 +1090,7 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
         _GRAFT_PREVIEW.clear()
         _GRAFT_PREVIEW[self._preview_key(g)] = (plans, base)
         has_centre = bool(plans[(True, False)].centres)
-        unlocked = getattr(context.scene, "mhwi_physics_unlocked", False)
+        unlocked = mhwi_physics_unlocked(context)
         over = mhwi_physics_budget.pack(
             plans[(has_centre, False)].items, base, unlocked).overflow_bones > 0
         self.dissolve_centre = True
@@ -1098,10 +1109,8 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
         if src is not None and tgt is not None:
             g_key = (src.name, tgt.name)
         cached = _GRAFT_PREVIEW.get(g_key)
-        scene = context.scene
-        if hasattr(scene, "mhwi_physics_unlocked"):
-            layout.prop(scene, "mhwi_physics_unlocked",
-                        text=T("core.standard_ops.graft_unlocked_plugin"))
+        layout.prop(mhwi_unlock_prefs(context), "mhwi_physics_unlocked",
+                    text=T("core.standard_ops.graft_unlocked_plugin"))
         if cached is None:
             layout.prop(self, "dissolve_centre", text=T("core.standard_ops.graft_dissolve_centre"))
             layout.prop(self, "decimate", text=T("core.standard_ops.graft_decimate"))
@@ -1114,7 +1123,7 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
                         text=T("core.standard_ops.graft_dissolve_centre_named").format(names=names))
         layout.prop(self, "decimate", text=T("core.standard_ops.graft_decimate"))
         plan = plans[(bool(centres) and self.dissolve_centre, self.decimate)]
-        unlocked = getattr(scene, "mhwi_physics_unlocked", False)
+        unlocked = mhwi_physics_unlocked(context)
         _draw_budget(layout.box(), plan, base, unlocked)
 
     def execute(self, context):
@@ -1393,7 +1402,7 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
                 self.report({'INFO'}, T("core.standard_ops.graft_simplify_summary").format(
                     helpers=len(plan.helpers), centre=len(plan.centres),
                     decimated=len(plan.decimated)))
-            unlocked = getattr(context.scene, "mhwi_physics_unlocked", False)
+            unlocked = mhwi_physics_unlocked(context)
             packing = mhwi_physics_budget.pack(plan.items, len(current_tgt_bones), unlocked)
             level = {'WARNING'} if packing.overflow else {'INFO'}
             self.report(level, _budget_text(packing))

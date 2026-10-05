@@ -7,7 +7,8 @@ from ...core import (bone_utils, facial_bones, facial_maps, fork_resolver, prepr
                      ref_model_ops, ref_skeleton, weight_utils)
 from ...core.bone_mapper import BoneMapManager, auto_detect_preset, resolve_preset
 from ...core.mhwi_port import SOLE_OFFSET_Z
-from ...core.standard_ops import _build_fuzzy_preset_bones, _run_bone_color_refresh, _slot_text
+from ...core.standard_ops import (_build_fuzzy_preset_bones, _run_bone_color_refresh, _slot_text,
+                                 mhwi_physics_unlocked, mhwi_unlock_prefs)
 from ...core import mhwi_physics_budget
 from . import physics_split
 from ...core.re_chain_utils import _patch_chain_cleanup, _straighten_chain_orientations
@@ -685,19 +686,16 @@ def _strip_slot_suffix(name):
 def _rename_rule(armature, physics, unlocked):
     """这副骨架按哪套编号：``'BODY'``（没有范围限制，300–511）还是 ``'SLOT'``（有限制）。
 
-    三样信息各管一件事——插件开关说**应该**变成什么，后缀说它是不是小部位，编号说它
-    **现在**是什么：
+    完全不看是哪个部位，只看有没有范围限制：
 
-    1. 勾了解锁插件：一律 BODY（后来装上插件、想把小部位放开时就靠这一条）。
-    2. 后缀 _arm / _wst / _leg：SLOT（卸了插件，300+ 的小部位要收回 150–199）；_body：BODY。
-    3. 没有后缀，看已有编号：**非末端**有一根在 300 以上就是 BODY，否则 SLOT。只看非末端，
-       因为末端骨编号说明不了什么；没有任何非末端编号时退而看全部编号。"""
+    1. 这个 mod 要求玩家装解锁插件：一律 BODY（之前没装、后来装了，已经编进 150–199
+       的小部位靠这一条整体挪到 300+）。
+    2. 否则看已有编号：**非末端**有一根在 300 以上就是 BODY，否则 SLOT。只看非末端，
+       因为末端骨编号说明不了什么；没有任何非末端编号时退而看全部编号。
+
+    骨架名后缀（_body / _arm …）不参与：它和编号是两个可能互相矛盾的依据，而它唯一
+    有用的场景——卸了插件要把 300+ 的小部位收回来——不会发生（插件只会从不装变成装）。"""
     if unlocked:
-        return 'BODY'
-    suffix = _slot_suffix(armature.name)
-    if suffix in ('arm', 'wst', 'leg'):
-        return 'SLOT'
-    if suffix == 'body':
         return 'BODY'
     ps = set(physics)
     bones = armature.data.bones
@@ -775,15 +773,8 @@ class MHWI_RegionAssignment(bpy.types.PropertyGroup):
     )
 
 
-def _get_split_fast_mode_items(self, context):
-    return [
-        ('DIRECT', T("mhwi.operators.fast_mode_direct"), T("mhwi.operators.fast_mode_direct_desc")),
-        ('SPLIT',  T("mhwi.operators.fast_mode_split"),  T("mhwi.operators.fast_mode_split_desc")),
-    ]
-
-
-#: invoke 算好的拆分规划，给弹窗 draw 用（draw 每帧都会调，不能重算权重）。
-#: 骨架名 -> (SplitPlan, 直接重命名装不下时的明细或 None, 骨架状态)
+#: invoke 算好的数据，给弹窗 draw 用（draw 每帧都会调，不能重算权重）。
+#: 骨架名 -> dict(plan=SplitPlan, state=骨架状态, body=按无限制重命名的明细, part=按有限制的)
 _SPLIT_PREVIEW = {}
 
 _REGION_LABEL = {
@@ -794,6 +785,30 @@ _REGION_LABEL = {
 _RULE_LABEL = {'BODY': "mhwi.operators.rule_body", 'SLOT': "mhwi.operators.rule_slot"}
 _STATE_LABEL = {STATE_PARTIAL: "mhwi.operators.state_partial",
                 STATE_NORMALIZED: "mhwi.operators.state_normalized"}
+
+OUTCOME_RENAME = 'RENAME'   # 装得下：按某套规则直接重命名，不拆
+OUTCOME_SPLIT = 'SPLIT'     # 无范围限制但总数超 255：拆分 + 重命名
+OUTCOME_BLOCK = 'BLOCK'     # 要做成有范围限制的部位却装不下：只能取消
+
+
+def _split_outcome(unlocked, target, rep_body, rep_part):
+    """(结果, 规则)。
+
+    - 要求装插件：一律按无范围限制；装得下直接重命名，超 255 才拆。
+    - 不要求、目标是 body：同上。
+    - 不要求、目标是其他部位：装得下按有范围限制重命名；装不下就拦下来——要么改做 body、
+      要么要求装插件、要么自己简化。不替用户把一个部位拆成好几个：自动拆分只是编号和
+      数量两重约束下的妥协，装得下时用户完全可以按自己的想法拆。"""
+    if unlocked or target == 'BODY':
+        return (OUTCOME_RENAME if rep_body["fits"] else OUTCOME_SPLIT), 'BODY'
+    return (OUTCOME_RENAME if rep_part["fits"] else OUTCOME_BLOCK), 'SLOT'
+
+
+def _split_target_items(self, context):
+    return [
+        ('BODY', T("mhwi.operators.target_body"), T("mhwi.operators.target_body_desc")),
+        ('PART', T("mhwi.operators.target_part"), T("mhwi.operators.target_part_desc")),
+    ]
 
 
 def _draw_split_packing(layout, plan, packing):
@@ -810,22 +825,15 @@ def _draw_split_packing(layout, plan, packing):
             n=packing.overflow_bones, names=names), icon='ERROR')
 
 
-def _draw_overflow_report(layout, report, state):
-    """已处理过的骨架直接重命名装不下：说清楚卡在哪，以及点确定会发生什么。"""
-    box = layout.box()
-    box.label(text=T("mhwi.operators.overflow_header").format(
-        state=T(_STATE_LABEL.get(state, state)), rule=T(_RULE_LABEL[report["rule"]])),
-        icon='ERROR')
+def _draw_counts(layout, report):
+    """物理骨 / 末端骨 / 总骨数各用了多少，超的标红。"""
     def line(key, n, cap):
-        box.label(text=T(key).format(n=n, cap=cap),
-                  icon='ERROR' if n > cap else 'CHECKMARK')
+        layout.label(text=T(key).format(n=n, cap=cap),
+                     icon='ERROR' if n > cap else 'CHECKMARK')
     line("mhwi.operators.overflow_physics", report["non_tail"], report["cap_non_tail"])
     if report["cap_tail"] is not None:
         line("mhwi.operators.overflow_tail", report["tail"], report["cap_tail"])
     line("mhwi.operators.overflow_total", report["total"], report["cap_total"])
-    col = layout.column(align=True)
-    col.label(text=T("mhwi.operators.overflow_warning_1"), icon='INFO')
-    col.label(text=T("mhwi.operators.overflow_warning_2"))
 
 
 class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
@@ -837,12 +845,9 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
     def description(cls, context, properties):
         return T("mhwi.operators.split_physics_bones_desc")
 
-    fast_mode: bpy.props.EnumProperty(
-        name="Processing Mode",
-        items=_get_split_fast_mode_items,
-    )
-    is_fast_path: bpy.props.BoolProperty(default=True, options={'HIDDEN'})
-    #: FRESH：没处理过的骨架走拆分；OVERFLOW：处理过、但直接重命名装不下，确认后才拆
+    #: 不要求装插件时，这副骨架要做成 body（无范围限制）还是其他部位（有限制）
+    target: bpy.props.EnumProperty(name="Target Part", items=_split_target_items)
+    #: FRESH：没处理过；OVERFLOW：处理过、但按现有编号直接重命名装不下
     mode: bpy.props.StringProperty(default='FRESH', options={'HIDDEN'})
 
     @classmethod
@@ -866,7 +871,7 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
 
     @staticmethod
     def _unlocked(context):
-        return getattr(context.scene, "mhwi_physics_unlocked", False)
+        return mhwi_physics_unlocked(context)
 
     def _renumber_one(self, context, armature, physics, rule):
         context.view_layer.objects.active = armature
@@ -876,8 +881,8 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
         return {'FINISHED'}
 
     def _renumber_many(self, context, armatures):
-        """选中了多副骨架：已处理过、装得下的逐个增量重命名；要拆分的不碰，报出来。
-        拆分一次只能对一副骨架做（弹窗里要逐副确认去向），所以不在这里批量拆。"""
+        """选中了多副骨架：已处理过、装得下的逐个增量重命名；要拆分或要用户拿主意的不碰，
+        用 warning 列出来，让用户逐个处理。"""
         active = context.active_object
         done = changed = kept = fail = 0
         need_split = []
@@ -920,22 +925,24 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
             self.report({'INFO'}, T("mhwi.operators.no_physics_bones_found"))
             return {'CANCELLED'}
 
-        # 已经处理过的骨架（物理骨里有 MhBone_）：能直接重命名就不拆。直接重命名装不下的
-        # 才进弹窗——把卡在哪报出来，用户确认后再按整套重拆。
+        # 已经处理过、按现有编号装得下：直接增量重命名，不打扰用户。其余情况（没处理过 /
+        # 处理过但装不下）都可能要拆分，进弹窗问清楚要做成什么。
         state = _armature_state(physics)
-        report = None
         self.mode = 'FRESH'
+        self.target = 'BODY'      # 没处理过的通常是整个模型
         if state != STATE_FRESH:
-            report = _renumber_report(armature, physics,
-                                      _rename_rule(armature, physics, self._unlocked(context)))
-            if report["fits"]:
-                return self._renumber_one(context, armature, physics, report["rule"])
+            rule = _rename_rule(armature, physics, self._unlocked(context))
+            if _renumber_report(armature, physics, rule)["fits"]:
+                return self._renumber_one(context, armature, physics, rule)
             self.mode = 'OVERFLOW'
+            self.target = 'BODY' if rule == 'BODY' else 'PART'
 
         plan = physics_split.plan_split(armature, mapper, physics)
         _SPLIT_PREVIEW.clear()
-        _SPLIT_PREVIEW[armature.name] = (plan, report, state)
-        self.is_fast_path = self.mode == 'FRESH' and len(armature.data.bones) <= 255
+        _SPLIT_PREVIEW[armature.name] = dict(
+            plan=plan, state=state,
+            body=_renumber_report(armature, physics, 'BODY'),
+            part=_renumber_report(armature, physics, 'SLOT'))
 
         assignments = context.scene.mhwi_region_assignments
         previous = {item.region: item.slot for item in assignments}
@@ -950,25 +957,45 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        scene = context.scene
         cached = _SPLIT_PREVIEW.get(context.active_object.name)
-        if self.mode == 'OVERFLOW' and cached is not None and cached[1] is not None:
-            _draw_overflow_report(layout, cached[1], cached[2])
-            layout.separator()
-        if self.is_fast_path:
-            layout.label(text=T("mhwi.operators.fast_path_prompt"))
-            layout.prop(self, "fast_mode", expand=True)
-            if self.fast_mode == 'DIRECT':
-                return
-            layout.separator()
-        elif self.mode == 'FRESH':
-            layout.label(text=T("mhwi.operators.over_255_prompt"))
-        layout.prop(scene, "mhwi_physics_unlocked",
-                    text=T("core.standard_ops.graft_unlocked_plugin"))
         if cached is None:
             return
-        plan = cached[0]
-        unlocked = scene.mhwi_physics_unlocked
+        if self.mode == 'OVERFLOW':
+            layout.label(text=T("mhwi.operators.processed_header").format(
+                state=T(_STATE_LABEL.get(cached["state"], cached["state"]))), icon='INFO')
+
+        layout.prop(mhwi_unlock_prefs(context), "mhwi_physics_unlocked",
+                    text=T("core.standard_ops.graft_unlocked_plugin"))
+        unlocked = self._unlocked(context)
+        if not unlocked:
+            layout.prop(self, "target", expand=True)
+
+        outcome, rule = _split_outcome(unlocked, self.target, cached["body"], cached["part"])
+        report = cached["body"] if rule == 'BODY' else cached["part"]
+
+        if outcome == OUTCOME_RENAME:
+            box = layout.box()
+            box.label(text=T("mhwi.operators.outcome_rename").format(rule=T(_RULE_LABEL[rule])),
+                      icon='CHECKMARK')
+            _draw_counts(box, report)
+            return
+
+        if outcome == OUTCOME_BLOCK:
+            box = layout.box()
+            box.label(text=T("mhwi.operators.outcome_block"), icon='ERROR')
+            _draw_counts(box, report)
+            col = layout.column(align=True)
+            col.label(text=T("mhwi.operators.block_option_body"))
+            col.label(text=T("mhwi.operators.block_option_plugin"))
+            col.label(text=T("mhwi.operators.block_option_simplify"))
+            layout.label(text=T("mhwi.operators.block_noop"), icon='CANCEL')
+            return
+
+        # 拆分：总骨数超 255
+        layout.label(text=T("mhwi.operators.outcome_split"), icon='MOD_EXPLODE')
+        if self.mode == 'OVERFLOW':
+            layout.label(text=T("mhwi.operators.overflow_resplit"), icon='INFO')
+        plan = cached["plan"]
         if unlocked:
             layout.label(text=T("mhwi.operators.confirm_region_targets"))
             box = layout.box()
@@ -976,7 +1003,7 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
             row.label(text=T("mhwi.operators.col_region"))
             row.label(text=T("mhwi.operators.col_bone_count"))
             row.label(text=T("mhwi.operators.col_target_slot"))
-            for item in scene.mhwi_region_assignments:
+            for item in context.scene.mhwi_region_assignments:
                 row = box.row()
                 row.label(text=T(_REGION_LABEL.get(item.region, item.region)))
                 row.label(text=str(item.bone_count))
@@ -997,19 +1024,19 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
             self.report({'INFO'}, T("mhwi.operators.no_physics_bones_found"))
             return {'CANCELLED'}
 
-        # 快速路径 + 直接重命名：一步到位
-        if self.mode == 'FRESH' and self.is_fast_path and self.fast_mode == 'DIRECT':
-            context.view_layer.objects.active = armature
-            batches = _rename_batches(armature, physics, 'BODY')
-            _s, f = _count_rename_failures(armature, batches)
-            if f > 0:
-                self.report({'ERROR'},
-                    T("mhwi.operators.exceeds_bone_count").format(n=f))
-                return {'CANCELLED'}
-            success, _kept, fail = _rename_physics_bones(armature, batches)
-            self.report({'INFO'}, T("mhwi.operators.rename_done").format(success=success, fail=fail))
-            return {'FINISHED'}
+        unlocked = self._unlocked(context)
+        outcome, rule = _split_outcome(unlocked, self.target,
+                                       _renumber_report(armature, physics, 'BODY'),
+                                       _renumber_report(armature, physics, 'SLOT'))
+        if outcome == OUTCOME_BLOCK:
+            # 弹窗的确定按钮没法禁用，所以在这里拦：什么都不改
+            self.report({'ERROR'}, T("mhwi.operators.block_noop"))
+            return {'CANCELLED'}
+        if outcome == OUTCOME_RENAME:
+            return self._renumber_one(context, armature, physics, rule)
+        return self._do_split(context, armature, mapper, physics)
 
+    def _do_split(self, context, armature, mapper, physics):
         plan = physics_split.plan_split(armature, mapper, physics)
         unlocked = self._unlocked(context)
         packing = physics_split.pack(plan, unlocked, self._region_slot(context))
@@ -1389,15 +1416,9 @@ def register():
     bpy.types.Scene.mhwi_region_assignments = bpy.props.CollectionProperty(
         type=MHWI_RegionAssignment
     )
-    bpy.types.Scene.mhwi_body_capacity = bpy.props.IntProperty(default=150)
-    # 游戏端的解锁插件：装了以后 arm / wst / leg 与 body 等同（300–512，各受 255 总数限制）。
-    # 插件在游戏侧，Blender 里探测不到，只能由用户声明。移植的名额估算和拆分共用这一个值。
-    bpy.types.Scene.mhwi_physics_unlocked = bpy.props.BoolProperty(
-        name="Physics Unlock Plugin", default=False)
+    # 是否要求玩家装解锁插件不在这里：它是插件偏好（__init__.MT_Preferences），永久保存
 
 def unregister():
-    del bpy.types.Scene.mhwi_physics_unlocked
     del bpy.types.Scene.mhwi_region_assignments
-    del bpy.types.Scene.mhwi_body_capacity
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

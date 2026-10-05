@@ -96,10 +96,26 @@ class MT_Preferences(AddonPreferences):
         default=False,
     )
 
+    # MHWI：这个 mod 是否要求玩家装"解除部位物理上限"插件。装了以后 arm / wst / leg 与
+    # body 等同（300–511，各受 255 总数限制）。这是制作者对自己的 mod 做的决定，不是
+    # 某个 .blend 的属性，而且只会从"不要求"变成"要求"，所以放在偏好里永久保存，默认关。
+    # 移植物理骨骼、拆分并重命名物理骨的弹窗里都会显示并可直接切换。
+    mhwi_physics_unlocked: BoolProperty(
+        name="MHWI: Mods Require the Physics Unlock Plugin",
+        description=(
+            "Mods made here require players to install the plugin that lifts the per-part "
+            "physics bone limit: arm / wst / leg then use IDs 300-511 like body.\n"
+            "Off: arm / wst / leg simulate only IDs 150-199"
+        ),
+        default=False,
+    )
+
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "show_console_on_batch_export")
         layout.prop(self, "show_personal_tools")
+        layout.prop(self, "mhwi_physics_unlocked",
+                    text=i18n.T("core.standard_ops.graft_unlocked_plugin"))
         addon_updater_ops.update_settings_ui(self, context)
         # Under the updater UI, because it is the updater's merge-never-delete
         # behaviour that creates the leftovers -- see core/stale_cleanup.py.
