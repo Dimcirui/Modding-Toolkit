@@ -220,8 +220,8 @@ STRINGS = {
         "EN": "MHWI fork handling: dropped {stubs} empty chain root(s) / light trunk(s), picked {auto_continue} continuation(s), kept {branch_forks} fork(s) as branch chains",
         "ZH": "MHWI 分叉处理: 删除 {stubs} 个空链首/很轻的主干，自动选定 {auto_continue} 处主链延续，{branch_forks} 处分叉保留为分支链"},
     "core.standard_ops.graft_unlocked_plugin": {
-        "EN": "Physics bone unlock plugin installed (arm / wst / leg same as body)",
-        "ZH": "已装物理骨解锁插件（arm / wst / leg 与 body 等同）"},
+        "EN": "Use the \"Remove Physics Limit\" plugin (arm / wst / leg same as body)",
+        "ZH": "使用「解除物理上限」插件（arm / wst / leg 与 body 等同）"},
     "core.standard_ops.graft_dissolve_centre": {
         "EN": "Dissolve front centre chain (weights to left / right chains)",
         "ZH": "拆掉正前方中央链（权重分给左右两条链）"},

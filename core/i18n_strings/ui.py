@@ -159,6 +159,13 @@ STRINGS = {
     # ── MHW_PT_MainPanel.draw() operator button labels ──────────────────────────
     "ui.main_panel.btn_sk_to_weights":            {"EN": "Shape Key to Weights",  "ZH": "形态键转权重"},
     "ui.main_panel.btn_merge_renamed_vgroups":    {"EN": "Merge Renamed Vertex Groups", "ZH": "合并重名顶点组"},
+    "ui.main_panel.btn_clear_empty_vgroups":      {"EN": "Clear Empty Vertex Groups", "ZH": "清除空顶点组"},
+    "ui.main_panel.clear_empty_vg_tip": {
+        "EN": "Remove every vertex group that no vertex is weighted to, on all selected meshes",
+        "ZH": "删除选中网格上所有没有任何顶点权重的顶点组"},
+    "ui.main_panel.clear_empty_vg_done": {
+        "EN": "Removed {n} empty vertex group(s) from {meshes} mesh(es)",
+        "ZH": "已从 {meshes} 个网格上删除 {n} 个空顶点组"},
     "ui.main_panel.btn_universal_snap":           {"EN": "Align Bones [X+Y, dual armature]", "ZH": "对齐骨骼 [X+Y, 双骨架]"},
     "ui.main_panel.btn_same_kind_snap":           {"EN": "Align Bones [by name, dual armature]", "ZH": "对齐骨骼 [同名骨骼, 双骨架]"},
     "ui.main_panel.same_kind_align_label":        {"EN": "Same-Kind Bone Align", "ZH": "同种类骨骼对齐"},
@@ -346,7 +353,7 @@ STRINGS = {
                                                     "ZH": "有 {n} 处重合位置的面朝向相反、互相抵消，已保留各自的面法向。调低角度上限可让它们分开着色"},
 
     # ── MHW_OT_FixShapeKeyNormals ────────────────────────────────────────────────
-    "ui.main_panel.btn_fix_shape_key_normals":    {"EN": "Fix Normals Broken by Shape Keys", "ZH": "修复形态键破坏的法向"},
+    "ui.main_panel.btn_fix_shape_key_normals":    {"EN": "Fix Shape Key Normals", "ZH": "修复形态键法向"},
     "ui.main_panel.fsk_tip": {
         "EN": "Re-encode the custom normals against the shape-keyed geometry. Blender stores a custom normal relative to a basis derived from the surrounding geometry, so dialling in shape keys leaves the stored bytes untouched but swings the direction they decode to — a few hundred corners on a face can end up tens of degrees out, which is the blotching around the eyes and mouth. This restores the authored directions without re-baking them, so a stylised field is kept exactly as it is",
         "ZH": "按形态键变形后的几何重新编码自定义法向。Blender 存的是法向在「由周围几何推出的基底」里的编码，所以调形态键时存的字节一个没变，解码出来的方向却歪了 —— 一张脸上会有几百个角点偏出几十度，那就是眼周和嘴部糊掉的斑块。此操作只恢复原本的方向，不重算，所以风格化的法向场分毫不动"},

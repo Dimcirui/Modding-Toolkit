@@ -536,7 +536,7 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             col.separator(factor=0.8)
             col.label(text=T("ui.main_panel.label_mesh_processing"), icon='GROUP_VERTEX')
             row = col.row(align=True)
-            row.operator("mhw.sk_to_weights", text=T("ui.main_panel.btn_sk_to_weights"), icon='SHAPEKEY_DATA')
+            row.operator("mhw.clear_empty_vgroups", text=T("ui.main_panel.btn_clear_empty_vgroups"), icon='GROUP_VERTEX')
             row.operator("mhw.merge_renamed_vgroups", text=T("ui.main_panel.btn_merge_renamed_vgroups"), icon='AUTOMERGE_ON')
             row = col.row(align=True)
             row.operator("mhw.cylindrical_face_normals", text=T("ui.main_panel.btn_cylindrical_face_normals"), icon='NORMALS_FACE')
@@ -545,7 +545,9 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             # first is only for references whose corner order differs, so it sits
             # inside the Fix Shape Key Normals dialog; the second is done by the
             # export fixes.
-            col.operator("mhw.fix_shape_key_normals",
+            row = col.row(align=True)
+            row.operator("mhw.sk_to_weights", text=T("ui.main_panel.btn_sk_to_weights"), icon='SHAPEKEY_DATA')
+            row.operator("mhw.fix_shape_key_normals",
                          text=T("ui.main_panel.btn_fix_shape_key_normals"), icon='MOD_NORMALEDIT')
             col.operator("mhw.apply_modifiers_keep_shape_keys",
                          text=T("ui.main_panel.btn_apply_mods_keep_sk"), icon='MODIFIER')

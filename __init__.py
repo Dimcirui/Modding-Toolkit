@@ -101,10 +101,10 @@ class MT_Preferences(AddonPreferences):
     # 某个 .blend 的属性，而且只会从"不要求"变成"要求"，所以放在偏好里永久保存，默认关。
     # 移植物理骨骼、拆分并重命名物理骨的弹窗里都会显示并可直接切换。
     mhwi_physics_unlocked: BoolProperty(
-        name="MHWI: Mods Require the Physics Unlock Plugin",
+        name="MHWI: Use the \"Remove Physics Limit\" Plugin",
         description=(
-            "Mods made here require players to install the plugin that lifts the per-part "
-            "physics bone limit: arm / wst / leg then use IDs 300-511 like body.\n"
+            "Use the \"Remove Physics Limit\" plugin, which lifts the per-part physics bone "
+            "limit: arm / wst / leg then use IDs 300-511 like body.\n"
             "Off: arm / wst / leg simulate only IDs 150-199"
         ),
         default=False,

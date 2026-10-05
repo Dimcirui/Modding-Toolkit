@@ -1283,6 +1283,36 @@ Groups whose suffixed name matches a real bone in the bound armature are skipped
         return {'FINISHED'}
 
 
+class MHW_OT_ClearEmptyVGroups(bpy.types.Operator):
+    """Remove every vertex group that no vertex is weighted to, on all selected meshes"""
+    bl_idname = "mhw.clear_empty_vgroups"
+    bl_label = "Clear Empty Vertex Groups"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return any(o.type == 'MESH' for o in context.selected_objects)
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("ui.main_panel.clear_empty_vg_tip")
+
+    def execute(self, context):
+        from . import mesh_utils
+
+        # 编辑模式下权重还在 bmesh 里，obj.data.vertices 读到的是进编辑模式前的旧值
+        mode = context.mode
+        if mode == 'EDIT_MESH':
+            bpy.ops.object.mode_set(mode='OBJECT')
+        meshes = [o for o in context.selected_objects if o.type == 'MESH']
+        removed = sum(mesh_utils.prune_vertex_groups(o) for o in meshes)
+        if mode == 'EDIT_MESH':
+            bpy.ops.object.mode_set(mode='EDIT')
+        self.report({'INFO'}, T("ui.main_panel.clear_empty_vg_done").format(
+            n=removed, meshes=len(meshes)))
+        return {'FINISHED'}
+
+
 # ── register / unregister ─────────────────────────────────────────────────────
 
 classes = [
@@ -1297,6 +1327,7 @@ classes = [
     MHW_OT_SeparateByMaterials,
     MHW_OT_CreateOutline,
     MHW_OT_MergeRenamedVGroups,
+    MHW_OT_ClearEmptyVGroups,
 ]
 
 
