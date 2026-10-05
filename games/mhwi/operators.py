@@ -1087,8 +1087,8 @@ class MHWI_OT_AddFacialBones(bpy.types.Operator):
         name="Reference Character",
         description="Select the reference character skeleton to source facial bones from",
         items=lambda self, ctx: ref_skeleton.get_reference_skeleton_items('mhwi', {
-            "f_face003.fbx": T("mhwi.operators.facial_ref_female"),
-            "m_face006.fbx": T("mhwi.operators.facial_ref_male"),
+            "f_face000.fbx": T("mhwi.operators.facial_ref_female"),
+            "m_face000.fbx": T("mhwi.operators.facial_ref_male"),
         }),
     )
 
