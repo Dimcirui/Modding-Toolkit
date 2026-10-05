@@ -2309,7 +2309,8 @@ STRINGS = {
     "core.pre_export_check_ops.mirror_normals": {
         "EN": "baking it could not keep the normals", "ZH": "应用后法向无法保持"},
     "core.pre_export_check_ops.mirror_apply": {
-        "EN": "apply it with Safe Apply Base Transform", "ZH": "用「安全应用基础变换」应用它"},
+        "EN": "click Fix Now, or switch on the mirror fix in the gear next to Auto-fix Before Export",
+        "ZH": "点「立即修复」，或在「导出前自动修正」旁的齿轮里打开镜像修正"},
     "core.pre_export_check_ops.item_degenerate": {
         "EN": "{obj} — a scale axis is 0", "ZH": "{obj} — 有一个缩放轴是 0"},
     "core.pre_export_check_ops.note_no_custom_normals": {

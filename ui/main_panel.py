@@ -541,13 +541,12 @@ class MHW_PT_MainPanel(bpy.types.Panel):
             row = col.row(align=True)
             row.operator("mhw.cylindrical_face_normals", text=T("ui.main_panel.btn_cylindrical_face_normals"), icon='NORMALS_FACE')
             row.operator("mhw.reset_face_normals", text=T("ui.main_panel.btn_reset_face_normals"), icon='FILE_REFRESH')
-            row = col.row(align=True)
-            row.operator("mhw.fix_shape_key_normals",
+            # Transfer Normals and Safe Apply Base Transform are off the panel: the
+            # first is only for references whose corner order differs, so it sits
+            # inside the Fix Shape Key Normals dialog; the second is done by the
+            # export fixes.
+            col.operator("mhw.fix_shape_key_normals",
                          text=T("ui.main_panel.btn_fix_shape_key_normals"), icon='MOD_NORMALEDIT')
-            row.operator("mhw.transfer_normals",
-                         text=T("ui.main_panel.btn_transfer_normals"), icon='MOD_DATA_TRANSFER')
-            col.operator("mhw.safe_apply_transform",
-                         text=T("ui.main_panel.btn_safe_apply_transform"), icon='ORIENTATION_LOCAL')
             col.operator("mhw.apply_modifiers_keep_shape_keys",
                          text=T("ui.main_panel.btn_apply_mods_keep_sk"), icon='MODIFIER')
             col.operator("mhw.separate_by_materials",

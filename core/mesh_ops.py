@@ -684,6 +684,14 @@ with the encoding basis (see core/normal_utils.py)"""
         layout.prop(self, "base_source", text=T("ui.main_panel.fsk_field_base_source"))
         if self.base_source == 'OBJECT':
             layout.prop(self, "base_object", text=T("ui.main_panel.fsk_field_base_object"))
+            # Transfer Normals lives here rather than on the panel: it is the way out
+            # for exactly one case of this dialog -- a reference with the same counts
+            # but a different corner order, which _reference_base refuses.
+            op = layout.operator("mhw.transfer_normals",
+                                 text=T("ui.main_panel.fsk_btn_transfer_instead"),
+                                 icon='MOD_DATA_TRANSFER')
+            if self.base_object != 'NONE':
+                op.reference = self.base_object
         layout.prop(self, "reset_intent",
                     text=T("ui.main_panel.fsk_field_reset"))
 
@@ -1117,6 +1125,10 @@ shape keys and vertex groups each fragment inherited (see core/mesh_utils.py)"""
     clean_suffix: bpy.props.BoolProperty(
         name="Strip Material .001 Suffix", default=True,
         description="Rename mat.001 back to mat before naming the fragments after it")
+    merge_same_texture: bpy.props.BoolProperty(
+        name="Merge Meshes Sharing a Texture", default=False,
+        description="Treat materials that use the same base colour texture as one material: "
+                    "their fragments stay together in one object")
 
     @classmethod
     def poll(cls, context):
@@ -1136,6 +1148,7 @@ shape keys and vertex groups each fragment inherited (see core/mesh_utils.py)"""
             col.prop(self, "clean_suffix", text=T("ui.main_panel.sbm_field_clean_suffix"))
         col.prop(self, "prune_keys", text=T("ui.main_panel.sbm_field_prune_keys"))
         col.prop(self, "prune_groups", text=T("ui.main_panel.sbm_field_prune_groups"))
+        col.prop(self, "merge_same_texture", text=T("ui.main_panel.sbm_field_merge_same_tex"))
 
     def execute(self, context):
         from . import mesh_utils
@@ -1145,7 +1158,8 @@ shape keys and vertex groups each fragment inherited (see core/mesh_utils.py)"""
             context, objects,
             rename=self.rename, prune_keys=self.prune_keys,
             prune_groups=self.prune_groups,
-            clean_suffix=self.clean_suffix and self.rename)
+            clean_suffix=self.clean_suffix and self.rename,
+            merge_same_texture=self.merge_same_texture)
         if not n:
             self.report({'ERROR'}, T("ui.main_panel.sbm_no_mesh"))
             return {'CANCELLED'}

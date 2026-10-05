@@ -101,9 +101,72 @@ def rename_after_materials(objects):
         obj.name = name
 
 
+def base_color_key(material):
+    """Identity of *material*'s base colour texture, or None when it has none.
+
+    Two materials count as "the same" for merging when this matches.  Compared by
+    the file on disk, not the datablock: ``tex.png`` and ``tex.png.001`` loading
+    one file are the same texture.  Read through shader_readers, so MMDShaderDev,
+    Principled and Emission materials all resolve.
+    """
+    import os
+    import bpy
+    from .shader_readers import read_material
+
+    if material is None or not material.use_nodes:
+        return None
+    ref = read_material(material, ()).pbr.get('color')
+    img = getattr(ref, 'image', None)
+    if img is None:
+        return None
+    if img.filepath:
+        path = bpy.path.abspath(img.filepath, library=img.library)
+        return ('file', os.path.normcase(os.path.normpath(path)))
+    return ('image', img.name)
+
+
+def _merge_same_texture(context, fragments):
+    """Join fragments of one source whose material uses the same base colour
+    texture.  Returns the surviving objects in their original order.
+
+    Joined while the shape keys are still all there: every fragment of one source
+    carries the same key names, and join matches keys by name."""
+    import bpy
+
+    # Names, not objects: join deletes the merged-in objects, and touching one
+    # afterwards raises ReferenceError
+    names = [o.name for o in fragments]
+    groups = {}
+    for obj in fragments:
+        mat = obj.data.materials[0] if obj.data.materials else None
+        key = base_color_key(mat)
+        groups.setdefault(key if key is not None else ('alone', obj.name), []).append(obj.name)
+    gone = set()
+    for members in groups.values():
+        if len(members) < 2:
+            continue
+        # The biggest fragment receives the rest: join keeps the active object's
+        # materials first, and the fragment is later named after material 0, so
+        # the face group comes out as "face" rather than as its transparent
+        # expression overlay
+        members.sort(key=lambda n: -len(bpy.data.objects[n].data.polygons))
+        bpy.ops.object.select_all(action='DESELECT')
+        for name in members:
+            bpy.data.objects[name].select_set(True)
+        context.view_layer.objects.active = bpy.data.objects[members[0]]
+        bpy.ops.object.join()
+        gone.update(members[1:])
+    return [bpy.data.objects[n] for n in names if n not in gone]
+
+
 def separate_by_materials(context, objects, rename=True, prune_keys=True,
-                          prune_groups=True, clean_suffix=True):
+                          prune_groups=True, clean_suffix=True, merge_same_texture=False):
     """Split every object in *objects* into one object per material.
+
+    With *merge_same_texture*, fragments of the same source whose materials use
+    the same base colour texture are joined back into one object (keeping all
+    their materials).  Only within one source: joining across sources would mix
+    parents, armature bindings and unrelated shape keys.
 
     Returns (fragment count, shape keys removed, vertex groups removed).
     """
@@ -120,22 +183,25 @@ def separate_by_materials(context, objects, rename=True, prune_keys=True,
         for obj in sources:
             strip_material_suffixes(obj)
 
-    before = set(bpy.data.objects)
+    # One source at a time, so each fragment's origin is known (merging needs it)
+    fragments = []
+    for src in sources:
+        before = set(bpy.data.objects)
+        bpy.ops.object.select_all(action='DESELECT')
+        src.select_set(True)
+        context.view_layer.objects.active = src
 
-    bpy.ops.object.select_all(action='DESELECT')
-    for obj in sources:
-        obj.select_set(True)
-    context.view_layer.objects.active = sources[0]
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_all(action='SELECT')
+        bpy.ops.mesh.separate(type='MATERIAL')
+        bpy.ops.object.mode_set(mode='OBJECT')
 
-    bpy.ops.object.mode_set(mode='EDIT')
-    bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.mesh.separate(type='MATERIAL')
-    bpy.ops.object.mode_set(mode='OBJECT')
-
-    # The sources stay in place holding their first material, so the result is
-    # everything new plus everything we started from
-    fragments = [o for o in bpy.data.objects if o not in before and o.type == 'MESH']
-    fragments += sources
+        # The source stays in place holding its first material, so the result is
+        # everything new plus the object we started from
+        own = [src] + [o for o in bpy.data.objects if o not in before and o.type == 'MESH']
+        if merge_same_texture:
+            own = _merge_same_texture(context, own)
+        fragments += own
 
     keys_gone = groups_gone = 0
     for obj in fragments:

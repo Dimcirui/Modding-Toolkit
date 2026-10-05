@@ -347,12 +347,11 @@ STRINGS = {
                                                     "ZH": "有 {n} 处重合位置的面朝向相反、互相抵消，已保留各自的面法向。调低角度上限可让它们分开着色"},
 
     # ── MHW_OT_FixShapeKeyNormals ────────────────────────────────────────────────
-    "ui.main_panel.btn_fix_shape_key_normals":    {"EN": "Fix Shape Key Normals", "ZH": "修复形态键法向"},
+    "ui.main_panel.btn_fix_shape_key_normals":    {"EN": "Fix Normals Broken by Shape Keys", "ZH": "修复形态键破坏的法向"},
     "ui.main_panel.fsk_tip": {
         "EN": "Re-encode the custom normals against the shape-keyed geometry. Blender stores a custom normal relative to a basis derived from the surrounding geometry, so dialling in shape keys leaves the stored bytes untouched but swings the direction they decode to — a few hundred corners on a face can end up tens of degrees out, which is the blotching around the eyes and mouth. This restores the authored directions without re-baking them, so a stylised field is kept exactly as it is",
         "ZH": "按形态键变形后的几何重新编码自定义法向。Blender 存的是法向在「由周围几何推出的基底」里的编码，所以调形态键时存的字节一个没变，解码出来的方向却歪了 —— 一张脸上会有几百个角点偏出几十度，那就是眼周和嘴部糊掉的斑块。此操作只恢复原本的方向，不重算，所以风格化的法向场分毫不动"},
     # ── MHW_OT_TransferNormals ───────────────────────────────────────────────────
-    "ui.main_panel.btn_transfer_normals":         {"EN": "Transfer Normals", "ZH": "转移法向"},
     "ui.main_panel.tn_tip": {
         "EN": "Give the selected meshes a reference mesh's normals. Corners are matched by rest position, not by index: two exports of the same head can carry identical counts in a different vertex and face order, in which case anything index-based silently lines the wrong corners up. The field is read off the reference mesh as it is actually shaded, so its shape keys and modifiers are already in it, and each target then gets it re-encoded against its own shape-keyed geometry. Use this when several expression meshes share one head and should all shade the same way",
         "ZH": "把参考网格的法向给选中的网格。角点是按静止位置匹配的，不是按索引：同一颗头的两次导出可以数量完全相同而顶点、面的顺序不同，这时任何按索引的做法都会静默地把错误的角点对到一起。法向场是按参考网格实际着色的样子读的，所以它的形态键和修改器都已经算在里面；每个目标再按自己的形态键几何重新编码。适用于多个表情网格共用一颗头、应当着色一致的情况"},
@@ -376,7 +375,6 @@ STRINGS = {
         "ZH": "有 {n} 个角点在匹配距离内找不到对应的来源角点，保留了原有法向"},
 
     # ── MHW_OT_SafeApplyTransform ────────────────────────────────────────────────
-    "ui.main_panel.btn_safe_apply_transform":     {"EN": "Safe Apply Base Transform", "ZH": "安全应用基础变换"},
     "ui.main_panel.sat_tip": {
         "EN": "Bake the object's transform into the mesh without losing the custom split normals. Blender stores a custom normal relative to a basis derived from the surrounding geometry, so baking a mirror -- any negative scale axis -- flips that basis and the same stored bytes decode to a different direction: measured on one face mesh, 76% of corners ended up more than 90 degrees out. RE Mesh's exporter bakes the object transform the same way, which is why a mirrored mesh exports with dead normals no matter what the triangulate option is set to. This captures the normals in world space, bakes the transform, and writes them back matched by (polygon, vertex) rather than by corner index",
         "ZH": "把物体变换烘进网格，且不丢自定义拆分法向。Blender 存的是法向在「由周围几何推出的基底」里的编码，所以烘入镜像（任何负缩放轴）会翻转这个基底，同一份字节解码出来就是别的方向：实测一张脸，76% 的角点偏出 90 度以上。RE Mesh 导出器用同样的方式烘物体变换，所以镜像过的网格导出后法向必然全废，跟三角化选项开不开无关。此操作先把法向抓到世界空间，烘完变换再按（面、顶点）而非角点索引写回去"},
@@ -429,8 +427,10 @@ STRINGS = {
         "EN": "{obj} has a different topology. The base positions are read corner for corner, so the vertex, face and corner counts all have to match",
         "ZH": "{obj} 的拓扑不同。基型坐标是逐角点对应读的，所以顶点、面、角点数必须全部一致"},
     "ui.main_panel.fsk_err_reference_order": {
-        "EN": "{obj} has the same counts but a different vertex/face order ({n} corners disagree), so its positions describe other corners than this mesh's. Use Transfer Normals, which matches by position instead",
-        "ZH": "{obj} 数量相同但顶点/面的顺序不同（{n} 个角点对不上），它的坐标描述的是别的角点。请改用「转移法向」，那个是按位置匹配的"},
+        "EN": "{obj} has the same counts but a different vertex/face order ({n} corners disagree), so its positions describe other corners than this mesh's. Use \"Transfer Normals Instead\" in this dialog, which matches by position",
+        "ZH": "{obj} 数量相同但顶点/面的顺序不同（{n} 个角点对不上），它的坐标描述的是别的角点。请点本对话框里的「顶点顺序不同：改用转移法向」，那个是按位置匹配的"},
+    "ui.main_panel.fsk_btn_transfer_instead": {
+        "EN": "Order Differs: Transfer Normals Instead", "ZH": "顶点顺序不同：改用转移法向"},
     "ui.main_panel.fsk_warn_reference_transform": {
         "EN": "{obj} has a different rotation or scale. Its base shape is read as-is, so the directions come back in its frame rather than this mesh's",
         "ZH": "{obj} 的旋转或缩放与本物体不同。它的基型是按原样读取的，所以取回的方向处在它的坐标系里，而不是本网格的"},
@@ -468,6 +468,8 @@ STRINGS = {
     "ui.main_panel.sbm_field_clean_suffix": {"EN": "Strip Material .001 Suffix","ZH": "去掉材质名的 .001 后缀"},
     "ui.main_panel.sbm_field_prune_keys":   {"EN": "Prune Dead Shape Keys",     "ZH": "剪掉失效的形态键"},
     "ui.main_panel.sbm_field_prune_groups": {"EN": "Prune Empty Vertex Groups", "ZH": "剪掉空的顶点组"},
+    "ui.main_panel.sbm_field_merge_same_tex": {
+        "EN": "Merge Meshes Sharing a Base Colour Texture", "ZH": "合并使用相同贴图的网格"},
     "ui.main_panel.sbm_no_mesh": {"EN": "No mesh objects selected", "ZH": "没有选中任何网格物体"},
     "ui.main_panel.sbm_done": {
         "EN": "{n} object(s) after the split; pruned {keys} shape key(s) and {groups} vertex group(s)",
