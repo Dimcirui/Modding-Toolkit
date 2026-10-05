@@ -906,19 +906,22 @@ def _plan_graft_simplify(source_arm, physics, mesh_objects, src_mapper,
 
 
 def _slot_text(packing, slot):
-    """``body 120/169``；不装插件的小部位另注物理骨（非末端）的用量：``arm 90/169 (物理 50/50)``。"""
+    """``body 120/169``；不装插件的小部位另注物理骨和末端骨的用量：
+    ``arm 90/169 (物理 50/50，末端 40/86)``。"""
     nt, t = packing.used[slot]
-    cap_nt, cap_total = packing.capacity[slot]
+    cap_nt, cap_t, cap_total = packing.capacity[slot]
     text = f"{slot} {nt + t}/{cap_total}"
     if cap_nt is not None:
-        text += " " + T("core.standard_ops.graft_slot_physics").format(n=nt, cap=cap_nt)
+        text += " " + T("core.standard_ops.graft_slot_physics").format(
+            n=nt, cap=cap_nt, t=t, cap_t=cap_t)
     return text
 
 
 def _slot_full(packing, slot):
     nt, t = packing.used[slot]
-    cap_nt, cap_total = packing.capacity[slot]
-    return nt + t >= cap_total or (cap_nt is not None and nt >= cap_nt)
+    cap_nt, cap_t, cap_total = packing.capacity[slot]
+    return (nt + t >= cap_total or (cap_nt is not None and nt >= cap_nt)
+            or (cap_t is not None and t >= cap_t))
 
 
 def _budget_text(packing):

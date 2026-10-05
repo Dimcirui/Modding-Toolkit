@@ -219,8 +219,8 @@ STRINGS = {
         "EN": "Estimated MHWI slots (base skeleton {base} bones):",
         "ZH": "MHWI 名额估算（本体 {base} 根骨）："},
     "core.standard_ops.graft_slot_physics": {
-        "EN": "(physics {n}/{cap})",
-        "ZH": "(物理 {n}/{cap})"},
+        "EN": "(physics {n}/{cap}, tail {t}/{cap_t})",
+        "ZH": "(物理 {n}/{cap}，末端 {t}/{cap_t})"},
     "core.standard_ops.graft_budget_line": {
         "EN": "Estimated slots: {slots}",
         "ZH": "名额估算: {slots}"},

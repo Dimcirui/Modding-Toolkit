@@ -101,27 +101,53 @@ STRINGS = {
 
     # ── MHWI_OT_SplitPhysicsBones ────────────────────────────────────────────
     "mhwi.operators.split_physics_bones_desc": {
-        "EN": "Split physics bones into separate armatures by part, meshes included, then rename them to MhBone_xxx.\n"
-              "Each part gets its own .mod3 collection; armature names get a suffix (_body/_arm/_wst/_leg).\n"
-              "Chains sharing vertices stay in one part; faces go to the part whose physics weights they carry.\n"
-              "When total bone count is <=255, direct rename or split are both available; >255 requires splitting.\n"
-              "On an already split part (name ends in _body/_arm/_wst/_leg) it only renumbers.",
-        "ZH": "将物理骨骼按部位拆分到不同骨架，网格一起拆，再重命名为 MhBone_xxx。\n"
-              "每个部位单独一个 .mod3 集合；骨架对象名会加上部位后缀（_body/_arm/_wst/_leg）。\n"
-              "共用顶点的链留在同一部位；面跟着它所带的物理权重归到对应部位。\n"
-              "骨架总数 ≤255 时可选直接重命名或拆分；>255 时必须拆分。\n"
-              "对已经拆好的部位（名称以 _body/_arm/_wst/_leg 结尾）只重新编号。"},
+        "EN": "Split physics bones into parts and rename them to MhBone_xxx, meshes included.\n"
+              "Never processed (no MhBone_ physics bones): full split + rename, each part in its own .mod3 collection.\n"
+              "Already processed: renumbered incrementally without splitting -- bones whose ID already fits keep it.\n"
+              "  No range limit (300-511) vs limited (physics 150-199, tails 200-245 then 260-299) is decided by\n"
+              "  the unlock plugin toggle, then the name suffix (_arm/_wst/_leg limited, _body not), then the IDs.\n"
+              "  If that does not fit, a dialog shows where it overflows; confirming re-splits it as a whole set.\n"
+              "With several armatures selected, each processed one is renumbered; ones needing a split are listed.",
+        "ZH": "把物理骨按部位拆分并重命名为 MhBone_xxx，网格一起处理。\n"
+              "没处理过（物理骨里没有 MhBone_）：完整拆分 + 重命名，每个部位单独一个 .mod3 集合。\n"
+              "已处理过：不拆，增量重新编号——编号已经合规的骨保持不动。\n"
+              "  无范围限制（300~511）还是有限制（物理 150~199，末端 200~245、满了接 260~299），\n"
+              "  依次看解锁插件开关、名称后缀（_arm/_wst/_leg 有限制，_body 没有）、现有编号。\n"
+              "  装不下时弹窗说明卡在哪；确认后按整套重新拆分。\n"
+              "同时选中多副骨架时：已处理过的逐个重新编号，需要拆分的列出来。"},
     "mhwi.operators.fast_mode_direct": {"EN": "Direct Rename", "ZH": "直接重命名"},
     "mhwi.operators.fast_mode_direct_desc": {
-        "EN": "One step: rename all physics bones directly into the 300-512 range",
-        "ZH": "一步到位，全部物理骨命名到 300~512"},
+        "EN": "One step: rename all physics bones directly into the 300-511 range",
+        "ZH": "一步到位，全部物理骨命名到 300~511"},
     "mhwi.operators.fast_mode_split": {"EN": "Split into Multiple Regions", "ZH": "拆分为多个部位"},
     "mhwi.operators.fast_mode_split_desc": {
         "EN": "Split the armature by part and rename each part's physics bones",
         "ZH": "按部位拆分骨架，并给各部位的物理骨重命名"},
     "mhwi.operators.renumber_only": {
-        "EN": "{name} is already a split part: renumbered only ({success} succeeded, {fail} failed)",
-        "ZH": "{name} 已经是拆好的部位：只重新编号（成功 {success} 根，失败 {fail} 根）"},
+        "EN": "{name} was already processed: renumbered by {rule} rules without splitting ({changed} renamed, {kept} kept, {fail} failed)",
+        "ZH": "{name} 已处理过：按{rule}规则重新编号，未拆分（改名 {changed} 根，保留 {kept} 根，失败 {fail} 根）"},
+    "mhwi.operators.renumber_many_done": {
+        "EN": "Renumbered {n} armature(s): {changed} renamed, {kept} kept, {fail} failed",
+        "ZH": "重新编号 {n} 副骨架：改名 {changed} 根，保留 {kept} 根，失败 {fail} 根"},
+    "mhwi.operators.renumber_need_split": {
+        "EN": "Not touched, these need splitting -- select each on its own: {names}",
+        "ZH": "以下骨架需要拆分，未处理，请逐个单独选中：{names}"},
+    "mhwi.operators.rule_body": {"EN": "no-range-limit", "ZH": "无范围限制"},
+    "mhwi.operators.rule_slot": {"EN": "range-limited", "ZH": "有范围限制"},
+    "mhwi.operators.state_partial": {"EN": "partly renamed", "ZH": "部分已重命名"},
+    "mhwi.operators.state_normalized": {"EN": "fully renamed", "ZH": "已全部重命名"},
+    "mhwi.operators.overflow_header": {
+        "EN": "Already processed ({state}), but renumbering by {rule} rules does not fit:",
+        "ZH": "这副骨架已处理过（{state}），但按{rule}规则直接重命名装不下："},
+    "mhwi.operators.overflow_physics": {"EN": "Physics bones {n}/{cap}", "ZH": "物理骨 {n}/{cap}"},
+    "mhwi.operators.overflow_tail": {"EN": "Tail bones {n}/{cap}", "ZH": "末端骨 {n}/{cap}"},
+    "mhwi.operators.overflow_total": {"EN": "Total bones {n}/{cap}", "ZH": "总骨数 {n}/{cap}"},
+    "mhwi.operators.overflow_warning_1": {
+        "EN": "OK re-splits it as a whole set: it becomes body and new parts are created.",
+        "ZH": "点确定会把它当整套重新拆分：它变成 body，并新建其余部位。"},
+    "mhwi.operators.overflow_warning_2": {
+        "EN": "If it is itself one part of a set, move some chains away or install the unlock plugin instead.",
+        "ZH": "如果它本身是某套装备的一个部位，请改为挪走一些链，或装解锁插件。"},
     "mhwi.operators.region_head": {"EN": "Head", "ZH": "头部"},
     "mhwi.operators.region_upper": {"EN": "Upper Body", "ZH": "上半身"},
     "mhwi.operators.region_lower": {"EN": "Lower Body", "ZH": "下半身"},
@@ -164,24 +190,6 @@ STRINGS = {
     "mhwi.operators.split_done": {
         "EN": "Split complete: {n} armature(s) generated ({names})",
         "ZH": "拆分完成：已生成 {n} 个骨架（{names}）"},
-
-    # ── MHWI_OT_BatchRenamePhysicsBones ──────────────────────────────────────
-    "mhwi.operators.batch_rename_desc": {
-        "EN": "Renumber physics bones on all selected armatures to MhBone_xxx — for split armatures edited afterwards.\n"
-              "With the unlock plugin ticked, everything uses 300-511. Otherwise each armature is judged by its\n"
-              "non-tail bones' current IDs: any at 300+ means body rules (300-511); all in 150-299 means a small part:\n"
-              "physics bones in 150-199 (the only range with physics), tail bones in 200-249 then 300-511.\n"
-              "Armatures with no IDs yet fall back to the name suffix (_arm/_wst/_leg = small part).",
-        "ZH": "把选中骨架的物理骨重新编号为 MhBone_xxx——用于拆分后又改动过骨骼的骨架。\n"
-              "勾了解锁插件时一律用 300~511。否则按每副骨架非末端骨的现有编号判断：有一根在 300 以上就按 body 规则（300~511）；\n"
-              "都在 150~299 就按小部位：物理骨进 150~199（只有这一段有物理），末端骨先 200~249、再 300~511。\n"
-              "还没有编号的骨架按名称后缀判断（_arm/_wst/_leg 为小部位）。"},
-    "mhwi.operators.warning_label": {"EN": "Warning", "ZH": "警告"},
-    "mhwi.operators.batch_rename_over_limit": {
-        "EN": "Currently over by {n} bone(s); recommend simplifying bones before renaming.",
-        "ZH": "当前超出了 {n} 个骨骼，建议先简化骨骼后再进行命名。"},
-    "mhwi.operators.confirm_rename_anyway": {
-        "EN": "Proceed with renaming anyway?", "ZH": "确定仍然进行重命名？"},
 
     # ══════════════════════════════════════════════════════════════════════
     # games/mhwi/batch_import.py

@@ -514,6 +514,12 @@ _SLOT_ITEMS = [
 
 _MHBONE_RE = re.compile(r"^MhBone_(\d+)$")
 
+#: 骨架的处理状态（只认 MhBone_；bonefunction_ 是旧工具的命名，在对骨 / 重命名顶点组
+#: 那几步由用户自己统一掉，不归这里管）
+STATE_FRESH = 'FRESH'            # 物理骨全不是 MhBone_：没处理过，完整拆分 + 重命名
+STATE_PARTIAL = 'PARTIAL'        # 部分是：处理过又加了骨
+STATE_NORMALIZED = 'NORMALIZED'  # 全是：处理过
+
 
 def _is_tail_bone(bone, physics_bones_set):
     """尾骨骼：在物理骨集合中没有物理子骨的骨骼（即链末端）。"""
@@ -529,11 +535,18 @@ def _in_ranges(idx, ranges):
     return any(a <= idx <= b for a, b in ranges)
 
 
+def _armature_state(physics):
+    named = sum(1 for n in physics if _mhbone_id(n) is not None)
+    if named == 0:
+        return STATE_FRESH
+    return STATE_NORMALIZED if named == len(physics) else STATE_PARTIAL
+
+
 def _rename_batches(armature, physics, rule):
     """按编号规则把物理骨分成 [(骨名序列, 编号范围), ...]。
 
-    *rule* 为 ``'BODY'``：全部进 300–511。``'SLOT'``（不装插件的 arm / wst / leg）：非末端
-    进 150–199——只有这一段有物理；末端放哪都行，只要不占 150–199，先 200–249 再 300–511。"""
+    *rule* 为 ``'BODY'``（没有范围限制）：全部进 300–511。``'SLOT'``（有范围限制）：非末端
+    进 150–199——只有这一段有物理；末端进 200–245，满了接 260–299。"""
     budget = mhwi_physics_budget
     if rule == 'BODY':
         return [(list(physics), budget.BODY_IDS)]
@@ -545,18 +558,32 @@ def _rename_batches(armature, physics, rule):
 
 
 def _plan_renumber(armature, batches):
-    """给每批骨分配编号，返回 [(旧名, 新名或 None), ...]。
+    """**增量**编号：返回 [(旧名, 新名或 None), ...]，旧名 == 新名的表示原样保留。
 
-    只有**不参与这次改名**的 MhBone 才算占用编号（本体骨，比如参考骨架自带的 249–253）；
-    这次要改的骨不管现在叫什么都会让出编号。若按批次各算各的占用，某根尾骨此刻恰好叫
-    MhBone_150，改非末端时 150 就会被当成占用跳过，白白少一个有物理的编号。"""
+    编号已经落在自己这一批范围里的骨保持不动——这副骨架可能来自现成的 mod，原来的
+    .ctc 引用的就是这些编号；而且同一副骨架连按两次结果不变。只给新骨、以及角色变了
+    的骨（比如链尾后面又接了几节，原来的末端骨变成了非末端，200+ 的编号就得挪进
+    150–199）分配编号。
+
+    占用的编号 = 不参与这次改名的 MhBone（本体骨）+ 保留下来的。要改的骨不管现在叫
+    什么都会让出编号，所以某根骨此刻恰好叫 MhBone_150 也不会挡住别人。"""
     renaming = {n for names, _r in batches for n in names}
     used = {i for i in (_mhbone_id(b.name) for b in armature.data.bones
                         if b.name not in renaming) if i is not None}
+    keep = {}
+    for names, ranges in batches:
+        for n in names:
+            i = _mhbone_id(n)
+            if i is not None and _in_ranges(i, ranges) and i not in used:
+                keep[n] = i
+                used.add(i)
     out = []
     for names, ranges in batches:
         free = (i for a, b in ranges for i in range(a, b + 1) if i not in used)
         for n in names:
+            if n in keep:
+                out.append((n, n))
+                continue
             new_id = next(free, None)
             if new_id is None:
                 out.append((n, None))
@@ -579,7 +606,9 @@ def _child_meshes(armature):
 
 
 def _rename_physics_bones(armature, batches):
-    """按 *batches*（见 _rename_batches）把物理骨重命名为 MhBone_xxx，返回 (成功数, 失败数)。
+    """按 *batches*（见 _rename_batches）把物理骨重命名为 MhBone_xxx。
+
+    返回 (改了名的数, 原样保留的数, 失败数)。
 
     采用两步改名（临时名 → 正式名）避免同序列内的命名冲突：
     若直接逐一改名，前面的骨骼抢占了后面骨骼的当前名称对应的 ID，
@@ -591,6 +620,8 @@ def _rename_physics_bones(armature, batches):
     不存在，手动步骤会直接跳过，不会重复处理或产生冲突）。
     """
     assignments = _plan_renumber(armature, batches)
+    kept = sum(1 for old, new in assignments if old == new)
+    assignments = [(old, new) for old, new in assignments if old != new]
     child_meshes = _child_meshes(armature)
 
     success = 0
@@ -630,7 +661,7 @@ def _rename_physics_bones(armature, batches):
                 vg.name = final
 
     bpy.ops.object.mode_set(mode='OBJECT')
-    return success, fail
+    return success, kept, fail
 
 
 def _slot_suffix(name):
@@ -641,25 +672,60 @@ def _slot_suffix(name):
     return None
 
 
-def _rename_rule(armature, physics, unlocked):
-    """这副骨架用哪套编号：``'BODY'``（300–511）还是 ``'SLOT'``（不装插件的小部位）。
+def _strip_slot_suffix(name):
+    """去掉部位后缀（保留 .mod3）：``Foo_arm.mod3`` -> ``Foo.mod3``。"""
+    slot = _slot_suffix(name)
+    if slot is None:
+        return name
+    ext = '.mod3' if name.endswith('.mod3') else ''
+    base = name[:-len(ext)] if ext else name
+    return base[:-(len(slot) + 1)] + ext
 
-    1. 勾了解锁插件：一律 BODY。
-    2. 已经有编号的看**非末端骨**的编号：有一根在 300 以上就是 BODY，都在 150–299 就是
-       SLOT。只看非末端，因为不装插件时末端骨也可以放到 300+，看全部会把小部位误判成
-       body，物理骨就会被编到没有物理的 300+ 上。
-    3. 都还是原名（手动拆的骨架）：按骨架名后缀，_body 或没有后缀是 BODY，其余 SLOT。"""
+
+def _rename_rule(armature, physics, unlocked):
+    """这副骨架按哪套编号：``'BODY'``（没有范围限制，300–511）还是 ``'SLOT'``（有限制）。
+
+    三样信息各管一件事——插件开关说**应该**变成什么，后缀说它是不是小部位，编号说它
+    **现在**是什么：
+
+    1. 勾了解锁插件：一律 BODY（后来装上插件、想把小部位放开时就靠这一条）。
+    2. 后缀 _arm / _wst / _leg：SLOT（卸了插件，300+ 的小部位要收回 150–199）；_body：BODY。
+    3. 没有后缀，看已有编号：**非末端**有一根在 300 以上就是 BODY，否则 SLOT。只看非末端，
+       因为末端骨编号说明不了什么；没有任何非末端编号时退而看全部编号。"""
     if unlocked:
+        return 'BODY'
+    suffix = _slot_suffix(armature.name)
+    if suffix in ('arm', 'wst', 'leg'):
+        return 'SLOT'
+    if suffix == 'body':
         return 'BODY'
     ps = set(physics)
     bones = armature.data.bones
     ids = [i for i in (_mhbone_id(n) for n in physics if not _is_tail_bone(bones[n], ps))
            if i is not None]
-    if any(i >= 300 for i in ids):
-        return 'BODY'
-    if any(150 <= i < 300 for i in ids):
-        return 'SLOT'
-    return 'SLOT' if _slot_suffix(armature.name) in ('arm', 'wst', 'leg') else 'BODY'
+    if not ids:
+        ids = [i for i in (_mhbone_id(n) for n in physics) if i is not None]
+    return 'BODY' if any(i >= 300 for i in ids) else 'SLOT'
+
+
+def _renumber_report(armature, physics, rule):
+    """直接重命名能不能装下，以及装不下时给弹窗看的明细。
+
+    返回 dict(fits, rule, non_tail, tail, total, cap_non_tail, cap_tail, cap_total, fail)。"""
+    budget = mhwi_physics_budget
+    batches = _rename_batches(armature, physics, rule)
+    _ok, fail = _count_rename_failures(armature, batches)
+    total = len(armature.data.bones)
+    info = dict(rule=rule, total=total, cap_total=budget.BONE_LIMIT, fail=fail)
+    if rule == 'SLOT':
+        info.update(non_tail=len(batches[0][0]), tail=len(batches[1][0]),
+                    cap_non_tail=budget.SLOT_NON_TAIL, cap_tail=budget.SLOT_TAIL)
+    else:
+        n = len(physics)
+        info.update(non_tail=n, tail=0, cap_non_tail=sum(b - a + 1 for a, b in budget.BODY_IDS),
+                    cap_tail=None)
+    info["fits"] = fail == 0 and total <= budget.BONE_LIMIT
+    return info
 
 
 def _make_slot_name(original_name, slot):
@@ -716,7 +782,8 @@ def _get_split_fast_mode_items(self, context):
     ]
 
 
-#: invoke 算好的拆分规划，给弹窗 draw 用（draw 每帧都会调，不能重算权重）。键是骨架名。
+#: invoke 算好的拆分规划，给弹窗 draw 用（draw 每帧都会调，不能重算权重）。
+#: 骨架名 -> (SplitPlan, 直接重命名装不下时的明细或 None, 骨架状态)
 _SPLIT_PREVIEW = {}
 
 _REGION_LABEL = {
@@ -724,6 +791,9 @@ _REGION_LABEL = {
     "upper": "mhwi.operators.region_upper",
     "lower": "mhwi.operators.region_lower",
 }
+_RULE_LABEL = {'BODY': "mhwi.operators.rule_body", 'SLOT': "mhwi.operators.rule_slot"}
+_STATE_LABEL = {STATE_PARTIAL: "mhwi.operators.state_partial",
+                STATE_NORMALIZED: "mhwi.operators.state_normalized"}
 
 
 def _draw_split_packing(layout, plan, packing):
@@ -740,6 +810,24 @@ def _draw_split_packing(layout, plan, packing):
             n=packing.overflow_bones, names=names), icon='ERROR')
 
 
+def _draw_overflow_report(layout, report, state):
+    """已处理过的骨架直接重命名装不下：说清楚卡在哪，以及点确定会发生什么。"""
+    box = layout.box()
+    box.label(text=T("mhwi.operators.overflow_header").format(
+        state=T(_STATE_LABEL.get(state, state)), rule=T(_RULE_LABEL[report["rule"]])),
+        icon='ERROR')
+    def line(key, n, cap):
+        box.label(text=T(key).format(n=n, cap=cap),
+                  icon='ERROR' if n > cap else 'CHECKMARK')
+    line("mhwi.operators.overflow_physics", report["non_tail"], report["cap_non_tail"])
+    if report["cap_tail"] is not None:
+        line("mhwi.operators.overflow_tail", report["tail"], report["cap_tail"])
+    line("mhwi.operators.overflow_total", report["total"], report["cap_total"])
+    col = layout.column(align=True)
+    col.label(text=T("mhwi.operators.overflow_warning_1"), icon='INFO')
+    col.label(text=T("mhwi.operators.overflow_warning_2"))
+
+
 class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
     bl_idname = "mhwi.split_physics_bones"
     bl_label = "Split Physics Bones"
@@ -754,6 +842,8 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
         items=_get_split_fast_mode_items,
     )
     is_fast_path: bpy.props.BoolProperty(default=True, options={'HIDDEN'})
+    #: FRESH：没处理过的骨架走拆分；OVERFLOW：处理过、但直接重命名装不下，确认后才拆
+    mode: bpy.props.StringProperty(default='FRESH', options={'HIDDEN'})
 
     @classmethod
     def poll(cls, context):
@@ -774,7 +864,54 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
     def _region_slot(context):
         return {item.region: item.slot for item in context.scene.mhwi_region_assignments}
 
+    @staticmethod
+    def _unlocked(context):
+        return getattr(context.scene, "mhwi_physics_unlocked", False)
+
+    def _renumber_one(self, context, armature, physics, rule):
+        context.view_layer.objects.active = armature
+        s, k, f = _rename_physics_bones(armature, _rename_batches(armature, physics, rule))
+        self.report({'WARNING'} if f else {'INFO'}, T("mhwi.operators.renumber_only").format(
+            name=armature.name, rule=T(_RULE_LABEL[rule]), changed=s, kept=k, fail=f))
+        return {'FINISHED'}
+
+    def _renumber_many(self, context, armatures):
+        """选中了多副骨架：已处理过、装得下的逐个增量重命名；要拆分的不碰，报出来。
+        拆分一次只能对一副骨架做（弹窗里要逐副确认去向），所以不在这里批量拆。"""
+        active = context.active_object
+        done = changed = kept = fail = 0
+        need_split = []
+        for arm in armatures:
+            mapper, physics = self._physics(arm)
+            if mapper is None:
+                return {'CANCELLED'}
+            if not physics:
+                continue
+            if _armature_state(physics) == STATE_FRESH:
+                need_split.append(arm.name)
+                continue
+            rule = _rename_rule(arm, physics, self._unlocked(context))
+            if not _renumber_report(arm, physics, rule)["fits"]:
+                need_split.append(arm.name)
+                continue
+            context.view_layer.objects.active = arm
+            s, k, f = _rename_physics_bones(arm, _rename_batches(arm, physics, rule))
+            done += 1
+            changed += s
+            kept += k
+            fail += f
+        context.view_layer.objects.active = active
+        self.report({'WARNING'} if fail else {'INFO'}, T("mhwi.operators.renumber_many_done").format(
+            n=done, changed=changed, kept=kept, fail=fail))
+        if need_split:
+            self.report({'WARNING'}, T("mhwi.operators.renumber_need_split").format(
+                names=T("mhwi.operators.list_sep").join(need_split)))
+        return {'FINISHED'}
+
     def invoke(self, context, _event):
+        armatures = [o for o in context.selected_objects if o.type == 'ARMATURE']
+        if len(armatures) > 1:
+            return self._renumber_many(context, armatures)
         armature = context.active_object
         mapper, physics = self._physics(armature)
         if mapper is None:
@@ -782,21 +919,23 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
         if not physics:
             self.report({'INFO'}, T("mhwi.operators.no_physics_bones_found"))
             return {'CANCELLED'}
-        # 已经拆过的部位骨架（拆完又手动加了骨）：不再拆，只按该部位的规则重新编号。
-        # 否则它总数 <=255 会走"直接重命名"，没装插件的 arm / wst / leg 会被编到没有
-        # 物理的 300+ 上。
-        if _slot_suffix(armature.name) is not None:
-            unlocked = getattr(context.scene, "mhwi_physics_unlocked", False)
-            rule = _rename_rule(armature, physics, unlocked)
-            context.view_layer.objects.active = armature
-            s, f = _rename_physics_bones(armature, _rename_batches(armature, physics, rule))
-            self.report({'INFO'}, T("mhwi.operators.renumber_only").format(
-                name=armature.name, success=s, fail=f))
-            return {'FINISHED'}
+
+        # 已经处理过的骨架（物理骨里有 MhBone_）：能直接重命名就不拆。直接重命名装不下的
+        # 才进弹窗——把卡在哪报出来，用户确认后再按整套重拆。
+        state = _armature_state(physics)
+        report = None
+        self.mode = 'FRESH'
+        if state != STATE_FRESH:
+            report = _renumber_report(armature, physics,
+                                      _rename_rule(armature, physics, self._unlocked(context)))
+            if report["fits"]:
+                return self._renumber_one(context, armature, physics, report["rule"])
+            self.mode = 'OVERFLOW'
+
         plan = physics_split.plan_split(armature, mapper, physics)
         _SPLIT_PREVIEW.clear()
-        _SPLIT_PREVIEW[armature.name] = plan
-        self.is_fast_path = len(armature.data.bones) <= 255
+        _SPLIT_PREVIEW[armature.name] = (plan, report, state)
+        self.is_fast_path = self.mode == 'FRESH' and len(armature.data.bones) <= 255
 
         assignments = context.scene.mhwi_region_assignments
         previous = {item.region: item.slot for item in assignments}
@@ -807,24 +946,28 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
             item.bone_count = plan.region_totals[region]
             item.slot = previous.get(region, physics_split.DEFAULT_REGION_SLOT[region])
         return context.window_manager.invoke_props_dialog(
-            self, width=440, title=T("ui.main_panel.btn_split_physics_bones"))
+            self, width=460, title=T("ui.main_panel.btn_split_physics_bones"))
 
     def draw(self, context):
         layout = self.layout
         scene = context.scene
+        cached = _SPLIT_PREVIEW.get(context.active_object.name)
+        if self.mode == 'OVERFLOW' and cached is not None and cached[1] is not None:
+            _draw_overflow_report(layout, cached[1], cached[2])
+            layout.separator()
         if self.is_fast_path:
             layout.label(text=T("mhwi.operators.fast_path_prompt"))
             layout.prop(self, "fast_mode", expand=True)
             if self.fast_mode == 'DIRECT':
                 return
             layout.separator()
-        else:
+        elif self.mode == 'FRESH':
             layout.label(text=T("mhwi.operators.over_255_prompt"))
         layout.prop(scene, "mhwi_physics_unlocked",
                     text=T("core.standard_ops.graft_unlocked_plugin"))
-        plan = _SPLIT_PREVIEW.get(context.active_object.name)
-        if plan is None:
+        if cached is None:
             return
+        plan = cached[0]
         unlocked = scene.mhwi_physics_unlocked
         if unlocked:
             layout.label(text=T("mhwi.operators.confirm_region_targets"))
@@ -855,20 +998,20 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
             return {'CANCELLED'}
 
         # 快速路径 + 直接重命名：一步到位
-        if self.is_fast_path and self.fast_mode == 'DIRECT':
+        if self.mode == 'FRESH' and self.is_fast_path and self.fast_mode == 'DIRECT':
             context.view_layer.objects.active = armature
             batches = _rename_batches(armature, physics, 'BODY')
-            s, f = _count_rename_failures(armature, batches)
+            _s, f = _count_rename_failures(armature, batches)
             if f > 0:
                 self.report({'ERROR'},
                     T("mhwi.operators.exceeds_bone_count").format(n=f))
                 return {'CANCELLED'}
-            success, fail = _rename_physics_bones(armature, batches)
+            success, _kept, fail = _rename_physics_bones(armature, batches)
             self.report({'INFO'}, T("mhwi.operators.rename_done").format(success=success, fail=fail))
             return {'FINISHED'}
 
         plan = physics_split.plan_split(armature, mapper, physics)
-        unlocked = getattr(context.scene, "mhwi_physics_unlocked", False)
+        unlocked = self._unlocked(context)
         packing = physics_split.pack(plan, unlocked, self._region_slot(context))
         if packing.overflow:
             names = T("mhwi.operators.list_sep").join(i.root for i in packing.overflow[:4])
@@ -883,7 +1026,9 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
         # 面的归属要在动骨架之前、按原始权重算
         face_slot = {m: physics_split.face_slots(m, slot_of_bone) for m in meshes}
 
-        base_name = armature.name
+        # 拆过的部位被再拆（溢出时用户确认的）：原骨架变成 body，旧后缀得去掉，否则下次
+        # 按 _arm 后缀又会被当成小部位收回 150–199
+        base_name = _strip_slot_suffix(armature.name)
         slot_arms, slot_cols, found_mod3 = {"body": armature}, {}, True
         for slot in used[1:]:
             cols, parent_of, ok = physics_split.make_slot_collections(context, armature, slot)
@@ -934,8 +1079,8 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
                 continue
             rule = 'BODY' if unlocked or slot == 'body' else 'SLOT'
             context.view_layer.objects.active = arm_obj
-            s, f = _rename_physics_bones(arm_obj, _rename_batches(arm_obj, names, rule))
-            renamed += s
+            s, k, f = _rename_physics_bones(arm_obj, _rename_batches(arm_obj, names, rule))
+            renamed += s + k
             rename_fail += f
         context.view_layer.objects.active = armature
 
@@ -947,85 +1092,6 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
             moved=moved, split=split, verts=touched))
         if not found_mod3:
             self.report({'WARNING'}, T("mhwi.operators.split_no_mod3"))
-        return {'FINISHED'}
-
-
-class MHWI_OT_BatchRenamePhysicsBones(bpy.types.Operator):
-    bl_idname = "mhwi.batch_rename_physics_bones"
-    bl_label = "Batch Rename Physics Bones"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def description(cls, context, properties):
-        return T("mhwi.operators.batch_rename_desc")
-
-    fail_count: bpy.props.IntProperty(default=0, options={'HIDDEN'})
-
-    @classmethod
-    def poll(cls, context):
-        return any(obj.type == 'ARMATURE' for obj in context.selected_objects)
-
-    @staticmethod
-    def _count_failures_for_armature(mapper, arm_obj, unlocked=False):
-        """预检单个骨架的失败数，但不实际改名。"""
-        preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
-        physics = _collect_physics_bones(arm_obj, preset_bones)
-        if not physics:
-            return 0
-        rule = _rename_rule(arm_obj, physics, unlocked)
-        _, f = _count_rename_failures(arm_obj, _rename_batches(arm_obj, physics, rule))
-        return f
-
-    def invoke(self, context, _event):
-        mapper = BoneMapManager()
-        if not mapper.load_preset("mhwi_world.json", is_import_x=True):
-            self.report({'ERROR'}, T("mhwi.operators.cannot_load_world_preset"))
-            return {'CANCELLED'}
-
-        armatures = [obj for obj in context.selected_objects if obj.type == 'ARMATURE']
-        total_fail = 0
-        for arm_obj in armatures:
-            total_fail += self._count_failures_for_armature(
-                mapper, arm_obj, getattr(context.scene, "mhwi_physics_unlocked", False))
-
-        if total_fail == 0:
-            return self.execute(context)
-
-        self.fail_count = total_fail
-        return context.window_manager.invoke_props_dialog(self, width=360)
-
-    def draw(self, context):
-        layout = self.layout
-        layout.label(text=T("mhwi.operators.warning_label"), icon='ERROR')
-        layout.separator()
-        layout.label(
-            text=T("mhwi.operators.batch_rename_over_limit").format(n=self.fail_count))
-        layout.label(text=T("mhwi.operators.confirm_rename_anyway"))
-
-    def execute(self, context):
-        mapper = BoneMapManager()
-        if not mapper.load_preset("mhwi_world.json", is_import_x=True):
-            self.report({'ERROR'}, T("mhwi.operators.cannot_load_world_preset"))
-            return {'CANCELLED'}
-
-        armatures = [obj for obj in context.selected_objects if obj.type == 'ARMATURE']
-        total_success = 0
-        total_fail = 0
-
-        for arm_obj in armatures:
-            context.view_layer.objects.active = arm_obj
-            preset_bones = _build_fuzzy_preset_bones(mapper, arm_obj)
-            physics = _collect_physics_bones(arm_obj, preset_bones)
-            if not physics:
-                continue
-
-            rule = _rename_rule(arm_obj, physics,
-                                getattr(context.scene, "mhwi_physics_unlocked", False))
-            s, f = _rename_physics_bones(arm_obj, _rename_batches(arm_obj, physics, rule))
-            total_success += s
-            total_fail += f
-
-        self.report({'INFO'}, T("mhwi.operators.rename_done").format(success=total_success, fail=total_fail))
         return {'FINISHED'}
 
 
@@ -1313,7 +1379,6 @@ classes = [
     MHWI_OT_AutoCreateChains,
     MHWI_RegionAssignment,
     MHWI_OT_SplitPhysicsBones,
-    MHWI_OT_BatchRenamePhysicsBones,
     MHWI_OT_SetMeshDisplayCondition,
     MHWI_OT_EndfieldFaceRename,
 ]

@@ -186,15 +186,13 @@ SECTIONS = {
             # MHWI's physics bones have to be split and renamed into the ID
             # ranges the game reserves before a chain can be built from them, so
             # they belong with the chains rather than with general rigging.
-            # Split also renames: it already knows which part each bone went to.
-            # Renumber stays for after-the-fact edits on an already split armature,
-            # so it sits after chain creation rather than in the main path.
+            # One button for every state of an armature: split + rename when it was
+            # never processed, an incremental renumber when it already was (also for
+            # several selected armatures at once).  See MHWI_OT_SplitPhysicsBones.
             op("mhwi.split_physics_bones", "ui.main_panel.btn_split_physics_bones",
                'BONE_DATA'),
             op("mhwi.auto_create_chains", "ui.main_panel.btn_create_chain",
                'LINKED', needs='mhw_ctc'),
-            op("mhwi.batch_rename_physics_bones",
-               "ui.main_panel.btn_batch_rename_physics", 'SORTALPHA'),
         ],
         # One-way, unlike the RE-to-RE ports: crossing engines is a rebuild, so
         # MHWI is always the source and never a destination.  The *target* is no
