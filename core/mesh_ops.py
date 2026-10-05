@@ -217,6 +217,19 @@ _MMD_FACE_FIXED_PARAMS = {
     True:  dict(ignore_threshold=0.0,   weight_strength=1.0, smooth_factor=0.0, smooth_iters=10),
     False: dict(ignore_threshold=0.001, weight_strength=1.0, smooth_factor=0.5, smooth_iters=10),
 }
+# Mouth groups (あ): the teeth/tongue/cavity wall move further than the lips, so
+# whole-mesh-max normalisation leaves the lips with a fraction of the weight and
+# gives the cavity interior 1.0 (it then pokes out through the lips when the
+# bones move). Normalise on the outer surface instead and fade the interior out
+# with depth: full weight up to D0 (the cavity's front edge stays glued to the
+# lips), linearly to 0 at D1. Local units, i.e. metres at object scale 1.
+_MMD_FACE_MOUTH_LABELS = {"upper_lip", "lower_lip", "l_mouth_corner", "r_mouth_corner"}
+_MMD_MOUTH_INTERIOR_FALLOFF = (0.002, 0.012)
+_MMD_FACE_MOUTH_PARAMS = dict(
+    _MMD_FACE_FIXED_PARAMS[False],
+    surface_ref=True,
+    interior_falloff=_MMD_MOUTH_INTERIOR_FALLOFF,
+)
 class MHW_OT_MMDFaceWeights(bpy.types.Operator):
     """Split MMD eyelid/mouth shape keys by direction into target-game facial vertex groups"""
     bl_idname = "mhw.mmd_face_weights"
@@ -288,7 +301,10 @@ class MHW_OT_MMDFaceWeights(bpy.types.Operator):
             target_vg = vg_names[vg_col - 3]
             if self.target_game == 'RE4':
                 target_vg = _mmd_re4_vg_name(target_vg, self.re4_character)
-            params = _MMD_FACE_FIXED_PARAMS[part_id in _MMD_FACE_UPPER_EYELID_LABELS]
+            if part_id in _MMD_FACE_MOUTH_LABELS:
+                params = _MMD_FACE_MOUTH_PARAMS
+            else:
+                params = _MMD_FACE_FIXED_PARAMS[part_id in _MMD_FACE_UPPER_EYELID_LABELS]
 
             result = weight_utils.shape_key_to_weights(
                 obj, kb, basis_kb,

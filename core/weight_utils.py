@@ -173,10 +173,41 @@ def rename_or_merge_vgroup(obj, old_name, new_name):
     return True
 
 
+# Outer-surface normalisation (mouth groups): the reference displacement is this
+# percentile of the displacement over outer-surface vertices, not the mesh maximum.
+SURFACE_REF_PERCENTILE = 0.95
+# Inside/outside test: a vertex is "inside" (mouth cavity, teeth, tongue) when a
+# ray cast forward from it hits the same mesh again.
+_INTERIOR_RAY_DIR = (0.0, -1.0, 0.0)
+_INTERIOR_RAY_START_OFFSET = 0.0005
+_INTERIOR_RAY_MAX_DIST = 0.06
+
+
+def _interior_depths(me):
+    """Per vertex: distance to the surface in front of it, or None for outer surface.
+
+    The ray starts a hair in front of the vertex so it does not hit its own faces.
+    Distances are in the mesh's local units, like the displacements.
+    """
+    from mathutils import Vector
+    from mathutils.bvhtree import BVHTree
+
+    bvh = BVHTree.FromPolygons([v.co.copy() for v in me.vertices],
+                               [tuple(p.vertices) for p in me.polygons])
+    fwd = Vector(_INTERIOR_RAY_DIR)
+    depths = [None] * len(me.vertices)
+    for v in me.vertices:
+        hit = bvh.ray_cast(v.co + fwd * _INTERIOR_RAY_START_OFFSET, fwd,
+                           _INTERIOR_RAY_MAX_DIST)
+        if hit[0] is not None:
+            depths[v.index] = hit[3]
+    return depths
+
+
 def shape_key_to_weights(obj, active_kb, basis_kb, ignore_threshold=0.001,
                          weight_strength=1.0, smooth_factor=0.5,
                          smooth_iters=10, sync_seams=True, direction=None,
-                         vg_name=None):
+                         vg_name=None, surface_ref=False, interior_falloff=None):
     """
     Convert a shape key to a vertex group using normalized, Laplacian-smoothed weights.
 
@@ -188,6 +219,15 @@ def shape_key_to_weights(obj, active_kb, basis_kb, ignore_threshold=0.001,
     projects positively onto this axis contribute; weight = dot product magnitude.
     This lets you split a single shape key (e.g. blink) into per-direction groups
     (upper eyelid vs lower eyelid) by running the operator twice with opposite signs.
+
+    surface_ref: normalise by the SURFACE_REF_PERCENTILE of the displacement over
+    outer-surface vertices instead of the whole-mesh maximum. For an open mouth the
+    teeth, tongue and cavity wall move further than the lips, so the maximum leaves
+    the lips with only a fraction of the weight. Falls back to the maximum when no
+    outer-surface vertex moves.
+
+    interior_falloff: optional (d0, d1) in local units. Interior vertices (see
+    _interior_depths) keep full weight up to depth d0, then fade linearly to 0 at d1.
 
     Returns the number of affected vertices, or None if no valid displacement is found.
     """
@@ -241,9 +281,22 @@ def shape_key_to_weights(obj, active_kb, basis_kb, ignore_threshold=0.001,
     if valid_count == 0 or max_val == 0:
         return None
 
+    depths = (_interior_depths(obj.data)
+              if surface_ref or interior_falloff is not None else None)
+
+    ref_val = max_val
+    if surface_ref:
+        surface_vals = sorted(raw_weights[i] for i in range(v_count)
+                              if raw_weights[i] > 0 and depths[i] is None)
+        if surface_vals:
+            ref_val = surface_vals[int(SURFACE_REF_PERCENTILE * (len(surface_vals) - 1))]
+
     for i in range(v_count):
         if raw_weights[i] > 0:
-            raw_weights[i] = min(1.0, (raw_weights[i] / max_val) * weight_strength)
+            raw_weights[i] = min(1.0, (raw_weights[i] / ref_val) * weight_strength)
+            if interior_falloff is not None and depths[i] is not None:
+                d0, d1 = interior_falloff
+                raw_weights[i] *= max(0.0, min(1.0, 1.0 - (depths[i] - d0) / (d1 - d0)))
 
     for group in seam_groups:
         avg = sum(raw_weights[idx] for idx in group) / len(group)
