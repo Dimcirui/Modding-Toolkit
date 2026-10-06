@@ -531,7 +531,9 @@ def reencode_for_shape(me, deformed_co, reset_intent=False, base_co=None):
     def authored():
         return corner_normals(me) if base_co is None else decode_at(me, base_co)
 
-    if me.attributes.get("custom_normal") is None:
+    deformed = np.asarray(deformed_co, np.float32).ravel()
+
+    if not me.has_custom_normals:
         # Nothing authored to preserve yet — pin down what the mesh shades with
         # now, so there is a target to re-encode at all
         me.normals_split_custom_set(authored().tolist())
@@ -544,12 +546,17 @@ def reencode_for_shape(me, deformed_co, reset_intent=False, base_co=None):
         _intent_field(me, target)
 
     enc = me.copy()
+    raw = None
     try:
-        enc.vertices.foreach_set("co", np.asarray(deformed_co, np.float32).ravel())
+        enc.vertices.foreach_set("co", deformed)
         enc.update()
         enc.normals_split_custom_set(target.tolist())
-        raw = np.empty(len(enc.loops) * 2, np.int16)
-        enc.attributes["custom_normal"].data.foreach_get("value", raw)
+        # Only newer Blenders expose the stored field as a named attribute; 4.3
+        # has the normals (has_custom_normals) but not the attribute
+        attr = enc.attributes.get("custom_normal")
+        if attr is not None:
+            raw = np.empty(len(enc.loops) * 2, np.int16)
+            attr.data.foreach_get("value", raw)
         # enc's own decode is the deformed decode, so the round-trip error can be
         # measured here without going through the depsgraph
         resid = np.degrees(np.arccos(np.clip(
@@ -557,7 +564,19 @@ def reencode_for_shape(me, deformed_co, reset_intent=False, base_co=None):
     finally:
         bpy.data.meshes.remove(enc)
 
-    me.attributes["custom_normal"].data.foreach_set("value", raw)
+    if raw is not None:
+        me.attributes["custom_normal"].data.foreach_set("value", raw)
+    else:
+        # No field to copy across, so do the encode on the mesh itself: the
+        # deformed positions are only borrowed for it and put straight back
+        rest = np.empty(len(me.vertices) * 3, np.float32)
+        me.vertices.foreach_get("co", rest)
+        try:
+            me.vertices.foreach_set("co", deformed)
+            me.update()
+            me.normals_split_custom_set(target.tolist())
+        finally:
+            me.vertices.foreach_set("co", rest)
     me.update()
     return len(target), fresh, resid
 
@@ -592,7 +611,7 @@ def stash_normals(me, matrix):
     The stored intent field (see ``reencode_for_shape``) is object-space too,
     so it is converted in place and rides along the same way.
     """
-    if me.attributes.get("custom_normal") is None:
+    if not me.has_custom_normals:
         return False
     # Normals transform by the inverse transpose, so as rows: n @ inv(M3)
     inv = np.array(matrix.to_3x3().inverted_safe(), np.float64)
