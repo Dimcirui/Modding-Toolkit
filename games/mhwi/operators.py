@@ -1317,6 +1317,9 @@ class MHWI_OT_AddFacialBones(bpy.types.Operator):
         note = layout.row()
         note.active = False
         note.label(text=T("mhwi.operators.facial_bones_warning"))
+        keep = layout.row()
+        keep.alert = True
+        keep.label(text=T("mhwi.operators.facial_bones_keep_positions"), icon='ERROR')
         layout.separator()
         layout.prop(self, "target_armature", text=T("mhwi.operators.facial_target_armature"))
         layout.prop(self, "reference_character", text=T("core.re_chain_utils.reference_character"))

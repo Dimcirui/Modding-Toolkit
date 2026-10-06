@@ -522,6 +522,12 @@ STRINGS = {
         "ZH": "将原生角色骨架的表情骨骼移植到当前骨架"},
     "mhwi.operators.facial_bones_warning": {
         "EN": "Using this feature will clear any existing facial bones!", "ZH": "使用该功能将清除原本存在的表情骨！"},
+    # The face motions set every facial bone's local position outright, so a bone moved (or the face scaled)
+    # relative to its parent gets pulled back in game and the mesh deforms; moving / rotating the whole face
+    # together with the head bone 004 is fine.
+    "mhwi.operators.facial_bones_keep_positions": {
+        "EN": "Avoid moving or scaling facial bones (moving / rotating them together with 004 is fine) unless the face actually deforms in game",
+        "ZH": "尽量不要调整表情骨位置或整体缩放（可连同 004 一起平移、旋转），除非实际游戏内出现变形"},
     "mhwi.operators.facial_target_armature": {"EN": "Skeleton", "ZH": "骨架"},
     "mhwi.operators.facial_no_reference": {
         "EN": "Select a reference character (add the file to assets/reference_skeletons/mhwi/)",
