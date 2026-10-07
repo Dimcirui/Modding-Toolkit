@@ -288,6 +288,7 @@ STRINGS = {
     "ui.main_panel.mmd_target_game_label":        {"EN": "Target Game",        "ZH": "目标游戏"},
     "ui.main_panel.mmd_re4_character_label":      {"EN": "Character",          "ZH": "目标角色"},
     "ui.main_panel.mmd_sync_seams_label":         {"EN": "Sync Seam Vertices", "ZH": "缝合重合顶点"},
+    "ui.main_panel.mmd_interior_falloff_label":   {"EN": "Fade Mouth Interior by Depth", "ZH": "口腔内部按深度衰减"},
     "ui.main_panel.mmd_part_l_upper_eyelid":      {"EN": "L Upper Eyelid",  "ZH": "左眼上眼皮"},
     "ui.main_panel.mmd_part_l_lower_eyelid":      {"EN": "L Lower Eyelid",  "ZH": "左眼下眼皮"},
     "ui.main_panel.mmd_part_r_upper_eyelid":      {"EN": "R Upper Eyelid",  "ZH": "右眼上眼皮"},

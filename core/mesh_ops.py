@@ -235,8 +235,11 @@ def _mmd_key_lookup(shape_keys):
     return lookup
 
 
-def _mmd_params(part_id):
+def _mmd_params(part_id, interior_falloff=False):
     if part_id in _MMD_FACE_MOUTH_LABELS:
+        if interior_falloff:
+            return dict(_MMD_FACE_MOUTH_PARAMS,
+                        interior_falloff=_MMD_MOUTH_INTERIOR_FALLOFF)
         return _MMD_FACE_MOUTH_PARAMS
     return _MMD_FACE_FIXED_PARAMS[part_id in _MMD_FACE_UPPER_EYELID_LABELS]
 
@@ -304,15 +307,17 @@ _MMD_FACE_FIXED_PARAMS = {
 # Mouth groups (あ): the teeth/tongue/cavity wall move further than the lips, so
 # whole-mesh-max normalisation leaves the lips with a fraction of the weight and
 # gives the cavity interior 1.0 (it then pokes out through the lips when the
-# bones move). Normalise on the outer surface instead and fade the interior out
-# with depth: full weight up to D0 (the cavity's front edge stays glued to the
-# lips), linearly to 0 at D1. Local units, i.e. metres at object scale 1.
+# bones move). Normalise on the outer surface instead; the clamp to 1.0 then
+# makes the interior move with the lips as one piece.
+# Optional (off by default): fade the interior out with depth -- full weight up
+# to D0, linearly to 0 at D1. Local units, i.e. metres at object scale 1. Off by
+# default because it splits the teeth (front half moves, back half doesn't) and
+# detaches the cavity from the lips.
 _MMD_FACE_MOUTH_LABELS = {"upper_lip", "lower_lip", "l_mouth_corner", "r_mouth_corner"}
 _MMD_MOUTH_INTERIOR_FALLOFF = (0.002, 0.012)
 _MMD_FACE_MOUTH_PARAMS = dict(
     _MMD_FACE_FIXED_PARAMS[False],
     surface_ref=True,
-    interior_falloff=_MMD_MOUTH_INTERIOR_FALLOFF,
 )
 class MHW_OT_MMDFaceWeights(bpy.types.Operator):
     """Split MMD eyelid/mouth shape keys by direction into target-game facial vertex groups"""
@@ -343,6 +348,10 @@ class MHW_OT_MMDFaceWeights(bpy.types.Operator):
         name="Sync Seam Vertices",
         default=True,
     )
+    interior_falloff: bpy.props.BoolProperty(
+        name="Fade Mouth Interior by Depth",
+        default=False,
+    )
 
     @classmethod
     def description(cls, context, properties):
@@ -366,6 +375,7 @@ class MHW_OT_MMDFaceWeights(bpy.types.Operator):
             col.prop(self, "re4_character", text=T("ui.main_panel.mmd_re4_character_label"))
         col.separator()
         col.prop(self, "sync_seams", text=T("ui.main_panel.mmd_sync_seams_label"))
+        col.prop(self, "interior_falloff", text=T("ui.main_panel.mmd_interior_falloff_label"))
 
     def execute(self, context):
         obj = context.active_object
@@ -395,7 +405,7 @@ class MHW_OT_MMDFaceWeights(bpy.types.Operator):
                     direction=direction,
                     vg_name=target_vg,
                     side=side,
-                    **_mmd_params(part_id),
+                    **_mmd_params(part_id, self.interior_falloff),
                 )
                 if result is None:
                     skipped.append(part_id)
