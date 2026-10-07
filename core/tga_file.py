@@ -42,6 +42,26 @@ _HEADER_STRUCT_FMT = '<BBB5s2H2HBB'
 #: goes to disk without a flip.
 _DESCRIPTOR_BOTTOM_UP_ALPHA8 = 0x08
 
+#: Written into the TGA's image-ID field so the converter can tell our staging files
+#: from a TGA the user picked.  It matters for one thing: DirectXTex treats a TGA
+#: whose alpha is 0 everywhere as "alpha channel unused" and loads it fully opaque,
+#: unless texconv gets ``-tgazeroalpha``.  For an exported TGA that guess is often
+#: right; for ours it is always wrong -- an all-zero alpha we wrote is the value we
+#: meant (the MHWI snow mask is exactly that, and came out solid white).  So the
+#: flag is passed for files carrying this ID and nobody else's.
+STAGING_ID = b"Modding-Toolkit staging"
+
+
+def is_staging_tga(filepath):
+    """True if *filepath* is a TGA written by :func:`write_tga_rgba8`."""
+    try:
+        with open(filepath, 'rb') as f:
+            head = f.read(18 + len(STAGING_ID))
+    except OSError:
+        return False
+    return (len(head) == 18 + len(STAGING_ID) and head[0] == len(STAGING_ID)
+            and head[18:] == STAGING_ID)
+
 
 def write_tga_rgba8(filepath, arr):
     """Write an ``(h, w, 4)`` float32 RGBA array in 0..1 as an uncompressed TGA.
@@ -57,7 +77,7 @@ def write_tga_rgba8(filepath, arr):
 
     header = struct.pack(
         _HEADER_STRUCT_FMT,
-        0,        # id_length
+        len(STAGING_ID),  # id_length
         0,        # colour_map_type: none
         2,        # image_type: uncompressed true-colour
         b'\0' * 5,
@@ -73,6 +93,7 @@ def write_tga_rgba8(filepath, arr):
 
     with open(filepath, 'wb') as f:
         f.write(header)
+        f.write(STAGING_ID)
         np.ascontiguousarray(bgra).tofile(f)
 
     return filepath

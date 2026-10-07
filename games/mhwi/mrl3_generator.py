@@ -709,16 +709,13 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                     'snow_Col_CMM.tex',
                 )
                 os.makedirs(os.path.dirname(snow_disk), exist_ok=True)
-                # RGB white + alpha black (fully transparent); must use alpha=True
-                # so the PNG is saved as RGBA rather than RGB-only
-                _snow_img_name = '__gen_solid_snow_Col_CMM'
-                # Not via Image.save(): it rewrites the buffer through an
-                # sRGB->linear pass, so the bytes on disk are not the numbers
-                # assigned here (see _write_exact_rgba in core/mdf_generator_base).
-                # White/0 happen to be the two values that survive it, but there
-                # is no reason to keep the one call that only works by accident.
+                # All black, alpha included: alpha 0 is what hides the snow, and a
+                # black RGB leaves nothing to bleed in if anything samples it anyway.
+                # The all-zero alpha only survives texconv because the staging TGA
+                # carries tga_file.STAGING_ID (-> -tgazeroalpha); without it
+                # DirectXTex loads the file opaque and the mask came out solid white.
                 snow_png = _generate_solid_texture_path(
-                    (1.0, 1.0, 1.0, 0.0), temp_dir, 'snow_Col_CMM', size=256)
+                    (0.0, 0.0, 0.0, 0.0), temp_dir, 'snow_Col_CMM', size=256)
                 snow_dds = os.path.join(
                     temp_dir, os.path.splitext(os.path.basename(snow_png))[0] + '.dds')
                 ImageListToDDS([(snow_png, 'BC7_UNORM_SRGB')], temp_dir,

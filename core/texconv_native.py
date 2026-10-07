@@ -195,6 +195,11 @@ def convert_to_dds(filepath, dxgi_format_name, out_dir, generate_mips=True,
         args += ['-w', str(int(size[0])), '-h', str(int(size[1]))]
     if _is_signed(dxgi_format_name):
         args += ['-x2bias']
+    # An all-zero alpha in our own staging TGA is meant (see tga_file.STAGING_ID);
+    # without this DirectXTex loads it as fully opaque.
+    from .tga_file import is_staging_tga
+    if filepath.lower().endswith('.tga') and is_staging_tga(filepath):
+        args += ['-tgazeroalpha']
 
     _run_texconv(dll, filepath, args, out_dir, verbose=verbose, allow_slow_codec=allow_slow_codec)
 
