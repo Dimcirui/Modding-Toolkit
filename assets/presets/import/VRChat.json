@@ -2,7 +2,7 @@
     "preset_info": {
         "name": "VRChat",
         "type": "X_PRESET",
-        "version": "1.6",
+        "version": "1.7",
         "description": "Unity Humanoid / VRM 0.x mapping, both the suffix style (UpperArm_L) and Unity's own prefix style (LeftUpperArm). Separator/case variants are handled by fuzzy matching. Thumbs follow Unity / VRM 0.x semantics (Proximal is the joint at the wrist) -- VRM 1.0 renamed that joint to ThumbMetacarpal and reused 'ThumbProximal' for the second one, so VRM 1.0 assets belong in vrm.json, not here.",
         "category": "通用平台",
         "priority": 1
@@ -76,8 +76,7 @@
             ],
             "aux": [
                 "Upper_arm_support_L",
-                "XC_ArmTwist_L",
-                "LowerArmAssist_L"
+                "XC_ArmTwist_L"
             ]
         },
         "forearm_L": {
@@ -95,7 +94,7 @@
                 "Lower_arm_support.L.002",
                 "Lower_arm_support.L.002_end",
                 "XC_WristTwist_L",
-                "Hand_twist_L"
+                "LowerArmAssist_L"
             ]
         },
         "hand_L": {
@@ -104,7 +103,9 @@
                 "Left wrist",
                 "Left Hand"
             ],
-            "aux": []
+            "aux": [
+                "Hand_twist_L"
+            ]
         },
         "clavicle_R": {
             "main": [
@@ -122,8 +123,7 @@
             ],
             "aux": [
                 "Upper_arm_support_R",
-                "XC_ArmTwist_R",
-                "LowerArmAssist_R"
+                "XC_ArmTwist_R"
             ]
         },
         "forearm_R": {
@@ -141,7 +141,7 @@
                 "Lower_arm_support.R.002",
                 "Lower_arm_support.R.002_end",
                 "XC_WristTwist_R",
-                "Hand_twist_R"
+                "LowerArmAssist_R"
             ]
         },
         "hand_R": {
@@ -150,7 +150,9 @@
                 "Right wrist",
                 "Right Hand"
             ],
-            "aux": []
+            "aux": [
+                "Hand_twist_R"
+            ]
         },
         "thigh_L": {
             "main": [
@@ -160,8 +162,7 @@
             ],
             "aux": [
                 "KneeSupport_L",
-                "KneeSupport_L_end",
-                "LowerLegAssist_L"
+                "KneeSupport_L_end"
             ]
         },
         "shin_L": {
@@ -171,7 +172,8 @@
                 "LeftLowerLeg"
             ],
             "aux": [
-                "LowerLeg_L_knee"
+                "LowerLeg_L_knee",
+                "LowerLegAssist_L"
             ]
         },
         "foot_L": {
@@ -227,8 +229,7 @@
             ],
             "aux": [
                 "KneeSupport_R",
-                "KneeSupport_R_end",
-                "LowerLegAssist_R"
+                "KneeSupport_R_end"
             ]
         },
         "shin_R": {
@@ -238,7 +239,8 @@
                 "RightLowerLeg"
             ],
             "aux": [
-                "LowerLeg_R_knee"
+                "LowerLeg_R_knee",
+                "LowerLegAssist_R"
             ]
         },
         "foot_R": {
