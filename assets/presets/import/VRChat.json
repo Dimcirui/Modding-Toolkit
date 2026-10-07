@@ -2,7 +2,7 @@
     "preset_info": {
         "name": "VRChat",
         "type": "X_PRESET",
-        "version": "1.4",
+        "version": "1.5",
         "description": "Unity Humanoid / VRM 0.x mapping, both the suffix style (UpperArm_L) and Unity's own prefix style (LeftUpperArm). Separator/case variants are handled by fuzzy matching. Thumbs follow Unity / VRM 0.x semantics (Proximal is the joint at the wrist) -- VRM 1.0 renamed that joint to ThumbMetacarpal and reused 'ThumbProximal' for the second one, so VRM 1.0 assets belong in vrm.json, not here.",
         "category": "通用平台",
         "priority": 1
@@ -51,7 +51,13 @@
                 "LeftEye",
                 "RightEye",
                 "LeftEye_end",
-                "RightEye_end"
+                "RightEye_end",
+                "Eye_L",
+                "Eye_R",
+                "Eye_L_end",
+                "Eye_R_end",
+                "L_Eye",
+                "R_Eye"
             ]
         },
         "clavicle_L": {
@@ -522,25 +528,29 @@
         },
         "upperarm_twist_01_L": {
             "main": [
-                "UpperArm_twist_L"
+                "UpperArm_twist_L",
+                "UpperArm_L_twist"
             ],
             "aux": []
         },
         "forearm_twist_01_L": {
             "main": [
-                "LowerArm_twist_L"
+                "LowerArm_twist_L",
+                "LowerArm_L_twist"
             ],
             "aux": []
         },
         "upperarm_twist_01_R": {
             "main": [
-                "UpperArm_twist_R"
+                "UpperArm_twist_R",
+                "UpperArm_R_twist"
             ],
             "aux": []
         },
         "forearm_twist_01_R": {
             "main": [
-                "LowerArm_twist_R"
+                "LowerArm_twist_R",
+                "LowerArm_R_twist"
             ],
             "aux": []
         }
