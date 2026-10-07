@@ -216,6 +216,9 @@ STRINGS = {
     "core.standard_ops.graft_done": {
         "EN": "Graft complete: processed {n} bone(s) (including auto-generated end bones)",
         "ZH": "移植完成: 处理 {n} 根骨骼 (含自动生成的末端骨)"},
+    "core.standard_ops.graft_excluded_merged": {
+        "EN": "{n} excluded control bone(s) carried weights; merged into the nearest mapped parent instead of grafting: {names}",
+        "ZH": "{n} 根被排除的控制骨带有权重，未移植，权重已并入最近的映射父骨: {names}"},
     "core.standard_ops.graft_fork_summary": {
         "EN": "MHWI fork handling: dropped {stubs} empty chain root(s) / light trunk(s), picked {auto_continue} continuation(s), kept {branch_forks} fork(s) as branch chains",
         "ZH": "MHWI 分叉处理: 删除 {stubs} 个空链首/很轻的主干，自动选定 {auto_continue} 处主链延续，{branch_forks} 处分叉保留为分支链"},

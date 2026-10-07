@@ -26,8 +26,8 @@ def _build_fuzzy_preset_bones(mapper, arm_obj):
             # 回退：预设游戏名未命中，但骨架中有与标准键同名的骨骼（已标准化的情形）
             preset_bones.add(std_key)
         preset_bones.update(aux_actuals)
-    # exclude 骨骼：直接按名称并入（无需模糊匹配，使用者自行确保名称准确）
-    preset_bones.update(mapper.exclude_bones & existing)
+    # exclude 骨骼：按名称（或 * 通配）并入，不做模糊匹配
+    preset_bones.update(mapper.exclude_matches(existing))
     # 姿态驱动修正骨：预设里列了的已经在上面的 aux 里，这里补的是**没列到**的。
     # 它们不是物理骨，落到物理那条路上会被当成链骨（终末地三具各有 28 / 16 / 0 根，
     # 而 arknights.json 列了 58 条 —— 资产之间数量本来就不一样，靠列表兜不住）。
@@ -1153,6 +1153,31 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
             _detect_chain_roles(source_arm, all_preset_bones_src)
             bpy.ops.object.mode_set(mode='OBJECT')
 
+        # --- 4.55 被 exclude 排除的骨不移植，它们的权重并进最近的映射祖先 ---
+        # 控制骨大多零权重，但不全是：首リボン操作 这种把手同时蒙着缎带结。不并的话
+        # 目标上没有这根骨，那片顶点就失去了驱动。并进的祖先和下面父级重建时越过它
+        # 去找的是同一根，所以并完以后结点跟着它原来跟随的身体部位走，行为不变。
+        excluded_merge = {}
+        for name in g["src_mapper"].exclude_matches(b.name for b in source_arm.data.bones):
+            if name in src_to_std:
+                continue
+            anc = source_arm.data.bones[name].parent
+            while anc is not None and anc.name not in src_to_std:
+                anc = anc.parent
+            if anc is not None:
+                excluded_merge[name] = anc.name
+        weighted = set()
+        for obj in mesh_objects:
+            idx = {obj.vertex_groups[n].index: n for n in excluded_merge
+                   if n in obj.vertex_groups}
+            if idx:
+                weighted.update(idx[gr.group] for v in obj.data.vertices
+                                for gr in v.groups if gr.weight > 0 and gr.group in idx)
+        merged_weighted = [n for n in excluded_merge if n in weighted]
+        if merged_weighted:
+            weight_utils.merge_vertex_groups(
+                mesh_objects, {n: excluded_merge[n] for n in merged_weighted})
+
         # --- 4.6 快照目标骨架现有骨骼，写入移植保护集合 ---
         existing_protected = _load_protected_bones(target_arm)
         current_tgt_bones = {b.name for b in target_arm.data.bones}
@@ -1389,6 +1414,10 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
 
         bpy.ops.object.mode_set(mode='OBJECT')
         self.report({'INFO'}, T("core.standard_ops.graft_done").format(n=created_count))
+        if merged_weighted:
+            names = ", ".join(merged_weighted[:5]) + ("…" if len(merged_weighted) > 5 else "")
+            self.report({'INFO'}, T("core.standard_ops.graft_excluded_merged").format(
+                n=len(merged_weighted), names=names))
         if fork_res is not None:
             stats = fork_resolver.summary(fork_res)
             if any(stats.values()):

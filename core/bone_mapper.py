@@ -1,4 +1,5 @@
 import bpy
+import fnmatch
 import json
 import os
 import re
@@ -104,6 +105,7 @@ class BoneMapManager:
         self.preset_info = {}       # 存储 JSON 中的 "preset_info" 内容
         self.reverse_mapping = {}   # 反向查找表：仅存储每个 Standard Key 对应的第一个 Main Candidate
         self.exclude_bones = set()  # 顶级 "exclude" 字段：不是物理骨，但不属于任何标准骨骼映射
+        self.exclude_patterns = ()  # exclude 里带 * 的条目，按 fnmatch 通配（见 exclude_matches）
 
     def get_preset_path(self, filename, is_import_x=False):
         """路径获取"""
@@ -135,7 +137,9 @@ class BoneMapManager:
             
             self.preset_info = data.get("preset_info", {})
             self.mapping_data = data.get("mappings", {})
-            self.exclude_bones = set(data.get("exclude", []))
+            exclude = data.get("exclude", [])
+            self.exclude_bones = {n for n in exclude if "*" not in n}
+            self.exclude_patterns = tuple(n for n in exclude if "*" in n)
 
             # 生成反向映射 (主要为了兼容导出逻辑：GameBoneName -> StandardKey)
             # 我们只取 mappings 中每个 standard_key 的 main 列表里的第一个元素作为主键
@@ -152,6 +156,19 @@ class BoneMapManager:
         except Exception as e:
             print(f"[Error] Failed to parse JSON: {e}")
             return False
+
+    def exclude_matches(self, names):
+        """*names* 中被 exclude 命中的那些。
+
+        不带 ``*`` 的条目按原样比对；带 ``*`` 的按 fnmatch 通配（区分大小写）。
+        通配是给"命名约定"用的：MMD 的 X操作 / X調整 / X親 是控制把手，前面的 X 每个
+        模型都不一样，逐个列名字列不完。只认 ``*`` 才算通配，是因为 ``[`` ``?`` 在
+        骨骼名里是真实字符，不能让旧的逐字条目突然变了含义。"""
+        names = set(names)
+        hit = self.exclude_bones & names
+        for pat in self.exclude_patterns:
+            hit.update(n for n in names if fnmatch.fnmatchcase(n, pat))
+        return hit
 
     def get_matches_for_standard(self, armature_obj, standard_key, fold_aux=False):
         """
