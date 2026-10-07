@@ -357,7 +357,7 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         name="Auto-fix Items",
         items=export_autofix.enum_items_for('MHWS'),
         options={'ENUM_FLAG'},
-        default=export_autofix.default_mask('MHWS'),
+        **export_autofix.default_kwargs('MHWS'),
     )
     # 「导出前自动修正」, same as MHWS's (replaces the old triangulate toggle).
     re9_autofix: bpy.props.BoolProperty(
@@ -369,7 +369,7 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         name="Auto-fix Items",
         items=export_autofix.enum_items_for('RE9'),
         options={'ENUM_FLAG'},
-        default=export_autofix.default_mask('RE9'),
+        **export_autofix.default_kwargs('RE9'),
     )
     re9_use_blank_export: bpy.props.BoolProperty(
         name="Use Blank Model for Unselected",
@@ -408,7 +408,7 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         name="Auto-fix Items",
         items=export_autofix.enum_items_for('MHRS'),
         options={'ENUM_FLAG'},
-        default=export_autofix.default_mask('MHRS'),
+        **export_autofix.default_kwargs('MHRS'),
     )
     #: How the armour's proportions reach the game.  One enum rather than two
     #: checkboxes because the two are mutually exclusive in the game, not merely
@@ -449,7 +449,7 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         name="Auto-fix Items",
         items=export_autofix.enum_items_for('RE4'),
         options={'ENUM_FLAG'},
-        default=export_autofix.default_mask('RE4'),
+        **export_autofix.default_kwargs('RE4'),
     )
     re4_use_blank_export: bpy.props.BoolProperty(
         name="Use Blank Model for Unselected",

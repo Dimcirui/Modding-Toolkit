@@ -72,6 +72,20 @@ def default_mask(game):
     return sum(bit for i, _k, _t, bit, on in ITEMS if on and i in offered)
 
 
+def default_kwargs(game):
+    """How *game*'s ``*_autofix_items`` property gets its default.
+
+    Blender checks an ENUM_FLAG ``default`` against the static item list, and a
+    callback's is empty, so any non-zero mask logs "default includes unused
+    bits" at registration (the default is still applied; measured in 5.1).
+    From 5.0 ``get_transform`` can stand in: an unset property reads as the
+    mask, and the stored value, and so every saved .blend, is untouched."""
+    mask = default_mask(game)
+    if bpy.app.version >= (5, 0, 0):
+        return {'get_transform': lambda _self, value, is_set: value if is_set else mask}
+    return {'default': mask}
+
+
 #: Items that only exist for the duration of the export and so cannot be
 #: "fixed now" from the report.
 TEMPORARY = {'TRIANGULATE', 'VCOLOR'}
