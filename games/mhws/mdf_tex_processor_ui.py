@@ -1,7 +1,8 @@
 import bpy
 
 from ...core.mdf_tex_processor_ui_base import MdfTexDialogBase
-from .mdf_tex_processor import COMMON_SLOT_TYPES, NULL_TEX_BY_TYPE
+from .mdf_tex_processor import SLOT_NULLS, COMMON_SLOT_TYPES, NULL_TEX_BY_TYPE, TEXTURE_TYPE_ABBREV
+from ...core.mdf_tex_processor_base import BASE_SLOT_CHANNEL_MAPS
 from ...core.i18n import T
 
 
@@ -21,6 +22,9 @@ class MHWS_OT_MdfTexProcessorDialog(MdfTexDialogBase):
     _path_hint         = "e.g. Author/CharacterName/"
     _common_slot_types = COMMON_SLOT_TYPES
     _null_tex_by_type  = NULL_TEX_BY_TYPE
+    _slot_nulls        = SLOT_NULLS
+    _channel_maps      = BASE_SLOT_CHANNEL_MAPS
+    _abbrev_map        = TEXTURE_TYPE_ABBREV
 
 
 classes = [MHWS_OT_MdfTexProcessorDialog]

@@ -94,7 +94,7 @@ _EMI = SlotSocket("EmissiveMap", "core.shader_pack.emissive",
 # constant, no further quantity confirmed there.
 _ATOS = SlotSocket("AlphaTranslucentOcclusionSSSMap", _K + "atos",
                    default_color=(1.0, 1.0, 1.0, 1.0),
-                   supplies=('alpha', 'ao', 'translucency'))
+                   supplies=('alpha', 'ao', 'translucency', 'sss'))
 
 # Hair's base slot: RGB colour, A real opacity (unlike BaseDielectricMap).
 _BASEALPHA = SlotSocket("BaseAlphaMap", _K + "basealpha",

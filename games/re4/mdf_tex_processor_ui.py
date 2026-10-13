@@ -2,7 +2,8 @@ import bpy
 
 from ...core.i18n import T
 from ...core.mdf_tex_processor_ui_base import MdfTexDialogBase
-from .mdf_tex_processor import RE4_COMMON_SLOT_TYPES, RE4_NULL_TEX_BY_TYPE
+from .mdf_tex_processor import (SLOT_NULLS, RE4_COMMON_SLOT_TYPES, RE4_NULL_TEX_BY_TYPE,
+                                RE4_SLOT_CHANNEL_MAPS, RE4_TEXTURE_TYPE_ABBREV)
 
 
 class RE4_OT_MdfTexProcessorDialog(MdfTexDialogBase):
@@ -22,6 +23,9 @@ class RE4_OT_MdfTexProcessorDialog(MdfTexDialogBase):
     _path_hint         = "e.g. Author/Name/"
     _common_slot_types = RE4_COMMON_SLOT_TYPES
     _null_tex_by_type  = RE4_NULL_TEX_BY_TYPE
+    _slot_nulls        = SLOT_NULLS
+    _channel_maps      = RE4_SLOT_CHANNEL_MAPS
+    _abbrev_map        = RE4_TEXTURE_TYPE_ABBREV
 
 
 classes = [RE4_OT_MdfTexProcessorDialog]

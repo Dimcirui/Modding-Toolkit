@@ -19,6 +19,7 @@ import shutil
 import time
 
 from .i18n import T
+from .slot_defaults import SlotNulls
 from .mdf_tex_processor_base import (
     BASE_SLOT_CHANNEL_MAPS, BASE_NULL_TEX_BY_TYPE, BASE_TEXTURE_TYPE_ABBREV,
     SRGB_SLOT_TYPES, PBR_DEFAULTS, PBR_TYPES, PBR_CHANNEL_SELECTABLE, _CH,
@@ -2148,6 +2149,7 @@ class MdfGenProcessBase(bpy.types.Operator):
     _abbrev_map        = {}
     _channel_maps      = {}
     _null_tex_by_type  = {}
+    _slot_nulls        = None   # SlotNulls; built from _null_tex_by_type when unset
     _log_tag           = "MDF Gen"
     _bake_size         = BAKE_SIZE_DEFAULT
 
@@ -2366,6 +2368,15 @@ class MdfGenProcessBase(bpy.types.Operator):
             preset_data = json.load(f)
         # print(f"[{cls._log_tag}]   加载Preset JSON: {time.time() - _t:.2f}s", flush=True)
         slot_types = [b["Texture Type"] for b in preset_data.get("Texture Bindings", [])]
+        # Nulls follow the master material (core/slot_defaults.py), and a preset
+        # binding that is already one of vanilla's defaults for the slot is kept.
+        nulls = cls._slot_nulls or SlotNulls(cls._null_tex_by_type)
+        preset_mmtr = preset_data.get("Material Header", {}).get("Master Material Path", "")
+        preset_paths = {b["Texture Type"]: b.get("Texture Path", "")
+                        for b in preset_data.get("Texture Bindings", [])}
+
+        def _null(st):
+            return nulls.null_for(st, preset_mmtr, preset_paths.get(st, ""))
 
         # A slot socket and the PBR inputs it covers can both be filled, and the
         # material's own shader_source is a hard switch between them -- not a
@@ -2420,7 +2431,7 @@ class MdfGenProcessBase(bpy.types.Operator):
                 if use_toon:
                     continue  # filled from albedo path after loop
                 if emi_zero:
-                    null = cls._null_tex_by_type.get(slot_type)
+                    null = _null(slot_type)
                     if null:
                         slot_mdf_paths[slot_type] = null
                     continue
@@ -2484,7 +2495,15 @@ class MdfGenProcessBase(bpy.types.Operator):
                 continue
 
             if slot_type not in cls._channel_maps:
-                null = cls._null_tex_by_type.get(slot_type)
+                # A slot the hand table never listed was always left as the
+                # preset had it. Keep doing that while the preset's binding is
+                # the game's own texture (RE9 glass's FakeSpecular_PanoramaMap);
+                # the survey default only replaces a path the game does not ship
+                # -- the preset author's own asset, e.g. MK_MODS/....
+                cur = preset_paths.get(slot_type, "")
+                if slot_type not in nulls.hand and (nulls.is_runtime(cur) or nulls.is_vanilla(cur)):
+                    continue
+                null = _null(slot_type)
                 if null:
                     slot_mdf_paths[slot_type] = null
                 elif slot_type in PLACEHOLDER_SLOT_TYPES:
@@ -2540,7 +2559,7 @@ class MdfGenProcessBase(bpy.types.Operator):
                     # If every channel is at its PBR default value the slot carries
                     # no meaningful data — redirect to the null texture directly
                     # instead of generating a solid PNG/DDS/TEX.
-                    null = cls._null_tex_by_type.get(slot_type)
+                    null = _null(slot_type)
                     if null:
                         default_rgba = _try_downgrade_slot(
                             slot_type, _DEFAULT_STRATEGIES, {}, cls._channel_maps)
@@ -2613,7 +2632,7 @@ class MdfGenProcessBase(bpy.types.Operator):
                     comp_cache[cache_key] = (composed, disk_path, mdf_path)
                 print(f"[{cls._log_tag}]   {slot_type} -> {os.path.basename(disk_path)}")
             else:
-                null = cls._null_tex_by_type.get(slot_type)
+                null = _null(slot_type)
                 if null:
                     slot_mdf_paths[slot_type] = null
 
@@ -2627,7 +2646,7 @@ class MdfGenProcessBase(bpy.types.Operator):
                 if albedo_path:
                     slot_mdf_paths[st] = albedo_path
                 else:
-                    null = cls._null_tex_by_type.get(st)
+                    null = _null(st)
                     if null:
                         slot_mdf_paths[st] = null
 

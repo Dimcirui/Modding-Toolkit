@@ -59,7 +59,7 @@ DECODE_MAP = {
         'R': ('emissive', 0),
         'G': ('emissive', 1),
         'B': ('emissive', 2),
-        'A': ('emissive', 3),
+        # No A: vanilla _EM is BC1, so its alpha holds nothing to carry over.
     },
 }
 
@@ -79,13 +79,14 @@ UNPORTABLE_SLOTS = ('FurVelocityMap', 'FurMap')
 PBR_DEFAULTS = {
     'color':        (0.0, 0.0, 0.0, 1.0),
     'alpha':        (1.0, 1.0, 1.0, 1.0),
-    'emissive':     (0.0, 0.0, 0.0, 0.0),
+    'emissive':     (0.0, 0.0, 0.0, 1.0),
     'normal':       (0.5, 0.5, 1.0, 1.0),
     'roughness':    (1.0, 1.0, 1.0, 1.0),
     'metallic':     (0.0, 0.0, 0.0, 1.0),
     'ao':           (1.0, 1.0, 1.0, 1.0),
     'cavity':       (1.0, 1.0, 1.0, 1.0),
     'translucency': (0.0, 0.0, 0.0, 1.0),
+    'sss':          (1.0, 1.0, 1.0, 1.0),
 }
 
 _CHANNEL_INDEX = {'R': 0, 'G': 1, 'B': 2, 'A': 3}

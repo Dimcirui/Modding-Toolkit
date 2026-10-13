@@ -1,0 +1,144 @@
+{
+ "meta": {
+  "materials": 23893,
+  "mmtrs": 320,
+  "source": "vanilla .mdf2 survey"
+ },
+ "suffixes": {
+  "albd": {
+   "n": 24720,
+   "purity": 0.884,
+   "slot": "BaseDielectricMap"
+  },
+  "alp": {
+   "n": 7377,
+   "purity": 0.953,
+   "slot": "AlphaMap"
+  },
+  "cmm": {
+   "n": 6236,
+   "purity": 0.91,
+   "slot": "UserColorchangeMap"
+  },
+  "cmm_msk4": {
+   "n": 84,
+   "purity": 0.952,
+   "slot": "UserColorchangeMap"
+  },
+  "dem": {
+   "n": 97,
+   "purity": 0.825,
+   "slot": "DetailEmissiveMap"
+  },
+  "demi": {
+   "n": 591,
+   "purity": 0.995,
+   "slot": "DetailEmissiveMap"
+  },
+  "flow01_msk2": {
+   "n": 20,
+   "purity": 0.9,
+   "slot": "FlowMap"
+  },
+  "flow08_msk2": {
+   "n": 137,
+   "purity": 1.0,
+   "slot": "FlowMap"
+  },
+  "fm": {
+   "n": 45,
+   "purity": 1.0,
+   "slot": "FurVelocityMap"
+  },
+  "fms": {
+   "n": 157,
+   "purity": 1.0,
+   "slot": "FurVelocity_SPMaskMap"
+  },
+  "fvm": {
+   "n": 27,
+   "purity": 1.0,
+   "slot": "FurVelocityMap"
+  },
+  "fvm_msk3": {
+   "n": 3104,
+   "purity": 0.999,
+   "slot": "FurVelocityMap"
+  },
+  "fx": {
+   "n": 3905,
+   "purity": 0.992,
+   "slot": "FxMap"
+  },
+  "fx_msk4": {
+   "n": 23,
+   "purity": 1.0,
+   "slot": "FxMap"
+  },
+  "g": {
+   "n": 39,
+   "purity": 1.0,
+   "slot": "UserColorchangeMap"
+  },
+  "isikabe12_msk3": {
+   "n": 86,
+   "purity": 1.0,
+   "slot": "MSK3"
+  },
+  "mask01_msk1": {
+   "n": 175,
+   "purity": 0.971,
+   "slot": "MSK1"
+  },
+  "mask02_msk1": {
+   "n": 22,
+   "purity": 0.864,
+   "slot": "MSK1"
+  },
+  "mizu01_msk1": {
+   "n": 41,
+   "purity": 0.976,
+   "slot": "MSK1"
+  },
+  "mizu17_msk1": {
+   "n": 22,
+   "purity": 1.0,
+   "slot": "MSK1"
+  },
+  "mizu66_msk1": {
+   "n": 20,
+   "purity": 1.0,
+   "slot": "MSK1"
+  },
+  "nrrt": {
+   "n": 5101,
+   "purity": 0.844,
+   "slot": "NRMR_NRRTMap"
+  },
+  "r": {
+   "n": 27,
+   "purity": 0.963,
+   "slot": "UserColorchangeMap"
+  },
+  "rcm": {
+   "n": 60,
+   "purity": 1.0,
+   "slot": "ReplaceColorMap"
+  },
+  "sem": {
+   "n": 247,
+   "purity": 1.0,
+   "slot": "WE_EmissiveMap"
+  },
+  "sem_msk1": {
+   "n": 78,
+   "purity": 1.0,
+   "slot": "WE_EmissiveMap"
+  },
+  "wemi": {
+   "n": 113,
+   "purity": 0.991,
+   "slot": "WE_EmissiveMap"
+  }
+ }
+}

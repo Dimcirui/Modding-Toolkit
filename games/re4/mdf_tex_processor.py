@@ -1,5 +1,6 @@
 import bpy
 
+from ...core.slot_defaults import SlotNulls
 from ...core.mdf_tex_processor_base import (
     BASE_SLOT_CHANNEL_MAPS, BASE_NULL_TEX_BY_TYPE, BASE_TEXTURE_TYPE_ABBREV,
     BASE_COMMON_SLOT_TYPES,
@@ -43,12 +44,18 @@ RE4_COMMON_SLOT_TYPES = BASE_COMMON_SLOT_TYPES | {'OcclusionMap'}
 
 RE4_NULL_TEX_BY_TYPE = {
     **BASE_NULL_TEX_BY_TYPE,
-    'OcclusionMap': 'systems/rendering/NullWhite.tex',
+    # What vanilla RE4 Emissive/Transparent bind. Same pixels as the shared
+    # NullNormalRoughnessOcclusion (both decode to 0.5,0.5,1,0.5), so this only
+    # makes a generated MDF match vanilla, it changes nothing on screen.
+    'NormalRoughnessCavityMap': 'systems/rendering/NullNormalRoughness.tex',
 }
 
 # ── Null checker + collection update callback ──────────────────────────────────
 
-_is_null_re4              = make_null_checker(RE4_NULL_TEX_BY_TYPE)
+# Vanilla-measured defaults where assets/re4/vanilla_slot_defaults.json exists,
+# the hand table above otherwise -- see core/slot_defaults.py.
+SLOT_NULLS = SlotNulls.for_game("re4", RE4_NULL_TEX_BY_TYPE)
+_is_null_re4 = SLOT_NULLS.is_null
 _on_re4_collection_update = make_collection_update_cb(_is_null_re4)
 
 
@@ -131,6 +138,7 @@ class RE4_OT_MdfTexProcess(MdfTexProcessBase):
     _settings_attr    = "re4_mdf_tex_processor"
     _natives_root_key = "re4_natives_root"
     _null_tex_by_type = RE4_NULL_TEX_BY_TYPE
+    _slot_nulls       = SLOT_NULLS
     _channel_maps     = RE4_SLOT_CHANNEL_MAPS
     _tex_version      = RE4_TEX_VERSION
     _abbrev_map       = RE4_TEXTURE_TYPE_ABBREV

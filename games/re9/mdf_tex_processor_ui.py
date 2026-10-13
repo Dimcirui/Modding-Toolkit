@@ -2,7 +2,8 @@ import bpy
 
 from ...core.i18n import T
 from ...core.mdf_tex_processor_ui_base import MdfTexDialogBase
-from .mdf_tex_processor import RE9_COMMON_SLOT_TYPES, RE9_NULL_TEX_BY_TYPE
+from .mdf_tex_processor import (SLOT_NULLS, RE9_COMMON_SLOT_TYPES, RE9_NULL_TEX_BY_TYPE,
+                                RE9_SLOT_CHANNEL_MAPS, RE9_TEXTURE_TYPE_ABBREV)
 
 
 class RE9_OT_MdfTexProcessorDialog(MdfTexDialogBase):
@@ -21,6 +22,9 @@ class RE9_OT_MdfTexProcessorDialog(MdfTexDialogBase):
     _path_hint         = "e.g. character/cha000_00/"
     _common_slot_types = RE9_COMMON_SLOT_TYPES
     _null_tex_by_type  = RE9_NULL_TEX_BY_TYPE
+    _slot_nulls        = SLOT_NULLS
+    _channel_maps      = RE9_SLOT_CHANNEL_MAPS
+    _abbrev_map        = RE9_TEXTURE_TYPE_ABBREV
 
 
 classes = [RE9_OT_MdfTexProcessorDialog]

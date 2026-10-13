@@ -3,30 +3,41 @@ import os
 
 from .i18n import T
 from .mdf_tex_processor_base import (
-    PBR_TYPES, PBR_TYPE_LABELS, PBR_CHANNEL_SELECTABLE,
-    BASE_COMMON_SLOT_TYPES, BASE_NULL_TEX_BY_TYPE,
+    PBR_TYPES, PBR_TYPE_LABELS, PBR_CHANNEL_SELECTABLE, PBR_DEFAULTS,
+    BASE_COMMON_SLOT_TYPES, BASE_NULL_TEX_BY_TYPE, BASE_SLOT_CHANNEL_MAPS,
+    BASE_TEXTURE_TYPE_ABBREV, register_game_tables, slot_status,
 )
-from .slot_sources import find_shader_slot_supplies
+from .mdf_tex_slot_status import recipe_inputs
+from .slot_defaults import SlotNulls
 
 PROCESSOR_WINDOW_WIDTH = 660
 
-# These two PBR types only exist because a handful of RE4/RE9/MHWS packed-shader
-# slots genuinely carry them -- MHWI/MHRS materials, and any material with no
-# packed shader at all, have no way to supply either one. Showing the row
-# regardless would just offer a manual picker with nothing real behind it, so
-# it is gated on whichever game slots the bound material's own packed shader
-# (if any) reports supplying -- see core.shader_pack.SLOT_SUPPLIES_KEY.
-_CONDITIONAL_PBR_TYPES = {'cavity', 'translucency'}
+# List + detail rather than every material expanded at once: a props dialog
+# cannot scroll, so the old layout ran off the screen at a dozen materials. The
+# list (a UIList) scrolls on its own; only the selected material is drawn below.
+_LIST_ROWS = 6
+
+_STATUS_ICON = {'COMPOSE': 'NODE_COMPOSITING', 'DIRECT': 'IMAGE_DATA',
+                'DEFAULT': 'LINKED', 'SKIP': 'RADIOBUT_OFF'}
+_CH_ORDER = ('R', 'G', 'B', 'A')
 
 
-def _supplied_pbr_types(material_name):
-    mat = bpy.data.materials.get(material_name)
-    if mat is None:
-        return set()
-    out = set()
-    for pbr_types in find_shader_slot_supplies(mat).values():
-        out.update(pbr_types)
-    return out
+def _basename(path):
+    return os.path.basename(bpy.path.abspath(path)) if path else ""
+
+
+def _channel_groups(ch_map):
+    """[(channels, source)] with consecutive channels that read the same input
+    merged -- 'RGB' colour, 'G A' normal -- so a row is one quantity."""
+    groups = []
+    for c in _CH_ORDER:
+        src = ch_map.get(c)
+        if groups and isinstance(src, tuple) and groups[-1][1] == src[:1] + src[2:]:
+            groups[-1][0].append(c)
+            continue
+        key = src[:1] + src[2:] if isinstance(src, tuple) else src
+        groups.append(([c], key))
+    return groups
 
 
 class MdfTexDialogBase(bpy.types.Operator):
@@ -43,6 +54,11 @@ class MdfTexDialogBase(bpy.types.Operator):
     _path_hint         = "例：Author/Character/"
     _common_slot_types = BASE_COMMON_SLOT_TYPES
     _null_tex_by_type  = BASE_NULL_TEX_BY_TYPE
+    # Must be the same tables the game's MdfTexProcessBase subclass uses, or
+    # the badges would describe a different export than the one that runs.
+    _channel_maps      = BASE_SLOT_CHANNEL_MAPS
+    _abbrev_map        = BASE_TEXTURE_TYPE_ABBREV
+    _slot_nulls        = None   # the game's SlotNulls -- same object its processor uses
 
     # ── Lifecycle ──────────────────────────────────────────────────────────────
 
@@ -74,6 +90,8 @@ class MdfTexDialogBase(bpy.types.Operator):
         cls      = type(self)
         settings = getattr(scene, cls._settings_attr)
         pfx      = cls._game_prefix
+        nulls    = cls._slot_nulls or SlotNulls(cls._null_tex_by_type)
+        tables   = register_game_tables(settings, cls._channel_maps, nulls)
 
         # Header
         row = layout.row(align=True)
@@ -89,7 +107,7 @@ class MdfTexDialogBase(bpy.types.Operator):
             short = "/".join(parts[-3:]) if len(parts) > 3 else natives_root
             row.label(text=f".../{short}")
         else:
-            row.label(text="Not set", icon='ERROR')
+            row.label(text=T("core.mdf_tex_processor_ui_base.not_set"), icon='ERROR')
 
         row = layout.row(align=True)
         row.label(text=cls._path_prefix_label)
@@ -112,139 +130,201 @@ class MdfTexDialogBase(bpy.types.Operator):
 
         if not settings.materials:
             layout.separator()
-            layout.label(text="Select MDF collection and click refresh", icon='INFO')
+            layout.label(text=T("core.mdf_tex_processor_ui_base.select_and_refresh"), icon='INFO')
             return
 
         layout.separator()
+        layout.template_list("MDFTEX_UL_materials", cls._settings_attr,
+                             settings, "materials", settings, "materials_index",
+                             rows=_LIST_ROWS)
 
-        has_clipboard = bool(settings.clipboard_json)
+        mi = settings.materials_index
+        if not 0 <= mi < len(settings.materials):
+            return
+        self._draw_material(layout, context, settings, settings.materials[mi], mi, tables)
 
-        for mi, mat in enumerate(settings.materials):
-            box = layout.box()
+    def _draw_material(self, layout, context, settings, mat, mi, tables):
+        cls = type(self)
+        pfx = cls._game_prefix
+        box = layout.box()
 
-            header = box.row(align=False)
-            expand_icon = 'TRIA_DOWN' if mat.expanded else 'TRIA_RIGHT'
-            header.prop(mat, "expanded", text="", icon=expand_icon, emboss=False)
-            header.label(text=mat.material_name, icon='MATERIAL')
+        header = box.row(align=False)
+        header.label(text=mat.material_name, icon='MATERIAL')
+        op_copy = header.operator(f"{pfx}.mdf_tex_copy_material", text="", icon='COPYDOWN')
+        op_copy.mat_index = mi
+        paste_row = header.row(align=True)
+        paste_row.enabled = bool(settings.clipboard_json)
+        op_paste = paste_row.operator(f"{pfx}.mdf_tex_paste_material", text="", icon='PASTEDOWN')
+        op_paste.mat_index = mi
 
-            op_copy = header.operator(f"{pfx}.mdf_tex_copy_material",
-                                      text="", icon='COPYDOWN')
-            op_copy.mat_index = mi
-
-            paste_row = header.row(align=True)
-            paste_row.enabled = has_clipboard
-            op_paste = paste_row.operator(f"{pfx}.mdf_tex_paste_material",
-                                          text="", icon='PASTEDOWN')
-            op_paste.mat_index = mi
-
-            if not mat.expanded:
-                continue
-
-            # PBR inputs section — indented under material header
-            pbr_split = box.split(factor=0.03)
-            pbr_split.column()
-            pbr_col = pbr_split.column()
-
-            pbr_header = pbr_col.row(align=False)
-            pbr_icon = 'TRIA_DOWN' if mat.pbr_expanded else 'TRIA_RIGHT'
-            pbr_header.prop(mat, "pbr_expanded", text="", icon=pbr_icon, emboss=False)
-            pbr_header.label(text="PBR Input", icon='NODE_COMPOSITING')
-
-            if mat.pbr_expanded:
-                pbr_box = pbr_col.box()
-                slot_supplies = _supplied_pbr_types(mat.material_name)
-                for pt in PBR_TYPES:
-                    if pt in _CONDITIONAL_PBR_TYPES and pt not in slot_supplies:
-                        continue
-                    row = pbr_box.row(align=True)
-                    row.label(text=PBR_TYPE_LABELS[pt])
-                    cur = getattr(mat.pbr, pt)
-                    pick_op = row.operator(
-                        f"{pfx}.mdf_tex_pick_pbr",
-                        text=os.path.basename(bpy.path.abspath(cur)) if cur else "--",
-                        icon='FILEBROWSER' if not cur else 'IMAGE_DATA',
-                    )
-                    pick_op.mat_index = mi
-                    pick_op.pbr_type  = pt
-                    if cur:
-                        clr_op = row.operator(f"{pfx}.mdf_tex_clear_pbr",
-                                              text="", icon='X')
-                        clr_op.mat_index = mi
-                        clr_op.pbr_type  = pt
-                    if pt == 'normal' and cur:
-                        row.prop(mat.pbr, "normal_flip_g",
-                                 text="GL>DX", icon='LOOP_BACK', toggle=True)
-                    if pt in PBR_CHANNEL_SELECTABLE and cur:
-                        ch_sub = row.row(align=True)
-                        ch_sub.scale_x = 0.35
-                        for ch_val in ('R', 'G', 'B', 'A'):
-                            ch_sub.prop_enum(mat.pbr, f"{pt}_ch", ch_val)
-                        inv_sub = row.row(align=True)
-                        inv_sub.scale_x = 0.4
-                        inv_sub.prop(mat.pbr, f"{pt}_inv", text="Inv", toggle=True)
-
-            if not mat.slots:
-                continue
-
-            # Per-material texture options
+        if mat.slots:
             opt_row = box.row(align=True)
             opt_row.prop(mat, "generate_mipmaps",
-                        text=T("core.mdf_tex_processor_base.generate_mipmaps_label"))
+                         text=T("core.mdf_tex_processor_base.generate_mipmaps_label"))
             if mat.generate_mipmaps:
                 opt_row.prop(mat, "mipmap_strategy", text="")
             opt_row.prop(mat, "skip_textures",
-                        text=T("core.mdf_tex_processor_base.skip_textures_label"))
+                         text=T("core.mdf_tex_processor_base.skip_textures_label"))
 
-            common_slots = [(si, s) for si, s in enumerate(mat.slots)
-                            if s.texture_type in cls._common_slot_types]
-            other_slots  = [(si, s) for si, s in enumerate(mat.slots)
-                            if s.texture_type not in cls._common_slot_types]
+        self._draw_inputs(box, mat, mi)
 
-            if common_slots:
-                box.label(text="Common Textures", icon='RENDERLAYERS')
-                self._draw_slots(box, common_slots, mi)
+        if not mat.slots:
+            return
+        pbr_paths = {pt: getattr(mat.pbr, pt) for pt in PBR_TYPES}
+        mat_obj = settings.mdf_collection.objects.get(mat.material_obj_name) if settings.mdf_collection else None
+        mat_data = getattr(mat_obj, 're_mdf_material', None)
+        mmtr = getattr(mat_data, 'mmtrPath', '') if mat_data else ''
+        common_slots = [(si, s) for si, s in enumerate(mat.slots)
+                        if s.texture_type in cls._common_slot_types]
+        other_slots  = [(si, s) for si, s in enumerate(mat.slots)
+                        if s.texture_type not in cls._common_slot_types]
 
-            if other_slots:
-                other_header = box.row(align=False)
-                other_icon = 'TRIA_DOWN' if mat.other_expanded else 'TRIA_RIGHT'
-                other_header.prop(mat, "other_expanded", text="",
-                                  icon=other_icon, emboss=False)
-                other_header.label(text="Other Textures", icon='RENDERLAYERS')
-                if mat.other_expanded:
-                    self._draw_slots(box, other_slots, mi)
+        if common_slots:
+            box.label(text=T("core.mdf_tex_processor_ui_base.common_textures"), icon='RENDERLAYERS')
+            self._draw_slots(box, mat, common_slots, mi, tables, pbr_paths, mmtr)
 
-    def _draw_slots(self, box, indexed_slots, mi):
+        if other_slots:
+            other_header = box.row(align=False)
+            other_icon = 'TRIA_DOWN' if mat.other_expanded else 'TRIA_RIGHT'
+            other_header.prop(mat, "other_expanded", text="", icon=other_icon, emboss=False)
+            other_header.label(text=T("core.mdf_tex_processor_ui_base.other_textures").format(
+                n=len(other_slots)), icon='RENDERLAYERS')
+            if mat.other_expanded:
+                self._draw_slots(box, mat, other_slots, mi, tables, pbr_paths, mmtr)
+
+    def _draw_inputs(self, box, mat, mi):
+        """One row per input some slot of *this* material reads. The rest are
+        named on one line instead of silently missing."""
         cls = type(self)
         pfx = cls._game_prefix
+        read = set()
+        for s in mat.slots:
+            read |= recipe_inputs(s.texture_type, cls._channel_maps) or set()
+
+        pbr_header = box.row(align=False)
+        pbr_icon = 'TRIA_DOWN' if mat.pbr_expanded else 'TRIA_RIGHT'
+        pbr_header.prop(mat, "pbr_expanded", text="", icon=pbr_icon, emboss=False)
+        n_set = sum(1 for pt in PBR_TYPES if pt in read and getattr(mat.pbr, pt))
+        pbr_header.label(text=T("core.mdf_tex_processor_ui_base.inputs").format(
+            n=n_set, total=len(read)), icon='NODE_COMPOSITING')
+        if not mat.pbr_expanded:
+            return
+
+        pbr_box = box.box()
+        for pt in PBR_TYPES:
+            if pt not in read:
+                continue
+            row = pbr_box.row(align=True)
+            row.label(text=PBR_TYPE_LABELS[pt])
+            cur = getattr(mat.pbr, pt)
+            pick_op = row.operator(
+                f"{pfx}.mdf_tex_pick_pbr",
+                text=_basename(cur) if cur else "--",
+                icon='FILEBROWSER' if not cur else 'IMAGE_DATA',
+            )
+            pick_op.mat_index = mi
+            pick_op.pbr_type  = pt
+            if cur:
+                clr_op = row.operator(f"{pfx}.mdf_tex_clear_pbr", text="", icon='X')
+                clr_op.mat_index = mi
+                clr_op.pbr_type  = pt
+            if pt == 'normal' and cur:
+                row.prop(mat.pbr, "normal_flip_g",
+                         text="GL>DX", icon='LOOP_BACK', toggle=True)
+            if pt in PBR_CHANNEL_SELECTABLE and cur:
+                ch_sub = row.row(align=True)
+                ch_sub.scale_x = 0.35
+                for ch_val in _CH_ORDER:
+                    ch_sub.prop_enum(mat.pbr, f"{pt}_ch", ch_val)
+                inv_sub = row.row(align=True)
+                inv_sub.scale_x = 0.4
+                inv_sub.prop(mat.pbr, f"{pt}_inv", text="Inv", toggle=True)
+        unread = [PBR_TYPE_LABELS[pt] for pt in PBR_TYPES if pt not in read]
+        if unread:
+            pbr_box.label(text=T("core.mdf_tex_processor_ui_base.inputs_unread").format(
+                names=", ".join(unread)), icon='INFO')
+
+    def _status_text(self, st, slot, nulls, mmtr):
+        null_rel = nulls.null_for(slot.texture_type, mmtr, slot.original_path) or ""
+        if st.mode == 'COMPOSE':
+            body = ", ".join(PBR_TYPE_LABELS[pt] for pt in st.sources)
+            text = T("core.mdf_tex_slot_status.compose") + (f" ← {body}" if body else "")
+        elif st.mode == 'DIRECT':
+            text = T("core.mdf_tex_slot_status.direct") + f" ← {_basename(slot.direct_image) or '--'}"
+        elif st.mode == 'DEFAULT':
+            text = T("core.mdf_tex_slot_status.default") + f" → {null_rel.split('/')[-1]}"
+        else:
+            text = T("core.mdf_tex_slot_status.skip") + (
+                f" · {slot.original_path.split('/')[-1]}" if slot.original_path else "")
+        if st.problem:
+            text += f"  ({T('core.mdf_tex_slot_status.' + st.problem)})"
+        return text
+
+    def _draw_slots(self, box, mat, indexed_slots, mi, tables, pbr_paths, mmtr=''):
+        cls = type(self)
+        pfx = cls._game_prefix
+        col = box.column(align=True)
         for si, slot in indexed_slots:
-            row = box.row(align=True)
-            row.label(text=slot.texture_type, icon='TEXTURE_DATA')
-            row.prop(slot, "mode", text="")
+            st = slot_status(tables, mat, slot, pbr_paths)
+            ch_map = cls._channel_maps.get(slot.texture_type)
 
-            if slot.mode == 'DIRECT':
-                cur = slot.direct_image
-                pick_op = row.operator(
-                    f"{pfx}.mdf_tex_pick_direct",
-                    text=os.path.basename(bpy.path.abspath(cur)) if cur else "--",
-                    icon='FILEBROWSER' if not cur else 'IMAGE_DATA',
-                )
-                pick_op.mat_index  = mi
-                pick_op.slot_index = si
-                if cur:
-                    clr_op = row.operator(f"{pfx}.mdf_tex_clear_direct",
-                                          text="", icon='X')
-                    clr_op.mat_index  = mi
-                    clr_op.slot_index = si
+            row = col.row(align=True)
+            if ch_map is not None:
+                row.prop(slot, "expanded", text="", emboss=False,
+                         icon='TRIA_DOWN' if slot.expanded else 'TRIA_RIGHT')
+            else:
+                row.label(text="", icon='BLANK1')
+            split = row.split(factor=0.40, align=True)
+            abbrev = cls._abbrev_map.get(slot.texture_type)
+            split.label(text=f"{abbrev}  ·  {slot.texture_type}" if abbrev else slot.texture_type)
+            right = split.row(align=True)
+            right.label(text=self._status_text(st, slot, tables[1], mmtr),
+                        icon='ERROR' if st.problem else _STATUS_ICON[st.mode])
+            mode_sub = right.row(align=True)
+            mode_sub.scale_x = 0.8
+            mode_sub.prop(slot, "mode", text="")
+            pick_op = right.operator(f"{pfx}.mdf_tex_pick_direct", text="",
+                                     icon='FILEBROWSER')
+            pick_op.mat_index  = mi
+            pick_op.slot_index = si
+            if slot.direct_image:
+                clr_op = right.operator(f"{pfx}.mdf_tex_clear_direct", text="", icon='X')
+                clr_op.mat_index  = mi
+                clr_op.slot_index = si
 
-            elif slot.mode == 'DEFAULT':
-                null_rel = cls._null_tex_by_type.get(slot.texture_type)
-                if null_rel:
-                    row.label(text=f"-> {null_rel.split('/')[-1]}", icon='LINKED')
-                else:
-                    row.label(text="(no default null texture)", icon='ERROR')
+            if ch_map is not None and slot.expanded:
+                self._draw_channels(col, mat, ch_map, pbr_paths)
 
-            elif slot.mode == 'SKIP' and slot.original_path:
-                row.label(
-                    text=slot.original_path.split('/')[-1],
-                    icon='LOOP_BACK',
-                )
+    def _draw_channels(self, col, mat, ch_map, pbr_paths):
+        """Where each channel of the slot comes from: an input (file + channel),
+        that input's neutral value when it is not set, or a fixed constant."""
+        for chans, src in _channel_groups(ch_map):
+            row = col.row(align=True)
+            row.label(text="", icon='BLANK1')
+            split = row.split(factor=0.12, align=True)
+            split.label(text=" ".join(chans) if len(chans) < 3 else "".join(chans))
+            inner = split.split(factor=0.36, align=True)
+            if not isinstance(src, tuple):
+                inner.label(text="—")
+                inner.label(text=T("core.mdf_tex_processor_ui_base.fixed").format(
+                    v=f"{0.0 if src is None else src:g}"))
+                continue
+            pt, rule_inv = src[0], len(src) > 1 and src[1] is True
+            inner.label(text=PBR_TYPE_LABELS[pt])
+            path = pbr_paths.get(pt, "")
+            if path and os.path.isfile(path):
+                text = _basename(path)
+                if pt in PBR_CHANNEL_SELECTABLE:
+                    text += f" · {getattr(mat.pbr, pt + '_ch')}"
+                    if getattr(mat.pbr, pt + '_inv'):
+                        text += " · Inv"
+                icon = 'IMAGE_DATA'
+            else:
+                neutral = PBR_DEFAULTS.get(pt, [1.0])
+                v = neutral[0] if pt not in ('color', 'emissive', 'normal') else None
+                text = (T("core.mdf_tex_processor_ui_base.neutral").format(v=f"{v:g}")
+                        if v is not None else T("core.mdf_tex_processor_ui_base.no_input"))
+                icon = 'DOT'
+            if rule_inv:
+                text += "  " + T("core.mdf_tex_processor_ui_base.inverted_rule")
+            inner.label(text=text, icon=icon)

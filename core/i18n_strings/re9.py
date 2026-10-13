@@ -165,10 +165,9 @@ STRINGS = {
         "EN": "AlphaCavityOcclusionTranslucentMap — R alpha (real opacity), B AO",
         "ZH": "AlphaCavityOcclusionTranslucentMap — R 透明度 (真正的不透明度), B 环境光遮蔽"},
     "re9.shader_defs.ssscot": {
-        "EN": "SSSCavityOcclusionTranslucentMap — R is a fixed constant (no "
-              "opacity data), B AO",
-        "ZH": "SSSCavityOcclusionTranslucentMap — R 为固定常量 (无不透明度数据), "
-              "B 环境光遮蔽"},
+        "EN": "SSSCavityOcclusionTranslucentMap — R SSS (no opacity data), G cavity, B AO",
+        "ZH": "SSSCavityOcclusionTranslucentMap — R 次表面散射 (无不透明度数据), "
+              "G 缝隙遮蔽, B 环境光遮蔽"},
     "re9.shader_defs.nrcm": {
         "EN": "NormalRoughnessCavityMap — R roughness, G/A hemi-octahedral normal, "
               "B a constant (RE9 writes no Cavity data)",
@@ -339,11 +338,11 @@ STRINGS = {
               "Scattering) -- this value round-trips to the exporter, the "
               "preview does not show it. Skin has no translucency channel at "
               "all, so this panel value has nothing to combine with there",
-        "ZH": "半透 (Translucency)。标准/毛发由 "
+        "ZH": "透光 (Translucency)。标准/毛发由 "
               "AlphaCavityOcclusionTranslucentMap.A 真实携带，自发光由 "
               "AlphaTranslucentOcclusionSSSMap.G 真实携带，但 Principled 没有对应"
               "输入 (不等同于次表面散射)——此值仅在导出时生效，预览不会显示。皮肤"
-              "完全没有半透通道，此项在皮肤 spec 上没有对应槽位可以结合"},
+              "完全没有透光通道，此项在皮肤 spec 上没有对应槽位可以结合"},
     "re9.shader_defs.pbr_emission": {
         "EN": "Emission colour. Added to EmissiveMap on the Emissive spec; "
               "Standard/Skin/Hair have no emissive slot, so this panel value "

@@ -432,7 +432,7 @@ STRINGS = {
               "no matching input (not the same thing as Subsurface Scattering) "
               "-- this value round-trips to the exporter, the preview does not "
               "show it",
-        "ZH": "半透 (Translucency)。标准/毛发由 "
+        "ZH": "透光 (Translucency)。标准/毛发由 "
               "AlphaTranslucentOcclusionCavityMap.G 真实携带，自发光由 "
               "AlphaTranslucentOcclusionSSSMap.G 真实携带，但 Principled 没有对应"
               "输入 (不等同于次表面散射)——此值仅在导出时生效，预览不会显示"},

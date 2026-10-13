@@ -2,7 +2,8 @@ import bpy
 
 from ...core.i18n import T
 from ...core.mdf_tex_processor_ui_base import MdfTexDialogBase
-from .mdf_tex_processor import MHRS_COMMON_SLOT_TYPES, MHRS_NULL_TEX_BY_TYPE
+from .mdf_tex_processor import (SLOT_NULLS, MHRS_COMMON_SLOT_TYPES, MHRS_NULL_TEX_BY_TYPE,
+                                MHRS_SLOT_CHANNEL_MAPS, MHRS_TEXTURE_TYPE_ABBREV)
 
 
 class MHRS_OT_MdfTexProcessorDialog(MdfTexDialogBase):
@@ -24,6 +25,9 @@ class MHRS_OT_MdfTexProcessorDialog(MdfTexDialogBase):
     _path_prefix_label = "natives/STM/"
     _common_slot_types = MHRS_COMMON_SLOT_TYPES
     _null_tex_by_type  = MHRS_NULL_TEX_BY_TYPE
+    _slot_nulls        = SLOT_NULLS
+    _channel_maps      = MHRS_SLOT_CHANNEL_MAPS
+    _abbrev_map        = MHRS_TEXTURE_TYPE_ABBREV
 
     @classmethod
     def description(cls, context, properties):

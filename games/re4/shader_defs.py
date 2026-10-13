@@ -151,7 +151,7 @@ _NRCM = SlotSocket("NormalRoughnessCavityMap", _K + "nrcm",
 # B ao. A stays a constant -- no further quantity confirmed there.
 _ATOSSS = SlotSocket("AlphaTranslucentOcclusionSSSMap", "core.shader_pack.atosss",
                      default_color=(1.0, 0.0, 1.0, 1.0),
-                     supplies=('alpha', 'ao', 'translucency'))
+                     supplies=('alpha', 'ao', 'translucency', 'sss'))
 
 _OCC = SlotSocket("OcclusionMap", "core.shader_pack.occ",
                   default_color=(1.0, 1.0, 1.0, 1.0),

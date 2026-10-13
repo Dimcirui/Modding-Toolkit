@@ -1,0 +1,349 @@
+{
+ "meta": {
+  "materials": 42351,
+  "mmtrs": 409,
+  "source": "vanilla .mdf2 survey"
+ },
+ "suffixes": {
+  "32mask": {
+   "n": 62,
+   "purity": 1.0,
+   "slot": "ArrayWrinkleMaskMap"
+  },
+  "a_msk1": {
+   "n": 208,
+   "purity": 0.981,
+   "slot": "ColorBlendMask"
+  },
+  "acot": {
+   "n": 5832,
+   "purity": 0.911,
+   "slot": "AlphaCavityOcclusionTranslucentMap"
+  },
+  "albd": {
+   "n": 40524,
+   "purity": 0.97,
+   "slot": "BaseDielectricMap"
+  },
+  "albh": {
+   "n": 6844,
+   "purity": 0.994,
+   "slot": "BaseDielectricMap_CoverMat"
+  },
+  "albm": {
+   "n": 234,
+   "purity": 0.829,
+   "slot": "BurntMap_ALBM"
+  },
+  "albs": {
+   "n": 721,
+   "purity": 0.904,
+   "slot": "BaseShiftMap"
+  },
+  "arm00_msk4": {
+   "n": 91,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "atos": {
+   "n": 8749,
+   "purity": 0.988,
+   "slot": "AlphaTranslucentOcclusionSSSMap"
+  },
+  "b_msk1": {
+   "n": 244,
+   "purity": 1.0,
+   "slot": "ColorBlendMask"
+  },
+  "c442s700_msk4": {
+   "n": 22,
+   "purity": 0.773,
+   "slot": "FixBloodMask"
+  },
+  "c_msk1": {
+   "n": 122,
+   "purity": 0.992,
+   "slot": "ColorBlendMask"
+  },
+  "carbon_msk4": {
+   "n": 22,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "color01": {
+   "n": 27,
+   "purity": 1.0,
+   "slot": "ColorGradient_A"
+  },
+  "color02": {
+   "n": 27,
+   "purity": 1.0,
+   "slot": "ColorGradient_B"
+  },
+  "color03": {
+   "n": 27,
+   "purity": 1.0,
+   "slot": "ColorGradient_C"
+  },
+  "d_msk1": {
+   "n": 60,
+   "purity": 1.0,
+   "slot": "ColorBlendMask"
+  },
+  "denim00_msk4": {
+   "n": 36,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "detail_msk4": {
+   "n": 56,
+   "purity": 0.964,
+   "slot": "DetailMap"
+  },
+  "e_msk1": {
+   "n": 49,
+   "purity": 1.0,
+   "slot": "ColorBlendMask"
+  },
+  "emi": {
+   "n": 743,
+   "purity": 0.972,
+   "slot": "EmissiveMap"
+  },
+  "enemy03_msk4": {
+   "n": 39,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "imperfectdetail_msk4": {
+   "n": 22,
+   "purity": 1.0,
+   "slot": "ImperfectDetail_Map"
+  },
+  "leather02_msk4": {
+   "n": 133,
+   "purity": 0.97,
+   "slot": "MicroDetailDetailMap"
+  },
+  "lymo": {
+   "n": 84,
+   "purity": 1.0,
+   "slot": "LayerMaskOcclusionMap"
+  },
+  "mask": {
+   "n": 366,
+   "purity": 0.992,
+   "slot": "RecordSys_ProtectMask"
+  },
+  "mask_msk4": {
+   "n": 456,
+   "purity": 1.0,
+   "slot": "RecordSys_ProtectMask"
+  },
+  "mossstitch00_msk4": {
+   "n": 47,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "noise_msk2": {
+   "n": 25,
+   "purity": 0.88,
+   "slot": "NoseMask"
+  },
+  "nrca": {
+   "n": 282,
+   "purity": 0.968,
+   "slot": "DetailNormalAlphaMap"
+  },
+  "nrmr": {
+   "n": 7816,
+   "purity": 0.829,
+   "slot": "NormalRoughnessMap"
+  },
+  "nrrc": {
+   "n": 41700,
+   "purity": 0.806,
+   "slot": "NormalRoughnessCavityMap"
+  },
+  "occ": {
+   "n": 19211,
+   "purity": 0.999,
+   "slot": "OcclusionMap"
+  },
+  "plainweave00_msk4": {
+   "n": 189,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "plainweave02_msk4": {
+   "n": 30,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "plainweave04_msk4": {
+   "n": 111,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "plainweave06_msk4": {
+   "n": 116,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "plainweave07_msk4": {
+   "n": 35,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "plainweave08_msk4": {
+   "n": 39,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "plainweave09_msk4": {
+   "n": 182,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "plainweave11_msk4": {
+   "n": 51,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "plainweave12_msk4": {
+   "n": 35,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "plainweave13_msk4": {
+   "n": 32,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "protectmask_msk1": {
+   "n": 189,
+   "purity": 1.0,
+   "slot": "DentProtectMask"
+  },
+  "rgh": {
+   "n": 25,
+   "purity": 1.0,
+   "slot": "RoughnessMap"
+  },
+  "ribstitch00_msk4": {
+   "n": 20,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "ribstitch02_msk4": {
+   "n": 41,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "ribstitch04_msk4": {
+   "n": 35,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "ribstitch05_msk4": {
+   "n": 29,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "ribstitch06_msk4": {
+   "n": 55,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "rocm": {
+   "n": 121,
+   "purity": 1.0,
+   "slot": "ROCMMap"
+  },
+  "satinweave00_msk4": {
+   "n": 73,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "scot": {
+   "n": 601,
+   "purity": 0.94,
+   "slot": "SSSCavityOcclusionTranslucentMap"
+  },
+  "suede00_msk4": {
+   "n": 71,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "tweed00_msk4": {
+   "n": 34,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "twillweave01_msk4": {
+   "n": 169,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "twillweave02_msk4": {
+   "n": 32,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "vt06_msk4": {
+   "n": 36,
+   "purity": 1.0,
+   "slot": "StitchMap"
+  },
+  "vt08_msk4": {
+   "n": 25,
+   "purity": 1.0,
+   "slot": "StitchMap"
+  },
+  "vtl03_msk4": {
+   "n": 210,
+   "purity": 1.0,
+   "slot": "StitchMap"
+  },
+  "waxedcotton00_msk4": {
+   "n": 23,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "waxedcotton02_msk4": {
+   "n": 34,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "waxedcotton03_msk4": {
+   "n": 66,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "waxedcotton04_msk4": {
+   "n": 21,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "wetmap_msk4": {
+   "n": 234,
+   "purity": 1.0,
+   "slot": "WetMap"
+  },
+  "wetmask_msk4": {
+   "n": 27,
+   "purity": 1.0,
+   "slot": "WetMap"
+  },
+  "wool00_msk4": {
+   "n": 62,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  },
+  "wool02_msk4": {
+   "n": 88,
+   "purity": 1.0,
+   "slot": "DetailMap"
+  }
+ }
+}

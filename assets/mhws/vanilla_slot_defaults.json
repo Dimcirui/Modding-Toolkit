@@ -1,0 +1,1466 @@
+{
+ "meta": {
+  "materials": 26050,
+  "mmtrs": 550,
+  "source": "vanilla .mdf2 survey"
+ },
+ "slots": {
+  "A_NoiseTexture": {
+   "uses": 1
+  },
+  "AlphaMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 1358
+  },
+  "AlphaTex2D": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "AlphaTranslucentOcclusionSSSMap": {
+   "by_mmtr": {
+    "materialshader/variation/base_atos_emit_depthe_fakeinnerl.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/base_atos_emit_wave.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/base_atos_vfx_hair_nopdo.mmtr": "systems/rendering/NullWhite.tex"
+   },
+   "default": "systems/rendering/NullATOS.tex",
+   "default_share": 0.954,
+   "seen": [
+    "MasterMaterial/Textures/NullGray_sRGB_ALB.tex",
+    "MasterMaterial/Textures/TextureArray/NullATOS_Array.tex",
+    "systems/rendering/NullATOS.tex",
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullGray.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 13753
+  },
+  "AmbientLightLUT": {
+   "uses": 3
+  },
+  "AnimEmit_MaskMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 3
+  },
+  "AnimEmit_Texture": {
+   "uses": 3
+  },
+  "AnimEmit_Texture2nd": {
+   "default": "MasterMaterial/Textures/sample_Pulse_MSK.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 3
+  },
+  "AttributeMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.714,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 97
+  },
+  "B_NoiseTexture": {
+   "uses": 1
+  },
+  "BaseAlphaMap": {
+   "by_mmtr": {
+    "materialshader/variation/volumedecal_base.mmtr": "systems/rendering/NullWhite.tex"
+   },
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 0.975,
+   "seen": [
+    "systems/rendering/NullGray.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 1777
+  },
+  "BaseDielectricMap": {
+   "by_mmtr": {
+    "materialshader/variation/vfx_standard_simple.mmtr": "MasterMaterial/Textures/null_ALBD.tex",
+    "materialshader/variation/vfx_standard_simple_e.mmtr": "MasterMaterial/Textures/null_ALBD.tex"
+   },
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 0.908,
+   "seen": [
+    "MasterMaterial/Textures/TextureArray/NullGray_Array.tex",
+    "MasterMaterial/Textures/null_ALBD.tex",
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullGray.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 23126
+  },
+  "BaseDielectricMap_Age": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 10
+  },
+  "BaseMap": {
+   "by_mmtr": {
+    "materialshader/master/box.mmtr": "systems/rendering/NullGray.tex",
+    "materialshader/variation/vfx_expensivetransparent_wave.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/vfx_transparent.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/vfx_transparent_bubble_nd.mmtr": "systems/rendering/NullBlack.tex"
+   },
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.679,
+   "seen": [
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullGray.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 235
+  },
+  "BaseMap_Detail": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 10
+  },
+  "BaseMap_FaceBlend": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 10
+  },
+  "BaseMetalMap": {
+   "default": "RE_ENGINE_LIBRARY/VFX_Library/Mesh/MESH_Meat/meat00/mesh_capcom_meat_meat00_00_ALBM.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 2
+  },
+  "BlackOilMap": {
+   "uses": 5
+  },
+  "BlackOilNormalRoughnessOcclusionMap": {
+   "uses": 5
+  },
+  "BlendNormalMap": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 685
+  },
+  "Blend_ALBA_ch90_156": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 26
+  },
+  "Blend_NRRO_ch90_156": {
+   "default": "systems/rendering/NullNormalRoughnessOcclusion.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughnessOcclusion.tex"
+   ],
+   "uses": 26
+  },
+  "BlueNoise": {
+   "default": "MasterMaterial/Textures/bluenoise_msk1.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/bluenoise_msk1.tex"
+   ],
+   "uses": 249
+  },
+  "Burn_MaskMap": {
+   "uses": 1
+  },
+  "C_NoiseTexture": {
+   "uses": 1
+  },
+  "Caustics3D": {
+   "default": "MasterMaterial/Textures/VFX_Uber/VFX_Caustics3D_MSK1.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 2
+  },
+  "Ch90_161_wave_heightmap": {
+   "default": "MasterMaterial/Textures/wave_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 2
+  },
+  "Ch90_161_wave_maskmap": {
+   "uses": 2
+  },
+  "Churn_3Dtexture": {
+   "uses": 66
+  },
+  "CirrusCloudsTexture": {
+   "uses": 3
+  },
+  "CirrusLayerWeatherTexture": {
+   "uses": 3
+  },
+  "CollisionMap_0": {
+   "uses": 1295
+  },
+  "CollisionMap_1": {
+   "uses": 1295
+  },
+  "ColorLayer_DetailMaskMap": {
+   "by_mmtr": {
+    "materialshader/variation/base_atos_emit_fx_detail_detailcollayer_rt_multiblend_ch90_155.mmtr": "MasterMaterial/Textures/NullGray_sRGB_ALB.tex"
+   },
+   "default": "MasterMaterial/Textures/ColorLayer_DetailNoise_01_ALB.tex",
+   "default_share": 0.977,
+   "seen": [
+    "MasterMaterial/Textures/ColorLayer_DetailNoise_01_ALB.tex",
+    "MasterMaterial/Textures/NullGray_sRGB_ALB.tex",
+    "MasterMaterial/Textures/kotaisa/kotaisa_grunge_1_MSK4.tex",
+    "RE_ENGINE_LIBRARY/VFX_Library/Mesh/MESH_Sample/MESH_Shader/manual00/shader_manual_11_smoothstep_noise.tex",
+    "systems/rendering/NullGray.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 1602
+  },
+  "ColorLayer_MaskMap": {
+   "default": "MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex",
+   "default_share": 0.996,
+   "seen": [
+    "MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 10377
+  },
+  "ColorLink": {
+   "uses": 1
+  },
+  "ColorLinkMap": {
+   "uses": 2
+  },
+  "CubeMap": {
+   "default": "systems/rendering/NullBlackCubemap.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlackCubemap.tex"
+   ],
+   "uses": 21
+  },
+  "DarkNoise": {
+   "uses": 3
+  },
+  "DetailMaskMap": {
+   "by_mmtr": {
+    "materialshader/variation/base_atos_detail_emit_fx.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/base_detail_emit_fx.mmtr": "systems/rendering/NullWhite.tex"
+   },
+   "default": "MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex",
+   "default_share": 0.944,
+   "seen": [
+    "MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 11512
+  },
+  "DetailNormalMap": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 90
+  },
+  "Detail_ALBD_A": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 11512
+  },
+  "Detail_ALBD_B": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 11512
+  },
+  "Detail_ALBD_G": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 11512
+  },
+  "Detail_ALBD_R": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 0.998,
+   "seen": [
+    "MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex",
+    "MasterMaterial/Textures/null_ALBD.tex",
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 11512
+  },
+  "Detail_ALBD_TriPlanar": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 849
+  },
+  "Detail_ALBD_TriPlanar_Top": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 4125
+  },
+  "Detail_NRRH_A": {
+   "default": "systems/rendering/NullNormalRoughnessOcclusion.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughnessOcclusion.tex"
+   ],
+   "uses": 11512
+  },
+  "Detail_NRRH_B": {
+   "default": "systems/rendering/NullNormalRoughnessOcclusion.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughnessOcclusion.tex"
+   ],
+   "uses": 11512
+  },
+  "Detail_NRRH_G": {
+   "default": "systems/rendering/NullNormalRoughnessOcclusion.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughnessOcclusion.tex"
+   ],
+   "uses": 11512
+  },
+  "Detail_NRRH_R": {
+   "default": "systems/rendering/NullNormalRoughnessOcclusion.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughnessOcclusion.tex"
+   ],
+   "uses": 11512
+  },
+  "Detail_NRRH_TriPlanar": {
+   "default": "systems/rendering/NullNormalRoughnessOcclusion.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughnessOcclusion.tex"
+   ],
+   "uses": 849
+  },
+  "Detail_NRRH_TriPlanar_Top": {
+   "default": "systems/rendering/NullNormalRoughnessOcclusion.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughnessOcclusion.tex"
+   ],
+   "uses": 4125
+  },
+  "DisplacementMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 99
+  },
+  "DynamicTransparentHDR": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 18
+  },
+  "EMns_Tex2D_00": {
+   "uses": 1
+  },
+  "EMns_Tex2D_01": {
+   "uses": 1
+  },
+  "EMns_Tex2D_02": {
+   "uses": 1
+  },
+  "EffectTexture": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "EmissiveMap": {
+   "by_mmtr": {
+    "materialshader/variation/base_atos_detail_burn_collayer_paint_dsand.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/base_atos_detail_emit_fx.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/base_atos_detail_triplanar_gblend_emit_fx.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/base_atos_detail_triplanar_gblend_emit_fx_nobase.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/base_atos_emit_depthe_fakeinnerl.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/base_atos_emit_fx_detail_collayer_vfx_hair_selfwind_scalpha.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/base_atos_triplanar_gblend_emit_fx.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/base_detail_detailemit_babfx_bablayer.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/base_detail_detailemit_top_babfx_bablayer.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/base_detail_emit_gblend.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/base_detail_triplanar_emit_babfx_bablayer.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/base_detail_triplanar_emit_fx.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/base_detail_triplanar_emit_gblend_babfx_bablayer.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/base_detail_triplanar_gradcolor_detailemit_top_babfx_bablayer.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/base_equip_fire.mmtr": "MasterMaterial/Textures/null_ALBD.tex",
+    "materialshader/variation/base_otomo_equip_ch05_048.mmtr": "MasterMaterial/Textures/null_ALBD.tex",
+    "materialshader/variation/base_simple_emit.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/base_simple_emit_babfx.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/base_triplanar_emit_fx.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/base_triplanar_emit_gblend_babfx.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/base_triplanar_top_emit_globalb_babfx_bablayer.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/base_triplanar_top_emit_globalb_gblend_babfx_bablayer.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/base_triplanar_top_emit_globalb_gradcolor_babfx_bablayer.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/base_triplanar_top_emit_globalb_gradcolor_gblend_babfx_bablayer.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/base_uniquealpha_nrrt_speedtree_emit_babfx.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/basealpha_emit_roughtransparent_top.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/basealpha_emit_roughtransparent_top_bablayer.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/basealpha_megane_emit_scroll_fx.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/decal_basealpha_emit_top.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/du_ch90_164_5000.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/du_weapon_fire.mmtr": "MasterMaterial/Textures/null_ALBD.tex",
+    "materialshader/variation/simple_volumeblend_emit_viewoffset.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/su_basealpha_emit_roughtransparent.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/vfx_abc_roughtransparent_d.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/vfx_base_atos_detail_triplanar_emit_fx_nouse.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/vfx_customdecal.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/vfx_customdecal_simple.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/vfx_roughtransparent_d.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/vfx_transparent.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/variation/vfx_transparent_bubble_nd.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/vfx_transparent_unique_bn_cmn.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/vfx_transparent_unique_laser.mmtr": "systems/rendering/NullWhite.tex"
+   },
+   "default": "MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex",
+   "default_share": 0.87,
+   "seen": [
+    "MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex",
+    "MasterMaterial/Textures/null_ALBD.tex",
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 12950
+  },
+  "EmitFlow_PosMap": {
+   "default": "systems/rendering/NullBlack3D.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack3D.tex"
+   ],
+   "uses": 267
+  },
+  "Eye_HeightMap": {
+   "default": "MasterMaterial/Textures/parallax_eye_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/parallax_eye_MSK4.tex"
+   ],
+   "uses": 5
+  },
+  "Fade_AlphaMap": {
+   "default": "MasterMaterial/Textures/Gradation_MSK1.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/Gradation_MSK1.tex"
+   ],
+   "uses": 122
+  },
+  "FakeSphere_ALBAMap": {
+   "default": "MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex"
+   ],
+   "uses": 296
+  },
+  "FallMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 87
+  },
+  "FallNormalMap_Texture": {
+   "default": "MasterMaterial/Textures/Noise3D_MSK3.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/Noise3D_MSK3.tex"
+   ],
+   "uses": 26
+  },
+  "Fixed_AlphaMap": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 112
+  },
+  "FlowMap": {
+   "by_mmtr": {
+    "materialshader/variation/vfx_expensivetransparent_wave.mmtr": "systems/rendering/NullNormal.tex",
+    "materialshader/variation/vfx_particlematerial_solidexp_pf.mmtr": "systems/rendering/NullNormal.tex",
+    "materialshader/variation/vfx_particlematerial_solidexp_pf_et.mmtr": "systems/rendering/NullNormal.tex",
+    "materialshader/variation/vfx_river_roughtransparent.mmtr": "systems/rendering/NullNormal.tex",
+    "materialshader/variation/vfx_standard_f_stvat.mmtr": "systems/rendering/NullNormal.tex",
+    "materialshader/variation/vfx_transparent.mmtr": "systems/rendering/NullNormal.tex",
+    "materialshader/variation/vfx_transparent_bubble_nd.mmtr": "systems/rendering/NullNormal.tex"
+   },
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 0.641,
+   "seen": [
+    "systems/rendering/NullGray.tex",
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 395
+  },
+  "Flowmap": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 111
+  },
+  "Flowmap_MSK1": {
+   "uses": 3
+  },
+  "FluidRTdensity": {
+   "uses": 64
+  },
+  "FoamMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.917,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 89
+  },
+  "FogZoneSdf": {
+   "uses": 1
+  },
+  "FurFlowMap": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 0.989,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 1026
+  },
+  "FurNoiseMap": {
+   "by_mmtr": {
+    "materialshader/variation/base_atos_emit_fur.mmtr": "MasterMaterial/Textures/FurNoise/FurPattern_03_v3.tex",
+    "materialshader/variation/base_atos_emit_fur_rt_ripple_multiblend.mmtr": "MasterMaterial/Textures/FurNoise/FurPattern_04_v3.tex",
+    "materialshader/variation/base_atos_emit_fur_rt_ripple_multiblend_cirdiss_kyoryu.mmtr": "MasterMaterial/Textures/FurNoise/FurPattern_05_v4.tex",
+    "materialshader/variation/base_atos_emit_vemit_collayer_over_fur_vfx.mmtr": "systems/rendering/NullGray.tex",
+    "materialshader/variation/base_atos_fur.mmtr": "MasterMaterial/Textures/FurNoise/FurPattern_03_v3.tex"
+   },
+   "default": "MasterMaterial/Textures/FurNoise/FurPattern_04_v4.tex",
+   "default_share": 0.284,
+   "seen": [
+    "MasterMaterial/Textures/FurNoise/FurPattern_01.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_01_v2.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_01_v3.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_01_v4.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_01_v5.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_01_v6.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_02.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_03.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_03_v2.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_03_v3.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_04.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_04_v2.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_04_v3.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_04_v4.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_04_v5.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_05.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_05_v2.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_05_v3.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_05_v4.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_06.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_06_v2.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_06_v3.tex",
+    "MasterMaterial/Textures/FurNoise/FurPattern_06_v4.tex",
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 1026
+  },
+  "FxMap": {
+   "by_mmtr": {
+    "materialshader/variation/base_atos_detail_fx_webfloor.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/base_atos_emit_fx.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/base_atos_emit_fx_detail_detailcollayer_rt_multiblend_ch90_155.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/base_atos_emit_fx_detail_detailcollayer_rt_multiblend_ch90_158.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/base_atos_emit_fx_gblend.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/base_atos_emit_wave_uvscroll_over.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/base_atos_fx_hairnopdo_ripple_standhair_cirdiss.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/base_atos_fx_wave.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/base_atos_fx_webfloor.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/base_equip_ch02_059.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/basealpha_megane_fx_roughtransparent.mmtr": "systems/rendering/NullWhite.tex"
+   },
+   "default": "MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex",
+   "default_share": 0.898,
+   "seen": [
+    "MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex",
+    "MasterMaterial/Textures/TextureArray/nullWhite_Array.tex",
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 11644
+  },
+  "GpuWind_MaskMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.998,
+   "seen": [
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 8196
+  },
+  "GradientMap": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 160
+  },
+  "GradientTexture": {
+   "uses": 3
+  },
+  "GrassFall_MaskMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 25
+  },
+  "GroundNoiseMap": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 160
+  },
+  "HairFlowMap": {
+   "default": "MasterMaterial/Textures/null_fur_up_MSK3.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/null_fur_up_MSK3.tex"
+   ],
+   "uses": 375
+  },
+  "HairOverMap": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 0.999,
+   "seen": [
+    "systems/rendering/NullGray.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 6038
+  },
+  "Hair_Height_SpecMask_Shift_Map": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 381
+  },
+  "HeightMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 111
+  },
+  "IceALBA": {
+   "uses": 921
+  },
+  "IconTex00": {
+   "uses": 5
+  },
+  "IconTex01": {
+   "uses": 4
+  },
+  "IconTex02": {
+   "uses": 3
+  },
+  "IconTexEM00": {
+   "uses": 1
+  },
+  "InnerICE_ALBMap": {
+   "uses": 71
+  },
+  "LightMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 10
+  },
+  "LightNoise": {
+   "uses": 3
+  },
+  "LocalNormalMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 724
+  },
+  "LocalPosMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 724
+  },
+  "MP_noise": {
+   "default": "MasterMaterial/Textures/MP_noise_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/MP_noise_MSK4.tex"
+   ],
+   "uses": 11939
+  },
+  "MainLayerWeatherTexture": {
+   "uses": 3
+  },
+  "Maka_Flowmap": {
+   "default": "MasterMaterial/Textures/maka_flow_MSK3.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "Maka_NormalHeight": {
+   "default": "MasterMaterial/Textures/maka_vortex_NRRH.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "MapIcon": {
+   "uses": 3
+  },
+  "MaskMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 150
+  },
+  "MaskMap_2nd_Color": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 74
+  },
+  "MeganeEnvMap": {
+   "uses": 68
+  },
+  "MeganeRimMap": {
+   "by_mmtr": {
+    "materialshader/variation/basealpha_megane_emit_scroll_fx.mmtr": "systems/rendering/NullNormal.tex"
+   },
+   "default": "MasterMaterial/Textures/megane_MSK4.tex",
+   "default_share": 0.773,
+   "seen": [
+    "MasterMaterial/Textures/megane_MSK4.tex",
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 68
+  },
+  "MetalMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 19
+  },
+  "MipCheckMap": {
+   "default": "MasterMaterial/Textures/mip_check_grad.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "MultiBlend_ALBDMap": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 952
+  },
+  "MultiBlend_NRMMap": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 952
+  },
+  "NRMD_Tex3D": {
+   "default": "MasterMaterial/Textures/__3DTexture_Seamless_000_000_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "NROMap_Age": {
+   "default": "systems/rendering/NullNormalRoughnessOcclusion.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughnessOcclusion.tex"
+   ],
+   "uses": 10
+  },
+  "NROMap_Detail": {
+   "default": "systems/rendering/NullNormalRoughnessOcclusion.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughnessOcclusion.tex"
+   ],
+   "uses": 10
+  },
+  "NROMap_FaceBlend": {
+   "default": "systems/rendering/NullNormalRoughnessOcclusion.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughnessOcclusion.tex"
+   ],
+   "uses": 10
+  },
+  "Noise3D": {
+   "uses": 3
+  },
+  "NoiseMap": {
+   "by_mmtr": {
+    "materialshader/master/post/post_magnification_chromatic_aberration.mmtr": "MasterMaterial/Textures/bluenoise_msk1.tex"
+   },
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 0.778,
+   "seen": [
+    "MasterMaterial/Textures/bluenoise_msk1.tex",
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 25
+  },
+  "NoiseTextureHigh": {
+   "uses": 3
+  },
+  "NoiseTextureLow": {
+   "uses": 3
+  },
+  "NormalMap": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 0.971,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 235
+  },
+  "NormalRoughnessHeightMap": {
+   "default": "systems/rendering/NullNormalRoughnessOcclusion.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughnessOcclusion.tex"
+   ],
+   "uses": 480
+  },
+  "NormalRoughnessMap": {
+   "default": "systems/rendering/NullNormalRoughness.tex",
+   "default_share": 0.5,
+   "seen": [],
+   "uses": 2
+  },
+  "NormalRoughnessOcclusionMap": {
+   "default": "systems/rendering/NullNormalRoughnessOcclusion.tex",
+   "default_share": 0.972,
+   "seen": [
+    "MasterMaterial/Textures/TextureArray/NullNRRO_Array.tex",
+    "MasterMaterial/Textures/null_NRRO.tex",
+    "systems/rendering/NullNormalRoughness.tex",
+    "systems/rendering/NullNormalRoughnessOcclusion.tex"
+   ],
+   "uses": 23479
+  },
+  "NormalRoughnessTranlucentMap": {
+   "default": "MasterMaterial/Textures/null_NRRT.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/null_NRRT.tex"
+   ],
+   "uses": 1310
+  },
+  "OIL01_Map": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 19
+  },
+  "OIL02_Map": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 19
+  },
+  "OcclusionMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 10
+  },
+  "Oil_MaskMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 19
+  },
+  "PaintMap_A": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 161
+  },
+  "PaintMap_B": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 161
+  },
+  "PaintMap_C": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 161
+  },
+  "PanoramaMap": {
+   "by_mmtr": {
+    "materialshader/variation/base_atos_emit_fx_detail_detailcollayer_over_rt_multiblend_wind.mmtr": "MasterMaterial/Textures/kirakira_PAN_HDR.tex",
+    "materialshader/variation/base_atos_fx_top_gblend_shm_bablayer.mmtr": "MasterMaterial/Textures/kirakira_PAN_HDR.tex",
+    "materialshader/variation/base_detail_emit_fx.mmtr": "MasterMaterial/Textures/kirakira_PAN_HDR.tex"
+   },
+   "default": "MasterMaterial/Textures/kirakira_PAN_ALB.tex",
+   "default_share": 0.986,
+   "seen": [
+    "MasterMaterial/Textures/kirakira_PAN_ALB.tex",
+    "MasterMaterial/Textures/kirakira_PAN_HDR.tex"
+   ],
+   "uses": 11623
+  },
+  "PerlinGradientTexture": {
+   "uses": 3
+  },
+  "PrevCollisionMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "Pulse_GradientMap": {
+   "default": "MasterMaterial/Textures/sample_Pulse_MSK.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/sample_Pulse_MSK.tex"
+   ],
+   "uses": 52
+  },
+  "RGBA_Emit_MaskMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 64
+  },
+  "RTT_2560x1080": {
+   "uses": 1
+  },
+  "RenderTarget": {
+   "uses": 1
+  },
+  "RenderTargetTexture_2": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 186
+  },
+  "Ripple_1Dtex": {
+   "default": "MasterMaterial/Textures/hagitori_ripple_ALB.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/hagitori_ripple_ALB.tex"
+   ],
+   "uses": 1209
+  },
+  "Ripple_Texture3D": {
+   "default": "MasterMaterial/Textures/Noise3D_MSK3.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/Noise3D_MSK3.tex"
+   ],
+   "uses": 1209
+  },
+  "RoughnessMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 19
+  },
+  "Scene_HeightMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 3941
+  },
+  "Scroll_ColorAlpha_NoiseMap": {
+   "default": "MasterMaterial/Textures/scroll_ALP.tex",
+   "default_share": 0.857,
+   "seen": [
+    "MasterMaterial/Textures/scroll_ALP.tex"
+   ],
+   "uses": 68
+  },
+  "Scroll_NormalMap": {
+   "uses": 1
+  },
+  "SdfTexture": {
+   "uses": 2
+  },
+  "SecondaryEmissiveMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 6
+  },
+  "Secondary_BaseDielectricMap": {
+   "uses": 658
+  },
+  "SelfWind_MaskMap": {
+   "by_mmtr": {
+    "materialshader/variation/base_equip_fire.mmtr": "systems/rendering/NullWhite.tex"
+   },
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.786,
+   "seen": [
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 109
+  },
+  "ShadowA_MSK1": {
+   "uses": 1
+  },
+  "ShadowB_MSK1": {
+   "uses": 1
+  },
+  "ShadowC_MSK1": {
+   "uses": 1
+  },
+  "ShadowFix_MSK1": {
+   "uses": 1
+  },
+  "SkinMap": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 695
+  },
+  "StampMap": {
+   "uses": 724
+  },
+  "StampRenderTarget": {
+   "uses": 95
+  },
+  "Tex2D": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "Tex2D_0": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 50
+  },
+  "Tex2D_1": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 13
+  },
+  "Tex2D_2": {
+   "uses": 9
+  },
+  "Tex2D_3": {
+   "uses": 2
+  },
+  "Tex2D_Alpha": {
+   "uses": 1
+  },
+  "Tex2D_Animation": {
+   "uses": 1
+  },
+  "Tex2D_Color": {
+   "uses": 1
+  },
+  "Tex2D_Flow": {
+   "uses": 1
+  },
+  "Tex2D_Main": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "Tex2D_Noise": {
+   "uses": 2
+  },
+  "TexNoise": {
+   "uses": 1
+  },
+  "Tex_Circle": {
+   "uses": 1
+  },
+  "Tex_Dirty": {
+   "uses": 65
+  },
+  "Tex_Effect": {
+   "uses": 65
+  },
+  "Tex_Normal": {
+   "uses": 65
+  },
+  "Tex_Ornament": {
+   "uses": 1
+  },
+  "Texture": {
+   "uses": 1
+  },
+  "ToonFakeSphereMap": {
+   "by_mmtr": {
+    "materialshader/variation/base_gold_push.mmtr": "systems/rendering/NullGray.tex"
+   },
+   "default": "MasterMaterial/Textures/GOLD_Toon_MSK3.tex",
+   "default_share": 0.895,
+   "seen": [
+    "MasterMaterial/Textures/GOLD_Toon_MSK3.tex",
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 63
+  },
+  "Top_MaskMap": {
+   "by_mmtr": {
+    "materialshader/variation/base_atos_triplanar_top_globalb_gblend_bablayer_effectice.mmtr": "systems/rendering/NullGray.tex"
+   },
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.999,
+   "seen": [
+    "systems/rendering/NullGray.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 4149
+  },
+  "TranslucencyMap": {
+   "uses": 10
+  },
+  "UDIM_FurFlowMap": {
+   "default": "MasterMaterial/Textures/TextureArray/NullGray_Array.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/TextureArray/NullGray_Array.tex"
+   ],
+   "uses": 13
+  },
+  "VAT_Normal": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 6
+  },
+  "VAT_Position": {
+   "uses": 6
+  },
+  "VAT_UV": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 5
+  },
+  "VFX_SubScene_RenderTarget": {
+   "uses": 91
+  },
+  "VFX_Texture2D": {
+   "by_mmtr": {
+    "materialshader/variation/base_atos_fx_secemit_vemit_collayer_vfxwe_fur.mmtr": "MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex",
+    "materialshader/variation/base_atos_fx_secemit_vemit_detail_collayer_vfxwe.mmtr": "MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex",
+    "materialshader/variation/base_atos_fx_secemit_vemit_detail_collayer_vfxwe_wave.mmtr": "MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex",
+    "materialshader/variation/du_weapon_fire.mmtr": "MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex",
+    "materialshader/variation/du_weapon_gold.mmtr": "MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex",
+    "materialshader/variation/du_weapon_roughtransparent.mmtr": "MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex",
+    "materialshader/variation/du_weapon_scroll_wave.mmtr": "MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex"
+   },
+   "default": "MasterMaterial/Textures/VFX_Uber/VFX_Uber_MSK4.tex",
+   "default_share": 0.827,
+   "seen": [
+    "MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex",
+    "MasterMaterial/Textures/VFX_Uber/VFX_Uber_MSK4.tex"
+   ],
+   "uses": 9809
+  },
+  "VFX_Texture3D": {
+   "default": "MasterMaterial/Textures/VFX_Uber/VFX_Uber3D_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/VFX_Uber/VFX_Uber3D_MSK4.tex"
+   ],
+   "uses": 9809
+  },
+  "VectorEmitMap": {
+   "by_mmtr": {
+    "materialshader/variation/base_atos_emit_collayer_vecemit_wave_vfx.mmtr": "systems/rendering/NullNormal.tex",
+    "materialshader/variation/base_equip_vectoremit_secemit_nomultiblend.mmtr": "systems/rendering/NullNormal.tex",
+    "materialshader/variation/du_ch90_164_5000_pulse.mmtr": "systems/rendering/NullNormal.tex"
+   },
+   "default": "MasterMaterial/Textures/eye_VectorEmit_MSK3.tex",
+   "default_share": 0.972,
+   "seen": [
+    "MasterMaterial/Textures/eye_VectorEmit_MSK3.tex",
+    "systems/rendering/NullGray.tex",
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 3890
+  },
+  "Vector_Tex3D": {
+   "default": "RE_ENGINE_LIBRARY/VFX_Library/Texture/TEX_Vectorfield/tex_capcom_vectorfield_0007_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "VoltexMap": {
+   "default": "RE_ENGINE_LIBRARY/VFX_Library/Texture/TEX_Vectorfield/tex_capcom_vectorfield_0003_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "RE_ENGINE_LIBRARY/VFX_Library/Texture/TEX_Vectorfield/tex_capcom_vectorfield_0003_MSK4.tex"
+   ],
+   "uses": 3
+  },
+  "Voltex_TexMask": {
+   "uses": 3
+  },
+  "VolumeNoiseMap": {
+   "default": "MasterMaterial/Textures/Noise3D_MSK3.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/Noise3D_MSK3.tex"
+   ],
+   "uses": 4333
+  },
+  "Voronoi_Texture": {
+   "default": "MasterMaterial/Textures/Voronoise3D_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/Voronoise3D_MSK4.tex"
+   ],
+   "uses": 4302
+  },
+  "WN0_NoiseTexture": {
+   "uses": 2
+  },
+  "WN0_ShadowTexture": {
+   "uses": 2
+  },
+  "WN1_NoiseTexture": {
+   "uses": 2
+  },
+  "WN1_ShadowTexture": {
+   "uses": 2
+  },
+  "WN2_NoiseTexture": {
+   "uses": 2
+  },
+  "WN2_ShadowTexture": {
+   "uses": 2
+  },
+  "WaveNormal3D": {
+   "default": "MasterMaterial/Textures/VFX_Uber/VFX_Wave_NormalVDB_MSK3.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/VFX_Uber/VFX_Wave_NormalVDB_MSK3.tex"
+   ],
+   "uses": 85
+  },
+  "WaveNormalMap": {
+   "default": "MasterMaterial/Textures/wave_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/wave_MSK4.tex"
+   ],
+   "uses": 489
+  },
+  "WaveVelocity3D": {
+   "default": "MasterMaterial/Textures/VFX_Uber/VFX_Wave_VelocityVDB_MSK3.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/VFX_Uber/VFX_Wave_VelocityVDB_MSK3.tex"
+   ],
+   "uses": 85
+  },
+  "Wave_Mask": {
+   "by_mmtr": {
+    "materialshader/variation/base_atos_emit_fx_wave.mmtr": "MasterMaterial/Textures/Gradation_MSK1.tex",
+    "materialshader/variation/base_atos_emit_wave.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/su_alba_scroll_wave_pdo.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/variation/su_alba_scroll_wave_pdo_babparam.mmtr": "systems/rendering/NullWhite.tex"
+   },
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.884,
+   "seen": [
+    "MasterMaterial/Textures/Gradation_MSK1.tex",
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 485
+  },
+  "Wind_Effect_VolumeMap": {
+   "default": "RE_ENGINE_LIBRARY/VFX_Library/Texture/TEX_Vectorfield/tex_capcom_vectorfield_0003_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "RE_ENGINE_LIBRARY/VFX_Library/Texture/TEX_Vectorfield/tex_capcom_vectorfield_0003_MSK4.tex"
+   ],
+   "uses": 8225
+  },
+  "YPos_MaskMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 32
+  },
+  "_Texture2D": {
+   "uses": 2
+  },
+  "_Texture2D_1": {
+   "uses": 5
+  },
+  "_Texture2D_2": {
+   "uses": 1
+  },
+  "ch05_048_NoiseMap": {
+   "uses": 7
+  },
+  "ch90_100_5100_DispMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 9
+  },
+  "ch90_155_BlendNormalMap": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 5
+  },
+  "ch90_164_5000_MaskMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 38
+  },
+  "noisemap": {
+   "default": "MasterMaterial/Textures/bluenoise_msk1.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/bluenoise_msk1.tex"
+   ],
+   "uses": 23918
+  },
+  "tex_Circle_00": {
+   "uses": 3
+  },
+  "tex_LordEMicon": {
+   "uses": 1
+  },
+  "tex_RepopLine": {
+   "uses": 1
+  },
+  "tex_Sicon": {
+   "uses": 3
+  },
+  "tex_noise": {
+   "uses": 1
+  },
+  "water_surface_texture": {
+   "default": "MasterMaterial/Textures/wave_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/wave_MSK4.tex"
+   ],
+   "uses": 66
+  }
+ }
+}

@@ -1,0 +1,1446 @@
+{
+ "meta": {
+  "materials": 23893,
+  "mmtrs": 320,
+  "source": "vanilla .mdf2 survey"
+ },
+ "slots": {
+  "ALBDmap": {
+   "uses": 4
+  },
+  "ALBRGHchange_MSK": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 14
+  },
+  "ALPmap": {
+   "uses": 4
+  },
+  "AddMaskMap": {
+   "uses": 6
+  },
+  "AlbedMask": {
+   "uses": 20
+  },
+  "AlbedcolorchangeMap": {
+   "uses": 8
+  },
+  "AlbedoblendMap": {
+   "uses": 6
+  },
+  "AlphaMap": {
+   "by_mmtr": {
+    "mastermaterial/master/env/env_water_wm.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/env_wave.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/blink_dot.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/blink_grass.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/blink_grass_dot.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/blink_opal.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/decal_transparent.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/decal_vertexalpha.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/dissolve.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/dissolve_transparent.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/dissolve_transparent_blink.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/dissolve_transparent_globalparam.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/dot.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/dot_a.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/dot_snow.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/dot_snow_a.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/emissive.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/emissive_color.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/emissive_lightup.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/flow.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/flow_vertexalpha.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/lamp_dissolve_lightup.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/materiallayer.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/nuki.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/nuki_uv_scroll.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/swing_trans.mmtr": "systems/rendering/NullWhite.tex"
+   },
+   "default": "MasterMaterial/Textures/NullMSK1.tex",
+   "default_share": 0.556,
+   "seen": [
+    "MasterMaterial/Textures/NullMSK1.tex",
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 16061
+  },
+  "AlphaMap_R": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 33
+  },
+  "AlphaMap_Secondary": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 2
+  },
+  "BackMap": {
+   "default": "MasterMaterial/Textures/TexSkyBall_base_ALBA.tex",
+   "default_share": 0.5,
+   "seen": [
+    "MasterMaterial/Textures/TexSkyBall_base_ALBA.tex"
+   ],
+   "uses": 29
+  },
+  "BackMap_1": {
+   "default": "MasterMaterial/Textures/NullallBlack.tex",
+   "default_share": 0.667,
+   "seen": [
+    "MasterMaterial/Textures/NullallBlack.tex"
+   ],
+   "uses": 10
+  },
+  "BaseAlphaMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.967,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 242
+  },
+  "BaseDielectricMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.918,
+   "seen": [
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 22476
+  },
+  "BaseDielectricMap_B": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.976,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 534
+  },
+  "BaseDielectricMap_G": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.947,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 695
+  },
+  "BaseDielectricMap_R": {
+   "by_mmtr": {
+    "mastermaterial/master/env/mmtrv/vertexcolorblend_dot_a.mmtr": "systems/rendering/NullBlack.tex"
+   },
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.571,
+   "seen": [
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 923
+  },
+  "BaseMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.938,
+   "seen": [
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 842
+  },
+  "BeardMap": {
+   "uses": 3
+  },
+  "BlendMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 2
+  },
+  "ChargeMask": {
+   "uses": 13
+  },
+  "CloudMap": {
+   "uses": 29
+  },
+  "CloudMap_1": {
+   "default": "MasterMaterial/Textures/NullallBlack.tex",
+   "default_share": 0.667,
+   "seen": [],
+   "uses": 10
+  },
+  "ColorMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.6,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 38
+  },
+  "Color_Map": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.806,
+   "seen": [
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 346
+  },
+  "ColormaskMap": {
+   "default": "MasterMaterial/Textures/NullMSK1.tex",
+   "default_share": 0.636,
+   "seen": [
+    "MasterMaterial/Textures/NullMSK1.tex",
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 69
+  },
+  "CubeMap": {
+   "by_mmtr": {
+    "mastermaterial/master/env/mmtrv/blink_ice.mmtr": "MasterMaterial/Textures/cubemap/noise2_CM_HDR.tex",
+    "mastermaterial/master/env/mmtrv/ice.mmtr": "MasterMaterial/Textures/cubemap/noise2_CM_HDR.tex",
+    "mastermaterial/master/env/mmtrv/ice_dissolve.mmtr": "MasterMaterial/Textures/cubemap/noise2_CM_HDR.tex",
+    "mastermaterial/master/obj/em/em_wind_thunder.mmtr": "MasterMaterial/Textures/cubemap/noise2_CM_HDR.tex",
+    "mastermaterial/master/obj/em/emp.mmtr": "systems/rendering/NullBlackCubemap.tex"
+   },
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.882,
+   "seen": [
+    "MasterMaterial/Textures/cubemap/Frost_pano_HDR.tex",
+    "MasterMaterial/Textures/cubemap/blue_HDR.tex",
+    "MasterMaterial/Textures/cubemap/gold_HDR.tex",
+    "MasterMaterial/Textures/cubemap/green_HDR.tex",
+    "MasterMaterial/Textures/cubemap/lightblue_HDR.tex",
+    "MasterMaterial/Textures/cubemap/noise2_CM_HDR.tex",
+    "MasterMaterial/Textures/cubemap/silver_HDR.tex",
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullBlackCubemap.tex"
+   ],
+   "uses": 2652
+  },
+  "DEMmap": {
+   "uses": 17
+  },
+  "Damage_ALBD": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 13
+  },
+  "Damage_ALBDMap": {
+   "by_mmtr": {
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_027_overmystery.mmtr": "systems/rendering/NullBlack.tex",
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_032.mmtr": "MasterMaterial/Textures/NullMSK1.tex",
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_136.mmtr": "systems/rendering/NullBlack.tex",
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_emi.mmtr": "MasterMaterial/Textures/NullMSK1.tex",
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_fur.mmtr": "MasterMaterial/Textures/NullMSK1.tex",
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_standard.mmtr": "MasterMaterial/Textures/NullMSK1.tex"
+   },
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.492,
+   "seen": [
+    "MasterMaterial/Textures/NullMSK1.tex",
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 427
+  },
+  "Damage_ALPMap": {
+   "by_mmtr": {
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_027_overmystery.mmtr": "systems/rendering/NullBlack.tex",
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_136.mmtr": "systems/rendering/NullBlack.tex"
+   },
+   "default": "MasterMaterial/Textures/NullMSK1.tex",
+   "default_share": 0.84,
+   "seen": [
+    "MasterMaterial/Textures/NullMSK1.tex",
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 440
+  },
+  "Damage_NRMR_NRRTMap": {
+   "by_mmtr": {
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_027_overmystery.mmtr": "systems/rendering/NullBlack.tex",
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_136.mmtr": "systems/rendering/NullBlack.tex",
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_emi.mmtr": "MasterMaterial/Textures/NullMSK1.tex",
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_standard.mmtr": "MasterMaterial/Textures/NullMSK1.tex"
+   },
+   "default": "systems/rendering/NullNormalRoughness.tex",
+   "default_share": 0.667,
+   "seen": [
+    "MasterMaterial/Textures/NullMSK1.tex",
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullNormalRoughness.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 427
+  },
+  "Damage_NRRT": {
+   "default": "systems/rendering/NullNormalRoughnessOcclusion.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughnessOcclusion.tex"
+   ],
+   "uses": 13
+  },
+  "DeformationPaintMap": {
+   "uses": 1
+  },
+  "Depth": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.667,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 10
+  },
+  "DetailAlphaMSKMap": {
+   "uses": 2
+  },
+  "DetailAlphaMap": {
+   "uses": 2
+  },
+  "DetailEmissiveColorMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 84
+  },
+  "DetailEmissiveMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 2714
+  },
+  "DetailEmissiveMap2": {
+   "uses": 3
+  },
+  "DetailEmissiveMaskMap": {
+   "uses": 3
+  },
+  "DetailEmissive_colorMap": {
+   "uses": 13
+  },
+  "DetailNormal": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 25
+  },
+  "DetailNormalMap": {
+   "by_mmtr": {
+    "mastermaterial/master/env/mmtrv/default_dem.mmtr": "systems/rendering/NullNormalRoughness.tex",
+    "mastermaterial/master/env/mmtrv/dot_snow.mmtr": "systems/rendering/NullNormalRoughness.tex",
+    "mastermaterial/master/env/mmtrv/snow_detail.mmtr": "systems/rendering/NullNormalRoughness.tex",
+    "mastermaterial/master/env/mmtrv/snow_detail_a.mmtr": "systems/rendering/NullNormalRoughness.tex",
+    "mastermaterial/master/env/mmtrv/vertexcolorblend_dot.mmtr": "systems/rendering/NullNormalRoughness.tex",
+    "mastermaterial/master/env/mmtrv/vertexcolorblend_dot_a.mmtr": "systems/rendering/NullNormalRoughness.tex",
+    "mastermaterial/master/env/mmtrv/vertexcolorblend_dot_b.mmtr": "systems/rendering/NullNormalRoughness.tex",
+    "mastermaterial/master/env/mmtrv/vertexcolorblend_dot_b_transparent.mmtr": "systems/rendering/NullNormalRoughness.tex"
+   },
+   "default": "MasterMaterial/Textures/Detail_rock03_NRMR.tex",
+   "default_share": 0.789,
+   "seen": [
+    "MasterMaterial/Textures/Detail_Normal_NRMR.tex",
+    "MasterMaterial/Textures/Detail_Snow_NRMR.tex",
+    "MasterMaterial/Textures/Detail_rock03_NRM.tex",
+    "MasterMaterial/Textures/Detail_rock03_NRMR.tex",
+    "MasterMaterial/Textures/mos_NRMR.tex",
+    "MasterMaterial/Textures/sand_NRMR.tex",
+    "systems/rendering/NullNormalRoughness.tex"
+   ],
+   "uses": 2165
+  },
+  "DetailNormalMap2": {
+   "uses": 1
+  },
+  "DisplacementMap": {
+   "uses": 2
+  },
+  "Dot_Alp": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 1887
+  },
+  "Dot_NormalRoughnessMap": {
+   "by_mmtr": {
+    "mastermaterial/master/env/mmtrv/blink_dot.mmtr": "systems/rendering/NullNormalRoughness.tex",
+    "mastermaterial/master/env/mmtrv/blink_grass_dot.mmtr": "systems/rendering/NullNormalRoughness.tex",
+    "mastermaterial/master/env/mmtrv/dot_snow.mmtr": "systems/rendering/NullNormalRoughness.tex",
+    "mastermaterial/master/env/mmtrv/dot_snow_a.mmtr": "systems/rendering/NullNormalRoughness.tex",
+    "mastermaterial/master/env/mmtrv/grass_dot_constant.mmtr": "systems/rendering/NullNormalRoughness.tex",
+    "mastermaterial/master/env/mmtrv/grass_transparent_dot.mmtr": "systems/rendering/NullNormalRoughness.tex",
+    "mastermaterial/master/env/mmtrv/grass_transparent_dot_constant.mmtr": "systems/rendering/NullNormalRoughness.tex",
+    "mastermaterial/master/env/mmtrv/nuki_dot.mmtr": "systems/rendering/NullNormalRoughness.tex",
+    "mastermaterial/master/env/mmtrv/vertexcolorblend_dot.mmtr": "systems/rendering/NullNormalRoughness.tex",
+    "mastermaterial/master/env/mmtrv/vertexcolorblend_dot_b.mmtr": "systems/rendering/NullNormalRoughness.tex",
+    "mastermaterial/master/env/mmtrv/vertexcolorblend_dot_b_transparent.mmtr": "systems/rendering/NullNormalRoughness.tex"
+   },
+   "default": "MasterMaterial/Textures/mos_NRMR.tex",
+   "default_share": 0.695,
+   "seen": [
+    "MasterMaterial/Textures/Detail_Snow_NRMR.tex",
+    "MasterMaterial/Textures/mos_NRMR.tex",
+    "MasterMaterial/Textures/sand_NRMR.tex",
+    "systems/rendering/NullNormalRoughness.tex"
+   ],
+   "uses": 2156
+  },
+  "Dot_Tex": {
+   "by_mmtr": {
+    "mastermaterial/master/env/mmtrv/blink_dot.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/blink_grass_dot.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/dot_snow.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/dot_snow_a.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/grass_dot_constant.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/grass_transparent_dot.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/grass_transparent_dot_constant.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/nuki_dot.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/vertexcolorblend_dot.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/vertexcolorblend_dot_b.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/env/mmtrv/vertexcolorblend_dot_b_transparent.mmtr": "systems/rendering/NullWhite.tex"
+   },
+   "default": "MasterMaterial/Textures/mos_ALBD.tex",
+   "default_share": 0.675,
+   "seen": [
+    "MasterMaterial/Textures/mos_ALB.tex",
+    "MasterMaterial/Textures/mos_ALBD.tex",
+    "MasterMaterial/Textures/sand_ALBD.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 2159
+  },
+  "Drop_NormalMap": {
+   "uses": 9
+  },
+  "DynamicTransparentHDR": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "EMI_MSKMap_118_05_1": {
+   "uses": 2
+  },
+  "EMI_MSKMap_118_05_2": {
+   "uses": 2
+  },
+  "EX_ALBD": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 7
+  },
+  "EX_DetailEmissiveMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 7
+  },
+  "EX_DetailEmissive_colorMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 7
+  },
+  "EX_Rim_EmissiveMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 7
+  },
+  "EmiMaskMap": {
+   "uses": 6
+  },
+  "EmissiveChangeMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 14
+  },
+  "EmissiveMap": {
+   "by_mmtr": {
+    "mastermaterial/master/obj/common/em_eye.mmtr": "systems/rendering/NullWhite.tex"
+   },
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.996,
+   "seen": [
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 5822
+  },
+  "EmissiveMap_118_05_sp1": {
+   "uses": 2
+  },
+  "EmissiveMap_118_05_sp2": {
+   "uses": 2
+  },
+  "EmissiveMap_118_05_sp3": {
+   "uses": 2
+  },
+  "EmissiveMap_primary": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 2
+  },
+  "EmissiveMask": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.714,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 25
+  },
+  "EmissiveMaskMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 11
+  },
+  "EmissiveMaskMap_sp": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 8
+  },
+  "Emissive_MSK1": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 25
+  },
+  "EmissivechangeMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 8
+  },
+  "Ex3_EmissiveMap": {
+   "uses": 7
+  },
+  "FXMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 22
+  },
+  "FX_FakeMaskMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 10
+  },
+  "FaceBaseMap": {
+   "uses": 3
+  },
+  "FaceMayuMap": {
+   "uses": 3
+  },
+  "FaceNormalRoughnessTranslucencyMap": {
+   "uses": 3
+  },
+  "FacePaintMap": {
+   "uses": 3
+  },
+  "Face_BaseDielectricMap": {
+   "uses": 2
+  },
+  "Face_NormalRoughnessMap": {
+   "uses": 2
+  },
+  "FigtEmiMap": {
+   "uses": 2
+  },
+  "FlowMap": {
+   "by_mmtr": {
+    "mastermaterial/master/env/mmtrv/vertexcolorblend_a_hamon.mmtr": "MasterMaterial/Textures/cloud_MSK3.tex",
+    "mastermaterial/master/env/mmtrv/vertexcolorblend_b_magma.mmtr": "systems/rendering/NullBlack.tex"
+   },
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.518,
+   "seen": [
+    "MasterMaterial/Textures/cloud_MSK3.tex",
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 344
+  },
+  "FlowMap_ALB": {
+   "uses": 1
+  },
+  "FlowMap_REF": {
+   "uses": 1
+  },
+  "FrostMaskMap": {
+   "uses": 18
+  },
+  "FrostNRMmap": {
+   "uses": 17
+  },
+  "FurTex": {
+   "default": "MasterMaterial/Textures/Fur_MSK1.tex",
+   "default_share": 0.991,
+   "seen": [
+    "MasterMaterial/Textures/Fur_MSK1.tex",
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 8993
+  },
+  "FurVelocityMap": {
+   "default": "MasterMaterial/Textures/NullFurVelocity.tex",
+   "default_share": 0.947,
+   "seen": [
+    "MasterMaterial/Textures/Furtop.tex",
+    "MasterMaterial/Textures/NullFurVelocity.tex",
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 8987
+  },
+  "FurVelocityMap_frk": {
+   "uses": 1
+  },
+  "FurVelocity_SPMaskMap": {
+   "default": "MasterMaterial/Textures/Hair_Velocity_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 162
+  },
+  "FxEMIMap": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 0.667,
+   "seen": [
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 117
+  },
+  "FxMap": {
+   "by_mmtr": {
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_102.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_ffemi.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_fiemi_wingdamage.mmtr": "systems/rendering/NullWhite.tex"
+   },
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.986,
+   "seen": [
+    "MasterMaterial/Textures/NullMSK1.tex",
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullGray.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 8491
+  },
+  "FxMap2": {
+   "uses": 4
+  },
+  "FxMap_132_05": {
+   "uses": 7
+  },
+  "FxMap_vtx": {
+   "uses": 5
+  },
+  "GoldMaskMap": {
+   "uses": 5
+  },
+  "GoldTileMaskMap": {
+   "uses": 2
+  },
+  "Gold_ALBD": {
+   "uses": 3
+  },
+  "Gold_NRRT": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 5
+  },
+  "HairBlendMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 114
+  },
+  "IBLmap": {
+   "default": "MasterMaterial/Textures/IBL_small.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/IBL_small.tex"
+   ],
+   "uses": 14
+  },
+  "IceFrostMaskMap": {
+   "uses": 5
+  },
+  "KekkanMap": {
+   "uses": 3
+  },
+  "KihouMap": {
+   "uses": 4
+  },
+  "KumoMask": {
+   "uses": 1
+  },
+  "Large_NormalAlphaMap": {
+   "uses": 1
+  },
+  "LensMap": {
+   "default": "MasterMaterial/Textures/LensMap.tex",
+   "default_share": 0.99,
+   "seen": [
+    "MasterMaterial/Textures/LensMap.tex"
+   ],
+   "uses": 104
+  },
+  "LoopTimeTex": {
+   "uses": 1
+  },
+  "MSK1": {
+   "by_mmtr": {
+    "mastermaterial/master/env/env_sky.mmtr": "MasterMaterial/Textures/cloud_mask_MSK1.tex",
+    "mastermaterial/master/env/mmtrv/blink_grass.mmtr": "systems/rendering/NullBlack.tex",
+    "mastermaterial/master/env/mmtrv/grass_transparent_dot.mmtr": "systems/rendering/NullGray.tex"
+   },
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.867,
+   "seen": [
+    "MasterMaterial/Textures/cloud_mask_MSK1.tex",
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullGray.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 750
+  },
+  "MSK2": {
+   "uses": 1
+  },
+  "MSK3": {
+   "uses": 86
+  },
+  "MSK4": {
+   "uses": 15
+  },
+  "Mask": {
+   "by_mmtr": {
+    "mastermaterial/master/env/mmtrv/sky_kohaku.mmtr": "systems/rendering/NullBlack.tex"
+   },
+   "default": "MasterMaterial/Textures/noise_ALB.tex",
+   "default_share": 0.815,
+   "seen": [
+    "MasterMaterial/Textures/noise_ALB.tex",
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 259
+  },
+  "MaskMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "MetalMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 16
+  },
+  "Middle_NormalAlphaMap": {
+   "uses": 1
+  },
+  "Moon_Tex": {
+   "default": "MasterMaterial/Textures/moon_ALB.tex",
+   "default_share": 0.607,
+   "seen": [
+    "MasterMaterial/Textures/moon_ALB.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 29
+  },
+  "Mozi": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.938,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 41
+  },
+  "Mud_mask": {
+   "uses": 4
+  },
+  "NRMR_NRRT": {
+   "uses": 13
+  },
+  "NRMR_NRRTMap": {
+   "default": "systems/rendering/NullNormalRoughness.tex",
+   "default_share": 0.983,
+   "seen": [
+    "systems/rendering/NullNormalRoughness.tex"
+   ],
+   "uses": 10143
+  },
+  "NRMR_NRRTmap": {
+   "uses": 4
+  },
+  "NRMmap": {
+   "uses": 1
+  },
+  "NRRTMap": {
+   "uses": 4
+  },
+  "Noise": {
+   "by_mmtr": {
+    "mastermaterial/preset/env_cloud_kohaku.mmtr": "systems/rendering/NullWhite.tex"
+   },
+   "default": "MasterMaterial/Textures/cloud_MSK3.tex",
+   "default_share": 0.727,
+   "seen": [
+    "MasterMaterial/Textures/cloud_MSK3.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 52
+  },
+  "NoiseMap": {
+   "uses": 1
+  },
+  "NoiseUVMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 2
+  },
+  "NormalMap": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 138
+  },
+  "NormalRoughnessMap": {
+   "default": "systems/rendering/NullNormalRoughness.tex",
+   "default_share": 0.977,
+   "seen": [
+    "systems/rendering/NullNormal.tex",
+    "systems/rendering/NullNormalRoughness.tex"
+   ],
+   "uses": 12463
+  },
+  "NormalRoughnessMap_B": {
+   "default": "systems/rendering/NullNormalRoughness.tex",
+   "default_share": 0.992,
+   "seen": [
+    "systems/rendering/NullNormalRoughness.tex"
+   ],
+   "uses": 530
+  },
+  "NormalRoughnessMap_G": {
+   "default": "systems/rendering/NullNormalRoughness.tex",
+   "default_share": 0.982,
+   "seen": [
+    "systems/rendering/NullNormalRoughness.tex"
+   ],
+   "uses": 691
+  },
+  "NormalRoughnessMap_R": {
+   "default": "systems/rendering/NullNormalRoughness.tex",
+   "default_share": 0.982,
+   "seen": [
+    "systems/rendering/NullNormalRoughness.tex"
+   ],
+   "uses": 919
+  },
+  "NormalRoughnessOcclusionMap": {
+   "uses": 1
+  },
+  "NormalRoughnessTranslucentMap": {
+   "default": "systems/rendering/NullNormalRoughnessOcclusion.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughnessOcclusion.tex"
+   ],
+   "uses": 540
+  },
+  "Normal_Hight": {
+   "default": "systems/rendering/NullNormalRoughness.tex",
+   "default_share": 0.889,
+   "seen": [
+    "systems/rendering/NullNormalRoughness.tex"
+   ],
+   "uses": 39
+  },
+  "PanoramaMap": {
+   "uses": 14
+  },
+  "ParallaxMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.667,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 9
+  },
+  "Parallax_maskMap": {
+   "uses": 10
+  },
+  "PhotoTexture": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 9
+  },
+  "ReflectionMap": {
+   "default": "MasterMaterial/Textures/IBL_small.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/IBL_small.tex"
+   ],
+   "uses": 4
+  },
+  "RenderTargetTexture": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 116
+  },
+  "ReplaceColorMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 2603
+  },
+  "Rim_EmissiveMap": {
+   "uses": 13
+  },
+  "RoughnessMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 16
+  },
+  "SecondBlendMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 20
+  },
+  "ShineAnim_ColorMap": {
+   "uses": 4
+  },
+  "ShineAnim_MaskMap": {
+   "uses": 4
+  },
+  "Shine_ColorMap": {
+   "uses": 4
+  },
+  "SkinMap": {
+   "default": "MasterMaterial/Textures/skin_BM.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/skin_BM.tex"
+   ],
+   "uses": 442
+  },
+  "Sky_Top_Tex": {
+   "default": "MasterMaterial/Textures/cloud_ALB.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/cloud_ALB.tex"
+   ],
+   "uses": 29
+  },
+  "Small_NormalAlphaMap": {
+   "uses": 1
+  },
+  "SnowNormalRoughnessMap": {
+   "default": "MasterMaterial/Textures/Detail_Snow_NRMR.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/Detail_Snow_NRMR.tex"
+   ],
+   "uses": 44
+  },
+  "SpecialMask": {
+   "uses": 4
+  },
+  "SphereMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 10
+  },
+  "SpongeBlend_NRRM": {
+   "uses": 3
+  },
+  "Star": {
+   "by_mmtr": {
+    "mastermaterial/master/env/mmtrv/sky_kohaku.mmtr": "systems/rendering/NullWhite.tex"
+   },
+   "default": "MasterMaterial/Textures/noise1_ALB.tex",
+   "default_share": 0.75,
+   "seen": [
+    "MasterMaterial/Textures/noise1_ALB.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 29
+  },
+  "Star_Mask": {
+   "default": "MasterMaterial/Textures/BayerMatrix8x8.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/BayerMatrix8x8.tex"
+   ],
+   "uses": 29
+  },
+  "TIKUTAI_emi_alpha_mask": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 6
+  },
+  "TIKUTAI_mask": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 4
+  },
+  "TearLightMaskMap": {
+   "uses": 2
+  },
+  "TearMap": {
+   "uses": 2
+  },
+  "TearNullNRM": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 2
+  },
+  "Texture": {
+   "default": "MasterMaterial/Textures/IBL_small.tex",
+   "default_share": 0.992,
+   "seen": [
+    "MasterMaterial/Textures/IBL_small.tex"
+   ],
+   "uses": 131
+  },
+  "TransparencyMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 42
+  },
+  "UseColorchangeMap_vtx": {
+   "uses": 19
+  },
+  "UserColorchangeMap": {
+   "by_mmtr": {
+    "mastermaterial/master/obj/common/common_mmtrv/item_03.mmtr": "MasterMaterial/Textures/allBlack_MSK4.tex",
+    "mastermaterial/master/obj/ot_armor.mmtr": "MasterMaterial/Textures/allBlack_MSK4.tex",
+    "mastermaterial/master/obj/ot_body.mmtr": "MasterMaterial/Textures/allBlack_MSK4.tex"
+   },
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.965,
+   "seen": [
+    "MasterMaterial/Textures/allBlack_MSK4.tex",
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 8782
+  },
+  "UserColorchangeMap_vtx": {
+   "uses": 15
+  },
+  "VTXanim": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 3
+  },
+  "VTXnormal": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 3
+  },
+  "VanishMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 10
+  },
+  "VertexAnimMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 24
+  },
+  "VertexAnimTex": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 2
+  },
+  "VertexxAnimMap": {
+   "uses": 1
+  },
+  "WE_EmissiveMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 2599
+  },
+  "W_Base": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 8
+  },
+  "W_Normal": {
+   "uses": 8
+  },
+  "WaterNRMmap": {
+   "uses": 4
+  },
+  "WaveNRMmap": {
+   "default": "MasterMaterial/Textures/wave_displace_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/wave_displace_MSK4.tex"
+   ],
+   "uses": 4
+  },
+  "WingDamageMap": {
+   "default": "MasterMaterial/Textures/kizu_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/kizu_MSK4.tex"
+   ],
+   "uses": 108
+  },
+  "Wing_Mask_DamageMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 108
+  },
+  "_Texture2D": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 15
+  },
+  "_Texture2DToSample": {
+   "uses": 1
+  },
+  "_Texture2D_1": {
+   "uses": 9
+  },
+  "_Texture2D_2": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 11
+  },
+  "_Texture2D_2_3": {
+   "uses": 1
+  },
+  "_Texture2D_3": {
+   "uses": 10
+  },
+  "_TextureCube": {
+   "default": "systems/rendering/NullBlackCubemap.tex",
+   "default_share": 0.981,
+   "seen": [
+    "systems/rendering/NullBlackCubemap.tex"
+   ],
+   "uses": 59
+  },
+  "aku1_noise_maskMap": {
+   "uses": 1
+  },
+  "akuMap": {
+   "uses": 1
+  },
+  "auroraColMap": {
+   "uses": 4
+  },
+  "auroraMskMap": {
+   "uses": 4
+  },
+  "colorMap": {
+   "uses": 1
+  },
+  "condition_colorchange_BlendMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 6
+  },
+  "crystal_ALBDmap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 5
+  },
+  "crystal_NRMR_NRRTMap": {
+   "default": "systems/rendering/NullNormalRoughness.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughness.tex"
+   ],
+   "uses": 5
+  },
+  "crystal_mask": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 5
+  },
+  "emissiveMask_map": {
+   "uses": 13
+  },
+  "emname_Tex": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 2
+  },
+  "emname_kanji_Tex": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "feather_ALBD": {
+   "uses": 1
+  },
+  "featheroverMap": {
+   "uses": 1
+  },
+  "frost_NRMmap": {
+   "uses": 8
+  },
+  "frost_NRRT": {
+   "uses": 5
+  },
+  "haegiwa_ALBA": {
+   "default": "MasterMaterial/Textures/NullallBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/NullallBlack.tex"
+   ],
+   "uses": 3
+  },
+  "hireMask3": {
+   "uses": 2
+  },
+  "ice_PanoramaMap": {
+   "default": "MasterMaterial/Textures/panorama01.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/panorama01.tex"
+   ],
+   "uses": 69
+  },
+  "kizu_NRM": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 7
+  },
+  "lavaMaskMap": {
+   "uses": 1
+  },
+  "mask01Map": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 16
+  },
+  "mask02Map": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 16
+  },
+  "maskMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 29
+  },
+  "maskMap1": {
+   "uses": 8
+  },
+  "maskMap2": {
+   "uses": 7
+  },
+  "masksMap": {
+   "uses": 8
+  },
+  "msk1": {
+   "uses": 3
+  },
+  "msk2": {
+   "uses": 3
+  },
+  "mudGold_ALBD": {
+   "uses": 9
+  },
+  "mudGold_NRMR": {
+   "uses": 9
+  },
+  "mud_ALBD": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 13
+  },
+  "mud_NRMR": {
+   "default": "systems/rendering/NullNormalRoughness.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 13
+  },
+  "mysteryMaskMap": {
+   "by_mmtr": {
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_037_02.mmtr": "systems/rendering/NullBlack.tex",
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_057.mmtr": "systems/rendering/NullBlack.tex",
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_082.mmtr": "systems/rendering/NullBlack.tex",
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_089.mmtr": "systems/rendering/NullBlack.tex",
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_emi.mmtr": "systems/rendering/NullBlack.tex",
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_ffemi.mmtr": "systems/rendering/NullBlack.tex",
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_ffemi_037_02.mmtr": "systems/rendering/NullBlack.tex",
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_film.mmtr": "systems/rendering/NullBlack.tex"
+   },
+   "default": "MasterMaterial/Textures/mysteryMask1_MSK4.tex",
+   "default_share": 0.614,
+   "seen": [
+    "MasterMaterial/Textures/mysteryMask1_MSK4.tex",
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 347
+  },
+  "normalMap": {
+   "uses": 1
+  },
+  "panoramamap": {
+   "uses": 2
+  },
+  "parallaxMap": {
+   "uses": 6
+  },
+  "parallaxMaskMap": {
+   "uses": 6
+  },
+  "reflectionMap": {
+   "by_mmtr": {
+    "mastermaterial/master/obj/em/em_mmtrv_2/em_124_body.mmtr": "systems/rendering/NullWhite.tex",
+    "mastermaterial/master/obj/ot_armor_icefrost.mmtr": "systems/rendering/NullBlack.tex"
+   },
+   "default": "MasterMaterial/Textures/IBL_small.tex",
+   "default_share": 0.778,
+   "seen": [
+    "MasterMaterial/Textures/IBL_small.tex",
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 76
+  },
+  "snowNRMmap": {
+   "uses": 1
+  },
+  "sphereMap": {
+   "uses": 2
+  },
+  "vtx_DetailEmissiveMap": {
+   "uses": 10
+  },
+  "vtx_hireMask3": {
+   "uses": 2
+  },
+  "waveMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 17
+  },
+  "waveMaskMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 17
+  },
+  "wave_displace": {
+   "default": "MasterMaterial/Textures/wave_displace_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/wave_displace_MSK4.tex"
+   ],
+   "uses": 46
+  },
+  "wave_displacementmap": {
+   "default": "MasterMaterial/Textures/wave_displace_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MasterMaterial/Textures/wave_displace_MSK4.tex"
+   ],
+   "uses": 173
+  },
+  "wave_mask": {
+   "default": "MasterMaterial/Textures/Flag_Mask_MM.tex",
+   "default_share": 0.977,
+   "seen": [
+    "MasterMaterial/Textures/Flag_Mask_MM.tex"
+   ],
+   "uses": 168
+  }
+ }
+}

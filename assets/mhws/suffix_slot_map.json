@@ -1,0 +1,299 @@
+{
+ "meta": {
+  "materials": 26050,
+  "mmtrs": 550,
+  "source": "vanilla .mdf2 survey"
+ },
+ "suffixes": {
+  "0002": {
+   "n": 52,
+   "purity": 1.0,
+   "slot": "MultiBlend_NRMMap"
+  },
+  "0004": {
+   "n": 95,
+   "purity": 0.979,
+   "slot": "MultiBlend_NRMMap"
+  },
+  "0012": {
+   "n": 53,
+   "purity": 0.962,
+   "slot": "MultiBlend_NRMMap"
+  },
+  "0014": {
+   "n": 73,
+   "purity": 1.0,
+   "slot": "MultiBlend_NRMMap"
+  },
+  "atlas_000": {
+   "n": 535,
+   "purity": 1.0,
+   "slot": "StampMap"
+  },
+  "atlas_001": {
+   "n": 27,
+   "purity": 1.0,
+   "slot": "StampMap"
+  },
+  "atlas_002": {
+   "n": 69,
+   "purity": 1.0,
+   "slot": "StampMap"
+  },
+  "atlas_052": {
+   "n": 29,
+   "purity": 1.0,
+   "slot": "StampMap"
+  },
+  "atlas_101": {
+   "n": 34,
+   "purity": 1.0,
+   "slot": "StampMap"
+  },
+  "atos": {
+   "n": 7936,
+   "purity": 0.996,
+   "slot": "AlphaTranslucentOcclusionSSSMap"
+  },
+  "attrmap_msk4": {
+   "n": 85,
+   "purity": 0.953,
+   "slot": "AttributeMap"
+  },
+  "bam": {
+   "n": 313,
+   "purity": 1.0,
+   "slot": "EmissiveMap"
+  },
+  "coll_msk4": {
+   "n": 3810,
+   "purity": 0.777,
+   "slot": "ColorLayer_MaskMap"
+  },
+  "colorlayer_msk4": {
+   "n": 22,
+   "purity": 1.0,
+   "slot": "ColorLayer_MaskMap"
+  },
+  "detail": {
+   "n": 20,
+   "purity": 0.9,
+   "slot": "DetailNormalMap"
+  },
+  "detail_msk4": {
+   "n": 7418,
+   "purity": 0.9,
+   "slot": "DetailMaskMap"
+  },
+  "emi": {
+   "n": 3686,
+   "purity": 0.997,
+   "slot": "EmissiveMap"
+  },
+  "eye_01": {
+   "n": 44,
+   "purity": 1.0,
+   "slot": "FakeSphere_ALBAMap"
+  },
+  "fa_msk1": {
+   "n": 45,
+   "purity": 1.0,
+   "slot": "Fade_AlphaMap"
+  },
+  "fh_msk3": {
+   "n": 29,
+   "purity": 1.0,
+   "slot": "HairFlowMap"
+  },
+  "flowmap_msk3": {
+   "n": 49,
+   "purity": 0.98,
+   "slot": "FlowMap"
+  },
+  "fm_msk3": {
+   "n": 178,
+   "purity": 0.904,
+   "slot": "FurFlowMap"
+  },
+  "fm_msk4": {
+   "n": 525,
+   "purity": 0.943,
+   "slot": "FurFlowMap"
+  },
+  "foam": {
+   "n": 58,
+   "purity": 0.759,
+   "slot": "FoamMap"
+  },
+  "foam03": {
+   "n": 21,
+   "purity": 1.0,
+   "slot": "EmissiveMap"
+  },
+  "fur": {
+   "n": 35,
+   "purity": 0.886,
+   "slot": "FurFlowMap"
+  },
+  "fvn_msk3": {
+   "n": 54,
+   "purity": 1.0,
+   "slot": "HairFlowMap"
+  },
+  "fx": {
+   "n": 64,
+   "purity": 1.0,
+   "slot": "FxMap"
+  },
+  "fx_msk3": {
+   "n": 26,
+   "purity": 0.885,
+   "slot": "FxMap"
+  },
+  "fx_msk4": {
+   "n": 4124,
+   "purity": 0.992,
+   "slot": "FxMap"
+  },
+  "gradient": {
+   "n": 156,
+   "purity": 0.821,
+   "slot": "GradientMap"
+  },
+  "green": {
+   "n": 97,
+   "purity": 0.835,
+   "slot": "ColorLayer_MaskMap"
+  },
+  "hairover": {
+   "n": 86,
+   "purity": 1.0,
+   "slot": "HairOverMap"
+  },
+  "hdr": {
+   "n": 1942,
+   "purity": 0.999,
+   "slot": "Scene_HeightMap"
+  },
+  "hf_msk3": {
+   "n": 206,
+   "purity": 1.0,
+   "slot": "HairFlowMap"
+  },
+  "hgt": {
+   "n": 79,
+   "purity": 0.848,
+   "slot": "HeightMap"
+  },
+  "hss_msk3": {
+   "n": 322,
+   "purity": 1.0,
+   "slot": "Hair_Height_SpecMask_Shift_Map"
+  },
+  "kirakira": {
+   "n": 29,
+   "purity": 1.0,
+   "slot": "PanoramaMap"
+  },
+  "mask4": {
+   "n": 28,
+   "purity": 1.0,
+   "slot": "Top_MaskMap"
+  },
+  "msdf": {
+   "n": 436,
+   "purity": 1.0,
+   "slot": "AlphaMap"
+  },
+  "nor_msk3": {
+   "n": 331,
+   "purity": 1.0,
+   "slot": "LocalNormalMap"
+  },
+  "nor_msk4": {
+   "n": 110,
+   "purity": 1.0,
+   "slot": "LocalNormalMap"
+  },
+  "nrro": {
+   "n": 22883,
+   "purity": 0.978,
+   "slot": "NormalRoughnessOcclusionMap"
+  },
+  "nrrt": {
+   "n": 1261,
+   "purity": 0.967,
+   "slot": "NormalRoughnessTranlucentMap"
+  },
+  "over": {
+   "n": 53,
+   "purity": 1.0,
+   "slot": "HairOverMap"
+  },
+  "pm_msk3": {
+   "n": 194,
+   "purity": 1.0,
+   "slot": "EmitFlow_PosMap"
+  },
+  "preview": {
+   "n": 49,
+   "purity": 1.0,
+   "slot": "PanoramaMap"
+  },
+  "red": {
+   "n": 107,
+   "purity": 0.85,
+   "slot": "ColorLayer_MaskMap"
+  },
+  "selfwind": {
+   "n": 21,
+   "purity": 1.0,
+   "slot": "SelfWind_MaskMap"
+  },
+  "simpledown_msk3": {
+   "n": 22,
+   "purity": 1.0,
+   "slot": "FlowMap"
+  },
+  "tmm_msk4": {
+   "n": 1312,
+   "purity": 0.986,
+   "slot": "Top_MaskMap"
+  },
+  "ve_msk3": {
+   "n": 845,
+   "purity": 1.0,
+   "slot": "VectorEmitMap"
+  },
+  "vfx_msk4": {
+   "n": 524,
+   "purity": 1.0,
+   "slot": "VFX_Texture2D"
+  },
+  "vm_msk1": {
+   "n": 27,
+   "purity": 1.0,
+   "slot": "Wave_Mask"
+  },
+  "wave_msk1": {
+   "n": 193,
+   "purity": 0.969,
+   "slot": "Wave_Mask"
+  },
+  "wave_msk4": {
+   "n": 65,
+   "purity": 0.985,
+   "slot": "WaveNormalMap"
+  },
+  "wind": {
+   "n": 587,
+   "purity": 0.99,
+   "slot": "GpuWind_MaskMap"
+  },
+  "xm_msk4": {
+   "n": 102,
+   "purity": 1.0,
+   "slot": "FxMap"
+  }
+ }
+}

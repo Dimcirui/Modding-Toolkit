@@ -4,6 +4,7 @@ from ...core.i18n import T
 from ...core.color_grade import color_grade_items, DEFAULT_MODE_INDEX
 from ...core.mdf_tex_processor_base import _CH_ENUM_ITEMS, octahedral_normals_prop
 from .mdf_tex_processor import (
+    SLOT_NULLS,
     RE9_SLOT_CHANNEL_MAPS, RE9_NULL_TEX_BY_TYPE, RE9_TEXTURE_TYPE_ABBREV,
     RE9_TEX_VERSION,
 )
@@ -164,6 +165,7 @@ class RE9_OT_MdfGenProcess(MdfGenProcessBase):
     _abbrev_map       = RE9_TEXTURE_TYPE_ABBREV
     _channel_maps     = RE9_SLOT_CHANNEL_MAPS
     _null_tex_by_type = RE9_NULL_TEX_BY_TYPE
+    _slot_nulls        = SLOT_NULLS
     _log_tag          = "RE9 Gen"
 
 

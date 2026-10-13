@@ -1,5 +1,6 @@
 import bpy
 
+from ...core.slot_defaults import SlotNulls
 from ...core.mdf_tex_processor_base import (
     BASE_SLOT_CHANNEL_MAPS, BASE_NULL_TEX_BY_TYPE, BASE_TEXTURE_TYPE_ABBREV,
     BASE_COMMON_SLOT_TYPES,
@@ -26,13 +27,18 @@ MHRS_SLOT_CHANNEL_MAPS   = BASE_SLOT_CHANNEL_MAPS
 # (rather than the "generic" fallback baked into BASE_NULL_TEX_BY_TYPE).
 MHRS_NULL_TEX_BY_TYPE = {
     **BASE_NULL_TEX_BY_TYPE,
-    'AlphaMap': 'MasterMaterial/Textures/NullMSK1.tex',
-    'FxMap':    'systems/rendering/NullBlack.tex',
+    'AlphaMap':       'MasterMaterial/Textures/NullMSK1.tex',
+    'FxMap':          'systems/rendering/NullBlack.tex',
+    # MHRS's own MasterMaterial/ -- MHWS does not ship this one.
+    'FurVelocityMap': 'MasterMaterial/Textures/NullFurVelocity.tex',
 }
 
 # ── Null checker + collection update callback ──────────────────────────────────
 
-_is_null_mhrs              = make_null_checker(MHRS_NULL_TEX_BY_TYPE)
+# Vanilla-measured defaults where assets/mhrs/vanilla_slot_defaults.json exists,
+# the hand table above otherwise -- see core/slot_defaults.py.
+SLOT_NULLS = SlotNulls.for_game("mhrs", MHRS_NULL_TEX_BY_TYPE)
+_is_null_mhrs = SLOT_NULLS.is_null
 _on_mhrs_collection_update  = make_collection_update_cb(_is_null_mhrs)
 
 
@@ -115,6 +121,7 @@ class MHRS_OT_MdfTexProcess(MdfTexProcessBase):
     _settings_attr    = "mhrs_mdf_tex_processor"
     _natives_root_key = "mhrs_natives_root"
     _null_tex_by_type = MHRS_NULL_TEX_BY_TYPE
+    _slot_nulls       = SLOT_NULLS
     _channel_maps     = MHRS_SLOT_CHANNEL_MAPS
     _tex_version      = MHRS_TEX_VERSION
     _abbrev_map       = MHRS_TEXTURE_TYPE_ABBREV

@@ -1,5 +1,6 @@
 import bpy
 
+from ...core.slot_defaults import SlotNulls
 from ...core.mdf_tex_processor_base import (
     BASE_SLOT_CHANNEL_MAPS, BASE_NULL_TEX_BY_TYPE, BASE_TEXTURE_TYPE_ABBREV,
     BASE_COMMON_SLOT_TYPES,
@@ -19,12 +20,31 @@ from ...core.color_grade import color_grade_items, DEFAULT_MODE_INDEX
 
 MHWS_TEX_VERSION    = 241106027
 COMMON_SLOT_TYPES   = BASE_COMMON_SLOT_TYPES
-NULL_TEX_BY_TYPE    = BASE_NULL_TEX_BY_TYPE
+# MHWS-only paths: MasterMaterial/ here is MHWS's own (RE4 keeps its copy under
+# _Chainsaw/, RE9 renamed it MaterialShader/), so these cannot be shared.
+NULL_TEX_BY_TYPE    = {
+    **BASE_NULL_TEX_BY_TYPE,
+    'MP_noise':              'MasterMaterial/Textures/MP_noise_MSK4.tex',
+    'Wind_Effect_VolumeMap': 'RE_ENGINE_LIBRARY/VFX_Library/Texture/TEX_Vectorfield/tex_capcom_vectorfield_0003_MSK4.tex',
+    'FxMap':                 'MasterMaterial/Textures/NullBlack_Alpha_MSK4.tex',
+    'noisemap':              'MasterMaterial/Textures/bluenoise_msk1.tex',
+    'PanoramaMap':           'MasterMaterial/Textures/kirakira_PAN_ALB.tex',
+    'VectorEmitMap':         'MasterMaterial/Textures/eye_VectorEmit_MSK3.tex',
+    'VFX_Texture2D':         'MasterMaterial/Textures/VFX_Uber/VFX_Uber_MSK4.tex',
+    'VFX_Texture3D':         'MasterMaterial/Textures/VFX_Uber/VFX_Uber3D_MSK4.tex',
+    'Ripple_1Dtex':          'MasterMaterial/Textures/hagitori_ripple_ALB.tex',
+    'Ripple_Texture3D':      'MasterMaterial/Textures/Noise3D_MSK3.tex',
+    # A real noise texture, not a null: 98% of vanilla bindings (the survey).
+    'ColorLayer_DetailMaskMap': 'MasterMaterial/Textures/ColorLayer_DetailNoise_01_ALB.tex',
+}
 TEXTURE_TYPE_ABBREV = BASE_TEXTURE_TYPE_ABBREV
 
 # ── Null checker + collection update callback ──────────────────────────────────
 
-_is_null_mhws             = make_null_checker(NULL_TEX_BY_TYPE)
+# Vanilla-measured defaults where assets/mhws/vanilla_slot_defaults.json exists,
+# the hand table above otherwise -- see core/slot_defaults.py.
+SLOT_NULLS = SlotNulls.for_game("mhws", NULL_TEX_BY_TYPE)
+_is_null_mhws = SLOT_NULLS.is_null
 _on_mhws_collection_update = make_collection_update_cb(_is_null_mhws)
 
 
@@ -107,6 +127,7 @@ class MHWS_OT_MdfTexProcess(MdfTexProcessBase):
     _settings_attr    = "mdf_tex_processor"
     _natives_root_key = "mhws_natives_root"
     _null_tex_by_type = NULL_TEX_BY_TYPE
+    _slot_nulls       = SLOT_NULLS
     _channel_maps     = BASE_SLOT_CHANNEL_MAPS
     _tex_version      = MHWS_TEX_VERSION
     _abbrev_map       = TEXTURE_TYPE_ABBREV

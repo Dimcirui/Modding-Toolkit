@@ -74,20 +74,28 @@ MHWI_SLOT_CHANNEL_MAPS = {
     'NormalMap': {
         'R': ('normal',   0),
         'G': ('normal',   1),
+        # Not the normal's Z: the EFX emissive mask, read by efx emissive
+        # attributes (PlEmissive etc. -- e.g. the Pl_Mt master material's
+        # rim-light / whole-body glow). Keep it 0, or efx glows where it
+        # should not (per the user, 2026-10-12).
         'B': None,
         'A': 1.0,
     },
     'RMTMap': {
-        'R': ('roughness', 0),
-        'G': ('metallic',  0),
-        'B': None,
+        'R': ('roughness',    0),
+        'G': ('metallic',     0),
+        # Translucency, same as core/mrl3_port_tex.py's copy of this table --
+        # this one used to write 0 here, so MHWI translucency had no input.
+        # Unconnected it still writes 0 (translucency's neutral value).
+        'B': ('translucency', 0),
         'A': 1.0,
     },
     'EmissiveMap': {
         'R': ('emissive', 0),
         'G': ('emissive', 1),
         'B': ('emissive', 2),
-        'A': ('emissive', 3),
+        # Vanilla _EM is BC1_UNORM_SRGB (no alpha) -- see BASE_SLOT_CHANNEL_MAPS.
+        'A': 1.0,
     },
 }
 

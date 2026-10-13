@@ -80,6 +80,7 @@ _SLOT_FAMILY = {
     'NormalRoughnessOcclusionMap': 'normal', 'NormalRoughness': 'normal',
     'NormalRoughnessMap': 'normal', 'NRMR_NRRTMap': 'normal',
     'NormalRoughnessCavityMap': 'normal', 'NormalRoughnessTranslucentMap': 'normal',
+    'NormalRoughnessTranlucentMap': 'normal',   # MHWS's spelling
     'EmissiveMap': 'emissive', 'Emissive_ColorMap': 'emissive',
     'AlphaTranslucentOcclusionSSSMap': 'alpha_pack', 'SSSCavityOcclusionTranslucentMap': 'alpha_pack',
     'AlphaCavityOcclusionTranslucentMap': 'alpha_pack', 'AlphaTranslucentOcclusionCavityMap': 'alpha_pack',

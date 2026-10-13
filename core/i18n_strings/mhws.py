@@ -516,7 +516,7 @@ STRINGS = {
               "(this is not the same as Subsurface Scattering, which needs "
               "radius data this module does not have) -- exports correctly, "
               "the preview does not attempt to show it",
-        "ZH": "Translucency。像金属度一样是加法组合。"
+        "ZH": "透光 (Translucency)。像金属度一样是加法组合。"
               "AlphaTranslucentOcclusionSSSMap.G 真的携带这个数据，但 Principled "
               "没有对应输入（这跟次表面散射不是一回事，那个需要半径数据，这里没有）——"
               "能正确导出，只是预览不会体现"},

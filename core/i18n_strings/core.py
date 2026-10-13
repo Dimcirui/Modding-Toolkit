@@ -459,14 +459,15 @@ STRINGS = {
     # ══════════════════════════════════════════════════════════════════════
 
     "core.mdf_tex_processor_base.pbr_color": {"EN": "Base Color (Albedo)", "ZH": "基础色 (Albedo)"},
-    "core.mdf_tex_processor_base.pbr_alpha": {"EN": "Alpha Mask", "ZH": "Alpha 遮罩"},
+    "core.mdf_tex_processor_base.pbr_alpha": {"EN": "Alpha Mask", "ZH": "Alpha 遮罩 (透明遮罩)"},
     "core.mdf_tex_processor_base.pbr_emissive": {"EN": "Emissive", "ZH": "自发光 (Emissive)"},
     "core.mdf_tex_processor_base.pbr_normal": {"EN": "Normal", "ZH": "法线 (Normal)"},
     "core.mdf_tex_processor_base.pbr_roughness": {"EN": "Roughness", "ZH": "粗糙度 (Roughness)"},
     "core.mdf_tex_processor_base.pbr_metallic": {"EN": "Metallic", "ZH": "金属度 (Metallic)"},
     "core.mdf_tex_processor_base.pbr_ao": {"EN": "AO", "ZH": "AO"},
     "core.mdf_tex_processor_base.pbr_cavity": {"EN": "Cavity", "ZH": "Cavity (缝隙遮蔽)"},
-    "core.mdf_tex_processor_base.pbr_translucency": {"EN": "Translucency", "ZH": "Translucency (半透)"},
+    "core.mdf_tex_processor_base.pbr_translucency": {"EN": "Translucency", "ZH": "Translucency (透光)"},
+    "core.mdf_tex_processor_base.pbr_sss": {"EN": "SSS", "ZH": "SSS (次表面散射)"},
 
     "core.mdf_tex_processor_base.prop_invert": {"EN": "Invert", "ZH": "反相"},
     "core.mdf_tex_processor_base.normal_flip_g_desc": {
@@ -486,6 +487,37 @@ STRINGS = {
     "core.mdf_tex_processor_base.mode_skip": {"EN": "No Change", "ZH": "不修改"},
     "core.mdf_tex_processor_base.mode_skip_desc": {
         "EN": "Keep the existing path unchanged", "ZH": "保持现有路径不变"},
+    "core.mdf_tex_processor_base.mode_auto": {"EN": "Auto", "ZH": "自动"},
+    "core.mdf_tex_processor_base.mode_auto_desc": {
+        "EN": "Use the direct image if one is set, otherwise compose from the inputs this slot reads, "
+              "otherwise leave the slot as it is (or keep its null texture)",
+        "ZH": "设了直接图片就用它，否则用本槽位读取的输入合成，都没有就保持原样（原本是空贴图的写入空贴图）"},
+    # Processor dialog (core/mdf_tex_processor_ui_base.py).
+    "core.mdf_tex_processor_ui_base.not_set": {"EN": "Not set", "ZH": "未设置"},
+    "core.mdf_tex_processor_ui_base.select_and_refresh": {
+        "EN": "Select an MDF collection and click refresh", "ZH": "选择 MDF 集合后点击刷新"},
+    "core.mdf_tex_processor_ui_base.common_textures": {"EN": "Common textures", "ZH": "常用贴图"},
+    "core.mdf_tex_processor_ui_base.other_textures": {"EN": "Other textures ({n})", "ZH": "其他贴图（{n}）"},
+    "core.mdf_tex_processor_ui_base.inputs": {"EN": "Inputs ({n}/{total} set)", "ZH": "输入（已设 {n}/{total}）"},
+    "core.mdf_tex_processor_ui_base.inputs_unread": {
+        "EN": "Not read by this material's slots: {names}", "ZH": "本材质的槽位不读取：{names}"},
+    "core.mdf_tex_processor_ui_base.fixed": {"EN": "fixed {v}", "ZH": "固定 {v}"},
+    "core.mdf_tex_processor_ui_base.neutral": {"EN": "no input, neutral {v}", "ZH": "无输入，中性值 {v}"},
+    "core.mdf_tex_processor_ui_base.no_input": {"EN": "no input", "ZH": "无输入"},
+    "core.mdf_tex_processor_ui_base.inverted_rule": {"EN": "(inverted by the slot)", "ZH": "（槽位规则反相）"},
+    "core.mdf_tex_processor_ui_base.untouched": {"EN": "untouched", "ZH": "未配置"},
+    # Slot status badges -- what processing will actually do to the slot.
+    "core.mdf_tex_slot_status.compose": {"EN": "Compose", "ZH": "合成"},
+    "core.mdf_tex_slot_status.direct": {"EN": "Direct", "ZH": "直接"},
+    "core.mdf_tex_slot_status.default": {"EN": "Null", "ZH": "空贴图"},
+    "core.mdf_tex_slot_status.skip": {"EN": "Unchanged", "ZH": "不变"},
+    "core.mdf_tex_slot_status.missing_file": {"EN": "file not found", "ZH": "文件不存在"},
+    "core.mdf_tex_slot_status.no_inputs": {"EN": "no inputs, writes null", "ZH": "无输入，将写入空贴图"},
+    "core.mdf_tex_slot_status.no_recipe": {"EN": "cannot be composed", "ZH": "该槽位无法合成"},
+    "core.mdf_tex_slot_status.no_null": {"EN": "no null texture, unchanged", "ZH": "无对应空贴图，保持不变"},
+    "core.mdf_tex_slot_status.summary": {
+        "EN": "{compose} compose · {direct} direct · {default} null · {skip} unchanged",
+        "ZH": "合成 {compose} · 直接 {direct} · 空贴图 {default} · 不变 {skip}"},
 
     "core.mdf_tex_processor_base.generate_mipmaps_label": {"EN": "Generate MipMaps", "ZH": "生成 MipMaps"},
     "core.mdf_generator_base.unresolved_channels": {
@@ -1672,7 +1704,7 @@ STRINGS = {
     "core.mrl3_port_ops.params_basic_desc": {
         "EN": "Metallic, roughness and translucency only -- the three whose meaning "
               "and 0..1 scale are the same in both engines",
-        "ZH": "只迁移金属度、粗糙度、半透明度 —— 这三个在两个引擎里含义与 0..1 "
+        "ZH": "只迁移金属度、粗糙度、透光 —— 这三个在两个引擎里含义与 0..1 "
               "量纲都相同"},
     "core.mrl3_port_ops.params_all": {"EN": "All", "ZH": "全部"},
     "core.mrl3_port_ops.params_all_desc": {

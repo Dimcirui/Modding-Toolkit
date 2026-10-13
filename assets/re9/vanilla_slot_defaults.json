@@ -1,0 +1,2531 @@
+{
+ "meta": {
+  "materials": 42351,
+  "mmtrs": 409,
+  "source": "vanilla .mdf2 survey"
+ },
+ "slots": {
+  "ALBH_1": {
+   "uses": 2
+  },
+  "ALBH_Map": {
+   "default": "MaterialShader/Textures/Vinyl/tx_base_Vinyl_00_ALBH.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 2
+  },
+  "ALP_MudMSK_dirtyBubble_MAP": {
+   "uses": 1
+  },
+  "AlphaArrayMap": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "AlphaCavityOcclusionTranslucentMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 5761
+  },
+  "AlphaMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.75,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 9
+  },
+  "AlphaMaskMap": {
+   "default": "MaterialShader/Textures/NullWhite_64.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "AlphaTex_FIX": {
+   "uses": 2
+  },
+  "AlphaTex_Scroll": {
+   "uses": 2
+  },
+  "AlphaTranslucentOcclusionCavityMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 80
+  },
+  "AlphaTranslucentOcclusionSSSMap": {
+   "default": "systems/rendering/NullATOS.tex",
+   "default_share": 0.999,
+   "seen": [
+    "systems/rendering/NullATOS.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 33869
+  },
+  "AmpouleExplosion_ALBA": {
+   "default": "MaterialShader/Textures/NullBlack_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 431
+  },
+  "AmpouleExplosion_NRMR": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 431
+  },
+  "AngerAnim_MSK1": {
+   "uses": 17
+  },
+  "AngerMask_MSK1": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 17
+  },
+  "AnimPush_Map": {
+   "uses": 1
+  },
+  "Anim_Noise_Map": {
+   "uses": 7
+  },
+  "ArrayWrinkleMaskMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 106
+  },
+  "BRDFColorMap": {
+   "default": "MaterialShader/Textures/CarPaint/CarPaintBRDFColor_ALB.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/CarPaint/CarPaintBRDFColor_ALB.tex"
+   ],
+   "uses": 11
+  },
+  "BaseAlphaMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 206
+  },
+  "BaseBlend_ALBD": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 18
+  },
+  "BaseBlend_GradationMask": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 18
+  },
+  "BaseBlend_NRMR": {
+   "default": "systems/rendering/NullNormalRoughness.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 18
+  },
+  "BaseBlend_SCOT": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 15
+  },
+  "BaseCoat": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 2
+  },
+  "BaseDielectricMap": {
+   "by_mmtr": {
+    "@materialshader/master/ch_default.mmtr": "systems/rendering/NullWhite.tex",
+    "@materialshader/master/ch_default_fakegem.mmtr": "systems/rendering/NullWhite.tex",
+    "@materialshader/master/ch_default_record_wet.mmtr": "systems/rendering/NullWhite.tex",
+    "@materialshader/master/ch_default_record_wet_brunt.mmtr": "systems/rendering/NullWhite.tex",
+    "@materialshader/master/ch_detail_record_wet_burnt.mmtr": "systems/rendering/NullWhite.tex",
+    "@materialshader/master/ch_skin.mmtr": "systems/rendering/NullWhite.tex",
+    "@materialshader/master/ch_skin_detail.mmtr": "systems/rendering/NullWhite.tex",
+    "@materialshader/master/ch_skin_detail_record_wet.mmtr": "systems/rendering/NullWhite.tex",
+    "@materialshader/master/ch_skin_record_wet_burnt.mmtr": "systems/rendering/NullWhite.tex",
+    "@materialshader/master/ch_transparentreflective.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/master/character_reflectivetransparent.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/master/chwp_dotsight_reticle.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/master/chwp_emissive_phonescreen.mmtr": "systems/rendering/NullBlack.tex",
+    "materialshader/master/chwp_glass_roughtransparent.mmtr": "MaterialShader/Textures/NullWhiteBlack.tex",
+    "materialshader/master/chwp_glass_roughtransparent_wet.mmtr": "MaterialShader/Textures/NullWhiteBlack.tex",
+    "materialshader/master/chwp_glass_transparent.mmtr": "MaterialShader/Textures/NullWhiteBlack.tex",
+    "materialshader/master/chwp_scope_lens.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/master/env_default_fakegem.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/master/glass_roughtransparent.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/master/glass_roughtransparent_carrainwet.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/master/glass_roughtransparent_reaction.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/master/glass_transparent.mmtr": "MaterialShader/Textures/NullBaseMetallic.tex"
+   },
+   "default": "MaterialShader/Textures/18Gray.tex",
+   "default_share": 0.539,
+   "seen": [
+    "MaterialShader/Textures/18Gray.tex",
+    "MaterialShader/Textures/NullBaseMetallic.tex",
+    "MaterialShader/Textures/NullWhiteBlack.tex",
+    "MaterialShader/Textures/NullWhite_64.tex",
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 39822
+  },
+  "BaseDielectricMap1": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 247
+  },
+  "BaseDielectricMap2": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.6,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 15
+  },
+  "BaseDielectricMapBase": {
+   "uses": 257
+  },
+  "BaseDielectricMap_CoverMat": {
+   "uses": 6806
+  },
+  "BaseFlowMap_Tex": {
+   "uses": 3
+  },
+  "BaseLayer_BRDFColorMap": {
+   "default": "MaterialShader/Textures/CarPaint/CarPaintBRDFColor_ALB.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/CarPaint/CarPaintBRDFColor_ALB.tex"
+   ],
+   "uses": 5
+  },
+  "BaseLayer_FlakesMap": {
+   "default": "MaterialShader/Textures/CarPaint/CarPaintFlakes_ALB.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/CarPaint/CarPaintFlakes_ALB.tex"
+   ],
+   "uses": 5
+  },
+  "BaseMadMap": {
+   "uses": 1
+  },
+  "BaseMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.968,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 358
+  },
+  "BaseMetalMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.75,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 25
+  },
+  "BaseShapeMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 9
+  },
+  "BaseShiftMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 772
+  },
+  "Base_ALB": {
+   "uses": 1
+  },
+  "Base_FlowMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 12
+  },
+  "Base_Map": {
+   "uses": 2
+  },
+  "Basemap": {
+   "uses": 3
+  },
+  "Basemap_A": {
+   "uses": 1
+  },
+  "Basemap_B": {
+   "uses": 1
+  },
+  "Blend1Normal": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 7
+  },
+  "Blend1_BaseDielectricMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 6
+  },
+  "Blend2Normal": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 7
+  },
+  "Blend2_BaseDielectricMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 6
+  },
+  "Blend3Normal": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 7
+  },
+  "BlendMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 3
+  },
+  "BlinkTex": {
+   "uses": 2
+  },
+  "BloodDirtMap": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 27
+  },
+  "BloodFog_Distortion_Map": {
+   "uses": 1
+  },
+  "BloodFog_Map": {
+   "uses": 1
+  },
+  "BloodImpurity_Distortion_Map": {
+   "uses": 1
+  },
+  "BloodImpurity_Map": {
+   "uses": 1
+  },
+  "BloodMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 4
+  },
+  "BloodMask": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 56
+  },
+  "BloodShed_rtt": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 4270
+  },
+  "BloodTexture": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "BloodTexture_ALBA": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 11
+  },
+  "BloodTexture_NRMR": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 11
+  },
+  "Blood_BaseMap": {
+   "uses": 1
+  },
+  "Blood_MaskMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "Blood_NRRA": {
+   "default": "MaterialShader/Textures/Record_Base/Blood_NRRA.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/Record_Base/Blood_NRRA.tex"
+   ],
+   "uses": 5254
+  },
+  "Blood_NormalMap": {
+   "uses": 1
+  },
+  "BodyResize_ProtectMask": {
+   "default": "MaterialShader/Textures/NullBlack_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/NullBlack_MSK4.tex"
+   ],
+   "uses": 418
+  },
+  "Bubble_NoiseMaskMap": {
+   "uses": 11
+  },
+  "Bubble_NormalMap": {
+   "uses": 11
+  },
+  "Bubble_NormalRoughnessMap": {
+   "uses": 3
+  },
+  "BumpMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 124
+  },
+  "BurntMap_ALBM": {
+   "default": "MaterialShader/Textures/Record_Base/BurntMap_ALBM.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/Record_Base/BurntMap_ALBM.tex"
+   ],
+   "uses": 4276
+  },
+  "BurntMap_NRMR": {
+   "default": "MaterialShader/Textures/Record_Base/BurntMap_NRMR.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/Record_Base/BurntMap_NRMR.tex"
+   ],
+   "uses": 4276
+  },
+  "Camera_RTT": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 3
+  },
+  "CarDamage_AlphaMap": {
+   "default": "MaterialShader/Textures/CarDamage/CarDamage_ALP.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/CarDamage/CarDamage_ALP.tex"
+   ],
+   "uses": 8
+  },
+  "CarDamage_BaseDielectricMap": {
+   "default": "MaterialShader/Textures/CarDamage/CarDamage_ALBD.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/CarDamage/CarDamage_ALBD.tex"
+   ],
+   "uses": 8
+  },
+  "CarDamage_NormalRoughnessCavityMap": {
+   "default": "MaterialShader/Textures/CarDamage/CarDamage_NRRC.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/CarDamage/CarDamage_NRRC.tex"
+   ],
+   "uses": 8
+  },
+  "CarDirt_AlphaMap": {
+   "by_mmtr": {
+    "materialshader/master/glass_roughtransparent_carrainwet.mmtr": "systems/rendering/NullBlack.tex"
+   },
+   "default": "MaterialShader/Textures/CarPaint/CarDirt__ALP.tex",
+   "default_share": 0.762,
+   "seen": [
+    "MaterialShader/Textures/CarPaint/CarDirt__ALP.tex",
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 21
+  },
+  "CarDirt_BaseDielectricMap": {
+   "by_mmtr": {
+    "materialshader/master/env_specialcar_dirtwetsurface.mmtr": "MaterialShader/Textures/CarRust/CarRust_ALB.tex",
+    "materialshader/master/glass_roughtransparent_carrainwet.mmtr": "systems/rendering/NullBlack.tex"
+   },
+   "default": "MaterialShader/Textures/CarPaint/CarDirt__ALBD.tex",
+   "default_share": 0.429,
+   "seen": [
+    "MaterialShader/Textures/CarPaint/CarDirt__ALBD.tex",
+    "MaterialShader/Textures/CarRust/CarRust_ALB.tex",
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 21
+  },
+  "CarDirt_NormalRoughnessCavityMap": {
+   "by_mmtr": {
+    "materialshader/master/env_default_cardirt.mmtr": "MaterialShader/Textures/CarPaint/CarDirt__NRRC.tex",
+    "materialshader/master/env_specialcar_dirt.mmtr": "MaterialShader/Textures/CarPaint/CarDirt__NRRC.tex",
+    "materialshader/master/env_specialcar_dirtwetsurface.mmtr": "MaterialShader/Textures/CarRust/CarRust_NRRC.tex"
+   },
+   "default": "systems/rendering/NullNormalRoughness.tex",
+   "default_share": 0.381,
+   "seen": [
+    "MaterialShader/Textures/CarPaint/CarDirt__NRRC.tex",
+    "MaterialShader/Textures/CarRust/CarRust_NRRC.tex",
+    "systems/rendering/NullNormalRoughness.tex"
+   ],
+   "uses": 21
+  },
+  "CarDirt_UniqueAlphaMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.857,
+   "seen": [
+    "MaterialShader/Textures/CarPaint/CarDirtUnique_ALP.tex",
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 21
+  },
+  "Caustics": {
+   "uses": 1
+  },
+  "CenterDentNormalMap": {
+   "uses": 12
+  },
+  "ClearCoat_NormalRoughnessMap": {
+   "default": "systems/rendering/NullNormalRoughness.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughness.tex"
+   ],
+   "uses": 39
+  },
+  "ClothDamageMap": {
+   "default": "MaterialShader/Textures/Record_Base/ClothDamage_Common_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/Record_Base/ClothDamage_Common_MSK4.tex"
+   ],
+   "uses": 1190
+  },
+  "ClothDamage_AlphaMask": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 1190
+  },
+  "Color": {
+   "uses": 2
+  },
+  "ColorBlendMask": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 1132
+  },
+  "ColorBlendMask1": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 235
+  },
+  "ColorGradient_A": {
+   "uses": 27
+  },
+  "ColorGradient_A_2": {
+   "uses": 3
+  },
+  "ColorGradient_B": {
+   "uses": 27
+  },
+  "ColorGradient_B_2": {
+   "uses": 3
+  },
+  "ColorGradient_C": {
+   "uses": 27
+  },
+  "ColorGradient_C_2": {
+   "uses": 3
+  },
+  "ColorMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 29
+  },
+  "ColorTex_1st": {
+   "uses": 2
+  },
+  "ColorTex_2nd": {
+   "uses": 2
+  },
+  "Color_Map": {
+   "uses": 7
+  },
+  "CorneaMap": {
+   "uses": 351
+  },
+  "CrackTexture": {
+   "default": "MaterialShader/Textures/CarGlassCrack/glasscrack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/CarGlassCrack/glasscrack.tex"
+   ],
+   "uses": 5
+  },
+  "DamegeRipple_Safemask": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 12
+  },
+  "DecalMapArray": {
+   "by_mmtr": {
+    "materialshader/master/glass_roughtransparent_carrainwet.mmtr": "systems/rendering/NullWhite.tex"
+   },
+   "default": "MaterialShader/Textures/CarGlassCrack/GlassDecalArray_MSK4.tex",
+   "default_share": 0.81,
+   "seen": [
+    "MaterialShader/Textures/CarGlassCrack/GlassDecalArray_MSK4.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 21
+  },
+  "Deflate_Skin_ALBA": {
+   "uses": 55
+  },
+  "Deflate_Skin_NRMR": {
+   "uses": 55
+  },
+  "Deflate_vertex_mask": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.895,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 33
+  },
+  "Deflate_vertex_normal": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 33
+  },
+  "Deflate_vertex_position": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 33
+  },
+  "DentMap": {
+   "uses": 4
+  },
+  "DentProtectMask": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 457
+  },
+  "DetailAlbedoMap": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 3564
+  },
+  "DetailAlbedoMap2": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 9
+  },
+  "DetailHeightMap": {
+   "default": "MaterialShader/Textures/NullGray_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/NullGray_MSK4.tex"
+   ],
+   "uses": 256
+  },
+  "DetailMap": {
+   "by_mmtr": {
+    "materialshader/master/character_detail_light.mmtr": "systems/rendering/NullGray.tex",
+    "materialshader/master/character_detail_umbllera.mmtr": "MaterialShader/Textures/NullWhite_512.tex",
+    "materialshader/master/env_detail.mmtr": "systems/rendering/NullNormalRoughnessOcclusion.tex",
+    "materialshader/master/env_detail_colormask.mmtr": "systems/rendering/NullNormalRoughnessOcclusion.tex",
+    "materialshader/master/env_detail_covermaterial.mmtr": "systems/rendering/NullNormalRoughnessOcclusion.tex"
+   },
+   "default": "MaterialShader/Textures/NullGray_MSK4.tex",
+   "default_share": 0.947,
+   "seen": [
+    "MaterialShader/Textures/NullGray_MSK4.tex",
+    "MaterialShader/Textures/NullWhite_512.tex",
+    "systems/rendering/NullGray.tex",
+    "systems/rendering/NullNormalRoughnessOcclusion.tex"
+   ],
+   "uses": 4062
+  },
+  "DetailMap2": {
+   "default": "MaterialShader/Textures/NullGray_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/NullGray_MSK4.tex"
+   ],
+   "uses": 11
+  },
+  "DetailMapArray": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 273
+  },
+  "DetailMask": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 3547
+  },
+  "DetailMask_Leather": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 273
+  },
+  "DetailNoise": {
+   "uses": 12
+  },
+  "DetailNormalAlpha": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "DetailNormalAlphaMap": {
+   "default": "systems/rendering/NullNormalRoughnessOcclusion.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughnessOcclusion.tex"
+   ],
+   "uses": 360
+  },
+  "DetailUVDistortionMap": {
+   "default": "MaterialShader/Textures/Character_Base/Detail/DetailDist_00_MSK2.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/Character_Base/Detail/DetailDist_00_MSK2.tex"
+   ],
+   "uses": 11
+  },
+  "Detail_Map": {
+   "uses": 1
+  },
+  "DirtMaskMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 772
+  },
+  "DirtWearMap": {
+   "by_mmtr": {
+    "@materialshader/master/ch_hair_record_wet.mmtr": "MaterialShader/Textures/Character_Base/Mask/DirtWearMask_001_MSK4.tex",
+    "materialshader/master/env_1layer_common_dirt.mmtr": "systems/rendering/NullGray.tex",
+    "materialshader/master/env_2layer_common_dirt.mmtr": "systems/rendering/NullGray.tex",
+    "materialshader/master/env_2layer_common_dirt_covermaterial.mmtr": "systems/rendering/NullGray.tex",
+    "materialshader/master/env_2layer_dirt.mmtr": "systems/rendering/NullGray.tex",
+    "materialshader/master/env_2layer_dirt_covermaterial.mmtr": "systems/rendering/NullGray.tex"
+   },
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.808,
+   "seen": [
+    "MaterialShader/Textures/Character_Base/Mask/DirtWearMask_001_MSK4.tex",
+    "systems/rendering/NullGray.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 1029
+  },
+  "Diss_Mask": {
+   "uses": 3
+  },
+  "DissolveTexture": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "DistortionMap": {
+   "default": "MaterialShader/Textures/TVScreen_HorizontalDistortion_MSK1.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/TVScreen_HorizontalDistortion_MSK1.tex"
+   ],
+   "uses": 22
+  },
+  "DistortionNoise": {
+   "uses": 8
+  },
+  "Distortion_Map": {
+   "uses": 5
+  },
+  "Distortion_Mask": {
+   "default": "MaterialShader/Textures/NullBlack_128.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 3
+  },
+  "DotSight_ShakeGradient": {
+   "default": "MaterialShader/Textures/DotSight_ShakeMap.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/DotSight_ShakeMap.tex"
+   ],
+   "uses": 6
+  },
+  "DownflowMap": {
+   "default": "RE_ENGINE_LIBRARY/MasterMaterial/SourceTexture/Lib_Container_RainWetWindow/Lib_Container_RainWetWindow_down_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "RE_ENGINE_LIBRARY/MasterMaterial/SourceTexture/Lib_Container_RainWetWindow/Lib_Container_RainWetWindow_down_MSK4.tex"
+   ],
+   "uses": 16
+  },
+  "DropMap": {
+   "default": "RE_ENGINE_LIBRARY/MasterMaterial/SourceTexture/Lib_Container_RainWetWindow/Lib_Container_RainWetWindow_drop_MSK3.tex",
+   "default_share": 1.0,
+   "seen": [
+    "RE_ENGINE_LIBRARY/MasterMaterial/SourceTexture/Lib_Container_RainWetWindow/Lib_Container_RainWetWindow_drop_MSK3.tex"
+   ],
+   "uses": 16
+  },
+  "DropMask": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 110
+  },
+  "DynamicCubeMap": {
+   "default": "systems/rendering/NullWhiteCubemap.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhiteCubemap.tex"
+   ],
+   "uses": 14
+  },
+  "DynamicTransparentHDR": {
+   "by_mmtr": {
+    "materialshader/master/vfx/efd/vfx_basic_primitive_distortion_00.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/master/vfx/efd/vfx_environment_3-03_dropinblood_distortion_00.mmtr": "MaterialShader/Textures/NullWhite_128.tex"
+   },
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.45,
+   "seen": [
+    "MaterialShader/Textures/NullWhite_128.tex",
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 20
+  },
+  "EdgeMask": {
+   "uses": 12
+  },
+  "Edge_Base_Tex": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 7
+  },
+  "Edge_Tex": {
+   "uses": 7
+  },
+  "EditNormal_NRM": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 431
+  },
+  "ElpisDistortion_Map": {
+   "uses": 2
+  },
+  "EmissiveMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.834,
+   "seen": [
+    "MaterialShader/Textures/NullWhite_64.tex",
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 1206
+  },
+  "EmissiveMask": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 21
+  },
+  "EmissiveMaskMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "EmissiveTex": {
+   "uses": 2
+  },
+  "EmissiveTexsture": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 4
+  },
+  "Emissive_ColorMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 14
+  },
+  "Emissive_DistortionMap": {
+   "uses": 1
+  },
+  "ExtraWearMap": {
+   "default": "MaterialShader/Textures/ExtraWearMap_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/ExtraWearMap_MSK4.tex"
+   ],
+   "uses": 157
+  },
+  "FakeCubeMap": {
+   "default": "MaterialShader/Textures/FakeGlassCubeMap.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/FakeGlassCubeMap.tex"
+   ],
+   "uses": 30
+  },
+  "FakeGlassMap": {
+   "default": "MaterialShader/Textures/FakeGlass_ALBA.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/FakeGlass_ALBA.tex"
+   ],
+   "uses": 27
+  },
+  "FakeReflection_Map": {
+   "default": "MaterialShader/Textures/EyeTextures/eye_fake_reflection.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/EyeTextures/eye_fake_reflection.tex"
+   ],
+   "uses": 102
+  },
+  "FakeSpecular": {
+   "default": "MaterialShader/Textures/EyeTextures/fake_specular.tex",
+   "default_share": 0.973,
+   "seen": [
+    "MaterialShader/Textures/EyeTextures/fake_specular.tex",
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 182
+  },
+  "FakeSpecular_PanoramaMap": {
+   "default": "MaterialShader/Textures/Character_Base/Eye/BH_human_eye_BM.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/Character_Base/Eye/BH_human_eye_BM.tex"
+   ],
+   "uses": 326
+  },
+  "FakeSphereMap": {
+   "by_mmtr": {
+    "materialshader/master/env_default_fakegem.mmtr": "MaterialShader/Textures/FakeGlass_ALBA.tex"
+   },
+   "default": "MaterialShader/Textures/Character_Base/Eye/BH_human_eye_BM.tex",
+   "default_share": 0.966,
+   "seen": [
+    "MaterialShader/Textures/Character_Base/Eye/BH_human_eye_BM.tex",
+    "MaterialShader/Textures/FakeGlass_ALBA.tex"
+   ],
+   "uses": 820
+  },
+  "FakeSphereMask": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 747
+  },
+  "FakeSphere_Tex_Rough_Max": {
+   "uses": 2
+  },
+  "FakeSphere_Tex_Rough_Min": {
+   "uses": 2
+  },
+  "Far_FlowMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 12
+  },
+  "FilmDamage_Texture": {
+   "default": "MaterialShader/Textures/CustomFilter/FilmDamage_MSK1.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "FilmGrain_Texture": {
+   "default": "MaterialShader/Textures/CustomFilter/FilmGrain8mm_MSK1.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "FixBloodMask": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.999,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 5256
+  },
+  "FlakesMap": {
+   "default": "MaterialShader/Textures/CarPaint/CarPaintFlakes_ALB.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/CarPaint/CarPaintFlakes_ALB.tex"
+   ],
+   "uses": 11
+  },
+  "FlickDrops": {
+   "uses": 8
+  },
+  "FloorMask": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 98
+  },
+  "FlowMap": {
+   "uses": 22
+  },
+  "FlowMap_00": {
+   "uses": 1
+  },
+  "FlowMeatMap_ALBM": {
+   "uses": 17
+  },
+  "FlowMeatMap_NRMR": {
+   "uses": 17
+  },
+  "FlowMeatMask_MSK1": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 17
+  },
+  "FlowOffsetNoiseMap": {
+   "uses": 17
+  },
+  "Flow_BaseMap": {
+   "uses": 2
+  },
+  "Fluctuation_Noise3D": {
+   "default": "MaterialShader/Textures/Noise3D_00_MSK1.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "Fluid_Gch_DetailFlowMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 14
+  },
+  "FoamColorMap": {
+   "uses": 1
+  },
+  "FoamNormalRoughnessMap": {
+   "uses": 1
+  },
+  "FoamWPOMap": {
+   "uses": 1
+  },
+  "Foam_Mask": {
+   "uses": 5
+  },
+  "Foam_Normal_Tex": {
+   "uses": 3
+  },
+  "Foam_Tex": {
+   "uses": 5
+  },
+  "FurDetailMap": {
+   "uses": 166
+  },
+  "FurDetailUVDistortionMap": {
+   "default": "MaterialShader/Textures/Character_Base/Detail/DetailDist_00_MSK2.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/Character_Base/Detail/DetailDist_00_MSK2.tex"
+   ],
+   "uses": 166
+  },
+  "FurDust_ImperfectDetailMap": {
+   "default": "MaterialShader/Textures/Character_Base/Mask/ImperfectDetail_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/Character_Base/Mask/ImperfectDetail_MSK4.tex"
+   ],
+   "uses": 71
+  },
+  "Fur_DepthColorMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 166
+  },
+  "Gch_Foam_BaseMap": {
+   "uses": 14
+  },
+  "Gch_FormNormalMap": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 14
+  },
+  "Gem_FakeSphereMap": {
+   "default": "MaterialShader/Textures/FakeGlass_ALBA.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/FakeGlass_ALBA.tex"
+   ],
+   "uses": 4
+  },
+  "GlassCrack_A_ColorMap": {
+   "uses": 4
+  },
+  "GlassCrack_A_DistortionMask": {
+   "uses": 4
+  },
+  "GlassCrack_A_Normal": {
+   "uses": 4
+  },
+  "GlassCrack_B_ColorMap": {
+   "uses": 4
+  },
+  "GlassCrack_B_DistortionMask": {
+   "uses": 4
+  },
+  "GlassCrack_B_Normalmap": {
+   "uses": 4
+  },
+  "GlassMaskMap": {
+   "by_mmtr": {
+    "@materialshader/master/ch_glass_transparent.mmtr": "systems/rendering/NullWhite.tex",
+    "@materialshader/master/ch_glass_transparent_record_wet_burnt.mmtr": "systems/rendering/NullWhite.tex",
+    "materialshader/master/chwp_glass_transparent.mmtr": "systems/rendering/NullWhite.tex"
+   },
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.573,
+   "seen": [
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 324
+  },
+  "Glitch_Map": {
+   "default": "MaterialShader/Textures/Noise_000_00_MSK2.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "GlobalWind_LeafSwing_Noise3D": {
+   "default": "MaterialShader/Textures/tex_capcom_vectorfield_0003_NotCompress_MSK3.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/tex_capcom_vectorfield_0003_NotCompress_MSK3.tex"
+   ],
+   "uses": 42
+  },
+  "Gradation01": {
+   "uses": 2
+  },
+  "Gradation02_": {
+   "uses": 2
+  },
+  "GradientColorMask": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 510
+  },
+  "GradientColorTexture": {
+   "uses": 2
+  },
+  "GradientColor_GradientAsset": {
+   "uses": 328
+  },
+  "GradientDirtMaskMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 7
+  },
+  "HDRI": {
+   "uses": 2
+  },
+  "HeavyDamage_ALBD": {
+   "default": "MaterialShader/Textures/Record_Base/HeavyDamage_ALBD.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/Record_Base/HeavyDamage_ALBD.tex"
+   ],
+   "uses": 5254
+  },
+  "HeavyDamage_NRRA": {
+   "default": "MaterialShader/Textures/Record_Base/HeavyDamage_NRRA.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/Record_Base/HeavyDamage_NRRA.tex"
+   ],
+   "uses": 5254
+  },
+  "HeightMap_CoverMat": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 6806
+  },
+  "HightMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 6
+  },
+  "Hole_mask": {
+   "uses": 7
+  },
+  "Hole_mask_noise": {
+   "uses": 7
+  },
+  "IBLTexResource_Primary": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "IBLTextureResource_Add": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "ImperfectDetail_Map": {
+   "default": "MaterialShader/Textures/Character_Base/Mask/ImperfectDetail_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/Character_Base/Mask/ImperfectDetail_MSK4.tex"
+   ],
+   "uses": 2672
+  },
+  "ImperfectDetail_OverrideMap": {
+   "uses": 1
+  },
+  "InjuryMap": {
+   "uses": 4
+  },
+  "InjuryMap_ALBA": {
+   "default": "MaterialShader/Textures/Record_Base/InjuryMap_ALBA.tex",
+   "default_share": 0.982,
+   "seen": [
+    "MaterialShader/Textures/Record_Base/InjuryMap_ALBA.tex"
+   ],
+   "uses": 56
+  },
+  "InjuryMap_NRM": {
+   "default": "MaterialShader/Textures/Record_Base/InjuryMap_NRM.tex",
+   "default_share": 0.982,
+   "seen": [
+    "MaterialShader/Textures/Record_Base/InjuryMap_NRM.tex"
+   ],
+   "uses": 56
+  },
+  "InjuryNormalMap": {
+   "uses": 4
+  },
+  "InsideRippleMap": {
+   "uses": 12
+  },
+  "InsideRippleNormalMap": {
+   "uses": 12
+  },
+  "InteriorMap_01": {
+   "default": "systems/rendering/NullBlackCubemap.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 217
+  },
+  "IrisBaseMap": {
+   "default": "MaterialShader/Textures/EyeTextures/iris_type1_ALB.tex",
+   "default_share": 0.994,
+   "seen": [
+    "MaterialShader/Textures/EyeTextures/iris_type1_ALB.tex"
+   ],
+   "uses": 369
+  },
+  "IrisBumMap": {
+   "default": "MaterialShader/Textures/EyeTextures/iris_type1_DISP.tex",
+   "default_share": 0.889,
+   "seen": [
+    "MaterialShader/Textures/EyeTextures/iris_type1_DISP.tex"
+   ],
+   "uses": 18
+  },
+  "IrisDispMap": {
+   "default": "MaterialShader/Textures/EyeTextures/iris_type1_DISP.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/EyeTextures/iris_type1_DISP.tex"
+   ],
+   "uses": 102
+  },
+  "IrisNormalMap": {
+   "default": "MaterialShader/Textures/EyeTextures/iris_type1_NRM.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/EyeTextures/iris_type1_NRM.tex"
+   ],
+   "uses": 369
+  },
+  "LargeNoise": {
+   "uses": 12
+  },
+  "LayerMaskOcclusionMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 257
+  },
+  "Layer_BaseDielectricMap": {
+   "uses": 12
+  },
+  "Layer_NormalRoughnessHeightMap": {
+   "uses": 12
+  },
+  "LensDepthMap": {
+   "default": "MaterialShader/Textures/EyeTextures/refraction_mask_master.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/EyeTextures/refraction_mask_master.tex"
+   ],
+   "uses": 369
+  },
+  "LightDamage_ALBD": {
+   "default": "MaterialShader/Textures/Record_Base/LightDamage_ALBD.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/Record_Base/LightDamage_ALBD.tex"
+   ],
+   "uses": 5254
+  },
+  "LightDamage_NRRA": {
+   "default": "MaterialShader/Textures/Record_Base/LightDamage_NRRA.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/Record_Base/LightDamage_NRRA.tex"
+   ],
+   "uses": 5254
+  },
+  "LightProjectionMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "LightdamageMap_ALBA": {
+   "uses": 48
+  },
+  "LightdamageMap_Bubble_NRMR": {
+   "uses": 26
+  },
+  "LightdamageMap_NRMR": {
+   "uses": 48
+  },
+  "Line_ALB": {
+   "uses": 1
+  },
+  "LinesALBH": {
+   "uses": 12
+  },
+  "LinesMask": {
+   "uses": 12
+  },
+  "LinesNRRO": {
+   "uses": 12
+  },
+  "MainNormalMap": {
+   "uses": 2
+  },
+  "MakeHole_Map": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.846,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 20
+  },
+  "MaskMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.859,
+   "seen": [
+    "MaterialShader/Textures/NullBlack_64.tex",
+    "MaterialShader/Textures/NullWhite_64.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 180
+  },
+  "Mask_Map": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 26
+  },
+  "Melt_Map": {
+   "uses": 3
+  },
+  "MetalMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 69
+  },
+  "MicroDetailDetailMap": {
+   "by_mmtr": {
+    "@materialshader/master/ch_detail_leather_record_wet_burnt.mmtr": "MaterialShader/Textures/Character_Base/Mask/AgingDetail_Leather_MSK4.tex",
+    "@materialshader/master/ch_detail_leather_record_wet_burnt_cloth.mmtr": "MaterialShader/Textures/Character_Base/Mask/AgingDetail_Leather_MSK4.tex"
+   },
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.521,
+   "seen": [
+    "MaterialShader/Textures/Character_Base/Mask/AgingDetail_Leather_MSK4.tex",
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 273
+  },
+  "Mirror_RTT": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 64
+  },
+  "Monitor_EmissiveTexture": {
+   "uses": 1
+  },
+  "MudBaseMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 14
+  },
+  "MudNomalMap": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 12
+  },
+  "Mud_Normal_Tex": {
+   "uses": 3
+  },
+  "Mud_Tex": {
+   "uses": 3
+  },
+  "NRMD_Tex3D": {
+   "uses": 7
+  },
+  "NRRO_1": {
+   "uses": 2
+  },
+  "Noise3D_Tex": {
+   "by_mmtr": {
+    "materialshader/master/vfx/efd/vfx_liquid_decalcustom_00.mmtr": "MaterialShader/Textures/Noise3D_01_MSK3.tex",
+    "materialshader/master/vfx/efd/vfx_liquid_decalcustom_01.mmtr": "MaterialShader/Textures/Noise3D_01_MSK3.tex"
+   },
+   "default": "MaterialShader/Textures/Noise3D_00_MSK1.tex",
+   "default_share": 0.542,
+   "seen": [
+    "MaterialShader/Textures/Noise3D_00_MSK1.tex",
+    "MaterialShader/Textures/Noise3D_01_MSK3.tex"
+   ],
+   "uses": 24
+  },
+  "NoiseMap": {
+   "default": "MaterialShader/Textures/NoiseMap_02_MSK1.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/NoiseMap_02_MSK1.tex"
+   ],
+   "uses": 106
+  },
+  "NoiseMap_CoverMat": {
+   "default": "MaterialShader/Textures/NoiseMap_03_MSK1.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/NoiseMap_03_MSK1.tex"
+   ],
+   "uses": 6806
+  },
+  "NoiseMap_RainWall": {
+   "default": "MaterialShader/Textures/NoiseMap_03_MSK1.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/NoiseMap_03_MSK1.tex"
+   ],
+   "uses": 2951
+  },
+  "NoiseWaveMap": {
+   "uses": 83
+  },
+  "Noise_ALB": {
+   "uses": 1
+  },
+  "Noise_Map": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 0.667,
+   "seen": [],
+   "uses": 27
+  },
+  "Noisemap": {
+   "uses": 2
+  },
+  "Normal": {
+   "uses": 2
+  },
+  "NormalMap": {
+   "by_mmtr": {
+    "materialshader/master/env_hlod.mmtr": "systems/rendering/NullNormal.tex",
+    "materialshader/master/env_hlod_bendnormal.mmtr": "systems/rendering/NullNormal.tex",
+    "systems/rendering/defaultshader.mmtr": "systems/rendering/NullNormal.tex"
+   },
+   "default": "MaterialShader/Textures/EyeTextures/Tearline_NRM.tex",
+   "default_share": 0.692,
+   "seen": [
+    "MaterialShader/Textures/EyeTextures/Tearline_NRM.tex",
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 495
+  },
+  "NormalMapLayer1": {
+   "default": "MaterialShader/Textures/EyeTextures/vein_NRM.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/EyeTextures/vein_NRM.tex"
+   ],
+   "uses": 369
+  },
+  "NormalMp": {
+   "uses": 1
+  },
+  "NormalRoughnessCavityMap": {
+   "default": "systems/rendering/NullNormalRoughnessOcclusion.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughnessOcclusion.tex"
+   ],
+   "uses": 34061
+  },
+  "NormalRoughnessCavityMap1": {
+   "uses": 235
+  },
+  "NormalRoughnessCavityMapBase": {
+   "uses": 257
+  },
+  "NormalRoughnessCavityMap_ClearCoat": {
+   "default": "systems/rendering/NullNormalRoughnessOcclusion.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughnessOcclusion.tex"
+   ],
+   "uses": 7
+  },
+  "NormalRoughnessCavityMap_CoverMat": {
+   "default": "systems/rendering/NullNormalRoughness.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 6806
+  },
+  "NormalRoughnessMap": {
+   "default": "systems/rendering/NullNormalRoughness.tex",
+   "default_share": 0.972,
+   "seen": [
+    "systems/rendering/NullNormal.tex",
+    "systems/rendering/NullNormalRoughness.tex"
+   ],
+   "uses": 6799
+  },
+  "NormalRoughnessMap2": {
+   "default": "systems/rendering/NullNormalRoughness.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughness.tex"
+   ],
+   "uses": 3
+  },
+  "NormalRoughnessMap_A": {
+   "uses": 1
+  },
+  "NormalRoughnessMap_B": {
+   "uses": 1
+  },
+  "NormalRoughnessOcclusionMap": {
+   "default": "MaterialShader/Textures/Vinyl/tx_base_Vinyl_00_NRRO.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 14
+  },
+  "NormalTexture": {
+   "uses": 2
+  },
+  "Normal_Map": {
+   "uses": 15
+  },
+  "NoseMask": {
+   "uses": 22
+  },
+  "OcclusionMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.984,
+   "seen": [
+    "MaterialShader/Textures/NullBlack_64.tex",
+    "MaterialShader/Textures/NullWhite_128.tex",
+    "MaterialShader/Textures/NullWhite_256.tex",
+    "MaterialShader/Textures/NullWhite_512.tex",
+    "MaterialShader/Textures/NullWhite_64.tex",
+    "systems/rendering/NullBlack.tex",
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 31244
+  },
+  "OilFilmMaskMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 3
+  },
+  "OutsideNormalMap": {
+   "uses": 12
+  },
+  "OutsideRippleMap": {
+   "uses": 12
+  },
+  "POM_HeightMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 19
+  },
+  "PadLock_Bubble_NRMap": {
+   "uses": 1
+  },
+  "PadLock_Foam_DiffuseMap": {
+   "uses": 1
+  },
+  "PadLock_Foam_DistortionMap": {
+   "uses": 1
+  },
+  "PadLock_Foam_NRMap": {
+   "uses": 1
+  },
+  "PadLock_Melt_DiffuseMap": {
+   "uses": 1
+  },
+  "PadLock_Melt_Nmap": {
+   "uses": 1
+  },
+  "PadLock_Melt_mask": {
+   "uses": 1
+  },
+  "PadLock_SmallBubble_NRMap": {
+   "uses": 1
+  },
+  "ParallaxBlend_BaseMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.941,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 240
+  },
+  "ParallaxBlend_DistortionMap": {
+   "default": "systems/rendering/NullNormalRoughnessOcclusion.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughnessOcclusion.tex"
+   ],
+   "uses": 140
+  },
+  "ParallaxBlend_HeightMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 240
+  },
+  "ParallaxBlend_NormalRoughnessCavityMap": {
+   "default": "systems/rendering/NullNormalRoughnessOcclusion.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughnessOcclusion.tex"
+   ],
+   "uses": 140
+  },
+  "Parallax_AlbedoAlphaMap": {
+   "uses": 2
+  },
+  "Parallax_HeightMap": {
+   "uses": 47
+  },
+  "ProjectedGrungeNoise": {
+   "uses": 12
+  },
+  "ProjectionALBH": {
+   "uses": 12
+  },
+  "ProjectionAOMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 3
+  },
+  "ProjectionMaskBreakup": {
+   "uses": 12
+  },
+  "ProjectionNRRO": {
+   "uses": 12
+  },
+  "Pulsation_Map": {
+   "uses": 3
+  },
+  "Pulse_mask_0": {
+   "uses": 1
+  },
+  "Pulse_mask_1": {
+   "uses": 1
+  },
+  "Pulse_mask_Gradation": {
+   "uses": 1
+  },
+  "PupilMap": {
+   "uses": 369
+  },
+  "Pus_DisplacementMap": {
+   "uses": 4
+  },
+  "Pus_DisplacementMask_MSK1": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 4
+  },
+  "Pus_EmissiveMask_MSK1": {
+   "uses": 4
+  },
+  "ROCMMap": {
+   "uses": 122
+  },
+  "RTReflectionBaseMap": {
+   "default": "MaterialShader/Textures/EyeTextures/RTReflectionBaseMap_ALB.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/EyeTextures/RTReflectionBaseMap_ALB.tex"
+   ],
+   "uses": 393
+  },
+  "RTT": {
+   "uses": 5
+  },
+  "RTT_RGDensity": {
+   "uses": 14
+  },
+  "RTT_VelocityField": {
+   "uses": 14
+  },
+  "Rain": {
+   "uses": 8
+  },
+  "RainDrop_DropMask": {
+   "uses": 5195
+  },
+  "RainDrop_FlickDrops": {
+   "uses": 5195
+  },
+  "RainDrop_StopDrops": {
+   "uses": 5195
+  },
+  "RainWindow": {
+   "uses": 1
+  },
+  "RecordSys_AddMask": {
+   "default": "MaterialShader/Textures/NullBlack_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/NullBlack_MSK4.tex"
+   ],
+   "uses": 5254
+  },
+  "RecordSys_FixMask": {
+   "uses": 5254
+  },
+  "RecordSys_ProtectMask": {
+   "default": "MaterialShader/Textures/NullBlack_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/NullBlack_MSK4.tex"
+   ],
+   "uses": 5254
+  },
+  "RecordSys_rtt": {
+   "default": "MaterialShader/Textures/NullBlack_MSK4.tex",
+   "default_share": 0.992,
+   "seen": [
+    "MaterialShader/Textures/NullBlack_MSK4.tex",
+    "MaterialShader/Textures/NullWhite_64.tex"
+   ],
+   "uses": 5310
+  },
+  "RefelctionBaseNormalMap": {
+   "uses": 1
+  },
+  "RefractMap": {
+   "default": "MaterialShader/Textures/RefractMap_NRM.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/RefractMap_NRM.tex"
+   ],
+   "uses": 30
+  },
+  "RenderTarget": {
+   "uses": 3
+  },
+  "Reticle_Tex": {
+   "uses": 3
+  },
+  "Reticle_Texture": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 9
+  },
+  "RimLight_FakeNormalMap": {
+   "default": "systems/rendering/NullNormalRoughness.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughness.tex"
+   ],
+   "uses": 772
+  },
+  "RoughnessMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 69
+  },
+  "SSSCavityOcclusionTranslucentMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.992,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 1193
+  },
+  "SandNoiseMap": {
+   "default": "MaterialShader/Textures/TVScreen_SandNoise_ALBM.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/TVScreen_SandNoise_ALBM.tex"
+   ],
+   "uses": 22
+  },
+  "Scan_ALB": {
+   "uses": 1
+  },
+  "ScleraMap": {
+   "default": "MaterialShader/Textures/EyeTextures/vein_master.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/EyeTextures/vein_master.tex"
+   ],
+   "uses": 369
+  },
+  "ScopeSpecular_Texture": {
+   "uses": 3
+  },
+  "Scope_Texture": {
+   "uses": 3
+  },
+  "ScreenImageMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 0.667,
+   "seen": [],
+   "uses": 22
+  },
+  "ScreenImageMap2": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 3
+  },
+  "ScreenSpaceEmitter_mask": {
+   "uses": 26
+  },
+  "ScreenTransitionMap": {
+   "uses": 3
+  },
+  "SecondaryBaseColorMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 768
+  },
+  "SecondaryBaseColorMap_MaskMap": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullWhite.tex"
+   ],
+   "uses": 768
+  },
+  "SecondaryNormalRoughnessMap": {
+   "default": "systems/rendering/NullNormalRoughness.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughness.tex"
+   ],
+   "uses": 48
+  },
+  "ShapeMap": {
+   "uses": 1
+  },
+  "SmallBubble_NormalRoughnessMap": {
+   "uses": 3
+  },
+  "Specular_FlowMap": {
+   "default": "MaterialShader/Textures/NullAnisoFlow.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/NullAnisoFlow.tex"
+   ],
+   "uses": 768
+  },
+  "StainMap_MSK4": {
+   "default": "MaterialShader/Textures/Record_Base/StainClothMap_MSK3.tex",
+   "default_share": 0.982,
+   "seen": [
+    "MaterialShader/Textures/Record_Base/StainClothMap_MSK3.tex"
+   ],
+   "uses": 56
+  },
+  "StampMaskRTT": {
+   "uses": 5
+  },
+  "StampedStrandColorGradient": {
+   "uses": 5
+  },
+  "StitchMap": {
+   "uses": 308
+  },
+  "StopDrops": {
+   "uses": 8
+  },
+  "SubNormalMap": {
+   "uses": 2
+  },
+  "SubinteriorALBD": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 217
+  },
+  "SubinteriorATOS": {
+   "default": "systems/rendering/NullATOS.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullATOS.tex"
+   ],
+   "uses": 217
+  },
+  "SweatMap": {
+   "default": "MaterialShader/Textures/SweatMap_Default_MSK4.tex",
+   "default_share": 0.998,
+   "seen": [
+    "MaterialShader/Textures/SweatMap_Default_MSK4.tex"
+   ],
+   "uses": 422
+  },
+  "TVPicture_Map": {
+   "default": "systems/rendering/NullWhite.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "TVShaderTexture": {
+   "uses": 1
+  },
+  "TVSnow_Map": {
+   "uses": 2
+  },
+  "TearMap": {
+   "uses": 26
+  },
+  "TearsFace_MaskMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 10
+  },
+  "TearsFace_NormalRoughnessMap": {
+   "default": "systems/rendering/NullNormalRoughness.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormalRoughness.tex"
+   ],
+   "uses": 10
+  },
+  "Tears_MaskMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 10
+  },
+  "Tears_NormalMap": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 10
+  },
+  "Tex2D_0": {
+   "uses": 24
+  },
+  "Tex2D_1": {
+   "uses": 24
+  },
+  "Tex2D_4": {
+   "uses": 1
+  },
+  "Tex2D_Base": {
+   "uses": 1
+  },
+  "Tex2D_Flash": {
+   "uses": 1
+  },
+  "Tex2D_Image": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "Tex2D_Line": {
+   "uses": 1
+  },
+  "Tex2D_Mask": {
+   "uses": 1
+  },
+  "Tex2D_RTT": {
+   "uses": 2
+  },
+  "Tex2D_image": {
+   "uses": 1
+  },
+  "Tex2D_ui1020_0": {
+   "uses": 1
+  },
+  "Tex2D_ui1020_1": {
+   "uses": 1
+  },
+  "Tex_Bubble": {
+   "uses": 8
+  },
+  "Tex_BubbleNormal": {
+   "uses": 5
+  },
+  "Tex_Detail": {
+   "uses": 5
+  },
+  "Tex_Distortion": {
+   "uses": 5
+  },
+  "Tex_Glass_Add": {
+   "uses": 1
+  },
+  "Tex_Glass_NRM": {
+   "uses": 1
+  },
+  "Tex_NormalA": {
+   "uses": 5
+  },
+  "Tex_NormalB": {
+   "uses": 5
+  },
+  "TillingMask_Map": {
+   "uses": 3
+  },
+  "VTXanim": {
+   "uses": 1
+  },
+  "Vector_Tex3D": {
+   "default": "RE_ENGINE_LIBRARY/VFX_Library/Texture/TEX_Vectorfield/tex_capcom_vectorfield_0007_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "RE_ENGINE_LIBRARY/VFX_Library/Texture/TEX_Vectorfield/tex_capcom_vectorfield_0007_MSK4.tex"
+   ],
+   "uses": 7
+  },
+  "Velocity": {
+   "uses": 2
+  },
+  "VertexAnim_NormalMap": {
+   "uses": 10
+  },
+  "VertexAnim_PositionMap": {
+   "uses": 10
+  },
+  "VertexMainNormalMap": {
+   "uses": 2
+  },
+  "VertexSafeMask": {
+   "uses": 3
+  },
+  "VertexSubNormalMap": {
+   "uses": 2
+  },
+  "VertexTex_B": {
+   "uses": 5
+  },
+  "Vertex_MeltMap": {
+   "uses": 3
+  },
+  "Vertex_NoiseMap": {
+   "uses": 3
+  },
+  "Vessel_Map": {
+   "uses": 3
+  },
+  "VtxTex_A": {
+   "uses": 5
+  },
+  "WPOAllNoiseMap": {
+   "uses": 1
+  },
+  "WaterColorMap": {
+   "uses": 1
+  },
+  "WaterLevel": {
+   "uses": 2
+  },
+  "WaterMask4_MAP": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 0.733,
+   "seen": [
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 22
+  },
+  "WaterNormalMap": {
+   "uses": 1
+  },
+  "WaveColorMap": {
+   "uses": 1
+  },
+  "WaveNormalRoughnessMap": {
+   "uses": 1
+  },
+  "WaveWpoMap": {
+   "uses": 1
+  },
+  "Wave_Normal_Tex": {
+   "uses": 3
+  },
+  "Wave_Normal_Texture2DArray": {
+   "uses": 16
+  },
+  "WearMap1": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 247
+  },
+  "Web_MSK4": {
+   "uses": 1
+  },
+  "WetMap": {
+   "uses": 5195
+  },
+  "WetNormalMap": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 0.714,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 7
+  },
+  "Wet_NormalMap": {
+   "default": "MaterialShader/Textures/CarPaint/CarWet_NRM.tex",
+   "default_share": 0.625,
+   "seen": [
+    "MaterialShader/Textures/CarPaint/CarWet_NRM.tex",
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 8
+  },
+  "WhiteWater_Map": {
+   "uses": 3
+  },
+  "WoundHealing_Base": {
+   "uses": 1
+  },
+  "WoundHealing_HealingMap": {
+   "uses": 1
+  },
+  "WoundHealing_Normal": {
+   "uses": 1
+  },
+  "WpBlood_Texture": {
+   "by_mmtr": {
+    "materialshader/master/chwp_vertexanimationtexture.mmtr": "MaterialShader/Textures/Record_Base/WeaponBlood_Melee_00_MSK4.tex"
+   },
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 0.722,
+   "seen": [
+    "MaterialShader/Textures/Record_Base/WeaponBlood_Gun_MSK4.tex",
+    "MaterialShader/Textures/Record_Base/WeaponBlood_Melee_00_MSK4.tex",
+    "MaterialShader/Textures/Record_Base/WeaponBlood_Melee_01_MSK4.tex",
+    "MaterialShader/Textures/Record_Base/WeaponBlood_Melee_02_MSK4.tex",
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 500
+  },
+  "WrinkleDiffuseMap1": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 106
+  },
+  "WrinkleDiffuseMap2": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 106
+  },
+  "WrinkleDiffuseMap3": {
+   "default": "systems/rendering/NullGray.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullGray.tex"
+   ],
+   "uses": 106
+  },
+  "WrinkleMap": {
+   "default": "MaterialShader/Textures/Character_Base/Mask/SmallWrinkles_Distortion_01_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [
+    "MaterialShader/Textures/Character_Base/Mask/SmallWrinkles_Distortion_01_MSK4.tex"
+   ],
+   "uses": 2945
+  },
+  "WrinkleNormalMap": {
+   "default": "MaterialShader/Textures/Character_Base/Mask/SmallWrinkles_Distortion_01_MSK4.tex",
+   "default_share": 0.8,
+   "seen": [
+    "MaterialShader/Textures/Character_Base/Mask/SmallWrinkles_Distortion_01_MSK4.tex",
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 20
+  },
+  "WrinkleNormalMap1": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 106
+  },
+  "WrinkleNormalMap2": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 106
+  },
+  "WrinkleNormalMap3": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullNormal.tex"
+   ],
+   "uses": 106
+  },
+  "WrinkleOverrideMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 1
+  },
+  "WriteTextMap": {
+   "uses": 1
+  },
+  "WriteTextNormalMap": {
+   "uses": 1
+  },
+  "_Texture2D": {
+   "uses": 1
+  },
+  "_Texture2D_1_3_4": {
+   "uses": 2
+  },
+  "base": {
+   "uses": 1
+  },
+  "blood_tank_Map": {
+   "uses": 5
+  },
+  "bubble_NRMR": {
+   "default": "systems/rendering/NullNormalRoughness.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 2
+  },
+  "caustics": {
+   "uses": 6
+  },
+  "dirtyBubble_BaseMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 11
+  },
+  "distortion_map": {
+   "default": "systems/rendering/NullNormal.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 2
+  },
+  "edge_mask": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 2
+  },
+  "emissive_anim_tex": {
+   "uses": 2
+  },
+  "image": {
+   "uses": 1
+  },
+  "noise": {
+   "uses": 1
+  },
+  "noise_blur": {
+   "uses": 1
+  },
+  "noise_mask": {
+   "uses": 1
+  },
+  "nosie": {
+   "uses": 3
+  },
+  "object_shape_mask": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 27
+  },
+  "rainTex": {
+   "uses": 3
+  },
+  "raindrop_noise": {
+   "uses": 4
+  },
+  "tex_Cover_Frame": {
+   "uses": 2
+  },
+  "tex_base": {
+   "uses": 1
+  },
+  "tex_line": {
+   "uses": 4
+  },
+  "tex_line_g": {
+   "uses": 4
+  },
+  "tex_mask": {
+   "uses": 1
+  },
+  "tex_vital": {
+   "uses": 1
+  },
+  "tex_vital_2": {
+   "uses": 1
+  },
+  "text": {
+   "uses": 1
+  },
+  "texture_NormalMap": {
+   "default": "systems/rendering/NullBlack.tex",
+   "default_share": 1.0,
+   "seen": [
+    "systems/rendering/NullBlack.tex"
+   ],
+   "uses": 3
+  },
+  "vertex_normal_map": {
+   "default": "MaterialShader/Textures/NullBlack_MSK4.tex",
+   "default_share": 1.0,
+   "seen": [],
+   "uses": 7
+  },
+  "wave_map": {
+   "uses": 1
+  }
+ }
+}

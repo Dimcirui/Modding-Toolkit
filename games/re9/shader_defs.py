@@ -124,12 +124,12 @@ _ACOT = SlotSocket("AlphaCavityOcclusionTranslucentMap", _K + "acot",
                    default_color=(1.0, 0.0, 1.0, 1.0), alpha=True, default_alpha=1.0,
                    supplies=('alpha', 'ao', 'cavity', 'translucency'))
 
-# Skin: R is a BASE_SLOT_CHANNEL_MAPS *constant* (no opacity data) -- only
-# cavity (G) and AO (B), per the module docstring. No translucency channel
+# Skin: R is SSS (not opacity -- there is no opacity data), G cavity, B AO,
+# per the module docstring. No translucency channel
 # here, unlike ACOT/ATOSSS -- confirmed by the user.
 _SSSCOT = SlotSocket("SSSCavityOcclusionTranslucentMap", _K + "ssscot",
                      default_color=(1.0, 1.0, 1.0, 1.0),
-                     supplies=('ao', 'cavity'))
+                     supplies=('ao', 'cavity', 'sss'))
 
 # ── Core slots: hemi-octahedral-normal family (Emissive) ───────────────────
 
@@ -139,7 +139,7 @@ _NRCM = SlotSocket("NormalRoughnessCavityMap", _K + "nrcm",
 
 _ATOSSS = SlotSocket("AlphaTranslucentOcclusionSSSMap", "core.shader_pack.atosss",
                      default_color=(1.0, 0.0, 1.0, 1.0),
-                     supplies=('alpha', 'ao', 'translucency'))
+                     supplies=('alpha', 'ao', 'translucency', 'sss'))
 
 _OCC = SlotSocket("OcclusionMap", "core.shader_pack.occ",
                   default_color=(1.0, 1.0, 1.0, 1.0),

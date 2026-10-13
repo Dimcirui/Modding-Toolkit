@@ -5,10 +5,15 @@ from ...core.i18n import T
 from ...core.mdf_tex_processor_base import (
     PBR_TYPES, PBR_TYPE_LABELS, PBR_CHANNEL_SELECTABLE,
 )
-from .mrl3_tex_processor import MHWI_PBR_SLOT_TYPES, MHWI_NULL_TEX
+from .mrl3_tex_processor import MHWI_PBR_SLOT_TYPES, MHWI_NULL_TEX, MHWI_SLOT_CHANNEL_MAPS
 
-# MHWI 无独立 AO 槽位，AO 应在 DCC 中预先烘焙到 Albedo
-MHWI_PBR_DISPLAY_TYPES = [t for t in PBR_TYPES if t != 'ao']
+# Only the quantities an MHWI slot actually stores. MHWI 无独立 AO 槽位，AO 应在
+# DCC 中预先烘焙到 Albedo; likewise no cavity or SSS slot -- deriving the list
+# from the channel maps keeps it from offering pickers with nothing behind them.
+MHWI_PBR_DISPLAY_TYPES = [t for t in PBR_TYPES
+                          if any(isinstance(v, tuple) and v[0] == t
+                                 for chans in MHWI_SLOT_CHANNEL_MAPS.values()
+                                 for v in chans.values())]
 
 PROCESSOR_WINDOW_WIDTH = 660
 
