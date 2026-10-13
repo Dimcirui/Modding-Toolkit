@@ -140,6 +140,31 @@ _CH_ENUM_ITEMS = [('R', 'R', ''), ('G', 'G', ''), ('B', 'B', ''), ('A', 'A', '')
 FEATURE_CHANNELS = ('R', 'G', 'B', 'A')
 
 
+def fx_feature_channels(null_rgba):
+    """FX mask -- the same channels in MHWI, Rise and Wilds (per the user, and
+    the community MHWS guide caimogu.cc/post/1921753): R thin-film, G unknown,
+    B wave emit, A fuzz gate (Wilds' XM_MSK4 shares this slot). ``null_rgba``
+    is the game's own vanilla null for the slot: unset channels match it."""
+    r, g, b, a = null_rgba
+    return {'R': ('input', "core.feature.film",      r),
+            'G': ('fixed', g, "core.feature.unknown"),
+            'B': ('input', "core.feature.wave_emit", b),
+            'A': ('input', "core.feature.fuzz",      a)}
+
+
+def cmm_feature_channels(null_rgba):
+    """CMM colour-change mask (MHWI ColorMaskMap, Rise UserColorchangeMap).
+    Per the user and caimogu.cc/post/2408292: R and G are two recolour areas --
+    alpha (α) armour recolours through R with G a fixed colour, beta (β) the
+    other way round; B unused; A transparency / glow strength (weapons, e.g.
+    charge-blade phials)."""
+    r, g, b, a = null_rgba
+    return {'R': ('input', "core.feature.cmm_r",     r),
+            'G': ('input', "core.feature.cmm_g",     g),
+            'B': ('fixed', b, "core.feature.unused"),
+            'A': ('input', "core.feature.cmm_alpha", a)}
+
+
 def feature_inputs_of(slot):
     """{channel: absolute path or ''} -- the slot's own per-channel inputs."""
     out = {}

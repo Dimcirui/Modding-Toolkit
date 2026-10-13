@@ -1,6 +1,7 @@
 import bpy
 
 from ...core.slot_defaults import SlotNulls
+from ...core.mdf_tex_processor_base import fx_feature_channels, cmm_feature_channels
 from ...core.mdf_tex_processor_base import (
     BASE_SLOT_CHANNEL_MAPS, BASE_NULL_TEX_BY_TYPE, BASE_TEXTURE_TYPE_ABBREV,
     BASE_COMMON_SLOT_TYPES,
@@ -34,6 +35,13 @@ MHRS_NULL_TEX_BY_TYPE = {
 }
 
 # ── Null checker + collection update callback ──────────────────────────────────
+
+# Mask slots with per-channel inputs. Both nulls are systems/rendering/NullBlack
+# (vanilla_slot_defaults.json: 97% / 99% of null bindings) = (0,0,0,1).
+MHRS_FEATURE_CHANNELS = {
+    'FxMap':              fx_feature_channels((0.0, 0.0, 0.0, 1.0)),
+    'UserColorchangeMap': cmm_feature_channels((0.0, 0.0, 0.0, 1.0)),
+}
 
 # Vanilla-measured defaults where assets/mhrs/vanilla_slot_defaults.json exists,
 # the hand table above otherwise -- see core/slot_defaults.py.
@@ -122,6 +130,7 @@ class MHRS_OT_MdfTexProcess(MdfTexProcessBase):
     _natives_root_key = "mhrs_natives_root"
     _null_tex_by_type = MHRS_NULL_TEX_BY_TYPE
     _slot_nulls       = SLOT_NULLS
+    _feature_channels = MHRS_FEATURE_CHANNELS
     _channel_maps     = MHRS_SLOT_CHANNEL_MAPS
     _tex_version      = MHRS_TEX_VERSION
     _abbrev_map       = MHRS_TEXTURE_TYPE_ABBREV

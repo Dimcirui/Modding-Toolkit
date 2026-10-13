@@ -16,6 +16,7 @@ from ...core.mdf_tex_processor_base import (
     MdfTexClearPBRBase, MdfTexClearDirectBase,
     MdfTexCopyMaterialBase, MdfTexPasteMaterialBase,
     _import_tex_utils, _STATE_VERSION, _restore_slot_features,
+    fx_feature_channels, cmm_feature_channels, feature_inputs_of, feature_channel_map,
 )
 from ...core.mdf_tex_slot_status import resolve_slot, migrate_saved_mode
 
@@ -101,6 +102,15 @@ MHWI_SLOT_CHANNEL_MAPS = {
 }
 
 _is_null_mhwi = make_null_checker(MHWI_NULL_TEX)
+
+# Mask slots with per-channel inputs, same meanings as Rise/Wilds. Both nulls
+# are MHW Model Editor's null_black, RGBA8 (0,0,0,255) -- A = 1, unlike Wilds'.
+# NormalMap.B (the EFX emissive mask) deliberately stays out: it is kept black,
+# and the rare author who needs it prepares that map by hand (user, 2026-10-13).
+MHWI_FEATURE_CHANNELS = {
+    'FxMap':        fx_feature_channels((0.0, 0.0, 0.0, 1.0)),
+    'ColorMaskMap': cmm_feature_channels((0.0, 0.0, 0.0, 1.0)),
+}
 
 
 # ── Path helpers ──────────────────────────────────────────────────────────────
@@ -407,11 +417,13 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                 for slot in mat_item.slots:
                     # AUTO resolves here exactly as in the MDF processor; the
                     # explicit modes pass through unchanged.
+                    feature_def = MHWI_FEATURE_CHANNELS.get(slot.texture_type)
                     mode = resolve_slot(
                         slot.texture_type, slot.mode,
                         bpy.path.abspath(slot.direct_image) if slot.direct_image else '',
                         slot.original_path, pbr_paths, MHWI_SLOT_CHANNEL_MAPS,
-                        MHWI_NULL_TEX, _is_null_mhwi).mode
+                        MHWI_NULL_TEX, _is_null_mhwi,
+                        feature_inputs=feature_inputs_of(slot) if feature_def else None).mode
                     if mode == 'SKIP':
                         skip_count += 1
                         continue
@@ -449,18 +461,25 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                                     base_path, tex_name, slot.texture_type)
                                 export_count += 1
                                 continue
-                            if slot.texture_type not in MHWI_PBR_SLOT_TYPES:
+                            feature_set = feature_def and any(feature_inputs_of(slot).values())
+                            if slot.texture_type not in MHWI_PBR_SLOT_TYPES and not feature_set:
                                 print(f"[MHWI Tex] SKIP  {slot.texture_type}: "
                                       "非 PBR 合成槽位，请改用 DIRECT 模式")
                                 skip_count += 1
                                 continue
                             _t_comp = time.time()
-                            src_img = _compose_channels(
-                                slot.texture_type, pbr_paths, pbr_channels,
-                                temp_dir, tex_name, pbr_inv,
-                                channel_maps=MHWI_SLOT_CHANNEL_MAPS,
-                                normal_flip_g=normal_flip_g,
-                            )
+                            if feature_set:
+                                f_map, f_paths = feature_channel_map(slot, feature_def)
+                                src_img = _compose_channels(
+                                    slot.texture_type, f_paths, {}, temp_dir, tex_name,
+                                    channel_maps={slot.texture_type: f_map}, octahedral=False)
+                            else:
+                                src_img = _compose_channels(
+                                    slot.texture_type, pbr_paths, pbr_channels,
+                                    temp_dir, tex_name, pbr_inv,
+                                    channel_maps=MHWI_SLOT_CHANNEL_MAPS,
+                                    normal_flip_g=normal_flip_g,
+                                )
                             # print(f"[MHWI Tex]   合成通道 {slot.texture_type}: {time.time() - _t_comp:.2f}s", flush=True)
                             if src_img is None:
                                 null_val = MHWI_NULL_TEX.get(slot.texture_type)

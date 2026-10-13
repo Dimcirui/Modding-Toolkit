@@ -506,6 +506,21 @@ STRINGS = {
     "core.mdf_tex_processor_ui_base.no_input": {"EN": "no input", "ZH": "无输入"},
     "core.mdf_tex_processor_ui_base.inverted_rule": {"EN": "(inverted by the slot)", "ZH": "（槽位规则反相）"},
     "core.mdf_tex_processor_ui_base.untouched": {"EN": "untouched", "ZH": "未配置"},
+    # Feature-mask channels shared across games (core/mdf_tex_processor_base.py)
+    "core.feature.film": {"EN": "Film (thin-film sheen)", "ZH": "薄膜 (Film 彩虹膜)"},
+    "core.feature.wave_emit": {"EN": "Wave emit", "ZH": "波纹发光 (WaveEmit)"},
+    "core.feature.fuzz": {"EN": "Fuzz", "ZH": "绒毛散射 (Fuzz)"},
+    "core.feature.unknown": {"EN": "unknown", "ZH": "未知"},
+    "core.feature.unused": {"EN": "unused", "ZH": "未使用"},
+    "core.feature.cmm_r": {
+        "EN": "Recolour area R (alpha armour: recolourable; beta: fixed colour)",
+        "ZH": "变色区域 R（α 装备可变色 / β 装备固定色）"},
+    "core.feature.cmm_g": {
+        "EN": "Recolour area G (beta armour: recolourable; alpha: fixed colour)",
+        "ZH": "变色区域 G（β 装备可变色 / α 装备固定色）"},
+    "core.feature.cmm_alpha": {
+        "EN": "Transparency / glow strength (weapons)",
+        "ZH": "透明度 / 发光强度（武器）"},
     # Slot status badges -- what processing will actually do to the slot.
     "core.mdf_tex_slot_status.compose": {"EN": "Compose", "ZH": "合成"},
     "core.mdf_tex_slot_status.direct": {"EN": "Direct", "ZH": "直接"},

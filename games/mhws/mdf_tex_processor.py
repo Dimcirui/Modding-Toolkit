@@ -1,6 +1,7 @@
 import bpy
 
 from ...core.slot_defaults import SlotNulls
+from ...core.mdf_tex_processor_base import fx_feature_channels
 from ...core.mdf_tex_processor_base import (
     BASE_SLOT_CHANNEL_MAPS, BASE_NULL_TEX_BY_TYPE, BASE_TEXTURE_TYPE_ABBREV,
     BASE_COMMON_SLOT_TYPES,
@@ -50,17 +51,12 @@ TEXTURE_TYPE_ABBREV = BASE_TEXTURE_TYPE_ABBREV
 # another third, and BC1-encoded masks report A = 1 only because BC1 has no alpha.
 _K = "mhws.feature."
 MHWS_FEATURE_CHANNELS = {
-    'FxMap': {
-        'R': ('input', _K + "film",      0.0),   # Film_Thickness / Blend / IOR
-        'G': ('fixed', 0.0, _K + "unknown"),
-        'B': ('input', _K + "wave_emit", 0.0),   # UseWaveEmit / AnimEmitWave
-        'A': ('input', _K + "fuzz",      0.0),   # XM_MSK4: Fuzz_Blend / Fuzz_Roughness gate
-    },
+    'FxMap': fx_feature_channels((0.0, 0.0, 0.0, 0.0)),   # NullBlack_Alpha_MSK4
     'ColorLayer_MaskMap': {                      # needs the _UseSC material suffix
         'R': ('input', _K + "color_area1", 0.0),
         'G': ('input', _K + "color_area2", 0.0),
         'B': ('input', _K + "color_area3", 0.0),
-        'A': ('fixed', 0.0, _K + "unused"),
+        'A': ('fixed', 0.0, "core.feature.unused"),
     },
     'DetailMaskMap': {                           # where Detail_ALBD_x / Detail_NRRH_x apply
         'R': ('input', _K + "detail_r", 0.0),
@@ -72,7 +68,7 @@ MHWS_FEATURE_CHANNELS = {
         'R': ('input', _K + "fur_dir1",     0.5),    # 0-180 deg -> 0-1, layer 1
         'G': ('input', _K + "fur_dir2",     0.5),    # layer 2, usually the visible one
         'B': ('input', _K + "fur_presence", 1.0),
-        'A': ('fixed', 0.0, _K + "unused"),
+        'A': ('fixed', 0.0, "core.feature.unused"),
     },
 }
 

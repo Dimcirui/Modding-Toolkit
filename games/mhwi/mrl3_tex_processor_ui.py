@@ -5,6 +5,7 @@ from ...core.mdf_tex_processor_ui_base import MdfTexDialogBase
 from ...core.slot_defaults import SlotNulls
 from .mrl3_tex_processor import (
     MHWI_ALL_SLOT_TYPES, MHWI_NULL_TEX, MHWI_SLOT_CHANNEL_MAPS, MHWI_ABBREV_MAP,
+    MHWI_FEATURE_CHANNELS,
 )
 
 
@@ -40,6 +41,7 @@ class MHWI_OT_Mrl3TexProcessorDialog(MdfTexDialogBase):
     _slot_nulls        = SlotNulls(MHWI_NULL_TEX)
     _channel_maps      = MHWI_SLOT_CHANNEL_MAPS
     _abbrev_map        = MHWI_ABBREV_MAP
+    _feature_channels  = MHWI_FEATURE_CHANNELS
 
     @property
     def _collection_label(self):
