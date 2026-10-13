@@ -28,6 +28,7 @@ from ...core.slot_sources import (
     find_shader_slot_supplies, shader_pbr_contributions,
 )
 from ...core.slot_resolver import resolve_dds_format, write_slot_tex
+from ...core.gen_slot_plan import plan_slots
 from .mrl3_coef_rules import transparent_coefs
 from .mrl3_tex_processor import (
     MHWI_SLOT_CHANNEL_MAPS, MHWI_NULL_TEX,
@@ -165,6 +166,16 @@ class MhwiGenMaterialEntry(bpy.types.PropertyGroup):
     )
     ao_ch:            bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
     ao_inv:           bpy.props.BoolProperty(name="Invert", default=False)
+    # Set by Refresh for the dialog: where each PBR channel comes from, as text
+    # (file name, constant, "ALB.A"...), and how many meshes use the material.
+    src_color:     bpy.props.StringProperty()
+    src_normal:    bpy.props.StringProperty()
+    src_roughness: bpy.props.StringProperty()
+    src_metallic:  bpy.props.StringProperty()
+    src_alpha:     bpy.props.StringProperty()
+    src_emissive:  bpy.props.StringProperty()
+    mesh_count:    bpy.props.IntProperty(default=0)
+    slots_expanded: bpy.props.BoolProperty(default=False)
     native_size_color:     bpy.props.IntProperty(default=0)
     native_size_normal:    bpy.props.IntProperty(default=0)
     native_size_roughness: bpy.props.IntProperty(default=0)
@@ -208,6 +219,9 @@ class MhwiGenSettings(bpy.types.PropertyGroup):
         default="",
     )
     material_list:    bpy.props.CollectionProperty(type=MhwiGenMaterialEntry)
+    material_list_idx: bpy.props.IntProperty()
+    options_expanded:  bpy.props.BoolProperty(default=False)
+    clipboard_json:    bpy.props.StringProperty()   # mhw.gen_copy_material
     flip_normal_g:    bpy.props.BoolProperty(
         name="Normal Map OpenGL -> DirectX",
         description="When enabled, connected OpenGL normal maps are directly converted to DX format, "
@@ -524,34 +538,38 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
         #: write sites uniform.
         slot_files = {}
 
+        # Which branch each slot takes -- the same call the dialog's "slot
+        # results" section draws (core/gen_slot_plan.py). MHWI writes the solid
+        # even when it equals the defaults (no default_rgba), as it always has.
+        plan = plan_slots(
+            slot_types, MHWI_SLOT_CHANNEL_MAPS,
+            emissive_slots=emissive_slots, use_toon=use_toon, emi_zero=emi_zero,
+            slot_direct=slot_direct, prefer_direct=prefer_direct,
+            skip_textures=getattr(mat_entry, 'skip_textures', False),
+            null_for=MHWI_NULL_TEX.get,
+            downgrade=lambda st: _try_downgrade_slot(
+                st, strategies, pbr_channels, MHWI_SLOT_CHANNEL_MAPS))
+
         for slot_type in slot_types:
-            # Emissive: skip composition if toon mode or strength is zero
-            if slot_type in emissive_slots:
-                if use_toon:
-                    continue  # filled from albedo binding after loop
-                if emi_zero:
-                    null = MHWI_NULL_TEX.get(slot_type)
-                    if null:
-                        slot_binding_values[slot_type] = null
-                    continue
+            p = plan[slot_type]
+            if p.kind in ('TOON', 'KEEP'):
+                continue                    # TOON is filled from the albedo below
+            if p.kind == 'NULL':
+                slot_binding_values[slot_type] = p.detail
+                continue
+            if p.kind == 'PATH':
+                slot_binding_values[slot_type] = _mhwi_tex_binding(
+                    base_path, tex_name, slot_type)
+                continue
 
             # --- direct slot source (BY_SLOT_NAME) ---------------------------
             # See mdf_generator_base for the rationale.  MHWI benefits more
             # than the RE games: only 4 of its 7 slots have a composition
             # recipe, so ColorMaskMap / FxMap / FurVelocityMap were previously
             # unreachable and always wrote a null texture.
-            direct_src, direct_auth = slot_direct.get(slot_type, (None, None))
-            # See mdf_generator_base: shader_source is a hard switch, so a slot
-            # socket only wins unconditionally when there is no PBR recipe to
-            # fall back to at all; otherwise it needs the explicit pick.
-            if direct_src is not None and (
-                    slot_type not in MHWI_SLOT_CHANNEL_MAPS
-                    or prefer_direct):
-                if getattr(mat_entry, 'skip_textures', False):
-                    slot_binding_values[slot_type] = _mhwi_tex_binding(
-                        base_path, tex_name, slot_type)
-                    continue
-
+            if p.kind == 'DIRECT':
+                direct_src = p.detail
+                direct_auth = slot_direct.get(slot_type, (None, None))[1]
                 direct_key = (slot_type, 'DIRECT_SLOT', direct_src)
                 cached = comp_cache.get(direct_key)
                 if cached is not None:
@@ -582,19 +600,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                       f"{os.path.basename(disk_path)} (槽位直连/{direct_auth})")
                 continue
 
-            if slot_type not in MHWI_SLOT_CHANNEL_MAPS:
-                null = MHWI_NULL_TEX.get(slot_type)
-                if null:
-                    slot_binding_values[slot_type] = null
-                continue
-
-            # --- skip_textures: just compute the binding path ---
-            if getattr(mat_entry, 'skip_textures', False):
-                slot_binding_values[slot_type] = _mhwi_tex_binding(
-                    base_path, tex_name, slot_type)
-                continue
-
-            # --- cache key construction ---
+            # --- SOLID / COMPOSE: cache key construction ---
             ch_map = MHWI_SLOT_CHANNEL_MAPS[slot_type]
             needed_pt = {src[0] for src in ch_map.values()
                          if src is not None and isinstance(src, tuple)}
@@ -623,31 +629,30 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                     slot_files[slot_type] = cached[0]
                     continue
 
-                # Only attempt downgrade for cacheable slots (no BAKE involved)
-                rgba = _try_downgrade_slot(slot_type, strategies, pbr_channels, MHWI_SLOT_CHANNEL_MAPS)
-                if rgba is not None:
-                    hint = f"{tex_name}_{slot_type.lower()}_dg"
-                    composed = _generate_solid_texture_path(rgba, temp_dir, hint, size=256)
-                    if composed:
-                        disk_path = _mhwi_disk_path(natives_root, base_path, tex_name, slot_type)
-                        write_slot_tex(
-                            composed, disk_path, temp_dir,
-                            dds_fmt=resolve_dds_format(
-                                slot_type, MHWI_SRGB_SLOT_TYPES),
-                            generate_mipmaps=effective_mipmaps,
-                            image_to_dds=ImageListToDDS,
-                            dds_to_tex=ConvertDDSToTex,
-                            grade_mode=grade_mode,
-                        )
+            if p.kind == 'SOLID':
+                hint = f"{tex_name}_{slot_type.lower()}_dg"
+                composed = _generate_solid_texture_path(p.detail, temp_dir, hint, size=256)
+                if composed:
+                    disk_path = _mhwi_disk_path(natives_root, base_path, tex_name, slot_type)
+                    write_slot_tex(
+                        composed, disk_path, temp_dir,
+                        dds_fmt=resolve_dds_format(
+                            slot_type, MHWI_SRGB_SLOT_TYPES),
+                        generate_mipmaps=effective_mipmaps,
+                        image_to_dds=ImageListToDDS,
+                        dds_to_tex=ConvertDDSToTex,
+                        grade_mode=grade_mode,
+                    )
 
-                        binding = _mhwi_tex_binding(base_path, tex_name, slot_type)
-                        slot_binding_values[slot_type] = binding
-                        slot_files[slot_type] = composed
+                    binding = _mhwi_tex_binding(base_path, tex_name, slot_type)
+                    slot_binding_values[slot_type] = binding
+                    slot_files[slot_type] = composed
+                    if cache_key is not None:
                         comp_cache[cache_key] = (composed, disk_path, binding)
-                        continue
+                    continue
+                # A solid that could not be saved falls through to composition.
 
             # --- full composition path ---
-            _t_comp = time.time()
             normal_flip_g = getattr(settings, 'flip_normal_g', False)
             composed = _compose_channels(
                 slot_type, pbr_paths, pbr_channels, temp_dir, tex_name,
@@ -657,7 +662,6 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                 bake_ao_into_color=bake_ao,
                 ao_strength=getattr(mat_entry, 'ao_strength', 1.0),
             )
-            # print(f"[{self._log_tag}]   合成通道 {slot_type}: {time.time() - _t_comp:.2f}s", flush=True)
 
             if composed:
                 disk_path = _mhwi_disk_path(natives_root, base_path, tex_name, slot_type)

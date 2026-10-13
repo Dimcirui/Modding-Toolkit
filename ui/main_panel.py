@@ -4,7 +4,11 @@ import re
 from ..core.i18n import T, draw_language_toggle, get_lang
 from ..core import bone_utils, ui_config, export_autofix
 from . import game_sections
-from ..core.mdf_generator_base import MHW_OT_SetChannelSize, MHW_OT_SetShaderSource
+from ..core.mdf_generator_base import (
+    MHW_OT_SetChannelSize, MHW_OT_SetShaderSource,
+    MHW_OT_GenCopyMaterial, MHW_OT_GenPasteMaterial,
+)
+from ..core.mdf_generator_ui_base import MDFGEN_UL_materials
 from ..core.bone_utils import get_import_presets_callback, get_target_presets_callback
 from ..core.pose_ops import get_pose_presets_callback
 from ..games.re9.batch_export import get_schemes_callback
@@ -789,6 +793,9 @@ classes = [
     MHW_PT_SuiteSettings,
     MHW_OT_SetChannelSize,
     MHW_OT_SetShaderSource,
+    MHW_OT_GenCopyMaterial,
+    MHW_OT_GenPasteMaterial,
+    MDFGEN_UL_materials,
     MHW_PT_MainPanel,
 ]
 

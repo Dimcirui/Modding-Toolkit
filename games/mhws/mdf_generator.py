@@ -89,6 +89,16 @@ class MhwsGenMaterialEntry(bpy.types.PropertyGroup):
     )
     ao_ch:            bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
     ao_inv:           bpy.props.BoolProperty(name="Invert", default=False)
+    # Set by Refresh for the dialog: where each PBR channel comes from, as text
+    # (file name, constant, "ALB.A"...), and how many meshes use the material.
+    src_color:     bpy.props.StringProperty()
+    src_normal:    bpy.props.StringProperty()
+    src_roughness: bpy.props.StringProperty()
+    src_metallic:  bpy.props.StringProperty()
+    src_alpha:     bpy.props.StringProperty()
+    src_emissive:  bpy.props.StringProperty()
+    mesh_count:    bpy.props.IntProperty(default=0)
+    slots_expanded: bpy.props.BoolProperty(default=False)
     # Native pixel sizes detected at refresh (read-only, set by MdfGenRefreshBase)
     native_size_color:     bpy.props.IntProperty(default=0)
     native_size_normal:    bpy.props.IntProperty(default=0)
@@ -131,6 +141,8 @@ class MhwsGenSettings(bpy.types.PropertyGroup):
     )
     material_list:     bpy.props.CollectionProperty(type=MhwsGenMaterialEntry)
     material_list_idx: bpy.props.IntProperty()
+    options_expanded:  bpy.props.BoolProperty(default=False)
+    clipboard_json:    bpy.props.StringProperty()   # mhw.gen_copy_material
     flip_normal_g:     bpy.props.BoolProperty(
         name="Normal OpenGL -> DirectX",
         description="When enabled, connected OpenGL normal maps are converted directly to DX format, without "
