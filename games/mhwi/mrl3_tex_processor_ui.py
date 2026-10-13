@@ -35,7 +35,6 @@ class MHWI_OT_Mrl3TexProcessorDialog(MdfTexDialogBase):
     _empty_hint_key    = "mhwi.mrl3_tex_processor_ui.select_mrl3_then_refresh"
     _collection_attr   = "mrl3_collection"
     _op_stem           = "mrl3_tex"
-    _show_mip_strategy = False          # MHWI's export never reads mipmap_strategy
     _common_slot_types = MHWI_ALL_SLOT_TYPES
     _null_tex_by_type  = MHWI_NULL_TEX
     _slot_nulls        = SlotNulls(MHWI_NULL_TEX)

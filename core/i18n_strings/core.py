@@ -547,6 +547,7 @@ STRINGS = {
     "core.mdf_generator_ui_base.opt_octahedral": {"EN": "Octahedral", "ZH": "八面体法线"},
     "core.mdf_generator_ui_base.opt_no_mip": {"EN": "No mipmaps", "ZH": "不生成 mip"},
     "core.mdf_generator_ui_base.opt_toon": {"EN": "Toon for all", "ZH": "全部三渲二"},
+    "core.mdf_generator_ui_base.mip_quality": {"EN": "Mipmaps", "ZH": "Mip 生成方式"},
     "core.mdf_generator_ui_base.flip_g": {"EN": "Normal OpenGL -> DirectX", "ZH": "法线 OpenGL → DirectX"},
     "core.mdf_generator_ui_base.meshes": {"EN": "{n} mesh(es)", "ZH": "{n} 个网格"},
     "core.mdf_generator_ui_base.read": {"EN": "Read", "ZH": "读取"},

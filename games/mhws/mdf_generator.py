@@ -3,7 +3,7 @@ import bpy
 from ...core.mdf_tex_processor_base import (
     BASE_SLOT_CHANNEL_MAPS, BASE_NULL_TEX_BY_TYPE, BASE_TEXTURE_TYPE_ABBREV,
     _CH_ENUM_ITEMS,
-    octahedral_normals_prop,
+    octahedral_normals_prop, mip_strategy_prop,
 )
 from .mdf_tex_processor import NULL_TEX_BY_TYPE, SLOT_NULLS, PLACEHOLDER_SLOT_TYPES
 from ...core.mdf_generator_base import (
@@ -164,6 +164,7 @@ class MhwsGenSettings(bpy.types.PropertyGroup):
         description="Override every material's own Generate MipMaps checkbox and skip mipmap generation entirely",
         default=False,
     )
+    global_mip_quality: mip_strategy_prop()
     global_use_toon:   bpy.props.BoolProperty(
         name="Use Toon Shading (Global)",
         description="Override every material's own Use Toon Shading checkbox and force it on for all of them",

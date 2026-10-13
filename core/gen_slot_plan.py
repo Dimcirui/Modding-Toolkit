@@ -32,22 +32,22 @@ def _close(a, b):
 
 def plan_slots(slot_types, channel_maps, *, emissive_slots, use_toon, emi_zero,
                slot_direct, prefer_direct, skip_textures, null_for,
-               downgrade, default_rgba=None, placeholder_slots=frozenset(),
+               downgrade, null_rgba=None, placeholder_slots=frozenset(),
                keep_unlisted=lambda st: False):
     """{slot_type: SlotPlan} for every slot in ``slot_types``.
 
     null_for(st)       -> the slot's null path, or "" / None
     downgrade(st)      -> RGBA when every input of the slot is a constant, else None
-    default_rgba(st)   -> RGBA of the all-defaults material; when given, a
-                          downgrade equal to it becomes the null instead of a
-                          solid texture (the RE generator; MHWI writes the solid)
+    null_rgba(st)      -> the measured pixel of the slot's null, or None when
+                          unknown; a downgrade equal to it becomes the null
+                          instead of a solid texture (core/null_pixels.py)
     keep_unlisted(st)  -> True to leave a recipe-less slot as the preset has it
     """
     plan = {}
     for st in slot_types:
         plan[st] = _plan_one(
             st, channel_maps, emissive_slots, use_toon, emi_zero, slot_direct,
-            prefer_direct, skip_textures, null_for, downgrade, default_rgba,
+            prefer_direct, skip_textures, null_for, downgrade, null_rgba,
             placeholder_slots, keep_unlisted)
     return plan
 
@@ -57,7 +57,7 @@ def _null_or_keep(null):
 
 
 def _plan_one(st, channel_maps, emissive_slots, use_toon, emi_zero, slot_direct,
-              prefer_direct, skip_textures, null_for, downgrade, default_rgba,
+              prefer_direct, skip_textures, null_for, downgrade, null_rgba,
               placeholder_slots, keep_unlisted):
     if st in emissive_slots:
         if use_toon:
@@ -86,10 +86,14 @@ def _plan_one(st, channel_maps, emissive_slots, use_toon, emi_zero, slot_direct,
                             if isinstance(src, tuple)}))
     rgba = downgrade(st)
     if rgba is not None:
-        if default_rgba is not None:
+        # The null only when it holds this very pixel. (Until 2026-10-13 the
+        # test was "equals the all-defaults material", which is not the same
+        # thing: NRRO's defaults have roughness 1 where its null has 0.5, and
+        # ACOT's have cavity 1 / translucency 0 where NullATOS has 0 / 1.)
+        if null_rgba is not None:
             null = null_for(st)
-            dflt = default_rgba(st)
-            if null and dflt is not None and _close(rgba, dflt):
+            px = null_rgba(st) if null else None
+            if px is not None and _close(rgba, px):
                 return SlotPlan('NULL', sources, null)
         return SlotPlan('SOLID', sources, tuple(rgba))
     return SlotPlan('COMPOSE', sources, '')

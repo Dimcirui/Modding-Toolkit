@@ -2,7 +2,7 @@ import bpy
 
 from ...core.i18n import T
 from ...core.color_grade import color_grade_items, DEFAULT_MODE_INDEX
-from ...core.mdf_tex_processor_base import _CH_ENUM_ITEMS, octahedral_normals_prop
+from ...core.mdf_tex_processor_base import _CH_ENUM_ITEMS, octahedral_normals_prop, mip_strategy_prop
 from .mdf_tex_processor import (
     SLOT_NULLS,
     RE4_SLOT_CHANNEL_MAPS, RE4_NULL_TEX_BY_TYPE, RE4_TEXTURE_TYPE_ABBREV,
@@ -152,6 +152,7 @@ class RE4GenSettings(bpy.types.PropertyGroup):
         description="Override every material's own Generate MipMaps checkbox and skip mipmap generation entirely",
         default=False,
     )
+    global_mip_quality: mip_strategy_prop()
     global_use_toon:   bpy.props.BoolProperty(
         name="Use Toon Shading (Global)",
         description="Override every material's own Use Toon Shading checkbox and force it on for all of them",

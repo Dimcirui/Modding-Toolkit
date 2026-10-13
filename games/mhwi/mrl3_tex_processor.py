@@ -6,7 +6,8 @@ import time
 
 from ...core.i18n import T
 from ...core.color_grade import color_grade_items, DEFAULT_MODE_INDEX
-from ...core.slot_resolver import grade_source_file
+from ...core.slot_resolver import resolve_dds_format, write_slot_tex
+from ...core.gen_pipeline import SlotWriter
 from ...core.mdf_tex_processor_base import (
     PBR_TYPES, PBR_CHANNEL_SELECTABLE,
     MdfTexMaterialItem,
@@ -17,6 +18,7 @@ from ...core.mdf_tex_processor_base import (
     MdfTexCopyMaterialBase, MdfTexPasteMaterialBase,
     _import_tex_utils, _STATE_VERSION, _restore_slot_features,
     fx_feature_channels, cmm_feature_channels, feature_inputs_of, feature_channel_map,
+    processor_cache_key,
 )
 from ...core.mdf_tex_slot_status import resolve_slot, migrate_saved_mode
 
@@ -384,6 +386,7 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
 
         temp_dir     = tempfile.mkdtemp(prefix="mhwi_tex_")
         export_count = fail_count = skip_count = 0
+        tex_cache    = {}   # processor_cache_key -> (source, disk, binding), across materials
 
         try:
             for mat_item in settings.materials:
@@ -413,6 +416,16 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                 emissive_path = pbr_paths.get('emissive', '')
                 share_emi     = bool(color_path and emissive_path and color_path == emissive_path)
                 bml_value_out = None
+                writer = SlotWriter(
+                    cache=tex_cache, temp_dir=temp_dir,
+                    disk_path=lambda st, _n=tex_name: _mhwi_disk_path(
+                        natives_root, base_path, _n, st),
+                    binding=lambda st, _n=tex_name: _mhwi_tex_binding(base_path, _n, st),
+                    srgb_slots=MHWI_SRGB_SLOT_TYPES, write_tex=write_slot_tex,
+                    resolve_format=resolve_dds_format, image_to_dds=ImageListToDDS,
+                    dds_to_tex=ConvertDDSToTex, mipmaps=effective_mipmaps,
+                    grade_mode=grade_mode, log_tag="MHWI Tex",
+                    mip_quality=mat_item.mipmap_strategy)
 
                 for slot in mat_item.slots:
                     # AUTO resolves here exactly as in the MDF processor; the
@@ -455,19 +468,31 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
 
                     # COMPOSE or DIRECT
                     try:
+                        if mat_item.skip_textures:
+                            map_item.value = _mhwi_tex_binding(
+                                base_path, tex_name, slot.texture_type)
+                            export_count += 1
+                            continue
                         if mode == 'COMPOSE':
-                            if mat_item.skip_textures:
-                                map_item.value = _mhwi_tex_binding(
-                                    base_path, tex_name, slot.texture_type)
-                                export_count += 1
-                                continue
                             feature_set = feature_def and any(feature_inputs_of(slot).values())
                             if slot.texture_type not in MHWI_PBR_SLOT_TYPES and not feature_set:
                                 print(f"[MHWI Tex] SKIP  {slot.texture_type}: "
                                       "非 PBR 合成槽位，请改用 DIRECT 模式")
                                 skip_count += 1
                                 continue
-                            _t_comp = time.time()
+                            # Same inputs as an earlier material -> its texture,
+                            # without composing or encoding again.
+                            key = processor_cache_key(
+                                slot, mode, feature_def, pbr_paths, pbr_channels, pbr_inv,
+                                normal_flip_g, False, MHWI_SLOT_CHANNEL_MAPS)
+                            hit = writer.cached(key)
+                            if hit is not None:
+                                map_item.value = hit[2]
+                                if slot.texture_type == 'AlbedoMap':
+                                    bml_value_out = map_item.value
+                                print(f"[MHWI Tex] SHARED {slot.texture_type} -> {hit[2]}")
+                                export_count += 1
+                                continue
                             if feature_set:
                                 f_map, f_paths = feature_channel_map(slot, feature_def)
                                 src_img = _compose_channels(
@@ -480,7 +505,6 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                                     channel_maps=MHWI_SLOT_CHANNEL_MAPS,
                                     normal_flip_g=normal_flip_g,
                                 )
-                            # print(f"[MHWI Tex]   合成通道 {slot.texture_type}: {time.time() - _t_comp:.2f}s", flush=True)
                             if src_img is None:
                                 null_val = MHWI_NULL_TEX.get(slot.texture_type)
                                 if null_val:
@@ -492,61 +516,30 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                                     skip_count += 1
                                 continue
                         else:  # DIRECT
-                            if mat_item.skip_textures:
-                                map_item.value = _mhwi_tex_binding(
-                                    base_path, tex_name, slot.texture_type)
-                                export_count += 1
-                                continue
                             src_img = bpy.path.abspath(slot.direct_image)
                             if not src_img or not os.path.isfile(src_img):
                                 print(f"[MHWI Tex] SKIP  {slot.texture_type}: "
                                       "文件未找到")
                                 skip_count += 1
                                 continue
+                            key = processor_cache_key(
+                                slot, mode, feature_def, pbr_paths, pbr_channels, pbr_inv,
+                                normal_flip_g, False, MHWI_SLOT_CHANNEL_MAPS)
+                            hit = writer.cached(key)
+                            if hit is not None:
+                                map_item.value = hit[2]
+                                if slot.texture_type == 'AlbedoMap':
+                                    bml_value_out = map_item.value
+                                print(f"[MHWI Tex] SHARED {slot.texture_type} -> {hit[2]}")
+                                export_count += 1
+                                continue
 
-                        disk_path = _mhwi_disk_path(
-                            natives_root, base_path, tex_name, slot.texture_type)
-                        os.makedirs(os.path.dirname(disk_path), exist_ok=True)
-
-                        src_name  = os.path.basename(src_img)
-                        src_lower = src_img.lower()
-
-                        if '.tex' in src_name.lower():
-                            shutil.copy2(src_img, disk_path)
-                        elif src_lower.endswith('.dds'):
-                            _t_tex = time.time()
-                            ConvertDDSToTex([src_img], disk_path)
-                            # print(f"[MHWI Tex]   DDS→TEX {slot.texture_type}: {time.time() - _t_tex:.2f}s", flush=True)
-                        else:
-                            dds_fmt = (
-                                'BC7_UNORM_SRGB' if slot.texture_type in MHWI_SRGB_SLOT_TYPES
-                                else 'BC7_UNORM'
-                            )
-                            # 这条路没走 slot_resolver.write_slot_tex（它自己内联了
-                            # 一份），所以色调处理得在这里显式接一下，用的是同一个函数。
-                            _g = grade_source_file(src_img, temp_dir, dds_fmt, grade_mode)
-                            if _g is not None:
-                                src_img, src_name = _g, os.path.basename(_g)
-                            dds_stem = os.path.splitext(src_name)[0]
-                            dds_path = os.path.join(temp_dir, dds_stem + '.dds')
-                            _t_dds = time.time()
-                            ImageListToDDS(
-                                [(src_img, dds_fmt)], temp_dir,
-                                effective_mipmaps)
-                            # print(f"[MHWI Tex]   PNG→DDS {slot.texture_type}: {time.time() - _t_dds:.2f}s", flush=True)
-                            if not os.path.isfile(dds_path):
-                                raise FileNotFoundError(
-                                    f"texconv 输出未找到: {dds_path}")
-                            _t_tex = time.time()
-                            ConvertDDSToTex([dds_path], disk_path)
-                            # print(f"[MHWI Tex]   DDS→TEX {slot.texture_type}: {time.time() - _t_tex:.2f}s", flush=True)
-
-                        map_item.value = _mhwi_tex_binding(
-                            base_path, tex_name, slot.texture_type)
+                        # The shared write (slot_resolver.write_slot_tex): it was an
+                        # inline copy of the same three branches until 2026-10-13,
+                        # minus the mip quality choice, which it now honours too.
+                        map_item.value, _src = writer.write(slot.texture_type, src_img, key, note="")
                         if slot.texture_type == 'AlbedoMap':
                             bml_value_out = map_item.value
-                        print(f"[MHWI Tex] OK    {slot.texture_type} -> "
-                              f"{os.path.basename(disk_path)}")
                         export_count += 1
 
                     except Exception as err:

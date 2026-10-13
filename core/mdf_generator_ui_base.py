@@ -145,8 +145,7 @@ class MdfGenDialogBase(bpy.types.Operator):
         nulls = p._slot_nulls or SlotNulls(p._null_tex_by_type)
         return dict(channel_maps=p._channel_maps,
                     null_for=lambda st, mmtr, cur: nulls.null_for(st, mmtr, cur),
-                    nulls=nulls, placeholder_slots=p._placeholder_slots,
-                    default_null=True)
+                    nulls=nulls, placeholder_slots=p._placeholder_slots)
 
     def _draw_extra(self, box, entry):
         """Game-only options under the shared ones (MHWI's snow overlay)."""
@@ -235,6 +234,8 @@ class MdfGenDialogBase(bpy.types.Operator):
             on.append(T("core.mdf_generator_ui_base.opt_octahedral"))
         if settings.global_disable_mipmaps:
             on.append(T("core.mdf_generator_ui_base.opt_no_mip"))
+        elif getattr(settings, "global_mip_quality", 'FAST') != 'FAST':
+            on.append(T("core.mip_strategy.quality"))
         if settings.global_use_toon:
             on.append(T("core.mdf_generator_ui_base.opt_toon"))
         if settings.global_color_grade != 'NONE':
@@ -260,6 +261,10 @@ class MdfGenDialogBase(bpy.types.Operator):
                  text=T("core.mdf_generator_base.global_disable_mipmaps"))
         row.prop(settings, "global_use_toon",
                  text=T("core.mdf_generator_base.global_use_toon"))
+        if not settings.global_disable_mipmaps and hasattr(settings, "global_mip_quality"):
+            row = col.row(align=True)
+            row.label(text=T("core.mdf_generator_ui_base.mip_quality"))
+            row.prop(settings, "global_mip_quality", text="")
         row = col.row(align=True)
         row.label(text=T("core.color_grade.label"))
         row.prop(settings, "global_color_grade", text="")

@@ -29,11 +29,10 @@ class MHWI_OT_Mrl3GeneratorDialog(MdfGenDialogBase):
         return get_mhwi_preset_dir()
 
     def _plan_tables(self):
-        # MHWI has no vanilla survey and no placeholder slots, and writes the
-        # solid even when it equals the defaults -- as its export loop does.
+        # MHWI has no vanilla survey and no placeholder slots.
         return dict(channel_maps=MHWI_SLOT_CHANNEL_MAPS,
                     null_for=lambda st, mmtr, cur: MHWI_NULL_TEX.get(st),
-                    nulls=None, placeholder_slots=frozenset(), default_null=False)
+                    nulls=None, placeholder_slots=frozenset())
 
     def _draw_extra(self, box, entry):
         if preset_has_albedo_blend_map(entry.material_preset):

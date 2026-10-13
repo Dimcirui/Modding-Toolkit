@@ -10,25 +10,17 @@ from ...core.color_grade import color_grade_items, DEFAULT_MODE_INDEX
 from ...core.mdf_generator_base import (
     get_shader_source_items, shader_source_update,
     MdfGenRefreshBase,
-    packed_shader_strategies,
-    _get_pbr_paths, _slugify, _strip_blender_suffix, _separate_mesh_by_material,
-    _emissive_strength_is_zero, _is_emissive_slot, _is_albedo_slot,
-    _make_source_id, _try_downgrade_slot, _generate_solid_texture_path,
+    analyse_entry, bake_entry, run_generator_slots,
+    _slugify, _strip_blender_suffix, _separate_mesh_by_material,
+    _is_albedo_slot, _generate_solid_texture_path,
     _detect_max_tex_size, _find_meshes_by_material,
     load_mhwi_preset_enum_items, bundled_mhwi_preset,
     _import_mhwi_tex_convert, _call_mhwi_read_preset, _import_mhwi_create_collection,
     BAKE_SIZE_DEFAULT,
 )
-from ...core.mdf_tex_processor_base import (
-    _import_tex_utils, _compose_channels, channel_maps_consume_ao, _CH_ENUM_ITEMS,
-)
-from ...core.slot_sources import (
-    find_slot_sources, stage_source_file,
-    find_shader_socket_image, find_shader_socket_value,
-    find_shader_slot_supplies, shader_pbr_contributions,
-)
+from ...core.mdf_tex_processor_base import _import_tex_utils, _CH_ENUM_ITEMS, mip_strategy_prop
 from ...core.slot_resolver import resolve_dds_format, write_slot_tex
-from ...core.gen_slot_plan import plan_slots
+from ...core.gen_pipeline import SlotWriter
 from .mrl3_coef_rules import transparent_coefs
 from .mrl3_tex_processor import (
     MHWI_SLOT_CHANNEL_MAPS, MHWI_NULL_TEX,
@@ -243,6 +235,7 @@ class MhwiGenSettings(bpy.types.PropertyGroup):
         description="Override every material's own Generate MipMaps checkbox and skip mipmap generation entirely",
         default=False,
     )
+    global_mip_quality: mip_strategy_prop()
     global_use_toon: bpy.props.BoolProperty(
         name="Use Toon Shading (Global)",
         description="Override every material's own Use Toon Shading checkbox and force it on for all of them",
@@ -419,287 +412,31 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
         if not os.path.isfile(preset_path):
             raise FileNotFoundError(f"Preset not found: {preset_path}")
 
-        # ── 阶段二：查找 MOD3 集合中所有使用该材质的网格 ──
         mesh_objects = _mhwi_find_meshes_by_material(mod3_col, mat_name)
-        mesh_obj = mesh_objects[0] if mesh_objects else None
-        if mesh_objects:
-            print(f"[{self._log_tag}]   '{mat_name}' → {len(mesh_objects)} 个网格: "
-                  f"{', '.join(o.name for o in mesh_objects)}")
-
-        _t = time.time()
-        strategies = packed_shader_strategies(mat, getattr(mat_entry, 'shader_source', 'PBR'))
-        # print(f"[{self._log_tag}]   分析材质节点: {time.time() - _t:.2f}s", flush=True)
-        bake_size  = max(_detect_max_tex_size(mat), self._bake_size)
-        _t = time.time()
-        pbr_paths  = _get_pbr_paths(
-            mat, strategies, temp_dir, bake_size, context, mesh_obj,
-            mesh_objects=mesh_objects)
-
-        # 解析不出源的通道要报出来 —— 见 core/mdf_generator_base 里同样的一段。
-        _no_source = sorted(pt for pt, sv in strategies.items()
-                            if sv and sv[0] == 'BAKE' and not pbr_paths.get(pt))
-        if _no_source:
-            self._unresolved_channels.append((mat_name, _no_source))
-            print(f"[{self._log_tag}]   !! no source for {mat_name}: "
-                  f"{', '.join(_no_source)} -> these fall back to a null texture")
-        # print(f"[{self._log_tag}]   解析PBR路径 (含烘培): {time.time() - _t:.2f}s", flush=True)
-
-        # A shader with AO plugged in is the user already saying "use this AO",
-        # so honour it without making them tick the box again. Explicit settings
-        # win: only an unset ao_image is filled in.
-        shader_ao = find_shader_socket_image(mat, 'AO')
-        if shader_ao and not getattr(mat_entry, 'ao_image', ''):
-            try:
-                mat_entry.use_ao  = True
-                mat_entry.ao_image = shader_ao
-                strength = find_shader_socket_value(mat, 'AO Strength', 1.0)
-                if hasattr(mat_entry, 'ao_strength'):
-                    mat_entry.ao_strength = strength
-                print(f"[{self._log_tag}]   AO from packed shader: "
-                      f"{os.path.basename(shader_ao)} (strength {strength:.2f})")
-            except Exception as e:
-                print(f"[{self._log_tag}]   could not adopt the shader's AO: {e}")
-
-        # User-provided AO override (Blender has no built-in AO node). Channel
-        # and invert are explicit UI choices -- see core.mdf_generator_base's
-        # own _process_one_material for the same fix on the other 4 games.
-        pbr_inv = {}
-        if getattr(mat_entry, 'use_ao', False):
-            ao_path_raw = getattr(mat_entry, 'ao_image', '')
-            if ao_path_raw:
-                ao_path = bpy.path.abspath(ao_path_raw)
-                if ao_path and os.path.isfile(ao_path):
-                    strategies['ao'] = ('DIRECT', ao_path, getattr(mat_entry, 'ao_ch', 'R'))
-                    pbr_paths['ao'] = ao_path
-                    pbr_inv['ao'] = getattr(mat_entry, 'ao_inv', False)
-
-        pbr_channels = {}
-        for pbr_type, strat_val in strategies.items():
-            if strat_val[0] != 'DIRECT':
-                continue
-            if len(strat_val) > 2 and strat_val[2] != 'R':
-                pbr_channels[pbr_type] = strat_val[2]
-            # 1-x 那种接法（光泽度当粗糙度用）在这里变成一个取反标志，
-            # 合成时由 pbr_inv 执行，不必烘培。
-            if len(strat_val) > 3 and strat_val[3]:
-                pbr_inv[pbr_type] = True
+        job = analyse_entry(mat, mat_entry, settings, log_tag=self._log_tag)
+        pbr_paths = bake_entry(self, context, mat, mat_entry, job, mesh_objects, temp_dir,
+                               max(_detect_max_tex_size(mat), self._bake_size), self._log_tag)
 
         tex_name = _slugify(_strip_blender_suffix(mat_name))
 
-        _t = time.time()
         with open(preset_path, encoding='utf-8') as f:
             preset_data = json.load(f)
-        # print(f"[{self._log_tag}]   加载Preset JSON: {time.time() - _t:.2f}s", flush=True)
         slot_types = [entry["name"] for entry in preset_data.get("Map List", [])]
+        albedo_slots = {st for st in slot_types if _is_albedo_slot(st, MHWI_SLOT_CHANNEL_MAPS)}
+        effective_mipmaps = job.mipmaps
 
-        # A slot socket and the PBR inputs it covers can both be filled, and the
-        # material's own shader_source is a hard switch between them -- not a
-        # tie-break that lets whichever side has data win regardless of the
-        # pick (see mdf_generator_base for the same fix on the other 4 games).
-        prefer_slots = getattr(mat_entry, 'shader_source', 'PBR') == 'SLOT'
-        _supplies = find_shader_slot_supplies(mat)
-        _pbr_given = shader_pbr_contributions(mat)
-        contested_slots = {
-            slot for slot, quantities in _supplies.items()
-            if any(q in _pbr_given for q in quantities)
-        }
-        if contested_slots:
-            print(f"[{self._log_tag}]   both panels filled for "
-                  f"{', '.join(sorted(contested_slots))} -> using the "
-                  f"{'game slots' if prefer_slots else 'PBR inputs'}")
-
-        # {slot: (path, authority)} — see core.slot_sources.
-        slot_direct   = find_slot_sources(mat, slot_types)
-        prefer_direct = prefer_slots
-
-        # Global toggles on the settings object override every material's own
-        # checkbox -- see core.mdf_generator_base's _process_one_material for
-        # the same fix on the other 4 games.
-        use_toon       = (getattr(mat_entry, 'use_toon', False)
-                         or getattr(settings, 'global_use_toon', False))
-        effective_mipmaps = (mat_entry.generate_mipmaps
-                            and not getattr(settings, 'global_disable_mipmaps', False))
-        # 色调处理是全局档，没有逐材质开关 —— 它补的是整套素材的口径差，
-        # 一张一张设只会让同一个模型的各部件对不上。
-        grade_mode = getattr(settings, 'global_color_grade', 'NONE')
-        emi_zero       = _emissive_strength_is_zero(mat)
-        emissive_slots = {st for st in slot_types if _is_emissive_slot(st)}
-        albedo_slots   = {st for st in slot_types if _is_albedo_slot(st, MHWI_SLOT_CHANNEL_MAPS)}
-
-        # With no AO slot in this game's channel maps, an AO map can only survive
-        # by being multiplied into the albedo. Where a slot does store it, that
-        # path is used instead -- doing both would darken twice.
-        bake_ao = (bool(pbr_paths.get('ao'))
-                   and not channel_maps_consume_ao(MHWI_SLOT_CHANNEL_MAPS))
-
-        slot_binding_values = {}
-        #: {slot: source file on disk} -- only the albedo is read back (for
-        #: the transparency rule below), but recording every slot keeps the
-        #: write sites uniform.
-        slot_files = {}
-
-        # Which branch each slot takes -- the same call the dialog's "slot
-        # results" section draws (core/gen_slot_plan.py). MHWI writes the solid
-        # even when it equals the defaults (no default_rgba), as it always has.
-        plan = plan_slots(
-            slot_types, MHWI_SLOT_CHANNEL_MAPS,
-            emissive_slots=emissive_slots, use_toon=use_toon, emi_zero=emi_zero,
-            slot_direct=slot_direct, prefer_direct=prefer_direct,
-            skip_textures=getattr(mat_entry, 'skip_textures', False),
-            null_for=MHWI_NULL_TEX.get,
-            downgrade=lambda st: _try_downgrade_slot(
-                st, strategies, pbr_channels, MHWI_SLOT_CHANNEL_MAPS))
-
-        for slot_type in slot_types:
-            p = plan[slot_type]
-            if p.kind in ('TOON', 'KEEP'):
-                continue                    # TOON is filled from the albedo below
-            if p.kind == 'NULL':
-                slot_binding_values[slot_type] = p.detail
-                continue
-            if p.kind == 'PATH':
-                slot_binding_values[slot_type] = _mhwi_tex_binding(
-                    base_path, tex_name, slot_type)
-                continue
-
-            # --- direct slot source (BY_SLOT_NAME) ---------------------------
-            # See mdf_generator_base for the rationale.  MHWI benefits more
-            # than the RE games: only 4 of its 7 slots have a composition
-            # recipe, so ColorMaskMap / FxMap / FurVelocityMap were previously
-            # unreachable and always wrote a null texture.
-            if p.kind == 'DIRECT':
-                direct_src = p.detail
-                direct_auth = slot_direct.get(slot_type, (None, None))[1]
-                direct_key = (slot_type, 'DIRECT_SLOT', direct_src)
-                cached = comp_cache.get(direct_key)
-                if cached is not None:
-                    slot_binding_values[slot_type] = cached[2]
-                    slot_files[slot_type] = cached[0]
-                    continue
-
-                disk_path = _mhwi_disk_path(natives_root, base_path, tex_name, slot_type)
-                # Staged under a slot-unique stem: the source lives outside
-                # temp_dir, and texconv names its output after the input.
-                staged = stage_source_file(
-                    direct_src, temp_dir, tex_name, slot_type)
-                write_slot_tex(
-                    staged, disk_path, temp_dir,
-                    dds_fmt=resolve_dds_format(
-                        slot_type, MHWI_SRGB_SLOT_TYPES),
-                    generate_mipmaps=effective_mipmaps,
-                    image_to_dds=ImageListToDDS,
-                    dds_to_tex=ConvertDDSToTex,
-                    grade_mode=grade_mode,
-                )
-
-                binding = _mhwi_tex_binding(base_path, tex_name, slot_type)
-                slot_binding_values[slot_type] = binding
-                slot_files[slot_type] = staged
-                comp_cache[direct_key] = (staged, disk_path, binding)
-                print(f"[{self._log_tag}]   {slot_type} -> "
-                      f"{os.path.basename(disk_path)} (槽位直连/{direct_auth})")
-                continue
-
-            # --- SOLID / COMPOSE: cache key construction ---
-            ch_map = MHWI_SLOT_CHANNEL_MAPS[slot_type]
-            needed_pt = {src[0] for src in ch_map.values()
-                         if src is not None and isinstance(src, tuple)}
-            key_parts = []
-            cache_ok = True
-            for pt in sorted(needed_pt):
-                sv = strategies.get(pt)
-                if sv:
-                    sid = _make_source_id(sv)
-                    if sid is not None:
-                        key_parts.append((pt, sid))
-                    else:
-                        cache_ok = False
-                        break
-                else:
-                    cache_ok = False
-                    break
-
-            cache_key = None
-            if cache_ok:
-                ch_ov = frozenset((k, v) for k, v in pbr_channels.items() if k in needed_pt)
-                cache_key = (slot_type, tuple(key_parts), ch_ov)
-                cached = comp_cache.get(cache_key)
-                if cached is not None:
-                    slot_binding_values[slot_type] = cached[2]
-                    slot_files[slot_type] = cached[0]
-                    continue
-
-            if p.kind == 'SOLID':
-                hint = f"{tex_name}_{slot_type.lower()}_dg"
-                composed = _generate_solid_texture_path(p.detail, temp_dir, hint, size=256)
-                if composed:
-                    disk_path = _mhwi_disk_path(natives_root, base_path, tex_name, slot_type)
-                    write_slot_tex(
-                        composed, disk_path, temp_dir,
-                        dds_fmt=resolve_dds_format(
-                            slot_type, MHWI_SRGB_SLOT_TYPES),
-                        generate_mipmaps=effective_mipmaps,
-                        image_to_dds=ImageListToDDS,
-                        dds_to_tex=ConvertDDSToTex,
-                        grade_mode=grade_mode,
-                    )
-
-                    binding = _mhwi_tex_binding(base_path, tex_name, slot_type)
-                    slot_binding_values[slot_type] = binding
-                    slot_files[slot_type] = composed
-                    if cache_key is not None:
-                        comp_cache[cache_key] = (composed, disk_path, binding)
-                    continue
-                # A solid that could not be saved falls through to composition.
-
-            # --- full composition path ---
-            normal_flip_g = getattr(settings, 'flip_normal_g', False)
-            composed = _compose_channels(
-                slot_type, pbr_paths, pbr_channels, temp_dir, tex_name,
-                pbr_inv=pbr_inv,
-                channel_maps=MHWI_SLOT_CHANNEL_MAPS,
-                normal_flip_g=normal_flip_g,
-                bake_ao_into_color=bake_ao,
-                ao_strength=getattr(mat_entry, 'ao_strength', 1.0),
-            )
-
-            if composed:
-                disk_path = _mhwi_disk_path(natives_root, base_path, tex_name, slot_type)
-                write_slot_tex(
-                    composed, disk_path, temp_dir,
-                    dds_fmt=resolve_dds_format(
-                        slot_type, MHWI_SRGB_SLOT_TYPES),
-                    generate_mipmaps=effective_mipmaps,
-                    image_to_dds=ImageListToDDS,
-                    dds_to_tex=ConvertDDSToTex,
-                    grade_mode=grade_mode,
-                )
-
-                binding = _mhwi_tex_binding(base_path, tex_name, slot_type)
-                slot_binding_values[slot_type] = binding
-                slot_files[slot_type] = composed
-
-                if cache_key is not None:
-                    comp_cache[cache_key] = (composed, disk_path, binding)
-                print(f"[{self._log_tag}]   {slot_type} -> {os.path.basename(disk_path)}")
-            else:
-                null = MHWI_NULL_TEX.get(slot_type)
-                if null:
-                    slot_binding_values[slot_type] = null
-
-        # Toon shading: copy albedo binding value to all emissive slots
-        if use_toon and emissive_slots:
-            albedo_binding = next(
-                (slot_binding_values[st] for st in albedo_slots if st in slot_binding_values),
-                None,
-            )
-            for st in emissive_slots:
-                if albedo_binding:
-                    slot_binding_values[st] = albedo_binding
-                else:
-                    null = MHWI_NULL_TEX.get(st)
-                    if null:
-                        slot_binding_values[st] = null
+        writer = SlotWriter(
+            cache=comp_cache, temp_dir=temp_dir,
+            disk_path=lambda st: _mhwi_disk_path(natives_root, base_path, tex_name, st),
+            binding=lambda st: _mhwi_tex_binding(base_path, tex_name, st),
+            srgb_slots=MHWI_SRGB_SLOT_TYPES, write_tex=write_slot_tex,
+            resolve_format=resolve_dds_format, image_to_dds=ImageListToDDS,
+            dds_to_tex=ConvertDDSToTex, mipmaps=job.mipmaps, grade_mode=job.grade_mode,
+            log_tag=self._log_tag, mip_quality=getattr(settings, 'global_mip_quality', None))
+        slot_binding_values, slot_files = run_generator_slots(
+            job, mat, slot_types, pbr_paths, writer, temp_dir, tex_name,
+            channel_maps=MHWI_SLOT_CHANNEL_MAPS, null_for=MHWI_NULL_TEX.get,
+            mat_entry=mat_entry, settings=settings)
 
         # Snow overlay: override AlbedoBlendMap with fully-transparent solid texture
         if getattr(mat_entry, 'hide_snow_overlay', False) and "AlbedoBlendMap" in slot_types:

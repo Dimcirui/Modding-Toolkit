@@ -8,7 +8,8 @@ import time
 from .i18n import T
 from .slot_resolver import resolve_dds_format, write_slot_tex
 from .re_normal_pack import encode_normal_ga
-from .mdf_tex_slot_status import resolve_slot, migrate_saved_mode
+from .mdf_tex_slot_status import resolve_slot, migrate_saved_mode, recipe_inputs
+from .gen_pipeline import SlotWriter
 from .slot_defaults import SlotNulls
 from .placeholder_tex import placeholder_dds, PLACEHOLDER_FALLBACK, is_prefab_borrowed
 
@@ -97,6 +98,20 @@ NORMAL_OCTAHEDRAL_SLOT_TYPES = {'NormalRoughnessOcclusionMap', 'NormalRoughnessC
 #: across all 1310 vanilla bindings (2026-10-12). Every table keyed by slot type
 #: carries both spellings so the slot matches whichever a game uses.
 NRRT_SLOT_TYPO = 'NormalRoughnessTranlucentMap'
+
+
+def mip_strategy_prop():
+    """Fast (texconv's own recursive filter) or Quality (every level averaged
+    straight from the source) mipmaps -- per material in the processor, once
+    per export in the generator."""
+    return bpy.props.EnumProperty(
+        name="Mipmap Strategy",
+        items=lambda self, ctx: [
+            ('FAST', T("core.mip_strategy.fast"), T("core.mip_strategy.fast_desc")),
+            ('QUALITY', T("core.mip_strategy.quality"), T("core.mip_strategy.quality_desc")),
+        ],
+        default=0,  # 'FAST' -- dynamic items need an int index default
+    )
 
 
 def octahedral_normals_prop():
@@ -1008,14 +1023,7 @@ class MdfTexMaterialItem(bpy.types.PropertyGroup):
     pbr_expanded:      bpy.props.BoolProperty(default=True)
     other_expanded:    bpy.props.BoolProperty(default=False)
     generate_mipmaps:  bpy.props.BoolProperty(name="Generate MipMaps", default=True)
-    mipmap_strategy:   bpy.props.EnumProperty(
-        name="Mipmap Strategy",
-        items=lambda self, ctx: [
-            ('FAST', T("core.mip_strategy.fast"), T("core.mip_strategy.fast_desc")),
-            ('QUALITY', T("core.mip_strategy.quality"), T("core.mip_strategy.quality_desc")),
-        ],
-        default=0,  # 'FAST' -- dynamic items need an int index default
-    )
+    mipmap_strategy:   mip_strategy_prop()
     skip_textures:     bpy.props.BoolProperty(
         name="Material Only",
         description="Skip texture composition/conversion; only update texture paths in the material definition",
@@ -1260,6 +1268,7 @@ class MdfTexProcessBase(bpy.types.Operator):
         temp_dir = tempfile.mkdtemp(prefix="mdf_tex_")
         export_count = fail_count = skip_count = 0
         nulls = cls._nulls()
+        tex_cache = {}      # processor_cache_key -> (source, disk, binding), across materials
 
         try:
             for mat_item in settings.materials:
@@ -1289,6 +1298,18 @@ class MdfTexProcessBase(bpy.types.Operator):
                 emissive_path = pbr_paths.get('emissive', '')
                 share_emi     = bool(color_path and emissive_path and color_path == emissive_path)
                 albd_path_out = None
+                writer = SlotWriter(
+                    cache=tex_cache, temp_dir=temp_dir,
+                    disk_path=lambda st, _n=tex_name: make_disk_path(
+                        natives_root, base_path, _n, st,
+                        cls._abbrev_map, cls._tex_version, cls._use_art_prefix),
+                    binding=lambda st, _n=tex_name: make_mdf_path(
+                        base_path, _n, st, cls._abbrev_map, cls._use_art_prefix),
+                    srgb_slots=SRGB_SLOT_TYPES, write_tex=write_slot_tex,
+                    resolve_format=resolve_dds_format, image_to_dds=ImageListToDDS,
+                    dds_to_tex=lambda p, o: DDSToTex(p, cls._tex_version, o),
+                    mipmaps=effective_mipmaps, grade_mode=grade_mode, log_tag=cls._log_tag,
+                    mip_quality=mat_item.mipmap_strategy)
 
                 for slot in mat_item.slots:
                     # The dialog's badge comes from this same call, so what it
@@ -1368,7 +1389,27 @@ class MdfTexProcessBase(bpy.types.Operator):
                                     albd_path_out = mdf_path
                                 export_count += 1
                                 continue
-                            _t_comp = time.time()
+                        elif mat_item.skip_textures:     # DIRECT
+                            binding.path = mdf_path
+                            export_count += 1
+                            continue
+
+                        # Same inputs as an earlier material -> its texture,
+                        # without composing or encoding again.
+                        key = processor_cache_key(slot, mode, feature_def, pbr_paths,
+                                                  pbr_channels, pbr_inv, normal_flip_g,
+                                                  getattr(settings, 'octahedral_normals', False),
+                                                  cls._channel_maps)
+                        hit = writer.cached(key)
+                        if hit is not None:
+                            binding.path = hit[2]
+                            if slot.texture_type == 'BaseDielectricMap':
+                                albd_path_out = hit[2]
+                            print(f"[{cls._log_tag}] SHARED {slot.texture_type} -> {hit[2]}")
+                            export_count += 1
+                            continue
+
+                        if mode == 'COMPOSE':
                             if feature_def and any(feature_inputs_of(slot).values()):
                                 # A mask slot: its own per-channel inputs, the
                                 # rest at the vanilla null's value.
@@ -1383,7 +1424,6 @@ class MdfTexProcessBase(bpy.types.Operator):
                                     channel_maps=cls._channel_maps,
                                     normal_flip_g=normal_flip_g,
                                     octahedral=getattr(settings, 'octahedral_normals', False))
-                            # print(f"[{cls._log_tag}]   合成通道 {slot.texture_type}: {time.time() - _t_comp:.2f}s", flush=True)
                             if src_img is None:
                                 null_rel = nulls.null_for(slot.texture_type, mmtr, binding.path)
                                 if null_rel:
@@ -1395,35 +1435,15 @@ class MdfTexProcessBase(bpy.types.Operator):
                                     skip_count += 1
                                 continue
                         else:  # DIRECT
-                            if mat_item.skip_textures:
-                                binding.path = mdf_path
-                                export_count += 1
-                                continue
                             src_img = bpy.path.abspath(slot.direct_image)
                             if not src_img or not os.path.isfile(src_img):
                                 print(f"[{cls._log_tag}] SKIP direct {slot.texture_type}: not found")
                                 skip_count += 1
                                 continue
 
-                        disk_path = make_disk_path(
-                            natives_root, base_path, tex_name, slot.texture_type,
-                            cls._abbrev_map, cls._tex_version, cls._use_art_prefix)
-
-                        write_slot_tex(
-                            src_img, disk_path, temp_dir,
-                            dds_fmt=resolve_dds_format(
-                                slot.texture_type, SRGB_SLOT_TYPES),
-                            generate_mipmaps=effective_mipmaps,
-                            mip_quality=mat_item.mipmap_strategy,
-                            image_to_dds=ImageListToDDS,
-                            dds_to_tex=lambda p, o: DDSToTex(p, cls._tex_version, o),
-                            grade_mode=grade_mode,
-                        )
-
-                        binding.path = mdf_path
+                        binding.path, _src = writer.write(slot.texture_type, src_img, key, note="")
                         if slot.texture_type == 'BaseDielectricMap':
-                            albd_path_out = mdf_path
-                        print(f"[{cls._log_tag}] OK {slot.texture_type} -> {os.path.basename(disk_path)}")
+                            albd_path_out = binding.path
                         export_count += 1
 
                     except Exception as err:
@@ -1444,6 +1464,29 @@ class MdfTexProcessBase(bpy.types.Operator):
             self.report({'INFO'}, T("core.mdf_tex_processor_base.process_done").format(
                 export=export_count, skip=skip_count))
         return {'FINISHED'}
+
+
+def processor_cache_key(slot, mode, feature_def, pbr_paths, pbr_channels, pbr_inv,
+                        normal_flip_g, octahedral, channel_maps):
+    """What a processed slot's texture is made of, as a cache key: two slots
+    with equal keys get identical .tex files, so the second reuses the first.
+    The encode settings (mips, mip quality, colour grade) are added by the
+    SlotWriter itself, for the generators too.
+    """
+    def _norm(p):
+        return os.path.normcase(os.path.normpath(bpy.path.abspath(p))) if p else ""
+
+    st = slot.texture_type
+    if mode != 'COMPOSE':
+        return (st, 'DIRECT', _norm(slot.direct_image))
+    if feature_def and any(feature_inputs_of(slot).values()):
+        return (st, 'FEATURE', json.dumps(_capture_slot(slot), sort_keys=True))
+    needed = sorted(recipe_inputs(st, channel_maps) or ())
+    inputs = tuple((pt, _norm(pbr_paths.get(pt)), pbr_channels.get(pt), pbr_inv.get(pt))
+                   for pt in needed)
+    normal = 'normal' in needed
+    return (st, 'PBR', inputs, normal_flip_g if normal else None,
+            octahedral if normal else None)
 
 
 # ── Slot status (dialog side) ──────────────────────────────────────────────────
