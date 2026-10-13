@@ -435,8 +435,6 @@ STRINGS = {
         "EN": "e.g. pl/f_equip/pl042_0500/helm/tex", "ZH": "例：pl/f_equip/pl042_0500/helm/tex"},
     "mhwi.mrl3_tex_processor_ui.select_mrl3_then_refresh": {
         "EN": "Select an MRL3 collection and click Refresh", "ZH": "选择 MRL3 集合并点击 Refresh"},
-    "mhwi.mrl3_tex_processor_ui.use_direct_instead": {"EN": "Use DIRECT instead", "ZH": "请改用 DIRECT"},
-    "mhwi.mrl3_tex_processor_ui.no_default": {"EN": "(no default)", "ZH": "(无默认)"},
 
     # ══════════════════════════════════════════════════════════════════════
     # games/mhwi/shader_defs.py — packed shader sockets

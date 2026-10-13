@@ -60,13 +60,28 @@ class MdfTexDialogBase(bpy.types.Operator):
     _abbrev_map        = BASE_TEXTURE_TYPE_ABBREV
     _slot_nulls        = None   # the game's SlotNulls -- same object its processor uses
     _feature_channels  = {}     # the game's mask slots with per-channel inputs
+    # Hooks for a processor that is not MDF-shaped (MHWI's MRL3 one): where the
+    # collection lives, what its operators are called, what to say when empty.
+    _collection_attr   = "mdf_collection"
+    _collection_label  = "MDF Collection"
+    _op_stem           = "mdf_tex"          # operators are <prefix>.<stem>_refresh etc.
+    _path_hint_key     = ""                 # translated hint; _path_hint used when empty
+    _empty_hint_key    = "core.mdf_tex_processor_ui_base.select_and_refresh"
+    _show_mip_strategy = True
+
+    def _mmtr_for(self, settings, mat):
+        """The material's master material path -- MDF only; drives null lookup."""
+        col = getattr(settings, self._collection_attr, None)
+        mat_obj = col.objects.get(mat.material_obj_name) if col else None
+        mat_data = getattr(mat_obj, 're_mdf_material', None)
+        return getattr(mat_data, 'mmtrPath', '') if mat_data else ''
 
     # ── Lifecycle ──────────────────────────────────────────────────────────────
 
     def invoke(self, context, event):
         cls      = type(self)
         settings = getattr(context.scene, cls._settings_attr)
-        col = settings.mdf_collection
+        col = getattr(settings, cls._collection_attr)
         # Always refresh on open, not just when col matches what was loaded
         # last time -- _do_refresh already handles both "same collection
         # again" (preserves the in-memory config) and "switched collections"
@@ -75,12 +90,13 @@ class MdfTexDialogBase(bpy.types.Operator):
         # stale materials list on screen until the user clicked refresh
         # themselves.
         if col:
-            getattr(bpy.ops, cls._game_prefix).mdf_tex_refresh()
+            getattr(getattr(bpy.ops, cls._game_prefix), f"{cls._op_stem}_refresh")()
         return context.window_manager.invoke_props_dialog(
             self, width=PROCESSOR_WINDOW_WIDTH)
 
     def execute(self, context):
-        getattr(getattr(bpy.ops, type(self)._game_prefix), 'mdf_tex_process')()
+        cls = type(self)
+        getattr(getattr(bpy.ops, cls._game_prefix), f"{cls._op_stem}_process")()
         return {'FINISHED'}
 
     # ── Drawing ────────────────────────────────────────────────────────────────
@@ -97,8 +113,8 @@ class MdfTexDialogBase(bpy.types.Operator):
 
         # Header
         row = layout.row(align=True)
-        row.prop(settings, "mdf_collection", text="MDF Collection")
-        row.operator(f"{pfx}.mdf_tex_refresh", text="", icon='FILE_REFRESH')
+        row.prop(settings, cls._collection_attr, text=self._collection_label)
+        row.operator(f"{pfx}.{self._op_stem}_refresh", text="", icon='FILE_REFRESH')
 
         row = layout.row(align=True)
         row.operator(f"{pfx}.set_natives_root",
@@ -122,7 +138,8 @@ class MdfTexDialogBase(bpy.types.Operator):
                         text=T("core.octahedral_normals.label"))
         if not settings.texture_base_path.strip():
             hint = layout.row()
-            hint.label(text=f"    {cls._path_hint}", icon='INFO')
+            text = T(cls._path_hint_key) if cls._path_hint_key else cls._path_hint
+            hint.label(text=f"    {text}", icon='INFO')
 
         layout.prop(settings, "global_disable_mipmaps",
                     text=T("core.mdf_generator_base.global_disable_mipmaps"))
@@ -132,7 +149,7 @@ class MdfTexDialogBase(bpy.types.Operator):
 
         if not settings.materials:
             layout.separator()
-            layout.label(text=T("core.mdf_tex_processor_ui_base.select_and_refresh"), icon='INFO')
+            layout.label(text=T(cls._empty_hint_key), icon='INFO')
             return
 
         layout.separator()
@@ -152,18 +169,18 @@ class MdfTexDialogBase(bpy.types.Operator):
 
         header = box.row(align=False)
         header.label(text=mat.material_name, icon='MATERIAL')
-        op_copy = header.operator(f"{pfx}.mdf_tex_copy_material", text="", icon='COPYDOWN')
+        op_copy = header.operator(f"{pfx}.{self._op_stem}_copy_material", text="", icon='COPYDOWN')
         op_copy.mat_index = mi
         paste_row = header.row(align=True)
         paste_row.enabled = bool(settings.clipboard_json)
-        op_paste = paste_row.operator(f"{pfx}.mdf_tex_paste_material", text="", icon='PASTEDOWN')
+        op_paste = paste_row.operator(f"{pfx}.{self._op_stem}_paste_material", text="", icon='PASTEDOWN')
         op_paste.mat_index = mi
 
         if mat.slots:
             opt_row = box.row(align=True)
             opt_row.prop(mat, "generate_mipmaps",
                          text=T("core.mdf_tex_processor_base.generate_mipmaps_label"))
-            if mat.generate_mipmaps:
+            if mat.generate_mipmaps and type(self)._show_mip_strategy:
                 opt_row.prop(mat, "mipmap_strategy", text="")
             opt_row.prop(mat, "skip_textures",
                          text=T("core.mdf_tex_processor_base.skip_textures_label"))
@@ -173,9 +190,7 @@ class MdfTexDialogBase(bpy.types.Operator):
         if not mat.slots:
             return
         pbr_paths = {pt: getattr(mat.pbr, pt) for pt in PBR_TYPES}
-        mat_obj = settings.mdf_collection.objects.get(mat.material_obj_name) if settings.mdf_collection else None
-        mat_data = getattr(mat_obj, 're_mdf_material', None)
-        mmtr = getattr(mat_data, 'mmtrPath', '') if mat_data else ''
+        mmtr = self._mmtr_for(settings, mat)
         common_slots = [(si, s) for si, s in enumerate(mat.slots)
                         if s.texture_type in cls._common_slot_types]
         other_slots  = [(si, s) for si, s in enumerate(mat.slots)
@@ -220,14 +235,14 @@ class MdfTexDialogBase(bpy.types.Operator):
             row.label(text=PBR_TYPE_LABELS[pt])
             cur = getattr(mat.pbr, pt)
             pick_op = row.operator(
-                f"{pfx}.mdf_tex_pick_pbr",
+                f"{pfx}.{self._op_stem}_pick_pbr",
                 text=_basename(cur) if cur else "--",
                 icon='FILEBROWSER' if not cur else 'IMAGE_DATA',
             )
             pick_op.mat_index = mi
             pick_op.pbr_type  = pt
             if cur:
-                clr_op = row.operator(f"{pfx}.mdf_tex_clear_pbr", text="", icon='X')
+                clr_op = row.operator(f"{pfx}.{self._op_stem}_clear_pbr", text="", icon='X')
                 clr_op.mat_index = mi
                 clr_op.pbr_type  = pt
             if pt == 'normal' and cur:
@@ -256,10 +271,10 @@ class MdfTexDialogBase(bpy.types.Operator):
         elif st.mode == 'DIRECT':
             text = T("core.mdf_tex_slot_status.direct") + f" ← {_basename(slot.direct_image) or '--'}"
         elif st.mode == 'DEFAULT':
-            text = T("core.mdf_tex_slot_status.default") + f" → {null_rel.split('/')[-1]}"
+            text = T("core.mdf_tex_slot_status.default") + f" → {null_rel.replace(chr(92), '/').split('/')[-1]}"
         else:
             text = T("core.mdf_tex_slot_status.skip") + (
-                f" · {slot.original_path.split('/')[-1]}" if slot.original_path else "")
+                f" · {slot.original_path.replace(chr(92), '/').split('/')[-1]}" if slot.original_path else "")
         if st.problem:
             text += f"  ({T('core.mdf_tex_slot_status.' + st.problem)})"
         return text
@@ -288,12 +303,12 @@ class MdfTexDialogBase(bpy.types.Operator):
             mode_sub = right.row(align=True)
             mode_sub.scale_x = 0.8
             mode_sub.prop(slot, "mode", text="")
-            pick_op = right.operator(f"{pfx}.mdf_tex_pick_direct", text="",
+            pick_op = right.operator(f"{pfx}.{self._op_stem}_pick_direct", text="",
                                      icon='FILEBROWSER')
             pick_op.mat_index  = mi
             pick_op.slot_index = si
             if slot.direct_image:
-                clr_op = right.operator(f"{pfx}.mdf_tex_clear_direct", text="", icon='X')
+                clr_op = right.operator(f"{pfx}.{self._op_stem}_clear_direct", text="", icon='X')
                 clr_op.mat_index  = mi
                 clr_op.slot_index = si
 
@@ -356,13 +371,13 @@ class MdfTexDialogBase(bpy.types.Operator):
             right = inner.row(align=True)
             prop = f"feat_{c.lower()}"
             cur = getattr(slot, prop)
-            pick = right.operator(f"{pfx}.mdf_tex_pick_direct",
+            pick = right.operator(f"{pfx}.{self._op_stem}_pick_direct",
                                   text=_basename(cur) if cur else
                                   T("core.mdf_tex_processor_ui_base.neutral").format(v=f"{b:g}"),
                                   icon='IMAGE_DATA' if cur else 'FILEBROWSER')
             pick.mat_index, pick.slot_index, pick.channel = mi, si, c
             if cur:
-                clr = right.operator(f"{pfx}.mdf_tex_clear_direct", text="", icon='X')
+                clr = right.operator(f"{pfx}.{self._op_stem}_clear_direct", text="", icon='X')
                 clr.mat_index, clr.slot_index, clr.channel = mi, si, c
                 ch_sub = right.row(align=True)
                 ch_sub.scale_x = 0.35
