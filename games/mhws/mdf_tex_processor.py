@@ -71,6 +71,39 @@ MHWS_FEATURE_CHANNELS = {
         'B': ('input', _K + "fur_presence", 1.0),
         'A': ('fixed', 0.0, "core.feature.unused"),
     },
+    # Layer-3 sample review, 2026-10-13. HSS follows its name's order; null
+    # NullWhite.
+    'Hair_Height_SpecMask_Shift_Map': {          # HSS_MSK3
+        'R': ('input', _K + "hair_height",    1.0),
+        'G': ('input', _K + "hair_spec_mask", 1.0),
+        'B': ('input', _K + "hair_shift",     1.0),
+        'A': ('fixed', 1.0, "core.feature.unused"),
+    },
+    # A 2D unit vector in RG: B is 0.5 (z = 0) in all 5 samples, and RG alone
+    # already has length 0.98-1.00. Null null_fur_up_MSK3 = (0.5, 1, 0.5),
+    # i.e. "up" -- decoded from its BC1 block.
+    'HairFlowMap': {                             # HF_MSK3
+        'R': ('vec2', _K + "hair_flow", (0.5, 1.0)),
+        'G': ('vec2_y', 'R'),
+        'B': ('fixed', 0.5, "core.feature.unused"),
+        'A': ('fixed', 1.0, "core.feature.unused"),
+    },
+    # One channel (BC4 in vanilla). The null is a real gradient
+    # (Gradation_MSK1), not a constant, so R has no neutral: unset, the slot
+    # keeps that null. G/B/A are what BC4 samples as.
+    'Fade_AlphaMap': {                           # FA_MSK1
+        'R': ('input', _K + "fade_alpha", None),
+        'G': ('fixed', 0.0, "core.feature.unused"),
+        'B': ('fixed', 0.0, "core.feature.unused"),
+        'A': ('fixed', 1.0, "core.feature.unused"),
+    },
+    # Only R carries data in the samples; the rest at NullWhite's value.
+    'Top_MaskMap': {                             # TMM_MSK4
+        'R': ('input', _K + "top_mask", 1.0),
+        'G': ('fixed', 1.0, "core.feature.unused"),
+        'B': ('fixed', 1.0, "core.feature.unused"),
+        'A': ('fixed', 1.0, "core.feature.unused"),
+    },
 }
 
 # Vanilla-measured defaults where assets/mhws/vanilla_slot_defaults.json exists,

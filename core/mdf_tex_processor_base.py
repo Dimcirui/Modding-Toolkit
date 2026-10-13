@@ -138,6 +138,11 @@ _CH_ENUM_ITEMS = [('R', 'R', ''), ('G', 'G', ''), ('B', 'B', ''), ('A', 'A', '')
 # empty -- and every 'fixed' one -- is written with the value the slot's vanilla
 # null has there, so an unset channel behaves exactly as if the slot were null
 # and nothing switches on by accident.
+#
+# A direction field is one quantity in two channels, not two masks, so it takes
+# one file for both: R = ('vec2', label_key, (neutral_x, neutral_y)) reads that
+# file's R and G, and G = ('vec2_y', 'R') marks G as R's partner (feat_r is the
+# file; feat_g_inv flips the Y component).
 FEATURE_CHANNELS = ('R', 'G', 'B', 'A')
 
 
@@ -183,15 +188,28 @@ def feature_channel_map(slot, feature_def):
         spec = feature_def.get(c, ('fixed', 0.0, ''))
         kind = spec[0]
         path = getattr(slot, f"feat_{c.lower()}")
-        if kind == 'input' and path:
+        if kind == 'vec2':
+            ch_map[c] = (f"feat_{c}", 0) if path else float(spec[2][0])
+            if path:
+                paths[f"feat_{c}"] = bpy.path.abspath(path)
+        elif kind == 'vec2_y':
+            x = spec[1]
+            if getattr(slot, f"feat_{x.lower()}"):
+                ch_map[c] = ((f"feat_{x}", 1, True) if getattr(slot, f"feat_{c.lower()}_inv")
+                             else (f"feat_{x}", 1))
+            else:
+                ch_map[c] = float(feature_def[x][2][1])
+        elif kind == 'input' and path:
             key = f"feat_{c}"
             src_ch = _CH[getattr(slot, f"feat_{c.lower()}_ch")]
             inv = getattr(slot, f"feat_{c.lower()}_inv")
             ch_map[c] = (key, src_ch, True) if inv else (key, src_ch)
             paths[key] = bpy.path.abspath(path)
         else:
-            # 'input': (kind, label, neutral); 'fixed': (kind, value, label)
-            ch_map[c] = float(spec[2] if kind == 'input' else spec[1])
+            # 'input': (kind, label, neutral); 'fixed': (kind, value, label).
+            # A None neutral is the slot's only input, so it is set whenever
+            # this composes.
+            ch_map[c] = float((spec[2] or 0.0) if kind == 'input' else spec[1])
     return ch_map, paths
 
 # ── Base texture data (all RE Engine games) ────────────────────────────────────

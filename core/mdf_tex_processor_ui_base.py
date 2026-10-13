@@ -360,12 +360,38 @@ class MdfTexDialogBase(bpy.types.Operator):
         whose meaning nobody has established."""
         pfx = type(self)._game_prefix
         for c in FEATURE_CHANNELS:
-            kind, a, b = fdef.get(c, ('fixed', 0.0, ''))
+            spec = fdef.get(c, ('fixed', 0.0, ''))
+            if spec[0] == 'vec2_y':
+                continue                # drawn on its partner's row
+            kind, a, b = spec
+            partner = next((y for y in FEATURE_CHANNELS
+                            if fdef.get(y, ('',))[0] == 'vec2_y' and fdef[y][1] == c), None) \
+                if kind == 'vec2' else None
             row = col.row(align=True)
             row.label(text="", icon='BLANK1')
             split = row.split(factor=0.12, align=True)
-            split.label(text=c)
+            split.label(text=f"{c} {partner}" if partner else c)
             inner = split.split(factor=0.36, align=True)
+            if kind == 'vec2':
+                inner.label(text=T(a))
+                right = inner.row(align=True)
+                prop = f"feat_{c.lower()}"
+                cur = getattr(slot, prop)
+                pick = right.operator(f"{pfx}.{self._op_stem}_pick_direct",
+                                      text=_basename(cur) if cur else
+                                      T("core.mdf_tex_processor_ui_base.neutral").format(
+                                          v=", ".join(f"{v:g}" for v in b)),
+                                      icon='IMAGE_DATA' if cur else 'FILEBROWSER')
+                pick.mat_index, pick.slot_index, pick.channel = mi, si, c
+                if cur:
+                    clr = right.operator(f"{pfx}.{self._op_stem}_clear_direct", text="", icon='X')
+                    clr.mat_index, clr.slot_index, clr.channel = mi, si, c
+                    if partner:
+                        inv_sub = right.row(align=True)
+                        inv_sub.scale_x = 0.6
+                        inv_sub.prop(slot, f"feat_{partner.lower()}_inv",
+                                     text=T("core.feature.flip_y"), toggle=True)
+                continue
             if kind == 'fixed':
                 inner.label(text=T(b) if b else "—")
                 inner.label(text=T("core.mdf_tex_processor_ui_base.fixed").format(v=f"{a:g}"))
@@ -376,7 +402,8 @@ class MdfTexDialogBase(bpy.types.Operator):
             cur = getattr(slot, prop)
             pick = right.operator(f"{pfx}.{self._op_stem}_pick_direct",
                                   text=_basename(cur) if cur else
-                                  T("core.mdf_tex_processor_ui_base.neutral").format(v=f"{b:g}"),
+                                  (T("core.mdf_tex_processor_ui_base.no_input") if b is None else
+                                   T("core.mdf_tex_processor_ui_base.neutral").format(v=f"{b:g}")),
                                   icon='IMAGE_DATA' if cur else 'FILEBROWSER')
             pick.mat_index, pick.slot_index, pick.channel = mi, si, c
             if cur:

@@ -535,4 +535,10 @@ STRINGS = {
     "mhws.feature.fur_dir1": {"EN": "Fur direction, layer 1", "ZH": "毛发方向（第 1 层）"},
     "mhws.feature.fur_dir2": {"EN": "Fur direction, layer 2", "ZH": "毛发方向（第 2 层）"},
     "mhws.feature.fur_presence": {"EN": "Fur presence", "ZH": "毛发分布"},
+    "mhws.feature.hair_height": {"EN": "Hair height", "ZH": "毛发高度"},
+    "mhws.feature.hair_spec_mask": {"EN": "Highlight mask", "ZH": "高光遮罩"},
+    "mhws.feature.hair_shift": {"EN": "Highlight shift", "ZH": "高光偏移"},
+    "mhws.feature.hair_flow": {"EN": "Hair direction (one RG image)", "ZH": "毛发走向（一张 RG 图）"},
+    "mhws.feature.fade_alpha": {"EN": "Fade", "ZH": "渐隐"},
+    "mhws.feature.top_mask": {"EN": "Top-cover mask", "ZH": "顶部覆盖遮罩"},
 }

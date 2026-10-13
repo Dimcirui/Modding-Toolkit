@@ -512,6 +512,7 @@ STRINGS = {
     "core.feature.fuzz": {"EN": "Fuzz", "ZH": "绒毛散射 (Fuzz)"},
     "core.feature.unknown": {"EN": "unknown", "ZH": "未知"},
     "core.feature.unused": {"EN": "unused", "ZH": "未使用"},
+    "core.feature.flip_y": {"EN": "Flip Y", "ZH": "翻转 Y"},
     "core.feature.cmm_r": {
         "EN": "Recolour area R (alpha armour: recolourable; beta: fixed colour)",
         "ZH": "变色区域 R（α 装备可变色 / β 装备固定色）"},
