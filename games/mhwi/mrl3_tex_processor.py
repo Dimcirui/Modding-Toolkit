@@ -15,8 +15,9 @@ from ...core.mdf_tex_processor_base import (
     MdfTexPickPBRBase, MdfTexPickDirectBase,
     MdfTexClearPBRBase, MdfTexClearDirectBase,
     MdfTexCopyMaterialBase, MdfTexPasteMaterialBase,
-    _import_tex_utils,
+    _import_tex_utils, _STATE_VERSION, _restore_slot_features,
 )
+from ...core.mdf_tex_slot_status import resolve_slot, migrate_saved_mode
 
 
 # ── MHWI MRL3 constants ───────────────────────────────────────────────────────
@@ -182,6 +183,7 @@ def _do_mhwi_refresh(settings, col, scene):
         prev_chs   = prev.get('pbr_chs', {})
         prev_inv   = prev.get('pbr_inv', {})
         prev_slots = prev.get('slots',   {})
+        prev_is_old = bool(prev) and prev.get('v', 1) < _STATE_VERSION
 
         for pt in PBR_TYPES:
             setattr(item.pbr, pt, prev_pbr.get(pt, ''))
@@ -204,15 +206,19 @@ def _do_mhwi_refresh(settings, col, scene):
             slot.texture_type  = slot_type
             slot.original_path = map_item.value
 
+            # Same AUTO rule as the MDF games (core/mdf_tex_slot_status.py): a
+            # slot nobody configured stays AUTO, which resolves to what this
+            # refresh used to fill in by hand (DEFAULT on a null, else SKIP).
             if slot_type in prev_slots:
                 sd = prev_slots[slot_type]
                 if isinstance(sd, dict):
-                    slot.mode         = sd.get('mode', 'SKIP')
-                    slot.direct_image = sd.get('direct_image', '')
+                    mode, slot.direct_image = sd.get('mode', 'AUTO'), sd.get('direct_image', '')
+                    _restore_slot_features(slot, sd)
                 else:
-                    slot.mode, slot.direct_image = sd
-            elif _is_null_mhwi(map_item.value):
-                slot.mode = 'DEFAULT'
+                    mode, slot.direct_image = sd
+                if prev_is_old:
+                    mode = migrate_saved_mode(mode, map_item.value, _is_null_mhwi)
+                slot.mode = mode
 
         count += 1
 
@@ -399,7 +405,14 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                 bml_value_out = None
 
                 for slot in mat_item.slots:
-                    if slot.mode == 'SKIP':
+                    # AUTO resolves here exactly as in the MDF processor; the
+                    # explicit modes pass through unchanged.
+                    mode = resolve_slot(
+                        slot.texture_type, slot.mode,
+                        bpy.path.abspath(slot.direct_image) if slot.direct_image else '',
+                        slot.original_path, pbr_paths, MHWI_SLOT_CHANNEL_MAPS,
+                        MHWI_NULL_TEX, _is_null_mhwi).mode
+                    if mode == 'SKIP':
                         skip_count += 1
                         continue
 
@@ -410,7 +423,7 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                         skip_count += 1
                         continue
 
-                    if slot.mode == 'DEFAULT':
+                    if mode == 'DEFAULT':
                         null_val = MHWI_NULL_TEX.get(slot.texture_type)
                         if null_val:
                             map_item.value = null_val
@@ -420,7 +433,7 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
                             skip_count += 1
                         continue
 
-                    if (slot.mode == 'COMPOSE'
+                    if (mode == 'COMPOSE'
                             and slot.texture_type == 'EmissiveMap'
                             and share_emi and bml_value_out):
                         map_item.value = bml_value_out
@@ -430,7 +443,7 @@ class MHWI_OT_Mrl3TexProcess(bpy.types.Operator):
 
                     # COMPOSE or DIRECT
                     try:
-                        if slot.mode == 'COMPOSE':
+                        if mode == 'COMPOSE':
                             if mat_item.skip_textures:
                                 map_item.value = _mhwi_tex_binding(
                                     base_path, tex_name, slot.texture_type)

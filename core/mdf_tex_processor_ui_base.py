@@ -5,7 +5,7 @@ from .i18n import T
 from .mdf_tex_processor_base import (
     PBR_TYPES, PBR_TYPE_LABELS, PBR_CHANNEL_SELECTABLE, PBR_DEFAULTS,
     BASE_COMMON_SLOT_TYPES, BASE_NULL_TEX_BY_TYPE, BASE_SLOT_CHANNEL_MAPS,
-    BASE_TEXTURE_TYPE_ABBREV, register_game_tables, slot_status,
+    BASE_TEXTURE_TYPE_ABBREV, register_game_tables, slot_status, FEATURE_CHANNELS,
 )
 from .mdf_tex_slot_status import recipe_inputs
 from .slot_defaults import SlotNulls
@@ -59,6 +59,7 @@ class MdfTexDialogBase(bpy.types.Operator):
     _channel_maps      = BASE_SLOT_CHANNEL_MAPS
     _abbrev_map        = BASE_TEXTURE_TYPE_ABBREV
     _slot_nulls        = None   # the game's SlotNulls -- same object its processor uses
+    _feature_channels  = {}     # the game's mask slots with per-channel inputs
 
     # ── Lifecycle ──────────────────────────────────────────────────────────────
 
@@ -91,7 +92,8 @@ class MdfTexDialogBase(bpy.types.Operator):
         settings = getattr(scene, cls._settings_attr)
         pfx      = cls._game_prefix
         nulls    = cls._slot_nulls or SlotNulls(cls._null_tex_by_type)
-        tables   = register_game_tables(settings, cls._channel_maps, nulls)
+        tables   = register_game_tables(settings, cls._channel_maps, nulls,
+                                        cls._feature_channels)
 
         # Header
         row = layout.row(align=True)
@@ -247,7 +249,9 @@ class MdfTexDialogBase(bpy.types.Operator):
     def _status_text(self, st, slot, nulls, mmtr):
         null_rel = nulls.null_for(slot.texture_type, mmtr, slot.original_path) or ""
         if st.mode == 'COMPOSE':
-            body = ", ".join(PBR_TYPE_LABELS[pt] for pt in st.sources)
+            fdef = type(self)._feature_channels.get(slot.texture_type, {})
+            body = ", ".join(T(fdef[pt[3:]][1]) if pt.startswith("ch:") else PBR_TYPE_LABELS[pt]
+                             for pt in st.sources)
             text = T("core.mdf_tex_slot_status.compose") + (f" ← {body}" if body else "")
         elif st.mode == 'DIRECT':
             text = T("core.mdf_tex_slot_status.direct") + f" ← {_basename(slot.direct_image) or '--'}"
@@ -267,9 +271,10 @@ class MdfTexDialogBase(bpy.types.Operator):
         for si, slot in indexed_slots:
             st = slot_status(tables, mat, slot, pbr_paths)
             ch_map = cls._channel_maps.get(slot.texture_type)
+            fdef = cls._feature_channels.get(slot.texture_type)
 
             row = col.row(align=True)
-            if ch_map is not None:
+            if ch_map is not None or fdef:
                 row.prop(slot, "expanded", text="", emboss=False,
                          icon='TRIA_DOWN' if slot.expanded else 'TRIA_RIGHT')
             else:
@@ -292,7 +297,9 @@ class MdfTexDialogBase(bpy.types.Operator):
                 clr_op.mat_index  = mi
                 clr_op.slot_index = si
 
-            if ch_map is not None and slot.expanded:
+            if fdef and slot.expanded:
+                self._draw_feature_channels(col, slot, fdef, mi, si)
+            elif ch_map is not None and slot.expanded:
                 self._draw_channels(col, mat, ch_map, pbr_paths)
 
     def _draw_channels(self, col, mat, ch_map, pbr_paths):
@@ -328,3 +335,39 @@ class MdfTexDialogBase(bpy.types.Operator):
             if rule_inv:
                 text += "  " + T("core.mdf_tex_processor_ui_base.inverted_rule")
             inner.label(text=text, icon=icon)
+
+    def _draw_feature_channels(self, col, slot, fdef, mi, si):
+        """A mask slot's own per-channel inputs. 'fixed' channels -- unknown or
+        unused -- are shown, not offered: nothing should be fed into a channel
+        whose meaning nobody has established."""
+        pfx = type(self)._game_prefix
+        for c in FEATURE_CHANNELS:
+            kind, a, b = fdef.get(c, ('fixed', 0.0, ''))
+            row = col.row(align=True)
+            row.label(text="", icon='BLANK1')
+            split = row.split(factor=0.12, align=True)
+            split.label(text=c)
+            inner = split.split(factor=0.36, align=True)
+            if kind == 'fixed':
+                inner.label(text=T(b) if b else "—")
+                inner.label(text=T("core.mdf_tex_processor_ui_base.fixed").format(v=f"{a:g}"))
+                continue
+            inner.label(text=T(a))
+            right = inner.row(align=True)
+            prop = f"feat_{c.lower()}"
+            cur = getattr(slot, prop)
+            pick = right.operator(f"{pfx}.mdf_tex_pick_direct",
+                                  text=_basename(cur) if cur else
+                                  T("core.mdf_tex_processor_ui_base.neutral").format(v=f"{b:g}"),
+                                  icon='IMAGE_DATA' if cur else 'FILEBROWSER')
+            pick.mat_index, pick.slot_index, pick.channel = mi, si, c
+            if cur:
+                clr = right.operator(f"{pfx}.mdf_tex_clear_direct", text="", icon='X')
+                clr.mat_index, clr.slot_index, clr.channel = mi, si, c
+                ch_sub = right.row(align=True)
+                ch_sub.scale_x = 0.35
+                for ch_val in _CH_ORDER:
+                    ch_sub.prop_enum(slot, f"{prop}_ch", ch_val)
+                inv_sub = right.row(align=True)
+                inv_sub.scale_x = 0.4
+                inv_sub.prop(slot, f"{prop}_inv", text="Inv", toggle=True)

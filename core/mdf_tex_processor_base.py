@@ -127,6 +127,47 @@ def octahedral_normals_prop():
 _CH           = {'R': 0, 'G': 1, 'B': 2, 'A': 3}
 _CH_ENUM_ITEMS = [('R', 'R', ''), ('G', 'G', ''), ('B', 'B', ''), ('A', 'A', '')]
 
+# ── Feature-mask slots ─────────────────────────────────────────────────────────
+#
+# Mask slots (FxMap, DetailMaskMap ...) carry one unrelated mask per channel and
+# no PBR quantity, so they get per-channel inputs on the slot itself instead of
+# a PBR recipe. A game declares them as
+#     {slot_type: {channel: ('input', label_key, neutral) | ('fixed', value, label_key)}}
+# (games/mhws/mdf_tex_processor.py's MHWS_FEATURE_CHANNELS). A channel left
+# empty -- and every 'fixed' one -- is written with the value the slot's vanilla
+# null has there, so an unset channel behaves exactly as if the slot were null
+# and nothing switches on by accident.
+FEATURE_CHANNELS = ('R', 'G', 'B', 'A')
+
+
+def feature_inputs_of(slot):
+    """{channel: absolute path or ''} -- the slot's own per-channel inputs."""
+    out = {}
+    for c in FEATURE_CHANNELS:
+        path = getattr(slot, f"feat_{c.lower()}")
+        out[c] = bpy.path.abspath(path) if path else ''
+    return out
+
+
+def feature_channel_map(slot, feature_def):
+    """(channel map, paths) for _compose_channels, built from the slot's inputs:
+    a set channel reads its file's chosen channel, everything else is a constant."""
+    ch_map, paths = {}, {}
+    for c in FEATURE_CHANNELS:
+        spec = feature_def.get(c, ('fixed', 0.0, ''))
+        kind = spec[0]
+        path = getattr(slot, f"feat_{c.lower()}")
+        if kind == 'input' and path:
+            key = f"feat_{c}"
+            src_ch = _CH[getattr(slot, f"feat_{c.lower()}_ch")]
+            inv = getattr(slot, f"feat_{c.lower()}_inv")
+            ch_map[c] = (key, src_ch, True) if inv else (key, src_ch)
+            paths[key] = bpy.path.abspath(path)
+        else:
+            # 'input': (kind, label, neutral); 'fixed': (kind, value, label)
+            ch_map[c] = float(spec[2] if kind == 'input' else spec[1])
+    return ch_map, paths
+
 # ── Base texture data (all RE Engine games) ────────────────────────────────────
 
 BASE_TEXTURE_TYPE_ABBREV = {
@@ -723,9 +764,29 @@ def _capture_material_state(m):
         'pbr_chs':        {pt: getattr(m.pbr, f"{pt}_ch") for pt in PBR_CHANNEL_SELECTABLE},
         'pbr_inv':        {pt: getattr(m.pbr, f"{pt}_inv") for pt in PBR_CHANNEL_SELECTABLE},
         'normal_flip_g':  m.pbr.normal_flip_g,
-        'slots':          {s.texture_type: {'mode': s.mode, 'direct_image': s.direct_image}
-                           for s in m.slots},
+        'slots':          {s.texture_type: _capture_slot(s) for s in m.slots},
     }
+
+
+def _capture_slot(s):
+    d = {'mode': s.mode, 'direct_image': s.direct_image}
+    feat = {c: [getattr(s, f"feat_{c.lower()}"), getattr(s, f"feat_{c.lower()}_ch"),
+                getattr(s, f"feat_{c.lower()}_inv")]
+            for c in FEATURE_CHANNELS if getattr(s, f"feat_{c.lower()}")}
+    if feat:
+        d['feat'] = feat
+    return d
+
+
+def _restore_slot_features(slot, sd):
+    for c, (path, ch, inv) in (sd.get('feat') or {}).items():
+        if c in FEATURE_CHANNELS:
+            setattr(slot, f"feat_{c.lower()}", path)
+            try:
+                setattr(slot, f"feat_{c.lower()}_ch", ch)
+            except Exception:
+                pass
+            setattr(slot, f"feat_{c.lower()}_inv", bool(inv))
 
 def _save_col_state(scene, col_name, state):
     scene[f"mdf_tex_saved__{col_name}"] = json.dumps(state)
@@ -797,6 +858,7 @@ def _do_refresh(settings, col, scene, is_null_fn=None):
                 sd = prev_slots[binding.textureType]
                 if isinstance(sd, dict):
                     mode, slot.direct_image = sd.get('mode', 'AUTO'), sd.get('direct_image', '')
+                    _restore_slot_features(slot, sd)
                 else:
                     mode, slot.direct_image = sd
                 if prev_is_old:
@@ -880,6 +942,19 @@ class MdfTexSlotItem(bpy.types.PropertyGroup):
     direct_image: bpy.props.StringProperty(name="Direct Image", subtype='FILE_PATH')
     # UI only: whether the dialog shows this slot's per-channel rows.
     expanded:     bpy.props.BoolProperty(default=False)
+    # Per-channel inputs of a feature-mask slot (see FEATURE_CHANNELS).
+    feat_r:       bpy.props.StringProperty(subtype='FILE_PATH')
+    feat_g:       bpy.props.StringProperty(subtype='FILE_PATH')
+    feat_b:       bpy.props.StringProperty(subtype='FILE_PATH')
+    feat_a:       bpy.props.StringProperty(subtype='FILE_PATH')
+    feat_r_ch:    bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
+    feat_g_ch:    bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
+    feat_b_ch:    bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
+    feat_a_ch:    bpy.props.EnumProperty(name="", items=_CH_ENUM_ITEMS, default='R')
+    feat_r_inv:   bpy.props.BoolProperty(name="Invert", default=False)
+    feat_g_inv:   bpy.props.BoolProperty(name="Invert", default=False)
+    feat_b_inv:   bpy.props.BoolProperty(name="Invert", default=False)
+    feat_a_inv:   bpy.props.BoolProperty(name="Invert", default=False)
 
 
 class MdfTexMaterialItem(bpy.types.PropertyGroup):
@@ -955,6 +1030,8 @@ class MdfTexPickDirectBase(bpy.types.Operator):
 
     mat_index:   bpy.props.IntProperty()
     slot_index:  bpy.props.IntProperty()
+    # '' picks the slot's direct image; 'R'..'A' one feature channel's input.
+    channel:     bpy.props.StringProperty(default="")
     filepath:    bpy.props.StringProperty(subtype='FILE_PATH')
     filter_glob: bpy.props.StringProperty(
         default="*.png;*.tga;*.tif;*.tiff;*.dds", options={'HIDDEN'})
@@ -968,7 +1045,9 @@ class MdfTexPickDirectBase(bpy.types.Operator):
         mats = settings.materials
         if 0 <= self.mat_index < len(mats):
             slots = mats[self.mat_index].slots
-            if 0 <= self.slot_index < len(slots):
+            if 0 <= self.slot_index < len(slots) and self.channel in FEATURE_CHANNELS:
+                setattr(slots[self.slot_index], f"feat_{self.channel.lower()}", self.filepath)
+            elif 0 <= self.slot_index < len(slots):
                 slot = slots[self.slot_index]
                 slot.direct_image = self.filepath
                 # AUTO already picks a set direct image; only an explicit
@@ -1001,13 +1080,16 @@ class MdfTexClearDirectBase(bpy.types.Operator):
 
     mat_index:  bpy.props.IntProperty()
     slot_index: bpy.props.IntProperty()
+    channel:    bpy.props.StringProperty(default="")   # see MdfTexPickDirectBase
 
     def execute(self, context):
         settings = getattr(context.scene, type(self)._settings_attr)
         mats = settings.materials
         if 0 <= self.mat_index < len(mats):
             slots = mats[self.mat_index].slots
-            if 0 <= self.slot_index < len(slots):
+            if 0 <= self.slot_index < len(slots) and self.channel in FEATURE_CHANNELS:
+                setattr(slots[self.slot_index], f"feat_{self.channel.lower()}", '')
+            elif 0 <= self.slot_index < len(slots):
                 slots[self.slot_index].direct_image = ''
                 if slots[self.slot_index].mode == 'DIRECT':
                     slots[self.slot_index].mode = 'AUTO'
@@ -1033,8 +1115,7 @@ class MdfTexCopyMaterialBase(bpy.types.Operator):
             'pbr_chs':       {pt: getattr(mat.pbr, f"{pt}_ch") for pt in PBR_CHANNEL_SELECTABLE},
             'pbr_inv':       {pt: getattr(mat.pbr, f"{pt}_inv") for pt in PBR_CHANNEL_SELECTABLE},
             'normal_flip_g': mat.pbr.normal_flip_g,
-            'slots':         {s.texture_type: {'mode': s.mode, 'direct_image': s.direct_image}
-                              for s in mat.slots},
+            'slots':         {s.texture_type: _capture_slot(s) for s in mat.slots},
         }
         settings.clipboard_json = json.dumps(data)
         self.report({'INFO'}, T("core.mdf_tex_processor_base.copied_material").format(name=mat.material_name))
@@ -1078,6 +1159,7 @@ class MdfTexPasteMaterialBase(bpy.types.Operator):
                 sd = slot_data[slot.texture_type]
                 slot.mode         = sd.get('mode', 'AUTO')
                 slot.direct_image = sd.get('direct_image', '')
+                _restore_slot_features(slot, sd)
         self.report({'INFO'}, T("core.mdf_tex_processor_base.pasted_to_material").format(name=mat.material_name))
         return {'FINISHED'}
 
@@ -1091,6 +1173,7 @@ class MdfTexProcessBase(bpy.types.Operator):
     _natives_root_key = ""
     _null_tex_by_type = {}
     _slot_nulls       = None   # SlotNulls; built from _null_tex_by_type when unset
+    _feature_channels = {}     # see FEATURE_CHANNELS; a game's mask slots
     _channel_maps     = {}
     _tex_version      = 0
     _abbrev_map       = {}
@@ -1165,11 +1248,13 @@ class MdfTexProcessBase(bpy.types.Operator):
                 for slot in mat_item.slots:
                     # The dialog's badge comes from this same call, so what it
                     # shows is what happens here.
+                    feature_def = cls._feature_channels.get(slot.texture_type)
                     mode = resolve_slot(
                         slot.texture_type, slot.mode,
                         bpy.path.abspath(slot.direct_image) if slot.direct_image else '',
                         slot.original_path, pbr_paths, cls._channel_maps,
-                        nulls, nulls.is_null).mode
+                        nulls, nulls.is_null,
+                        feature_inputs=feature_inputs_of(slot) if feature_def else None).mode
                     if mode == 'SKIP':
                         skip_count += 1
                         continue
@@ -1211,12 +1296,20 @@ class MdfTexProcessBase(bpy.types.Operator):
                                 export_count += 1
                                 continue
                             _t_comp = time.time()
-                            src_img = _compose_channels(
-                                slot.texture_type, pbr_paths, pbr_channels,
-                                temp_dir, tex_name, pbr_inv,
-                                channel_maps=cls._channel_maps,
-                                normal_flip_g=normal_flip_g,
-                                octahedral=getattr(settings, 'octahedral_normals', False))
+                            if feature_def and any(feature_inputs_of(slot).values()):
+                                # A mask slot: its own per-channel inputs, the
+                                # rest at the vanilla null's value.
+                                f_map, f_paths = feature_channel_map(slot, feature_def)
+                                src_img = _compose_channels(
+                                    slot.texture_type, f_paths, {}, temp_dir, tex_name,
+                                    channel_maps={slot.texture_type: f_map}, octahedral=False)
+                            else:
+                                src_img = _compose_channels(
+                                    slot.texture_type, pbr_paths, pbr_channels,
+                                    temp_dir, tex_name, pbr_inv,
+                                    channel_maps=cls._channel_maps,
+                                    normal_flip_g=normal_flip_g,
+                                    octahedral=getattr(settings, 'octahedral_normals', False))
                             # print(f"[{cls._log_tag}]   合成通道 {slot.texture_type}: {time.time() - _t_comp:.2f}s", flush=True)
                             if src_img is None:
                                 null_rel = nulls.null_for(slot.texture_type, mmtr, binding.path)
@@ -1282,29 +1375,31 @@ class MdfTexProcessBase(bpy.types.Operator):
 
 # ── Slot status (dialog side) ──────────────────────────────────────────────────
 
-#: settings PropertyGroup identifier -> (channel_maps, SlotNulls, is_null).
+#: settings PropertyGroup identifier -> (channel_maps, SlotNulls, is_null, feature_channels).
 #: Filled by each game's dialog before it draws, so the shared material list
 #: below -- one UIList class for all four games -- can resolve slots with the
 #: right game's tables. A UIList receives the settings, not the dialog.
 _GAME_TABLES = {}
 
 
-def register_game_tables(settings, channel_maps, slot_nulls):
+def register_game_tables(settings, channel_maps, slot_nulls, feature_channels=None):
     key = settings.bl_rna.identifier
     if key not in _GAME_TABLES:
-        _GAME_TABLES[key] = (channel_maps, slot_nulls, slot_nulls.is_null)
+        _GAME_TABLES[key] = (channel_maps, slot_nulls, slot_nulls.is_null,
+                             feature_channels or {})
     return _GAME_TABLES[key]
 
 
 def slot_status(tables, mat_item, slot, pbr_paths=None):
     """resolve_slot for a slot item -- the same call MdfTexProcessBase makes."""
-    channel_maps, null_tex_by_type, is_null = tables
+    channel_maps, null_tex_by_type, is_null, features = tables
     if pbr_paths is None:
         pbr_paths = {pt: getattr(mat_item.pbr, pt) for pt in PBR_TYPES}
     return resolve_slot(
         slot.texture_type, slot.mode,
         bpy.path.abspath(slot.direct_image) if slot.direct_image else '',
-        slot.original_path, pbr_paths, channel_maps, null_tex_by_type, is_null)
+        slot.original_path, pbr_paths, channel_maps, null_tex_by_type, is_null,
+        feature_inputs=feature_inputs_of(slot) if slot.texture_type in features else None)
 
 
 class MDFTEX_UL_materials(bpy.types.UIList):

@@ -523,4 +523,21 @@ STRINGS = {
     "mhws.shader_defs.fxmap": {
         "EN": "FxMap — secondary effect mask; carried for export, not used by the preview",
         "ZH": "FxMap — 附加特效遮罩；仅为导出保留，预览不使用"},
+
+    # Feature-mask channels (games/mhws/mdf_tex_processor.py, MHWS_FEATURE_CHANNELS)
+    "mhws.feature.film": {"EN": "Film (thin-film sheen)", "ZH": "薄膜 (Film 彩虹膜)"},
+    "mhws.feature.wave_emit": {"EN": "Wave emit", "ZH": "波纹发光 (WaveEmit)"},
+    "mhws.feature.fuzz": {"EN": "Fuzz (XM)", "ZH": "绒毛散射 (XM Fuzz)"},
+    "mhws.feature.unknown": {"EN": "unknown", "ZH": "未知"},
+    "mhws.feature.unused": {"EN": "unused", "ZH": "未使用"},
+    "mhws.feature.color_area1": {"EN": "Colour area 1", "ZH": "着色区域 1"},
+    "mhws.feature.color_area2": {"EN": "Colour area 2", "ZH": "着色区域 2"},
+    "mhws.feature.color_area3": {"EN": "Colour area 3 (rarely used)", "ZH": "着色区域 3（少用）"},
+    "mhws.feature.detail_r": {"EN": "Detail set R area", "ZH": "细节 R 组区域"},
+    "mhws.feature.detail_g": {"EN": "Detail set G area", "ZH": "细节 G 组区域"},
+    "mhws.feature.detail_b": {"EN": "Detail set B area", "ZH": "细节 B 组区域"},
+    "mhws.feature.detail_a": {"EN": "Detail set A area", "ZH": "细节 A 组区域"},
+    "mhws.feature.fur_dir1": {"EN": "Fur direction, layer 1", "ZH": "毛发方向（第 1 层）"},
+    "mhws.feature.fur_dir2": {"EN": "Fur direction, layer 2", "ZH": "毛发方向（第 2 层）"},
+    "mhws.feature.fur_presence": {"EN": "Fur presence", "ZH": "毛发分布"},
 }

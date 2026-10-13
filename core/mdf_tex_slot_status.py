@@ -11,6 +11,8 @@ were left alone exported unchanged, with nothing to say so.
 
     direct image set            -> DIRECT
     a recipe input exists       -> COMPOSE
+    a feature channel is set    -> COMPOSE   (mask slots like FxMap, which have
+                                              per-channel inputs of their own)
     otherwise                   -> what the old default was: DEFAULT if the
                                    binding already points at a vanilla null
                                    (and this slot type has one), else SKIP
@@ -30,7 +32,8 @@ from collections import namedtuple
 MODES = ('AUTO', 'COMPOSE', 'DIRECT', 'DEFAULT', 'SKIP')
 
 #: ``mode``: one of COMPOSE / DIRECT / DEFAULT / SKIP -- never AUTO.
-#: ``sources``: the input types a COMPOSE will read (sorted), else ().
+#: ``sources``: the input types a COMPOSE will read (sorted), then ``'ch:R'``-style
+#: entries for the feature channels it reads; else ().
 #: ``problem``: a short reason key when the slot cannot do what its mode asks
 #: (an explicit COMPOSE with no inputs, a DIRECT whose file is gone), else ''.
 SlotStatus = namedtuple('SlotStatus', 'mode sources problem auto')
@@ -51,10 +54,16 @@ def _present_inputs(needed, pbr_paths, exists):
 
 
 def resolve_slot(slot_type, mode, direct_image, original_path, pbr_paths,
-                 channel_maps, null_tex_by_type, is_null, exists=os.path.isfile):
-    """SlotStatus for one slot. ``exists`` is injectable for tests."""
+                 channel_maps, null_tex_by_type, is_null, exists=os.path.isfile,
+                 feature_inputs=None):
+    """SlotStatus for one slot. ``exists`` is injectable for tests.
+
+    ``feature_inputs``: ``{channel: path}`` for a slot with per-channel feature
+    inputs (None for any other slot) -- its set channels count as sources."""
     needed = recipe_inputs(slot_type, channel_maps)
     sources = _present_inputs(needed, pbr_paths, exists) if needed else ()
+    sources += tuple(f"ch:{c}" for c in sorted((feature_inputs or {}))
+                     if feature_inputs[c] and exists(feature_inputs[c]))
 
     if mode == 'AUTO':
         if direct_image:
@@ -66,7 +75,7 @@ def resolve_slot(slot_type, mode, direct_image, original_path, pbr_paths,
         return SlotStatus('SKIP', (), '', True)
 
     if mode == 'COMPOSE':
-        if needed is None:
+        if needed is None and feature_inputs is None:
             return SlotStatus('COMPOSE', (), 'no_recipe', False)
         return SlotStatus('COMPOSE', sources, '' if sources else 'no_inputs', False)
     if mode == 'DIRECT':
