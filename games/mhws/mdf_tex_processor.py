@@ -1,6 +1,7 @@
 import bpy
 
 from ...core.slot_defaults import SlotNulls
+from ...core.placeholder_tex import PLACEHOLDER_SLOT_TYPES
 from ...core.mdf_tex_processor_base import fx_feature_channels
 from ...core.mdf_tex_processor_base import (
     BASE_SLOT_CHANNEL_MAPS, BASE_NULL_TEX_BY_TYPE, BASE_TEXTURE_TYPE_ABBREV,
@@ -160,6 +161,7 @@ class MHWS_OT_MdfTexProcess(MdfTexProcessBase):
     _null_tex_by_type = NULL_TEX_BY_TYPE
     _slot_nulls       = SLOT_NULLS
     _feature_channels = MHWS_FEATURE_CHANNELS
+    _placeholder_slots = PLACEHOLDER_SLOT_TYPES
     _channel_maps     = BASE_SLOT_CHANNEL_MAPS
     _tex_version      = MHWS_TEX_VERSION
     _abbrev_map       = TEXTURE_TYPE_ABBREV

@@ -18,7 +18,7 @@ PROCESSOR_WINDOW_WIDTH = 660
 _LIST_ROWS = 6
 
 _STATUS_ICON = {'COMPOSE': 'NODE_COMPOSITING', 'DIRECT': 'IMAGE_DATA',
-                'DEFAULT': 'LINKED', 'SKIP': 'RADIOBUT_OFF'}
+                'DEFAULT': 'LINKED', 'SKIP': 'RADIOBUT_OFF', 'PLACEHOLDER': 'FILE_IMAGE'}
 _CH_ORDER = ('R', 'G', 'B', 'A')
 
 
@@ -60,6 +60,7 @@ class MdfTexDialogBase(bpy.types.Operator):
     _abbrev_map        = BASE_TEXTURE_TYPE_ABBREV
     _slot_nulls        = None   # the game's SlotNulls -- same object its processor uses
     _feature_channels  = {}     # the game's mask slots with per-channel inputs
+    _placeholder_slots = frozenset()   # written from a bundled DDS (MHWS SkinMap)
     # Hooks for a processor that is not MDF-shaped (MHWI's MRL3 one): where the
     # collection lives, what its operators are called, what to say when empty.
     _collection_attr   = "mdf_collection"
@@ -109,7 +110,7 @@ class MdfTexDialogBase(bpy.types.Operator):
         pfx      = cls._game_prefix
         nulls    = cls._slot_nulls or SlotNulls(cls._null_tex_by_type)
         tables   = register_game_tables(settings, cls._channel_maps, nulls,
-                                        cls._feature_channels)
+                                        cls._feature_channels, cls._placeholder_slots)
 
         # Header
         row = layout.row(align=True)
@@ -270,6 +271,8 @@ class MdfTexDialogBase(bpy.types.Operator):
             text = T("core.mdf_tex_slot_status.compose") + (f" ← {body}" if body else "")
         elif st.mode == 'DIRECT':
             text = T("core.mdf_tex_slot_status.direct") + f" ← {_basename(slot.direct_image) or '--'}"
+        elif st.mode == 'PLACEHOLDER':
+            text = T("core.mdf_tex_slot_status.placeholder") + f" → {slot.texture_type}.dds"
         elif st.mode == 'DEFAULT':
             text = T("core.mdf_tex_slot_status.default") + f" → {null_rel.replace(chr(92), '/').split('/')[-1]}"
         else:

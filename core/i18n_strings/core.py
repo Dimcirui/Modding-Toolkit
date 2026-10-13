@@ -526,6 +526,7 @@ STRINGS = {
     "core.mdf_tex_slot_status.direct": {"EN": "Direct", "ZH": "直接"},
     "core.mdf_tex_slot_status.default": {"EN": "Null", "ZH": "空贴图"},
     "core.mdf_tex_slot_status.skip": {"EN": "Unchanged", "ZH": "不变"},
+    "core.mdf_tex_slot_status.placeholder": {"EN": "Placeholder", "ZH": "占位贴图"},
     "core.mdf_tex_slot_status.missing_file": {"EN": "file not found", "ZH": "文件不存在"},
     "core.mdf_tex_slot_status.no_inputs": {"EN": "no inputs, writes null", "ZH": "无输入，将写入空贴图"},
     "core.mdf_tex_slot_status.no_recipe": {"EN": "cannot be composed", "ZH": "该槽位无法合成"},

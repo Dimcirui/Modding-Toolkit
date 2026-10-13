@@ -5,7 +5,7 @@ from ...core.mdf_tex_processor_base import (
     _CH_ENUM_ITEMS,
     octahedral_normals_prop,
 )
-from .mdf_tex_processor import NULL_TEX_BY_TYPE, SLOT_NULLS
+from .mdf_tex_processor import NULL_TEX_BY_TYPE, SLOT_NULLS, PLACEHOLDER_SLOT_TYPES
 from ...core.mdf_generator_base import (
     get_shader_source_items, shader_source_update,
     load_preset_enum_items,
@@ -180,6 +180,7 @@ class MHWS_OT_MdfGenProcess(MdfGenProcessBase):
     # MasterMaterial/ entries (MP_noise, PanoramaMap ...).
     _null_tex_by_type = NULL_TEX_BY_TYPE
     _slot_nulls       = SLOT_NULLS
+    _placeholder_slots = PLACEHOLDER_SLOT_TYPES
     _log_tag          = "MHWS Gen"
 
 

@@ -10,6 +10,7 @@ from .slot_resolver import resolve_dds_format, write_slot_tex
 from .re_normal_pack import encode_normal_ga
 from .mdf_tex_slot_status import resolve_slot, migrate_saved_mode
 from .slot_defaults import SlotNulls
+from .placeholder_tex import placeholder_dds, PLACEHOLDER_FALLBACK, is_prefab_borrowed
 
 # ── PBR Constants ──────────────────────────────────────────────────────────────
 
@@ -1199,6 +1200,7 @@ class MdfTexProcessBase(bpy.types.Operator):
     _null_tex_by_type = {}
     _slot_nulls       = None   # SlotNulls; built from _null_tex_by_type when unset
     _feature_channels = {}     # see FEATURE_CHANNELS; a game's mask slots
+    _placeholder_slots = frozenset()   # slots written from a bundled DDS (MHWS SkinMap)
     _channel_maps     = {}
     _tex_version      = 0
     _abbrev_map       = {}
@@ -1278,8 +1280,11 @@ class MdfTexProcessBase(bpy.types.Operator):
                         slot.texture_type, slot.mode,
                         bpy.path.abspath(slot.direct_image) if slot.direct_image else '',
                         slot.original_path, pbr_paths, cls._channel_maps,
-                        nulls, nulls.is_null,
-                        feature_inputs=feature_inputs_of(slot) if feature_def else None).mode
+                        # The prefab's borrowed MK_MODS/... path counts as a null:
+                        # AUTO must replace it, not keep a dangling reference.
+                        nulls, lambda p, _t=slot.texture_type: nulls.is_null(p) or is_prefab_borrowed(_t, p),
+                        feature_inputs=feature_inputs_of(slot) if feature_def else None,
+                        placeholder=slot.texture_type in cls._placeholder_slots).mode
                     if mode == 'SKIP':
                         skip_count += 1
                         continue
@@ -1292,6 +1297,31 @@ class MdfTexProcessBase(bpy.types.Operator):
 
                     mdf_path = make_mdf_path(base_path, tex_name, slot.texture_type,
                                              cls._abbrev_map, cls._use_art_prefix)
+
+                    if mode == 'PLACEHOLDER':
+                        src = placeholder_dds(slot.texture_type)
+                        try:
+                            if mat_item.skip_textures:
+                                binding.path = mdf_path
+                            elif src:
+                                write_slot_tex(
+                                    src, make_disk_path(
+                                        natives_root, base_path, tex_name, slot.texture_type,
+                                        cls._abbrev_map, cls._tex_version, cls._use_art_prefix),
+                                    temp_dir, dds_fmt=None, generate_mipmaps=True,
+                                    image_to_dds=ImageListToDDS,
+                                    dds_to_tex=lambda p, o: DDSToTex(p, cls._tex_version, o))
+                                binding.path = mdf_path
+                            else:
+                                binding.path = PLACEHOLDER_FALLBACK[slot.texture_type]
+                            print(f"[{cls._log_tag}] PLACEHOLDER {slot.texture_type}: {binding.path}")
+                            export_count += 1
+                        except Exception as err:
+                            binding.path = PLACEHOLDER_FALLBACK[slot.texture_type]
+                            print(f"[{cls._log_tag}] PLACEHOLDER failed ({err}), "
+                                  f"{slot.texture_type} -> {binding.path}")
+                            fail_count += 1
+                        continue
 
                     if mode == 'DEFAULT':
                         null_rel = nulls.null_for(slot.texture_type, mmtr, binding.path)
@@ -1400,31 +1430,35 @@ class MdfTexProcessBase(bpy.types.Operator):
 
 # ── Slot status (dialog side) ──────────────────────────────────────────────────
 
-#: settings PropertyGroup identifier -> (channel_maps, SlotNulls, is_null, feature_channels).
+#: settings PropertyGroup identifier ->
+#:     (channel_maps, SlotNulls, is_null, feature_channels, placeholder_slots).
 #: Filled by each game's dialog before it draws, so the shared material list
 #: below -- one UIList class for all four games -- can resolve slots with the
 #: right game's tables. A UIList receives the settings, not the dialog.
 _GAME_TABLES = {}
 
 
-def register_game_tables(settings, channel_maps, slot_nulls, feature_channels=None):
+def register_game_tables(settings, channel_maps, slot_nulls, feature_channels=None,
+                         placeholder_slots=frozenset()):
     key = settings.bl_rna.identifier
     if key not in _GAME_TABLES:
         _GAME_TABLES[key] = (channel_maps, slot_nulls, slot_nulls.is_null,
-                             feature_channels or {})
+                             feature_channels or {}, frozenset(placeholder_slots))
     return _GAME_TABLES[key]
 
 
 def slot_status(tables, mat_item, slot, pbr_paths=None):
     """resolve_slot for a slot item -- the same call MdfTexProcessBase makes."""
-    channel_maps, null_tex_by_type, is_null, features = tables
+    channel_maps, null_tex_by_type, is_null, features, placeholders = tables
     if pbr_paths is None:
         pbr_paths = {pt: getattr(mat_item.pbr, pt) for pt in PBR_TYPES}
     return resolve_slot(
         slot.texture_type, slot.mode,
         bpy.path.abspath(slot.direct_image) if slot.direct_image else '',
-        slot.original_path, pbr_paths, channel_maps, null_tex_by_type, is_null,
-        feature_inputs=feature_inputs_of(slot) if slot.texture_type in features else None)
+        slot.original_path, pbr_paths, channel_maps, null_tex_by_type,
+        lambda p: is_null(p) or is_prefab_borrowed(slot.texture_type, p),
+        feature_inputs=feature_inputs_of(slot) if slot.texture_type in features else None,
+        placeholder=slot.texture_type in placeholders)
 
 
 class MDFTEX_UL_materials(bpy.types.UIList):

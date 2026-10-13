@@ -814,25 +814,15 @@ def invalidate_preset_cache():
     _PRESET_SNOW_MAP_CACHE.clear()
 
 
-#: Slot types with no PBR composition recipe *and* no vanilla null texture at
-#: all (see core.mdf_tex_processor_base.BASE_SLOT_CHANNEL_MAPS /
-#: BASE_NULL_TEX_BY_TYPE -- SkinMap/BlendNormalMap only, so far). Left
-#: unoverridden by the user, _resolve_placeholder_slot below writes the
-#: bundled placeholder DDS through the same per-material make_disk_path/
-#: make_mdf_path convention every other slot uses -- *not* the preset's own
-#: embedded literal Texture Path (MK_MODS/Eku/Public/...), which belongs to
-#: whichever mod that preset was originally authored for, not this export.
-PLACEHOLDER_SLOT_TYPES = {'SkinMap', 'BlendNormalMap'}
-
-
-def _prefab_placeholder_dds(slot_type):
-    """Bundled placeholder DDS for a slot type in PLACEHOLDER_SLOT_TYPES, or
-    None if there is none (any other slot type, or the asset is missing)."""
-    if slot_type not in PLACEHOLDER_SLOT_TYPES:
-        return None
-    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    path = os.path.join(root, "assets", "mdf_presets", "mhws", f"{slot_type}.dds")
-    return path if os.path.isfile(path) else None
+# Slots written from a bundled placeholder DDS rather than a null -- SkinMap
+# only; why, and why not BlendNormalMap, is in core/placeholder_tex.py. Left
+# unoverridden by the user, _resolve_placeholder_slot below writes it through
+# the same per-material make_disk_path/make_mdf_path convention every other
+# slot uses -- *not* the preset's own embedded literal Texture Path
+# (MK_MODS/Eku/Public/...), which belongs to whichever mod that preset was
+# originally authored for, not this export.
+from .placeholder_tex import (                       # noqa: E402 -- re-exported for the port
+    PLACEHOLDER_SLOT_TYPES, PLACEHOLDER_FALLBACK, placeholder_dds as _prefab_placeholder_dds)
 
 
 def _resolve_placeholder_slot(slot_type, tex_name, natives_root, base_path, temp_dir,
@@ -2150,6 +2140,10 @@ class MdfGenProcessBase(bpy.types.Operator):
     _channel_maps      = {}
     _null_tex_by_type  = {}
     _slot_nulls        = None   # SlotNulls; built from _null_tex_by_type when unset
+    # Slots written from a bundled DDS -- MHWS's SkinMap only. Per game: Rise has
+    # a SkinMap slot too, bound to its own engine texture, and MHWS's skin tone
+    # must not land in a Rise mod.
+    _placeholder_slots = frozenset()
     _log_tag           = "MDF Gen"
     _bake_size         = BAKE_SIZE_DEFAULT
 
@@ -2494,6 +2488,27 @@ class MdfGenProcessBase(bpy.types.Operator):
                       f"{os.path.basename(disk_path)} (槽位直连/{direct_auth})")
                 continue
 
+            if slot_type in cls._placeholder_slots:
+                # Before any null lookup: the placeholder is the intended
+                # default here, a null only the fallback when it cannot be
+                # written (no mod root) or textures are off.
+                placeholder_path = None
+                if getattr(mat_entry, 'skip_textures', False):
+                    placeholder_path = make_mdf_path(base_path, tex_name, slot_type,
+                                                     cls._abbrev_map, cls._use_art_prefix)
+                elif natives_root:
+                    placeholder_path = _resolve_placeholder_slot(
+                        slot_type, tex_name, natives_root, base_path, temp_dir,
+                        cls._abbrev_map, cls._tex_version, cls._use_art_prefix,
+                        ImageListToDDS, DDSToTex, comp_cache)
+                if placeholder_path:
+                    slot_mdf_paths[slot_type] = placeholder_path
+                    print(f"[{cls._log_tag}]   {slot_type} -> "
+                          f"{os.path.basename(placeholder_path)} (占位贴图)")
+                else:
+                    slot_mdf_paths[slot_type] = PLACEHOLDER_FALLBACK[slot_type]
+                continue
+
             if slot_type not in cls._channel_maps:
                 # A slot the hand table never listed was always left as the
                 # preset had it. Keep doing that while the preset's binding is
@@ -2506,15 +2521,6 @@ class MdfGenProcessBase(bpy.types.Operator):
                 null = _null(slot_type)
                 if null:
                     slot_mdf_paths[slot_type] = null
-                elif slot_type in PLACEHOLDER_SLOT_TYPES:
-                    placeholder_path = _resolve_placeholder_slot(
-                        slot_type, tex_name, natives_root, base_path, temp_dir,
-                        cls._abbrev_map, cls._tex_version, cls._use_art_prefix,
-                        ImageListToDDS, DDSToTex, comp_cache)
-                    if placeholder_path:
-                        slot_mdf_paths[slot_type] = placeholder_path
-                        print(f"[{cls._log_tag}]   {slot_type} -> "
-                              f"{os.path.basename(placeholder_path)} (占位贴图)")
                 continue
 
             # --- skip_textures: just compute the binding path ---
