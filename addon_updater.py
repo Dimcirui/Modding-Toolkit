@@ -1104,13 +1104,30 @@ class SingletonUpdater:
                 # Decide to replace if file already exists, and copy new over.
                 if os.path.isfile(dest_file):
                     # Otherwise, check each file for overwrite pattern match.
+                    # Modding-Toolkit: patterns are also tried against the
+                    # '/'-joined path relative to the addon root -- stock code
+                    # matched the bare filename only, so "assets/*" never matched
+                    # and changed assets never reached updater users.
+                    rel_file = os.path.relpath(dest_file, base).replace(os.sep, "/")
                     replaced = False
                     for pattern in self._overwrite_patterns:
-                        if fnmatch.filter([file], pattern):
+                        if (fnmatch.fnmatch(file, pattern)
+                                or fnmatch.fnmatch(rel_file, pattern)):
                             replaced = True
                             break
                     if replaced:
-                        os.remove(dest_file)
+                        try:
+                            os.remove(dest_file)
+                        except OSError:
+                            # A DLL loaded through ctypes (texconv, GDeflate) can't
+                            # be deleted on Windows, but it can be renamed aside;
+                            # the leftover is not in MANIFEST.txt, so stale cleanup
+                            # takes it later.
+                            try:
+                                os.replace(dest_file, dest_file + ".old")
+                            except OSError:
+                                print("Could not replace (in use?): " + rel_file)
+                                continue
                         os.rename(srcFile, dest_file)
                         self.print_verbose(
                             "Overwrote file " + os.path.basename(dest_file))
