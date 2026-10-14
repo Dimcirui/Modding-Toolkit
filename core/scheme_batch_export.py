@@ -158,9 +158,18 @@ class SchemeExporter:
         d = self.native_skeletons_dir()
         return os.path.join(d, os.path.basename(fbxskel_path)) if d else ""
 
-    def blank_path(self, filetype):
+    def blank_path(self, filetype, filename=None):
+        """``blank_files/<game>/<filename>``, else the game's generic ``blank.<type>``.
+
+        *filename* is an entry's own ``blank_mesh`` -- RE4's convention, and the
+        reason it exists: a part whose prefab has components that look up its own
+        joints by name needs a blank that still carries them.  Onimusha's cloak is
+        the measured case: its PlayerCloakController / MultiChainManager copy the
+        mantle joints, the generic blank has none of them, and the game crashed
+        loading it (2026-10-14).
+        """
         return os.path.join(_addon_dir(), "assets", "blank_files", self.spec.blank_dir,
-                            f"blank.{filetype}")
+                            filename or f"blank.{filetype}")
 
     # ── schemes ─────────────────────────────────────────────────────────────
 
@@ -425,9 +434,9 @@ class SchemeExporter:
                 print(f"{tag} FAILED {label}: {err}")
                 fail_count += 1
 
-        def try_blank(filetype, filepath, label):
+        def try_blank(filetype, filepath, label, filename=None):
             nonlocal export_count, skip_count
-            blank_src = self.blank_path(filetype)
+            blank_src = self.blank_path(filetype, filename)
             if os.path.isfile(blank_src):
                 os.makedirs(os.path.dirname(filepath), exist_ok=True)
                 shutil.copy2(blank_src, filepath)
@@ -513,7 +522,8 @@ class SchemeExporter:
                         if entry_blank:
                             # Use built-in blank files directly for empty entries
                             if entry.get("mesh"):
-                                try_blank("mesh", make_full(entry["mesh"], grp_bp), f"MESH {entry_id}")
+                                try_blank("mesh", make_full(entry["mesh"], grp_bp), f"MESH {entry_id}",
+                                      entry.get("blank_mesh"))
                             if entry.get("mdf2"):
                                 for m in entry["mdf2"]:
                                     try_blank("mdf2", make_full(m, grp_bp), f"MDF2 {entry_id}")
@@ -582,7 +592,8 @@ class SchemeExporter:
                             if entry.get("gpuc"):
                                 blank_gpuc()
                         elif entry_blank:
-                            try_blank("mesh", make_full(entry["mesh"], grp_bp), f"MESH {entry_id}")
+                            try_blank("mesh", make_full(entry["mesh"], grp_bp), f"MESH {entry_id}",
+                                      entry.get("blank_mesh"))
                             if entry.get("gpuc"):
                                 blank_gpuc()
 
@@ -610,7 +621,8 @@ class SchemeExporter:
                             if entry.get("gpuc"):
                                 blank_gpuc()
                         elif mesh_en and entry_blank:
-                            try_blank("mesh", make_full(entry["mesh"], grp_bp), f"MESH {entry_id}")
+                            try_blank("mesh", make_full(entry["mesh"], grp_bp), f"MESH {entry_id}",
+                                      entry.get("blank_mesh"))
                             if entry.get("gpuc"):
                                 blank_gpuc()
 
