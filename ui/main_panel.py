@@ -13,6 +13,7 @@ from ..core.bone_utils import get_import_presets_callback, get_target_presets_ca
 from ..core.pose_ops import get_pose_presets_callback
 from ..games.re9.batch_export import get_schemes_callback
 from ..games.re4.batch_export import get_schemes_callback as get_re4_schemes_callback
+from ..games.oni.batch_export import get_schemes_callback as get_oni_schemes_callback
 from ..games.mhws.batch_export import get_mhws_schemes_callback, get_mhws_armor_callback, get_mhws_variants
 from ..games.mhrs.batch_export import get_mhrs_schemes_callback, get_mhrs_armor_callback, get_mhrs_genders
 from ..games.mhwi.batch_export import (
@@ -133,6 +134,7 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     show_mhrs: bpy.props.BoolProperty(name="MHRS", default=False)
     show_re4: bpy.props.BoolProperty(name="RE4", default=False)
     show_re9: bpy.props.BoolProperty(name="RE9", default=False)
+    show_oni: bpy.props.BoolProperty(name="ONI", default=False)
 
     # Basic tools toggle
     show_basic_tools: bpy.props.BoolProperty(name="Basic Tools", default=True)
@@ -223,6 +225,13 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         name="Export Scheme",
         description="Select character export scheme for RE9",
         items=get_schemes_callback
+    )
+
+    # Onimusha batch export scheme
+    oni_export_scheme: bpy.props.EnumProperty(
+        name="Export Scheme",
+        description="Select character export scheme for Onimusha",
+        items=get_oni_schemes_callback
     )
 
     # MHWI batch export
@@ -380,6 +389,11 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         description="For slots with no collection selected, copy in the built-in blank file instead of skipping",
         default=True,
     )
+    oni_use_blank_export: bpy.props.BoolProperty(
+        name="Use Blank Model for Unselected",
+        description="For slots with no collection selected, copy in the built-in blank file instead of skipping",
+        default=True,
+    )
 
     # MHRS batch export
     mhrs_armor_scheme: bpy.props.EnumProperty(
@@ -499,7 +513,8 @@ class MHW_PT_MainPanel(bpy.types.Panel):
         row.prop(settings, "show_mhrs", toggle=True, text="MHRS")
         row.prop(settings, "show_re4", toggle=True, text="RE4")
         row.prop(settings, "show_re9", toggle=True, text="RE9")
-        
+        row.prop(settings, "show_oni", toggle=True, text="ONI")
+
         layout.separator()
 
         # =========================================
@@ -776,7 +791,8 @@ class MHW_PT_MainPanel(bpy.types.Panel):
                              ("mhws", settings.show_mhws),
                              ("re4",  settings.show_re4),
                              ("mhrs", settings.show_mhrs),
-                             ("re9",  settings.show_re9)):
+                             ("re9",  settings.show_re9),
+                             ("oni",  settings.show_oni)):
             if _shown:
                 game_sections.draw_section(layout, _key)
 # Known Blender dynamic-enum limitation: if the list returned by an items=

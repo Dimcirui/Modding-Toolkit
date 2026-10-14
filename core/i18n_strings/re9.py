@@ -77,36 +77,6 @@ STRINGS = {
               "itself named natives, its parent is used automatically",
         "ZH": "选择 RE9 Mod 根目录（natives 的上级）。若选中的文件夹本身名为 natives，自动取其上级"},
 
-    # ══════════════════════════════════════════════════════════════════════
-    # games/re9/batch_export_ui.py
-    # ══════════════════════════════════════════════════════════════════════
-
-    "re9.batch_export_ui.will_align_native_skeleton": {
-        "EN": "Will align to native skeleton: {name}", "ZH": "将对齐原生骨架: {name}"},
-    "re9.batch_export_ui.native_skeleton_not_found": {
-        "EN": "Native skeleton file not found; the selected armature will be exported directly",
-        "ZH": "未找到原生骨架文件，将直接导出选中骨架"},
-    "re9.batch_export_ui.copy_bindings": {"EN": "Copy", "ZH": "复制"},
-    "re9.batch_export_ui.copy_bindings_desc": {
-        "EN": "Copy this group's bound collections (Mesh/MDF2/SFUR/CHAIN2/CLSP), so they "
-              "can be pasted onto another group",
-        "ZH": "复制这个部位当前绑定的集合（Mesh/MDF2/SFUR/CHAIN2/CLSP），供粘贴到别的部位",
-    },
-    "re9.batch_export_ui.paste_bindings": {"EN": "Paste", "ZH": "粘贴"},
-    "re9.batch_export_ui.paste_bindings_desc": {
-        "EN": "Apply the copied bindings to this group -- only for the slots this group "
-              "actually has; anything else is skipped",
-        "ZH": "把复制的绑定应用到这个部位——只应用这个部位实际存在的槽位，其余的跳过",
-    },
-    "re9.batch_export_ui.copy_done": {
-        "EN": "Copied {n} binding(s) from {group}", "ZH": "已从 {group} 复制 {n} 项绑定"},
-    "re9.batch_export_ui.copy_nothing": {
-        "EN": "Nothing bound in {group} to copy", "ZH": "{group} 没有已绑定的内容可复制"},
-    "re9.batch_export_ui.paste_done": {
-        "EN": "Pasted {n} binding(s) onto {group}", "ZH": "已向 {group} 粘贴 {n} 项绑定"},
-    "re9.batch_export_ui.paste_nothing": {
-        "EN": "Nothing on the clipboard matches a slot {group} has",
-        "ZH": "剪贴板里的内容没有一项对得上 {group} 现有的槽位"},
 
     # ══════════════════════════════════════════════════════════════════════
     # games/re9/mdf_tex_processor_ui.py

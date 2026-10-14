@@ -343,6 +343,13 @@ SECTIONS = {
         'physics': [_re_chain('re9')],
         'port': _port('RE9'),
     },
+    # A port *target* only (see mesh_port_ops.PORTABLE_GAMES), so no port group --
+    # the port buttons live in the source game's section.
+    'oni': {
+        'label': "Onimusha Tools", 'icon': 'GHOST_ENABLED',
+        'io': [_ref_model('ONI'),
+               _batch_export('oni', "ui.game_sections.btn_batch_export_oni")],
+    },
 }
 
 
