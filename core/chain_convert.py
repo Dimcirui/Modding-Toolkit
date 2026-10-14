@@ -73,13 +73,17 @@ BONE_CONSTRAINT = "BoneName"
 #: RE4R is simply the wrong file.  Confirmed against docs/chain_chain2_plan.md and
 #: against all three reference characters in the project's own scene.
 CHAIN_EXT_BY_GAME = {"MHWS": ".chain2", "RE4": ".chain", "RE9": ".chain2",
-                     "MHRS": ".chain"}
+                     "MHRS": ".chain", "ONI": ".chain2"}
 
 #: File version each game's exporter writes, from RE-Chain-Editor's own export
 #: dropdowns (``__init__.py`` ``ExportREChain.filename_ext`` /
 #: ``ExportREChain2.filename_ext``).  These are the numbers the *game* validates
 #: against ``supportedVersionSet``, so they are not cosmetic.
-CHAIN_VERSION_BY_GAME = {"MHWS": 14, "RE4": 53, "RE9": 15, "MHRS": 48}
+#:
+#: ONI's 17 is only in the RidogFork of RE-Chain-Editor (its header is 112 bytes:
+#: the collisionAttr/extraData offsets are gone).  Upstream and the MHWilds fork
+#: cannot write it.
+CHAIN_VERSION_BY_GAME = {"MHWS": 14, "RE4": 53, "RE9": 15, "MHRS": 48, "ONI": 17}
 
 #: ``colliderFilterInfoPath`` is a **path into the game's own files**, so it can
 #: only ever be correct for the game it names.  MHWilds is the only supported
@@ -95,7 +99,32 @@ COLLIDER_FILTER_BY_GAME = {
     # MHRS predates the feature: chain v1 only gained clspFlags at version 52 and
     # MHRS writes 48, so it has no collider filter to name.
     "MHRS": "",
+    # Every settings entry of both vanilla ch001_00 chain2 files is empty.
+    "ONI": "",
 }
+
+#: chain2 header fields a game needs set to its own values, by field name on
+#: RE-Chain-Editor's ``re_chain_header`` property group.  Read off both vanilla
+#: Onimusha files (ch001_00_00 / ch001_00_20 .chain2.17) and identical in them; the
+#: user arrived at the same table by hand and confirmed it in game (2026-10-14).
+#: ``rotationOrder`` is left alone -- the two vanilla files disagree on it (0 / 1),
+#: so it belongs to the asset, not the game.
+CHAIN2_HEADER_BY_GAME = {
+    "ONI": {
+        "calculateMode": 3,
+        "chainAttrFlags": 2,
+        "highFPSCalculateMode": 2,
+        "modelCollisionSearch": 1,
+        "calculateStepTime": 1.0,
+        "wilds_unkn1": 1,
+        "wilds_unkn2": 1,
+    },
+}
+
+#: chain2 games whose vanilla settings carry *no* subdata, so the MHWilds-style
+#: backfill below must not run for them.  Both vanilla ONI files have
+#: ``subDataCount`` 0 on every settings entry.
+CHAIN2_NO_SUBDATA_GAMES = frozenset({"ONI"})
 
 #: What RE-Chain-Editor writes into an empty chain2 ``subDataList`` (see
 #: ``blender_re_chain.py::exportChainFile``).  Its own fix-up only fires when the
@@ -298,6 +327,7 @@ def ported_chain_collection_name(source_name, target_game):
 #: ``TYPE``, not ``~TYPE`` -- the tilde form tags *collections*; objects carry the
 #: bare name (``blender_re_chain.py::exportChainFile`` reads ``obj.get("TYPE")``).
 _SETTINGS_TYPE = "RE_CHAIN_CHAINSETTINGS"
+_HEADER_TYPE = "RE_CHAIN_HEADER"
 
 
 def apply_target_game_settings(collection, target_game, source_game=None):
@@ -331,8 +361,12 @@ def apply_target_game_settings(collection, target_game, source_game=None):
         Needs *source_game*; without it the translation is skipped, since
         guessing the source vocabulary would be the same bug in a new place.
 
+    chain2 header fields
+        Same container, different header values: Onimusha reads ``.chain2`` like
+        MHWilds but wants its own calculate modes.  See CHAIN2_HEADER_BY_GAME.
+
     Returns ``{'filter_set': n, 'subdata_added': n, 'filter_path': str,
-    'attr_translated': n, 'attr_dropped': [name, ...]}``.
+    'attr_translated': n, 'attr_dropped': [name, ...], 'header_set': n}``.
 
     Note there is deliberately no "convert the objects to chain2 types" step: there
     are no such types.  Every object carries a format-neutral ``RE_CHAIN_*`` marker
@@ -341,7 +375,7 @@ def apply_target_game_settings(collection, target_game, source_game=None):
     which export operator runs, not by anything stored here.
     """
     path = COLLIDER_FILTER_BY_GAME.get(target_game, "")
-    want_subdata = is_chain2(target_game)
+    want_subdata = is_chain2(target_game) and target_game not in CHAIN2_NO_SUBDATA_GAMES
 
     # None means "source unknown" -- distinct from "same container", so the two
     # cannot collapse into a silent no-op that looks like a handled port.
@@ -402,9 +436,34 @@ def apply_target_game_settings(collection, target_game, source_game=None):
         except (AttributeError, TypeError, ValueError):
             pass
 
+    header_set = 0
+    header_values = CHAIN2_HEADER_BY_GAME.get(target_game) or {}
+    if header_values:
+        for obj in collection.all_objects:
+            if obj.get("TYPE") != _HEADER_TYPE:
+                continue
+            pg = getattr(obj, "re_chain_header", None)
+            if pg is None:
+                continue
+            for field, value in header_values.items():
+                # The calculate modes are EnumProperties keyed "0".."n", not ints:
+                # setattr(pg, "calculateMode", 3) raises TypeError, which the guard
+                # below would swallow and leave the source game's value in place.
+                try:
+                    if pg.bl_rna.properties[field].type == 'ENUM':
+                        value = str(value)
+                except (AttributeError, KeyError, TypeError):
+                    pass
+                try:
+                    if getattr(pg, field) != value:
+                        setattr(pg, field, value)
+                        header_set += 1
+                except (AttributeError, TypeError, ValueError):
+                    pass
+
     return {'filter_set': filter_set, 'subdata_added': subdata_added,
             'filter_path': path, 'attr_translated': attr_translated,
-            'attr_dropped': attr_dropped}
+            'attr_dropped': attr_dropped, 'header_set': header_set}
 
 
 class RemapReport:
@@ -552,8 +611,17 @@ def remap_collider_attachments(collection, cross_map, target_armature=None,
         new = cross_map.get(old)
 
         if new is None:
-            report.unmapped.append((obj.name, old))
-            continue
+            # A bone no preset knows is the model's own (Butt_L, a skirt root) and
+            # travels with the ported rig under the same name, so if the target rig
+            # has it the binding is already right -- same as a node's pass-through.
+            # Blocking it stopped MHWS -> ONI on two butt colliders that had a bone
+            # to bind to.  Without a target rig there is no way to know, so it stays
+            # an error.
+            if target_bones is not None and old in target_bones:
+                new = old
+            else:
+                report.unmapped.append((obj.name, old))
+                continue
 
         if target_bones is not None and new not in target_bones:
             report.missing_in_target.append((obj.name, new))

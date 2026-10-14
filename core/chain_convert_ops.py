@@ -38,9 +38,32 @@ from .port_consent import gate
 #: ``.chain2``, so every MHRS pair crosses the container boundary in one direction
 #: or the other and leans on ``translate_group_attr``.
 #:
+#: ONI joined on 2026-10-14.  Same ``.chain2`` container as MHWilds, so nothing is
+#: translated -- it differs in header values and file version (17), and only the
+#: RidogFork of RE-Chain-Editor can write that version; see _exporter_writes.
+#:
 #: The mapping layer already handles all of them (`build_cross_game_map` composes any
 #: pair); this list is only about which ones have been *validated end to end*.
-PORTABLE_GAMES = ("MHWS", "RE4", "RE9", "MHRS")
+PORTABLE_GAMES = ("MHWS", "RE4", "RE9", "MHRS", "ONI")
+
+
+def _exporter_writes(idname, version):
+    """Whether the enabled chain editor's export dialog offers *version*.
+
+    The version is a ``filename_ext`` enum item (``".17"``), so it can be read off
+    the operator's RNA without running it.  None when the operator is missing or
+    does not expose the enum -- unknown, which is not reported as a problem.
+    """
+    category, _, name = idname.partition(".")
+    try:
+        if name not in dir(getattr(bpy.ops, category)):
+            return None
+        prop = getattr(getattr(bpy.ops, category), name).get_rna_type().properties.get("filename_ext")
+        if prop is None or prop.type != 'ENUM':
+            return None
+        return f".{version}" in {item.identifier for item in prop.enum_items}
+    except Exception:
+        return None
 
 #: EnumProperty item callbacks must keep a persistent reference to what they return.
 #: Blender's C side holds the strings, and a list built inside the callback is freed
@@ -436,10 +459,16 @@ class MODDER_OT_ConvertChainCrossGame(bpy.types.Operator):
         if applied['attr_dropped']:
             self.report({'WARNING'}, T("core.chain_convert_ops.attr_dropped").format(
                 names=", ".join(applied['attr_dropped'])))
+        if applied.get('header_set'):
+            self.report({'INFO'}, T("core.chain_convert_ops.header_set").format(
+                n=applied['header_set'], game=self.target_game))
         # The container is chosen by which operator the user runs, and nothing in
         # the scene decides it -- so saying which one is part of the result.
         self.report({'INFO'}, T("core.chain_convert_ops.export_with").format(
             op=idname, version=version))
+        if _exporter_writes(idname, version) is False:
+            self.report({'WARNING'}, T("core.chain_convert_ops.version_unsupported").format(
+                version=version, game=self.target_game))
         return {'FINISHED'}
 
 

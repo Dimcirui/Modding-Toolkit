@@ -51,16 +51,23 @@ from .port_consent import gate
 #: CrossGameBoneMap off the preset while this set and mesh_port._INSERT_RULES key
 #: off the other spelling, so a mismatch yields a silently *empty* mapping rather
 #: than an error.  One spelling, everywhere.
-FAMILY_A = frozenset({"MHWS", "RE4", "SF6", "DMC5", "MHRS"})
+#:
+#: ONI is measured: 172 bones shared with MHWilds by name, all 172 at 0 degrees rest
+#: orientation difference (vanilla ch001_00_00 vs an MHWilds body, 2026-10-14).
+FAMILY_A = frozenset({"MHWS", "RE4", "SF6", "DMC5", "MHRS", "ONI"})
 
 #: Ported rigs are offered for the games with a reference skeleton to derive against.
 #: MHRS joined once it had one (assets/reference_skeletons/mhrs/) and a native bone
 #: table; it is the first member whose rig origin is not on the ground, which is what
 #: RIG_ORIGIN and origin_shift() exist for.
-PORTABLE_GAMES = ("MHWS", "RE4", "RE9", "MHRS")
+#:
+#: ONI is a port *target* only for now: no UI section offers it as a source, and it
+#: has no native bone table, which the source side needs to tell rig furniture from
+#: the model's own bones.
+PORTABLE_GAMES = ("MHWS", "RE4", "RE9", "MHRS", "ONI")
 
 #: Reference skeletons live under assets/reference_skeletons/<lowercased game_code>/.
-_REF_DIRS = {"MHWS": "mhws", "RE4": "re4", "RE9": "re9", "MHRS": "mhrs"}
+_REF_DIRS = {"MHWS": "mhws", "RE4": "re4", "RE9": "re9", "MHRS": "mhrs", "ONI": "oni"}
 
 _TEMP_PREFIX = "__port_tmp__"
 
@@ -190,6 +197,28 @@ def _armature_only_copy(arm_obj):
     return probe
 
 
+def _discard_copy(arm_obj, col=None):
+    """Remove a refused port's copy: the armature, its meshes, their data, and *col*.
+
+    The data blocks go too, not just the objects -- an orphaned armature or mesh
+    would otherwise sit in the file until a save-and-reload purges it.  *col* is
+    removed only once it is empty, so nothing else in it is lost.
+    """
+    objs = [arm_obj] + pose_bake.attached_meshes(arm_obj)
+    datas = [o.data for o in objs]
+    for obj in objs:
+        bpy.data.objects.remove(obj, do_unlink=True)
+    for data in datas:
+        if data is None or data.users:
+            continue
+        if isinstance(data, bpy.types.Armature):
+            bpy.data.armatures.remove(data)
+        else:
+            bpy.data.meshes.remove(data)
+    if col is not None and not col.objects and not col.children:
+        bpy.data.collections.remove(col)
+
+
 def _tpose(context, arm_obj):
     """Run the rest-level T-pose conversion on one rig.
 
@@ -243,6 +272,22 @@ def _insert_bones(arm_obj, inserts, ref_arm):
     if not inserts:
         return 0
     ref_bones = ref_arm.data.bones if ref_arm is not None else {}
+
+    # Parents before children.  The plan lists inserts alphabetically, and a
+    # ref_offset bone whose parent is *also* being inserted is skipped outright when
+    # it comes first -- it has no parent to be offset from yet.  Measured on
+    # MHWS -> ONI: Wakizashi_Saya_root sorts before its parent Wakizashi_root and
+    # was silently left out.  Depth in the reference rig fixes the order for every
+    # rule; the second pass below still covers bones the reference does not have.
+    def _depth(name):
+        ref = ref_bones.get(name) if ref_bones else None
+        d = 0
+        while ref is not None and ref.parent is not None:
+            d += 1
+            ref = ref.parent
+        return d
+    inserts = sorted(inserts, key=lambda r: _depth(r[0]))
+
     bpy.context.view_layer.objects.active = arm_obj
     bpy.ops.object.mode_set(mode='EDIT')
     eb = arm_obj.data.edit_bones
@@ -870,19 +915,31 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
         # Copy unless told otherwise. The meshes come too: merging supernumerary
         # bones moves vertex groups, which live on the mesh, so an armature-only
         # copy would have nothing to transfer the weights on.
-        if not self.replace_original:
-            if self.skeleton_only:
-                arm = _armature_only_copy(arm)
-                arm.name = f"{arm.name.replace('_probe', '')}_{self.target_game}"
-                arm.data.name = arm.name
+        if self.replace_original:
+            return self._port(context, arm)
+        copy_col = None
+        if self.skeleton_only:
+            arm = _armature_only_copy(arm)
+            arm.name = f"{arm.name.replace('_probe', '')}_{self.target_game}"
+            arm.data.name = arm.name
+        else:
+            col = bpy.data.collections.get(self.source_collection)
+            if col is not None:
+                arm = duplicate_mesh_collection(col, arm, self.target_game)
+                copy_col = arm.users_collection[0]
             else:
-                col = bpy.data.collections.get(self.source_collection)
-                if col is not None:
-                    arm = duplicate_mesh_collection(col, arm, self.target_game)
-                else:
-                    arm = bone_utils.duplicate_armature_with_meshes(
-                        arm, f"{arm.name}_{self.target_game}")
+                arm = bone_utils.duplicate_armature_with_meshes(
+                    arm, f"{arm.name}_{self.target_game}")
+        # The copy has to exist before the plan can be checked -- the plan is built
+        # on it -- so every refusal in _port would otherwise leave a half-made second
+        # model in the scene.  Global undo is off for the run; nothing else takes it
+        # back.
+        result = self._port(context, arm)
+        if 'CANCELLED' in result:
+            _discard_copy(arm, copy_col)
+        return result
 
+    def _port(self, context, arm):
         # Into the target's rig frame before anything measures against the
         # reference, which is imported in that frame.  Nothing downstream actually
         # depends on the order -- the insert rules are origin-agnostic (colocate and

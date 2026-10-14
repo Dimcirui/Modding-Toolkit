@@ -15,7 +15,8 @@ from . import mhws
 from . import mhrs
 from . import re4
 from . import re9
+from . import oni
 
 STRINGS = {}
-for _mod in (meta, core, ui, mhwi, mhws, mhrs, re4, re9):
+for _mod in (meta, core, ui, mhwi, mhws, mhrs, re4, re9, oni):
     STRINGS.update(_mod.STRINGS)

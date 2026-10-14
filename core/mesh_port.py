@@ -75,9 +75,13 @@ from .mhwi_port import SOLE_OFFSET_Z
 #:
 #: An unregistered game defaults to ``GROUND`` -- every RE Engine game measured so
 #: far is, and MHRS is the exception, so that is the way to be wrong least often.
+#:
+#: ONI (Onimusha: Way of the Sword) is measured, not deduced: on the vanilla
+#: ch001_00_00 rig ``root`` is at (0,0,0) and ``COG`` at (0,0,1.02), identical to
+#: MHWilds' (2026-10-14).
 RIG_ORIGIN = {
     "MHWS": "GROUND", "RE4": "GROUND", "RE9": "GROUND",
-    "SF6": "GROUND", "DMC5": "GROUND",
+    "SF6": "GROUND", "DMC5": "GROUND", "ONI": "GROUND",
     "MHRS": "PELVIS",
 }
 DEFAULT_RIG_ORIGIN = "GROUND"
@@ -233,6 +237,45 @@ _INSERT_RULES = {
         "LookAt": ("ref_offset", None),
         "PL_Cam": ("ref_offset", None),
     },
+    # Onimusha's base skeleton is MHWilds' -- same names, same parents, 0 degrees
+    # apart on all 172 shared bones -- so the preset maps nearly everything and this
+    # only has to add the rig furniture MHWilds lacks.  Which 29: the ones a working
+    # MHWS -> ONI port the user built by hand (ShinanoOC_Musashi, ch001_00_00.mesh)
+    # carries beyond MHWilds' own set.  The kimono drivers and the extra shoulder
+    # helpers the vanilla rig also has are *not* in it, and a mod without them loads,
+    # so they are left out rather than guessed at.
+    #
+    # All ref_offset, measured on the vanilla rig against each bone's parent: 17 sit
+    # exactly on it (root, Spine_2, the hands) or 1 mm off, where the reference's own
+    # offset is the right answer at any body size.  The rest are props hung off Hip
+    # (scabbards 15-28 cm out) and the eyes off Head (11.5 cm) -- not joints, so
+    # nothing on the model to anchor them to; the user's port has the vanilla offsets
+    # for every one of them as well.
+    "ONI": {
+        "Attach": ("ref_offset", None),
+        "Attach_02": ("ref_offset", None),
+        "Ground_Angle": ("ref_offset", None),
+        "Control": ("ref_offset", None),
+        "Lookat": ("ref_offset", None),
+        "{s}_Attach_01": ("ref_offset", None),
+        "{s}_Wep": ("ref_offset", None),
+        "{s}_SubWep": ("ref_offset", None),
+        "{s}_Wep_Mark": ("ref_offset", None),
+        "{s}_Wep_Mark_02": ("ref_offset", None),
+        "{s}_Eye": ("ref_offset", None),
+        "R_eyeOffset_HJ_00_SCH": ("ref_offset", None),
+        "kote_eye_00_SCH": ("ref_offset", None),
+        "kote_eye_01_SCH": ("ref_offset", None),
+        "Katana_Yure_root": ("ref_offset", None),
+        "Katana_root": ("ref_offset", None),
+        "Saya_root": ("ref_offset", None),
+        "Wakizashi_Yure_root": ("ref_offset", None),
+        "Wakizashi_root": ("ref_offset", None),
+        "Wakizashi_Saya_root": ("ref_offset", None),
+        "SageoWakizashi_const": ("ref_offset", None),
+        "Obi_Control_01": ("ref_offset", None),
+        "Obi_Control_02": ("ref_offset", None),
+    },
 }
 
 #: The bone every rig has as scene plumbing rather than anatomy: the origin the
@@ -247,7 +290,7 @@ _INSERT_RULES = {
 #: targets) then has no parent to be inserted under.  Caught by the first real
 #: MHWS -> MHRS run, which produced 79 bones of which 6 were the wrong 6.
 PLUMBING_ROOT_BY_GAME = {"MHWS": "root", "RE4": "root", "RE9": "root",
-                         "SF6": "root", "DMC5": "root", "MHRS": "Root"}
+                         "SF6": "root", "DMC5": "root", "ONI": "root", "MHRS": "Root"}
 DEFAULT_PLUMBING_ROOT = "root"
 
 #: Every spelling, for "is this bone plumbing?" tests that do not know a game.

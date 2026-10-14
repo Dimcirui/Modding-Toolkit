@@ -84,8 +84,34 @@ _SLOT_FAMILY = {
     'EmissiveMap': 'emissive', 'Emissive_ColorMap': 'emissive',
     'AlphaTranslucentOcclusionSSSMap': 'alpha_pack', 'SSSCavityOcclusionTranslucentMap': 'alpha_pack',
     'AlphaCavityOcclusionTranslucentMap': 'alpha_pack', 'AlphaTranslucentOcclusionCavityMap': 'alpha_pack',
+    # ONI's member has no alpha channel -- its alpha moved to a slot of its own,
+    # which SLOT_EXTRA_FEEDS fills.
+    'SSSTranslucentCavityDetailMaskMap': 'alpha_pack',
     'OcclusionMap': 'occlusion',
 }
+
+
+def extra_feeds(custom_src_slots, dst_slot_types, feeds, taken):
+    """``[(src_slot, dst_slot)]`` for destination slots no family match fills.
+
+    A one-to-one family match cannot express a game that *splits* a packed slot:
+    ONI keeps alpha in its own ``AlphaMap``, so MHWS' ATOS has to land on two
+    slots (STCM by family, AlphaMap here) and its hair BaseAlphaMap likewise
+    (BaseDielectricMap by family, AlphaMap here).
+
+    *feeds* is the destination game's ``{dst_slot: (src_slot, ...)}``, sources in
+    priority order -- for hair both BaseAlphaMap and ATOS carry an alpha and the
+    first one the material actually binds a custom texture to wins.  *taken* is
+    the destination slots already being written, which are never fed twice.
+    """
+    out = []
+    for dst_slot, sources in (feeds or {}).items():
+        if dst_slot not in dst_slot_types or dst_slot in taken:
+            continue
+        src = next((s for s in sources if s in custom_src_slots), None)
+        if src is not None:
+            out.append((src, dst_slot))
+    return out
 
 
 def find_dst_slot_type(src_slot_type, dst_slot_types):
@@ -198,6 +224,59 @@ def unpack_channels(png_path, slot_type, channel_maps=None, octahedral=False):
         _plane(pbr_type)[:, :, ch_idx] = data
 
     return pbr_arrays
+
+
+# ── Alpha probe (for mdf_port's content routing) ────────────────────────────
+
+#: "Pure white" with room for one 8-bit step of block-compression error.
+OPAQUE_ALPHA_MIN = 254.0 / 255.0
+
+
+def _alpha_channels(slot_type, channel_maps):
+    return [ch for ch, src in (channel_maps.get(slot_type) or {}).items()
+            if isinstance(src, tuple) and src[0] == 'alpha']
+
+
+def alpha_is_opaque(bindings, channel_maps, is_custom, disk_path_for, temp_dir):
+    """Whether every alpha the material carries is pure white.
+
+    *bindings* is ``{slot type: path}``; a slot counts when its channel map
+    routes a channel to 'alpha'.  A null texture is answered from its measured
+    pixel (``core.null_pixels``), a custom one by decoding it -- *disk_path_for*
+    maps a binding path to the file to read, or None when it cannot be found.
+
+    Returns True / False, or None when some alpha could not be read (an
+    unmeasured null, a texture missing on disk): the caller must not treat
+    "unknown" as "opaque".  A material with no alpha slot at all is opaque.
+    """
+    from .null_pixels import null_pixel
+
+    unknown = False
+    for slot_type, path in bindings.items():
+        chans = _alpha_channels(slot_type, channel_maps)
+        if not chans or not path:
+            continue
+        if not is_custom(path):
+            px = null_pixel(path)
+            if px is None:
+                unknown = True
+                continue
+            if any(px["RGBA".index(ch)] < OPAQUE_ALPHA_MIN for ch in chans):
+                return False
+            continue
+        disk = disk_path_for(path)
+        if not disk or not os.path.isfile(disk):
+            unknown = True
+            continue
+        planes = unpack_channels(decode_tex_to_png(disk, temp_dir), slot_type,
+                                 channel_maps=channel_maps)
+        alpha = planes.get('alpha')
+        if alpha is None:
+            unknown = True
+            continue
+        if float(alpha[:, :, 0].min()) < OPAQUE_ALPHA_MIN:
+            return False
+    return None if unknown else True
 
 
 # ── Orchestration ────────────────────────────────────────────────────────────

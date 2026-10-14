@@ -141,6 +141,7 @@ def build_transfer(src_members, dst_members, role,
 
     lo_name, lo_t = aug[0]
     hi_name, hi_t = aug[-1]
+    snapped_to = set()
 
     for name, t in src_members:
         if t < lo_t - SAME_T or t > hi_t + SAME_T:
@@ -154,9 +155,19 @@ def build_transfer(src_members, dst_members, role,
                                 coefficient(tgt_t, role) - coefficient(t, role), 4)})
             continue       # 已单列在 clamped 里，不混进保真度统计
 
-        # 同位：直接改名，避免引入一个千分位的第二权重把顶点组撑肥
-        hit = min(aug, key=lambda r: abs(r[1] - t))
-        if abs(hit[1] - t) < SAME_T:
+        # 同位：直接改名，避免引入一个千分位的第二权重把顶点组撑肥。
+        #
+        # 目标链可以在同一个 t 上放好几根骨：MHWilds 的 UpperArmTwist_HJ_01/_02 都在
+        # 0.5，ThighTwist_HJ_00/_01 都在 0。只取最近的那根（min 的并列取第一个）会把
+        # 两根源骨吸到同一根上，另一根目标骨就没人产出——MHWS -> ONI（同一套骨架）
+        # 因此报了 8 根"无法放置"。所以同位候选里先认同名骨，再认还没被占的。
+        co = sorted((r for r in aug if abs(r[1] - t) < SAME_T),
+                    key=lambda r: abs(r[1] - t))
+        if co:
+            hit = (next((r for r in co if r[0] == name), None)
+                   or next((r for r in co if r[0] not in snapped_to), None)
+                   or co[0])
+            snapped_to.add(hit[0])
             transfer[name] = [(hit[0], 1.0)]
             snapped.append(abs(coefficient(hit[1], role) - coefficient(t, role)))
             continue
@@ -346,6 +357,7 @@ def plan_transfers(src_rig, dst_rig, segments, name_filter=is_twist_name):
     """
     transfer = {}
     reports = {}
+    dst_parents = dst_rig["parents"]
     for label, (sh, st), (dh, dt), role in segments:
         src_chain = chain_for_segment(src_rig["positions"], src_rig["parents"],
                                       sh, st, name_filter)
@@ -353,8 +365,26 @@ def plan_transfers(src_rig, dst_rig, segments, name_filter=is_twist_name):
             continue
         dst_chain = chain_for_segment(dst_rig["positions"], dst_rig["parents"],
                                       dh, dt, name_filter)
-        rows, rep = build_transfer(src_chain, dst_chain, role,
-                                   dst_seg_bone=dh, dst_child_bone=dt)
+
+        # A bone the target rig has under the same name and the same parent *is*
+        # that bone -- bones bind by name hash -- so it keeps its name instead of
+        # being resampled.  Geometry alone can miss this: MHWS -> ONI share a
+        # skeleton, yet ONI's L_Shin sits 8 mm above its knee, which puts
+        # ThighTwist_HJ_02 (at the knee) at t = 1.0216 on ONI's thigh segment, just
+        # past candidates()'s 1.02 cut, so it never made the target chain and the
+        # port reported it unplaceable.
+        same = {n for n, _t in src_chain
+                if n in dst_parents and dst_parents.get(n) == src_rig["parents"].get(n)}
+        rows = {n: [(n, 1.0)] for n in same}
+        rest_src = [(n, t) for n, t in src_chain if n not in same]
+        rest_dst = [(n, t) for n, t in dst_chain if n not in same]
+        rep = {"conserved": 0.0, "fidelity": 0.0, "snap_error": 0.0,
+               "clamped": [], "inverted": [], "virtual_endpoints": []}
+        if rest_src:
+            more, rep = build_transfer(rest_src, rest_dst, role,
+                                       dst_seg_bone=dh, dst_child_bone=dt)
+            rows.update(more)
+        rep["kept_by_name"] = sorted(same)
         if not rows:
             continue
         transfer.update(rows)

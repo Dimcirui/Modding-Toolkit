@@ -781,6 +781,19 @@ STRINGS = {
         "EN": "Texture(s) not found, fell back to the destination default -- please check and fill in yourself: {paths}",
         "ZH": "未找到贴图，回退默认路径，请自行检查并补充：{paths}"},
     "core.mdf_port_ops.and_n_more": {"EN": " (+{n} more)", "ZH": "（及其他 {n} 个）"},
+    "core.mdf_port_ops.routed_emissive": {
+        "EN": "{n} material(s) are opaque with a custom emissive texture, so they use the "
+              "target's emissive shader: {names}",
+        "ZH": "{n} 个材质 alpha 纯白且带自定义自发光贴图，已改用目标游戏的自发光 shader：{names}"},
+    "core.mdf_port_ops.alpha_unknown": {
+        "EN": "Could not read the alpha of {n} emissive material(s), so they keep the shader "
+              "that keeps the alpha and lose their glow. Set the source Mod Root to decide: {names}",
+        "ZH": "{n} 个带自发光的材质读不到 alpha，按保留透明的 shader 处理，自发光会丢失。"
+              "设置源游戏 Mod 根目录后可正确判断：{names}"},
+    "core.mdf_port_ops.emissive_dropped": {
+        "EN": "{n} material(s) have a custom emissive texture the target shader has no slot "
+              "for, so it was not carried over: {names}",
+        "ZH": "{n} 个材质的自定义自发光贴图在目标 shader 上没有对应槽位，未移植：{names}"},
     "core.mdf_port_ops.null_fallback_warning": {
         "EN": "{n} slot(s) with no vanilla default fell back to a null texture (skin will look "
               "pallid). Set the destination Mod Root and enable texture conversion to write the "
@@ -1357,6 +1370,13 @@ STRINGS = {
     "core.chain_convert_ops.export_with": {
         "EN": "Export with {op}, version {version}",
         "ZH": "请用 {op} 导出，版本 {version}"},
+    "core.chain_convert_ops.header_set": {
+        "EN": "Set {n} chain2 header field(s) to {game}'s values",
+        "ZH": "已把 {n} 个 chain2 Header 字段改成 {game} 的取值"},
+    "core.chain_convert_ops.version_unsupported": {
+        "EN": "The enabled chain editor cannot export version {version}, which {game} "
+              "needs -- enable the RE-Chain-Editor fork that offers it",
+        "ZH": "当前启用的 Chain 编辑器导不出 {game} 需要的 {version} 版本——请改用提供该版本的 RE-Chain-Editor 分支"},
     "core.chain_convert_ops.blocked": {
         "EN": "Cannot convert: some colliders would end up bound to nothing",
         "ZH": "无法转换：部分碰撞体会绑到不存在的骨骼上"},

@@ -1,0 +1,704 @@
+{
+    "presetType": "RE_MDF_MATERIAL",
+    "MDFVersion": "ONIWOTS",
+    "presetVersion": 5,
+    "Material Header": {
+        "Material Name": "Weapon_Emissive",
+        "Master Material Path": "MaterialShader/Master/Character/Variation/WEP/V_Chara_WEP_EM_Alpha_3.mmtr",
+        "Material Shader Type": "0"
+    },
+    "Flags": {
+        "Ver32Unknown": -1,
+        "Ver32Unknown1": -1,
+        "Ver32Unknown2": -1,
+        "FlagBitFlag": 134236315,
+        "FlagBitFlagB": 0,
+        "ShaderLODNum": 0,
+        "BakeTextureArraySize": 0
+    },
+    "Property List": [
+        {
+            "Property Name": "Voltex_Direction",
+            "Data Type": "VEC4",
+            "Value": [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Mud_Color",
+            "Data Type": "COLOR",
+            "Value": [
+                0.08627451211214066,
+                0.06666667014360428,
+                0.03921568766236305,
+                1.0
+            ],
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "BaseColor",
+            "Data Type": "COLOR",
+            "Value": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "EmissiveColor",
+            "Data Type": "COLOR",
+            "Value": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "VFX_Param1",
+            "Data Type": "VEC4",
+            "Value": [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "VFX_Param2",
+            "Data Type": "VEC4",
+            "Value": [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "VFX_CommonRimEmissive_Color",
+            "Data Type": "COLOR",
+            "Value": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "VFX_CoatBlend_CoatColor",
+            "Data Type": "COLOR",
+            "Value": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Sonar_EmissiveColor",
+            "Data Type": "COLOR",
+            "Value": [
+                0.5160489678382874,
+                0.3491203188896179,
+                0.003855278016999364,
+                1.0
+            ],
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Blood_TilingRatio_x",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Blood_TilingRatio_y",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Voltex_Offset",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Voltex_Tile",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Voltex_Intensity",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Voltex_Speed",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "WetBlendMax",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Use_AllMud",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Mud_UseSecodaryUV",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Mud_UseSecondaryUV_MudNRRMMap",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Mud_UseNormal",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Mud_Roughness",
+            "Data Type": "FLOAT",
+            "Value": 0.4000000059604645,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Mud_Volume",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Mud_PartVolume",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Mud_Tiling",
+            "Data Type": "FLOAT",
+            "Value": 4.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Mud_MaxVolume",
+            "Data Type": "FLOAT",
+            "Value": 0.800000011920929,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "UVModeChange",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Test_EmiMode",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "UseFlipNormal",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "BaseColor_BlendMode",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "MetalScale",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "RoughnessScale",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "OcclusionScale",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "TranslucentScale",
+            "Data Type": "FLOAT",
+            "Value": 0.10000000149011612,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "SheenBlendRate",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "UseAOSecondaryUV",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Use_BtoE",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "EmissiveIntensity",
+            "Data Type": "FLOAT",
+            "Value": 3.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "EmissivePower",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "UseTempDither",
+            "Data Type": "BOOL",
+            "Value": 1.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "AlphaAdjust",
+            "Data Type": "FLOAT",
+            "Value": 0.5,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "AlphaTestThreshold",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "FilmBlendRate",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "FilmThickness",
+            "Data Type": "FLOAT",
+            "Value": 0.5,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "FilmIOR",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "IsBake",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "IsAlphaTest",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "PassThrough",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Dissolve",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "VFX_UseEnemyMaskTexture",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "VFX_ThresholdDissolve_UseBloodUV",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "VFX_CommonRimEmissive_Intensity",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "VFX_CommonRimEmissive_Width",
+            "Data Type": "FLOAT",
+            "Value": 0.800000011920929,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "VFX_CommonRimEmissive_Threshold",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "VFX_CommonRimEmissive_InvertBlendRate",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "VFX_AfterImage_DissolveRate",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "VFX_AfterImage_DesaturationRate",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "VFX_AfterImage_BrightnessScale",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "VFX_CoatBlend_CoatBlendRate",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "VFX_CoatBlend_NoiseThreshold",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "VFX_CoatBlend_UVTiling",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "VFX_CoatBlend_NoiseBlendRate",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "VFX_CoatBlend_AffectEmissive",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "VFX_CoatBlend_Enable",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Sonar_EmissiveIntensity",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Sonar_Mask_UVTiling",
+            "Data Type": "FLOAT",
+            "Value": 5.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Sonar_Mask_EmissiveIntensity",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Sonar_AnimEmit_Speed",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Sonar_AnimEmit_Wave",
+            "Data Type": "FLOAT",
+            "Value": 10.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "WetBlend",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "WetDownLimit",
+            "Data Type": "FLOAT",
+            "Value": 0.1899999976158142,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "WetBlendRoughtness",
+            "Data Type": "FLOAT",
+            "Value": 0.44999998807907104,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "WetColor_ONOFF",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Blood_ONOFF",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "PartWat_Height",
+            "Data Type": "FLOAT",
+            "Value": -0.5,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "PartWat_Grd",
+            "Data Type": "FLOAT",
+            "Value": 0.10000000149011612,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Blood_UseSecondaryUV",
+            "Data Type": "BOOL",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Blood_Tiling",
+            "Data Type": "FLOAT",
+            "Value": 2.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Blood_Roughness_Offset",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Blood_Volume",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Blood_Down",
+            "Data Type": "FLOAT",
+            "Value": 1.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        },
+        {
+            "Property Name": "Blood_SpreadRate",
+            "Data Type": "FLOAT",
+            "Value": 0.0,
+            "Padding": 0,
+            "FrontPadding": 0
+        }
+    ],
+    "Texture Bindings": [
+        {
+            "Texture Type": "MudNRRMMap",
+            "Texture Path": "Art/Model/Common/textures/dynamic_alteration/mud/mud_tiling_NRRM.tex"
+        },
+        {
+            "Texture Type": "MudMaskMap",
+            "Texture Path": "MaterialShader/Texture/NullTexture/Null_CVT.tex"
+        },
+        {
+            "Texture Type": "BaseDielectricMap",
+            "Texture Path": "systems/rendering/NullBlack.tex"
+        },
+        {
+            "Texture Type": "NormalRoughnessOcclusionMap",
+            "Texture Path": "systems/rendering/NullNormalRoughnessOcclusion.tex"
+        },
+        {
+            "Texture Type": "EmissiveMap",
+            "Texture Path": "systems/rendering/NullBlack.tex"
+        },
+        {
+            "Texture Type": "AlphaMap",
+            "Texture Path": "systems/rendering/NullWhite.tex"
+        },
+        {
+            "Texture Type": "FilmMap",
+            "Texture Path": "systems/rendering/NullBlack.tex"
+        },
+        {
+            "Texture Type": "noisemap",
+            "Texture Path": "MaterialShader/Texture/bluenoise_msk1.tex"
+        },
+        {
+            "Texture Type": "VFX_Texture2D",
+            "Texture Path": "Art/VFX/Resources/_Texture/shader/19_shader_noise_900_MSK4.tex"
+        },
+        {
+            "Texture Type": "VFX_Texture3D",
+            "Texture Path": "Art/VFX/Texture/Common/Noise/19_noise_100_MSK4.tex"
+        },
+        {
+            "Texture Type": "VFX_EnemyMaskTexture",
+            "Texture Path": "systems/rendering/NullWhite.tex"
+        },
+        {
+            "Texture Type": "Sonar_Mask",
+            "Texture Path": "Art/Model/Common/textures/em_SonarEmissive/SonarEmissive_MSK1.tex"
+        },
+        {
+            "Texture Type": "BloodMaskMap",
+            "Texture Path": "MaterialShader/Texture/Blood_Sample_MSK3.tex"
+        },
+        {
+            "Texture Type": "Blood_OFFMask",
+            "Texture Path": "systems/rendering/NullWhite.tex"
+        },
+        {
+            "Texture Type": "Blood_Gradient",
+            "Texture Path": "MaterialShader/Texture/Blood_Gradation.tex"
+        },
+        {
+            "Texture Type": "VolumeMap",
+            "Texture Path": "RE_ENGINE_LIBRARY/VFX_Library/Texture/TEX_Vectorfield/tex_capcom_vectorfield_0003_MSK4.tex"
+        }
+    ],
+    "MMTRS Data": [],
+    "GPBF Data": [
+        "GlobalInstanceParameters,MaterialShader/ByteAddressBuffer/GlobalMaterialParam.gpbf,0,1",
+        "CharaUniqueMaterialParam,MaterialShader/ByteAddressBuffer/CharaUniqueMaterialParam.gpbf,0,1"
+    ]
+}

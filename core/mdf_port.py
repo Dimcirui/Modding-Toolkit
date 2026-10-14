@@ -36,6 +36,15 @@ The mapping (user's decision, 2026-08-14):
 * Anything unclassified falls back per game -- MHWS ``basic``, RE4R and RE9
   ``standard`` -- **and is reported**, so the user can check those materials by hand.
 
+ONI (Onimusha: Way of the Sword, user's decisions 2026-10-14) is a target only and
+is the one game where the shader is **not** the whole answer.  Its ``standard``
+(``V_Chara_PL_Cloth_ALP``) has an AlphaMap but no EmissiveMap, and its ``emissive``
+(``V_Chara_EM_Bone``) the reverse, so a source material is routed by what it
+actually uses: alpha pure white *and* a custom emissive texture goes to
+``emissive``, everything else to ``standard``.  That needs pixels, which this layer
+does not read -- the caller measures and passes the answer in; see
+``needs_alpha_probe`` and ``_OPAQUE_EMISSIVE_ROUTE``.
+
 Free of ``bpy``: the mapping is a table over the shipped prefab files, so it can be
 checked offline against the assets that actually ship.
 """
@@ -44,10 +53,10 @@ import json
 import os
 
 #: Games this is offered for, same set the mesh and chain ports cover.
-PORTABLE_GAMES = ("MHWS", "RE4", "RE9", "MHRS")
+PORTABLE_GAMES = ("MHWS", "RE4", "RE9", "MHRS", "ONI")
 
 #: Prefab directory per game, under assets/mdf_presets/.
-_PREFAB_DIRS = {"MHWS": "mhws", "RE4": "re4", "RE9": "re9", "MHRS": "mhrs"}
+_PREFAB_DIRS = {"MHWS": "mhws", "RE4": "re4", "RE9": "re9", "MHRS": "mhrs", "ONI": "oni"}
 
 #: Where each source archetype lands, per target game.  A missing entry means the
 #: target has no equivalent and the game's fallback is used.
@@ -70,7 +79,19 @@ _ARCHETYPE_MAP = {
     "MHRS": {"standard": "standard", "hair": "standard", "skin": "standard",
              "emissive": "standard", "transparent": "standard",
              "weapon": "standard", "basic": "standard"},
+    # Everything that is not hair or skin lands on standard first; the ones that are
+    # opaque and emissive move on to emissive through _OPAQUE_EMISSIVE_ROUTE.
+    # transparent -> standard is the user's call: Cloth_ALP carries the AlphaMap.
+    # ONI's weapon prefab (V_Chara_WEP_EM_Alpha_3) is no source's destination.
+    "ONI": {"standard": "standard", "hair": "hair", "skin": "skin",
+            "emissive": "emissive", "transparent": "standard",
+            "weapon": "standard", "basic": "standard"},
 }
+
+#: ``{dst_game: (from_archetype, to_archetype)}`` -- a material planned onto
+#: *from_archetype* moves to *to_archetype* when its alpha is pure white and it
+#: binds a custom emissive texture.  Only ONI has a pair of shaders split this way.
+_OPAQUE_EMISSIVE_ROUTE = {"ONI": ("standard", "emissive")}
 
 #: Shaders that *mean* an archetype without being the prefab shipped for it.
 #:
@@ -103,7 +124,7 @@ _ALSO_CLASSIFIES_AS = {
 
 #: Used when the source material's shader matches no known archetype.
 FALLBACK_ARCHETYPE = {"MHWS": "basic", "RE4": "standard", "RE9": "standard",
-                      "MHRS": "standard"}
+                      "MHRS": "standard", "ONI": "standard"}
 
 
 def _assets_dir():
@@ -184,9 +205,35 @@ def target_prefab(src_archetype, dst_game):
     return wanted, info["path"], exact
 
 
-def plan_material(game_code, dst_game, master_material_path):
-    """``{archetype, target, path, exact, unsupported}`` for one material."""
+def needs_alpha_probe(dst_game, plan, has_emissive):
+    """Whether the caller must measure the source's alpha before this plan is final.
+
+    Only when the material is headed for the route's *from* archetype and has a
+    custom emissive texture to lose -- the alpha of everything else does not
+    change where it goes, so it is not worth decoding a texture for.
+    """
+    route = _OPAQUE_EMISSIVE_ROUTE.get(dst_game)
+    return bool(route and has_emissive and plan.get("target") == route[0])
+
+
+def plan_material(game_code, dst_game, master_material_path,
+                  alpha_opaque=None, has_emissive=False):
+    """``{archetype, target, path, exact, unsupported, routed}`` for one material.
+
+    *alpha_opaque* is the caller's measurement of the source's alpha: True for
+    pure white everywhere, False when anything is cut out, None when it could
+    not be read.  Only True moves a material along _OPAQUE_EMISSIVE_ROUTE --
+    an unreadable alpha stays on the shader that keeps the alpha, which loses
+    the glow rather than the cutout.  *routed* says the move happened.
+    """
     src_archetype = classify(game_code, master_material_path)
     target, path, exact = target_prefab(src_archetype, dst_game)
+    routed = False
+    route = _OPAQUE_EMISSIVE_ROUTE.get(dst_game)
+    if route and target == route[0] and has_emissive and alpha_opaque is True:
+        info = load_prefabs(dst_game).get(route[1])
+        if info is not None:
+            target, path, routed = route[1], info["path"], True
+            exact = exact and src_archetype == route[1]
     return {"archetype": src_archetype, "target": target, "path": path,
-            "exact": exact, "unsupported": src_archetype is None}
+            "exact": exact, "unsupported": src_archetype is None, "routed": routed}

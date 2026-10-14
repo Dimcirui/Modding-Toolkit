@@ -56,19 +56,24 @@ from . import mdf_port
 #: Roughness, ``S_col_R`` for Base Color) is exactly the kind of matching this
 #: module's docstring rejects: same family, different meaning, renders subtly
 #: wrong with nothing to trace it to.
+#:
+#: ONI fills only the rows whose name says the same thing.  Its PBR knobs are
+#: ``RoughnessScale`` / ``MetalScale`` / ``OcclusionScale`` / ``TranslucentScale``
+#: -- multipliers on a map, where MHWS' ``*Param`` are not established to be -- and
+#: ``AlphaTestThreshold``; none goes in until a vanilla value says they mean the same.
 CANON = [
-    ("Base Color",            {"MHWS": ["ColorParam"],           "RE4": ["BaseColor"],             "RE9": ["BaseColor"], "MHRS": []}),
-    ("Roughness",             {"MHWS": ["RoughnessParam"],       "RE4": ["Roughness"],             "RE9": ["Roughness"], "MHRS": []}),
-    ("Metallic",              {"MHWS": ["MetalParam"],           "RE4": ["Metallic"],              "RE9": ["Metallic"], "MHRS": ["Metallic_Param"]}),
-    ("Translucency",          {"MHWS": ["TranslucentParam"],     "RE4": ["Translucency"],          "RE9": ["Translucency"], "MHRS": ["Translucency_Param", "NoMap_Translucency_Param"]}),
-    ("Occlusion Intensity",   {"MHWS": ["OcclusionParam"],       "RE4": ["OcclusionIntensity"],    "RE9": ["Occlusion_Intensity"], "MHRS": []}),
-    ("Alpha Test Ref",        {"MHWS": ["AlphaTest_Ref"],        "RE4": ["AlphaTestRef"],          "RE9": ["AlphaTestRef"], "MHRS": []}),
-    ("Emissive Color",        {"MHWS": ["Emissive_Color"],       "RE4": ["EmissiveColor"],         "RE9": ["EmissiveColor"], "MHRS": ["Emissive_color"]}),
-    ("Emissive Intensity",    {"MHWS": ["Emissive_Intensity"],   "RE4": ["EmissiveIntensity"],     "RE9": ["EmissiveIntensity"], "MHRS": ["Emissive_intensity"]}),
-    ("SSS Profile",           {"MHWS": ["SSSProfile"],           "RE4": [],                        "RE9": ["SSS_Profile"], "MHRS": []}),
-    ("Primary Specular Color", {"MHWS": ["PrimalySpecularColor"], "RE4": ["PrimalySpecularColor"], "RE9": ["Primaly_SpecularColor"], "MHRS": []}),
-    ("Specular Shift Offset", {"MHWS": ["Specular_ShiftOffset"], "RE4": ["SpecularShiftOffset"],   "RE9": ["SpecularShiftOffset"], "MHRS": []}),
-    ("Wet Roughness",         {"MHWS": ["Wet_Roughness"],        "RE4": [],                        "RE9": ["Wet_Roughness"], "MHRS": []}),
+    ("Base Color",            {"MHWS": ["ColorParam"],           "RE4": ["BaseColor"],             "RE9": ["BaseColor"], "MHRS": [], "ONI": ["BaseColor"]}),
+    ("Roughness",             {"MHWS": ["RoughnessParam"],       "RE4": ["Roughness"],             "RE9": ["Roughness"], "MHRS": [], "ONI": []}),
+    ("Metallic",              {"MHWS": ["MetalParam"],           "RE4": ["Metallic"],              "RE9": ["Metallic"], "MHRS": ["Metallic_Param"], "ONI": []}),
+    ("Translucency",          {"MHWS": ["TranslucentParam"],     "RE4": ["Translucency"],          "RE9": ["Translucency"], "MHRS": ["Translucency_Param", "NoMap_Translucency_Param"], "ONI": []}),
+    ("Occlusion Intensity",   {"MHWS": ["OcclusionParam"],       "RE4": ["OcclusionIntensity"],    "RE9": ["Occlusion_Intensity"], "MHRS": [], "ONI": []}),
+    ("Alpha Test Ref",        {"MHWS": ["AlphaTest_Ref"],        "RE4": ["AlphaTestRef"],          "RE9": ["AlphaTestRef"], "MHRS": [], "ONI": []}),
+    ("Emissive Color",        {"MHWS": ["Emissive_Color"],       "RE4": ["EmissiveColor"],         "RE9": ["EmissiveColor"], "MHRS": ["Emissive_color"], "ONI": ["EmissiveColor"]}),
+    ("Emissive Intensity",    {"MHWS": ["Emissive_Intensity"],   "RE4": ["EmissiveIntensity"],     "RE9": ["EmissiveIntensity"], "MHRS": ["Emissive_intensity"], "ONI": ["EmissiveIntensity"]}),
+    ("SSS Profile",           {"MHWS": ["SSSProfile"],           "RE4": [],                        "RE9": ["SSS_Profile"], "MHRS": [], "ONI": []}),
+    ("Primary Specular Color", {"MHWS": ["PrimalySpecularColor"], "RE4": ["PrimalySpecularColor"], "RE9": ["Primaly_SpecularColor"], "MHRS": [], "ONI": ["Primary_Specular_Color"]}),
+    ("Specular Shift Offset", {"MHWS": ["Specular_ShiftOffset"], "RE4": ["SpecularShiftOffset"],   "RE9": ["SpecularShiftOffset"], "MHRS": [], "ONI": ["Primary_Specular_ShiftOffset"]}),
+    ("Wet Roughness",         {"MHWS": ["Wet_Roughness"],        "RE4": [],                        "RE9": ["Wet_Roughness"], "MHRS": [], "ONI": []}),
     # Three spellings of one unambiguous switch -- two of them misspelling it in
     # different directions ("Filp", "Reverse"). Nothing in these shaders is close
     # enough to confuse it with, which is what makes it HIGH-confidence despite no
@@ -81,7 +86,7 @@ CANON = [
     # field without converting between types -- pairing them would write a float
     # into a bool. Worth revisiting only if migration grows type coercion; the
     # concept is right, the representation is not.
-    ("Backface Normal Flip",  {"MHWS": ["BackFaceFlipNormal"],   "RE4": ["BackfaceNormalReverse"], "RE9": ["BackfaceNormalReverse"], "MHRS": []}),
+    ("Backface Normal Flip",  {"MHWS": ["BackFaceFlipNormal"],   "RE4": ["BackfaceNormalReverse"], "RE9": ["BackfaceNormalReverse"], "MHRS": [], "ONI": []}),
 ]
 
 #: Kept out of 'basic', not out of 'all'.  Each entry is a name or a name prefix,

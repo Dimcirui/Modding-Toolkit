@@ -215,6 +215,16 @@ def _scan_source_textures(targets, vanilla_set, src_natives_root, tex_version):
     return total, missing
 
 
+def _has_custom_emissive(bindings, channel_maps, vanilla_set):
+    """True when a slot that carries emissive is bound to the user's own texture."""
+    for slot_type, path in bindings.items():
+        ch_map = channel_maps.get(slot_type) or {}
+        if any(isinstance(src, tuple) and src[0] == 'emissive' for src in ch_map.values()) \
+                and is_custom_tex_path(path, vanilla_set):
+            return True
+    return False
+
+
 def _new_port_collection(src_col, suffix):
     """A fresh, empty .mdf2 collection beside *src_col* -- same naming/linking
     convention as mesh_port_ops.duplicate_mesh_collection, minus the armature
@@ -466,6 +476,15 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
         tex_ported = tex_skipped_vanilla = tex_skipped_no_slot = tex_skipped_no_source = 0
         tex_pending_write = tex_placeholder = tex_null_fallback = 0
         params_migrated = params_skipped = 0
+        routed = []             # materials the alpha/emissive rule moved
+        alpha_unknown = []      # ... and the ones it could not decide for
+        emissive_dropped = []   # custom emissive with nowhere to go on the target
+
+        def _src_disk(path):
+            if no_source_root:
+                return None
+            return mdf_port_tex.resolve_source_disk_path(
+                src_natives_root, path, src_cfg["tex_version"])
 
         try:
             for obj in targets:
@@ -476,6 +495,20 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
                     old_bindings = {b.textureType: b.path for b in old_data.textureBindingList_items}
 
                     plan = mdf_port.plan_material(src_game, dst_game, old_mmtr)
+                    has_emissive = _has_custom_emissive(
+                        old_bindings, src_cfg["channel_maps"], vanilla_set)
+                    if mdf_port.needs_alpha_probe(dst_game, plan, has_emissive):
+                        opaque = mdf_port_tex.alpha_is_opaque(
+                            old_bindings, src_cfg["channel_maps"],
+                            lambda p: is_custom_tex_path(p, vanilla_set),
+                            _src_disk, temp_dir)
+                        plan = mdf_port.plan_material(src_game, dst_game, old_mmtr,
+                                                      alpha_opaque=opaque,
+                                                      has_emissive=has_emissive)
+                        if plan["routed"]:
+                            routed.append(old_name)
+                        elif opaque is None:
+                            alpha_unknown.append(old_name)
                     if plan["unsupported"]:
                         unsupported += 1
                         print(f"[MDF Port] {old_name}: unsupported material shader "
@@ -517,17 +550,38 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
                     dst_binding_types = {b.textureType: b for b in new_data.textureBindingList_items}
                     handled_dst_slots = set()
 
+                    # The emissive the target cannot show, reported whether or not
+                    # textures are being converted -- it is the material choice that
+                    # loses it, not the texture step.
+                    if has_emissive and not any(
+                            any(isinstance(s, tuple) and s[0] == 'emissive'
+                                for s in (dst_cfg["channel_maps"].get(t) or {}).values())
+                            for t in dst_binding_types):
+                        emissive_dropped.append(old_name)
+
                     if convert_textures:
+                        # (source slot, its path, destination slot). One source slot
+                        # can feed two destinations when the target splits a packed
+                        # slot -- see mdf_port_tex.extra_feeds.
+                        jobs = []
+                        custom_src = {}
                         for tex_type, old_path in old_bindings.items():
                             if not is_custom_tex_path(old_path, vanilla_set):
                                 if old_path:
                                     tex_skipped_vanilla += 1
                                 continue
-
+                            custom_src[tex_type] = old_path
                             dst_slot_type = mdf_port_tex.find_dst_slot_type(tex_type, dst_binding_types)
                             if dst_slot_type is None:
                                 tex_skipped_no_slot += 1
                                 continue
+                            jobs.append((tex_type, old_path, dst_slot_type))
+                        for src_slot, dst_slot in mdf_port_tex.extra_feeds(
+                                custom_src, dst_binding_types, dst_cfg.get("slot_extra_feeds"),
+                                {d for _s, _p, d in jobs}):
+                            jobs.append((src_slot, custom_src[src_slot], dst_slot))
+
+                        for tex_type, old_path, dst_slot_type in jobs:
                             dst_binding = dst_binding_types[dst_slot_type]
 
                             if no_source_root:
@@ -621,6 +675,21 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
         if tex_null_fallback:
             self.report({'WARNING'}, T("core.mdf_port_ops.null_fallback_warning").format(
                 n=tex_null_fallback))
+
+        # The one place the material chosen depends on the pixels rather than the
+        # shader, so it is said out loud -- including when it could not be decided.
+        def _names(lst):
+            return ", ".join(lst[:4]) + (T("core.mdf_port_ops.and_n_more").format(n=len(lst) - 4)
+                                         if len(lst) > 4 else "")
+        if routed:
+            self.report({'INFO'}, T("core.mdf_port_ops.routed_emissive").format(
+                n=len(routed), names=_names(routed)))
+        if alpha_unknown:
+            self.report({'WARNING'}, T("core.mdf_port_ops.alpha_unknown").format(
+                n=len(alpha_unknown), names=_names(alpha_unknown)))
+        if emissive_dropped:
+            self.report({'WARNING'}, T("core.mdf_port_ops.emissive_dropped").format(
+                n=len(emissive_dropped), names=_names(emissive_dropped)))
 
         # Some (not all -- that case already returned CANCELLED above), so the
         # batch went ahead; call out exactly which ones by full path rather
