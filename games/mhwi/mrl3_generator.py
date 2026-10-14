@@ -65,10 +65,13 @@ def _albedo_alpha_is_white(path):
     img = None
     try:
         img = bpy.data.images.load(path, check_existing=False)
+        # load() is lazy: has_data stays False until something touches the
+        # buffer, and reading .size is what loads it (measured on 5.1).  Testing
+        # has_data first made every albedo read as "alpha is white".
+        w, h = img.size
         if not img.has_data or img.channels < 4:
             result = True
         else:
-            w, h = img.size
             if max(w, h) > _ALPHA_PROBE_SIZE:
                 scale = _ALPHA_PROBE_SIZE / max(w, h)
                 img.scale(max(1, int(w * scale)), max(1, int(h * scale)))
