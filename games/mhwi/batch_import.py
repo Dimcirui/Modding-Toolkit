@@ -2,6 +2,7 @@ import bpy
 import os
 
 from ...core.i18n import T
+from ...core.compat import op_available
 from .weapon_data import WEAPON_TYPES, _load_weapon_sets, set_selected_weapon
 from .batch_export import _load_armor_sets, get_armor_entry
 
@@ -310,7 +311,7 @@ class MHWI_OT_BatchImport(bpy.types.Operator):
         return T("mhwi.batch_import.batch_import_desc")
 
     def execute(self, context):
-        if not (hasattr(bpy.ops, 'mhw_mod3') and hasattr(bpy.ops.mhw_mod3, 'import_mhw_mod3')):
+        if not op_available('mhw_mod3', 'import_mhw_mod3'):
             self.report({'ERROR'}, T("mhwi.batch_import.model_editor_missing"))
             return {'CANCELLED'}
 

@@ -3,6 +3,7 @@ import sys
 import time
 import bpy
 from ...core.i18n import T
+from ...core.compat import op_available
 from ...core import weight_utils, facial_maps
 from ...core import bone_utils
 from ...core import ref_skeleton
@@ -270,8 +271,7 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
         return (context.mode == 'POSE'
                 and context.active_object is not None
                 and context.active_object.type == 'ARMATURE'
-                and hasattr(bpy.ops, 're_chain')
-                and hasattr(bpy.ops.re_chain, 'create_chain_settings'))
+                and op_available('re_chain', 'create_chain_settings'))
 
     def invoke(self, context, event):
         arm = context.active_object

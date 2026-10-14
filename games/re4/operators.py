@@ -1,6 +1,7 @@
 import bpy
 import os
 from ...core.i18n import T
+from ...core.compat import op_available
 from . import data_maps
 from ...core.re_chain_utils import REChainConfig, auto_create_re_chains, _is_valid_chain_collection
 from ...core.standard_ops import _run_bone_color_refresh
@@ -282,7 +283,7 @@ def do_fakebone(context, user_arm_obj, native_fbxskel_path):
     batch export 中请先复制骨架再传入。
     成功返回 True，失败抛出异常。
     """
-    if not hasattr(bpy.ops, 're_fbxskel') or not hasattr(bpy.ops.re_fbxskel, 'importfile'):
+    if not op_available('re_fbxskel', 'importfile'):
         raise RuntimeError(T("re4.operators.need_re_fbxskel_importer"))
 
     prev_active   = context.view_layer.objects.active
@@ -366,7 +367,7 @@ class RE4_OT_FakeBone_OneClick(bpy.types.Operator):
         self.layout.prop(self, "native_skeleton", text=T("re4.operators.native_skeleton_prop_label"))
 
     def execute(self, context):
-        if not hasattr(bpy.ops, 're_fbxskel') or not hasattr(bpy.ops.re_fbxskel, 'exportfile'):
+        if not op_available('re_fbxskel', 'exportfile'):
             self.report({'ERROR'}, T("re4.operators.need_re_mesh_editor"))
             return {'CANCELLED'}
 
@@ -468,8 +469,7 @@ class RE4_OT_AutoCreateChains(bpy.types.Operator):
         return (context.mode == 'POSE'
                 and context.active_object is not None
                 and context.active_object.type == 'ARMATURE'
-                and hasattr(bpy.ops, 're_chain')
-                and hasattr(bpy.ops.re_chain, 'create_chain_settings'))
+                and op_available('re_chain', 'create_chain_settings'))
 
     def invoke(self, context, event):
         arm = context.active_object

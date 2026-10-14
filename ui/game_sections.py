@@ -25,7 +25,7 @@ is far better than a button that fails when pressed.
 import bpy
 
 from ..core.i18n import T
-from ..core.compat import MTK_SHADER_AVAILABLE
+from ..core.compat import MTK_SHADER_AVAILABLE, op_available
 from ..core.re_mesh_compat import re_mesh_op_available
 from ..core.port_consent import draw_gate
 
@@ -34,19 +34,19 @@ from ..core.port_consent import draw_gate
 # name -> (probe, i18n key explaining what is missing).  Probed once per draw.
 
 def _has_mhw_model():
-    return hasattr(bpy.ops, 'mhw_mod3') and hasattr(bpy.ops.mhw_mod3, 'export_mhw_mod3')
+    return op_available('mhw_mod3', 'export_mhw_mod3')
 
 
 def _has_mhw_ctc():
-    return hasattr(bpy.ops, 'mhw_ctc') and hasattr(bpy.ops.mhw_ctc, 'create_chain_from_bone')
+    return op_available('mhw_ctc', 'create_chain_from_bone')
 
 
 def _has_re_chain():
-    return hasattr(bpy.ops, 're_chain') and hasattr(bpy.ops.re_chain, 'create_chain_settings')
+    return op_available('re_chain', 'create_chain_settings')
 
 
 def _has_re_fbxskel():
-    return hasattr(bpy.ops, 're_fbxskel') and hasattr(bpy.ops.re_fbxskel, 'exportfile')
+    return op_available('re_fbxskel', 'exportfile')
 
 
 GUARDS = {

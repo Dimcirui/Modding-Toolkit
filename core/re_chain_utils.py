@@ -570,7 +570,8 @@ def _apply_angle_ramp_all(context, armature, col, max_angle, iterations):
               file=sys.stderr)
         return
 
-    if not hasattr(bpy.ops.re_chain, 'apply_angle_limit_ramp'):
+    from .compat import op_available
+    if not op_available('re_chain', 'apply_angle_limit_ramp'):
         print("[ChainGen] apply_angle_ramp: operator re_chain.apply_angle_limit_ramp unavailable",
               file=sys.stderr)
         return

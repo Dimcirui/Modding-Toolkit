@@ -1,6 +1,7 @@
 import bpy
 
 from ...core.i18n import T
+from ...core.compat import op_available
 from ...core.re_chain_utils import REChainConfig, auto_create_re_chains, _is_valid_chain_collection
 from ...core.standard_ops import _run_bone_color_refresh
 
@@ -79,8 +80,7 @@ class MHRS_OT_AutoCreateChains(bpy.types.Operator):
         return (context.mode == 'POSE'
                 and context.active_object is not None
                 and context.active_object.type == 'ARMATURE'
-                and hasattr(bpy.ops, 're_chain')
-                and hasattr(bpy.ops.re_chain, 'create_chain_settings'))
+                and op_available('re_chain', 'create_chain_settings'))
 
     def invoke(self, context, event):
         arm = context.active_object

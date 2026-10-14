@@ -4,6 +4,7 @@ import os
 import shutil
 
 from ...core.i18n import T
+from ...core.compat import op_available
 from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
 from ...core import console_export
 from .weapon_data import (
@@ -799,7 +800,7 @@ class MHWI_OT_BatchExport(bpy.types.Operator):
         scene    = context.scene
         settings = scene.mhw_suite_settings
 
-        if not hasattr(bpy.ops, 'mhw_mod3') or not hasattr(bpy.ops.mhw_mod3, 'export_mhw_mod3'):
+        if not op_available('mhw_mod3', 'export_mhw_mod3'):
             self.report({'ERROR'}, T("mhwi.batch_import.model_editor_missing"))
             return {'CANCELLED'}
 

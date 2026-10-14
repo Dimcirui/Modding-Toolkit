@@ -53,3 +53,22 @@ MIN_VERSION = {
 
 def version_string():
     return ".".join(str(p) for p in _V)
+
+
+# ── Companion addon probes ────────────────────────────────────────────────────
+
+def op_available(category, op_name):
+    """True if ``bpy.ops.<category>.<op_name>`` is actually registered.
+
+    ``hasattr`` cannot answer this: ``bpy.ops`` attribute access is lazy and
+    hands back a wrapper for *any* category and *any* operator name, so
+    ``hasattr(bpy.ops.mhw_mod3, 'export_mhw_mod3')`` is True with MHW Model
+    Editor uninstalled.  ``dir()`` of a category lists only what is registered.
+    """
+    submod = getattr(bpy.ops, category, None)
+    if submod is None:
+        return False
+    try:
+        return op_name in dir(submod)
+    except Exception:
+        return False
