@@ -25,18 +25,50 @@ class REChainConfig:
     apply_angle_ramp_iter: int = 4
 
 
-def _patch_chain_cleanup(disable=True):
-    """批量替换 alignChains + setChainBoneColor 为 no-op 或恢复。"""
+def _patch_chain_cleanup():
+    """把所有模块里的 alignChains + setChainBoneColor 换成 no-op，返回原函数。
+
+    返回值必须交给 _restore_chain_cleanup() 还原。早先的版本靠"再调一次本函数"来
+    恢复，但那一遍只是重新收集**当前**属性——也就是 lambda——什么都没还原，于是
+    第一次建链之后 RE Chain Editor / MHW Model Editor 的对齐与骨骼着色在整个会话里
+    都是空函数。
+    """
     saved = []
-    for mod in sys.modules.values():
+    for mod in list(sys.modules.values()):
         has_align = hasattr(mod, 'alignChains') and callable(mod.alignChains)
         has_color = hasattr(mod, 'setChainBoneColor') and callable(mod.setChainBoneColor)
         if has_align and has_color:
             saved.append((mod, mod.alignChains, mod.setChainBoneColor))
-            if disable:
-                mod.alignChains = lambda: None
-                mod.setChainBoneColor = lambda x: None
+            mod.alignChains = lambda: None
+            mod.setChainBoneColor = lambda x: None
     return saved
+
+
+def _restore_chain_cleanup(saved):
+    for mod, align, color in saved:
+        mod.alignChains = align
+        mod.setChainBoneColor = color
+
+
+def _chain_cleanup_host(saved, category, op_name):
+    """saved 里属于 bpy.ops.<category>.<op_name> 所在插件的那一项，找不到时取第一项。
+
+    同时装着上游与 fork（或 RE Chain 与 MHW Model Editor）时，sys.modules 里排第一的
+    未必是正在被驱动的那个插件，收尾的那一次对齐必须调它自己的。
+    """
+    if not saved:
+        return None
+    cls = bpy.types.Operator.bl_rna_get_subclass_py(f"{category.upper()}_OT_{op_name}")
+    owner = getattr(cls, '__module__', '').split('.')
+    def shared(entry):
+        n = 0
+        for a, b in zip(entry[0].__name__.split('.'), owner):
+            if a != b:
+                break
+            n += 1
+        return n
+    best = max(saved, key=shared)
+    return best if shared(best) else saved[0]
 
 
 # ============================================================
@@ -752,7 +784,7 @@ def auto_create_re_chains(context, armature, config: REChainConfig):
             return {'CANCELLED'}
 
     saved_experimental = getattr(toolpanel, 'experimentalPoseModeOptions', False)
-    _patches = _patch_chain_cleanup(disable=True)
+    _patches = _patch_chain_cleanup()
 
     t_loop = time.perf_counter()
     try:
@@ -770,9 +802,10 @@ def auto_create_re_chains(context, armature, config: REChainConfig):
                 else:
                     skipped += 1
     finally:
-        _patch_chain_cleanup(disable=False)
-        if _patches and created > 0:
-            mod, _align, _color = _patches[0]
+        _restore_chain_cleanup(_patches)
+        host = _chain_cleanup_host(_patches, 're_chain', 'create_chain_settings')
+        if host and created > 0:
+            mod, _align, _color = host
             _align()
             _color(armature)
         toolpanel.experimentalPoseModeOptions = saved_experimental

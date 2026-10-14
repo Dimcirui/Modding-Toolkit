@@ -576,7 +576,7 @@ def build(context, arm_obj, chains, colliders, stem, flag_mode="ALL",
     # loop and RE-Chain-Editor calls it after *every* chain and collider.  See
     # memory note project_chain_import_perf_trap: the same shape once made a chain
     # import take 78 minutes.  Patched out for the build, restored and run once.
-    patches = re_chain_utils._patch_chain_cleanup(disable=True)
+    patches = re_chain_utils._patch_chain_cleanup()
     try:
         for fields, chain_names in clusters:
             before = {o.name for o in col.all_objects}
@@ -615,9 +615,10 @@ def build(context, arm_obj, chains, colliders, stem, flag_mode="ALL",
             if _build_collider(context, arm_obj, col, shape, report) is not None:
                 report["colliders"] += 1
     finally:
-        re_chain_utils._patch_chain_cleanup(disable=False)
-        if patches:
-            _mod, align, color = patches[0]
+        re_chain_utils._restore_chain_cleanup(patches)
+        host = re_chain_utils._chain_cleanup_host(patches, 're_chain', 'create_chain_settings')
+        if host:
+            _mod, align, color = host
             align()
             color(arm_obj)
         (toolpanel.chainCollection, toolpanel.chainFileType,

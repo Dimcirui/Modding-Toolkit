@@ -3,6 +3,7 @@ import time
 import bpy
 import re
 from ...core.i18n import T
+from ...core.compat import op_available
 from ...core import (bone_utils, facial_bones, facial_maps, fork_resolver, preprocess_align,
                      ref_model_ops, ref_skeleton, weight_utils)
 from ...core.bone_mapper import BoneMapManager, auto_detect_preset, resolve_preset
@@ -11,7 +12,8 @@ from ...core.standard_ops import (_build_fuzzy_preset_bones, _run_bone_color_ref
                                  mhwi_physics_unlocked, mhwi_unlock_prefs)
 from ...core import mhwi_physics_budget
 from . import physics_split
-from ...core.re_chain_utils import _patch_chain_cleanup, _straighten_chain_orientations
+from ...core.re_chain_utils import (_patch_chain_cleanup, _restore_chain_cleanup,
+                                    _chain_cleanup_host, _straighten_chain_orientations)
 
 
 def _is_mhwi_physics(name):
@@ -277,8 +279,7 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
             context.mode == 'POSE'
             and context.active_object is not None
             and context.active_object.type == 'ARMATURE'
-            and hasattr(bpy.ops, 'mhw_ctc')
-            and hasattr(bpy.ops.mhw_ctc, 'create_chain_from_bone')
+            and op_available('mhw_ctc', 'create_chain_from_bone')
         )
 
     def invoke(self, context, _event):
@@ -415,7 +416,7 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
         detach = fork_resolver.children_to_detach(armature.data.bones, to_create)
         saved_parents = {}
 
-        _patches = _patch_chain_cleanup(disable=True)
+        _patches = _patch_chain_cleanup()
 
         created = 0
         failed = []
@@ -453,9 +454,10 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
         finally:
             if saved_parents:
                 _reattach_bones(armature, saved_parents)
-            _patch_chain_cleanup(disable=False)
-            if _patches and created > 0:
-                mod, _align, _color = _patches[0]
+            _restore_chain_cleanup(_patches)
+            host = _chain_cleanup_host(_patches, 'mhw_ctc', 'create_chain_from_bone')
+            if host and created > 0:
+                mod, _align, _color = host
                 _align()
                 _color(armature)
 
