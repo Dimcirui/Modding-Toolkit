@@ -22,6 +22,7 @@ from .color_grade import color_grade_items, DEFAULT_MODE_INDEX
 # pixel transfers, and a single convert can chain three of them.
 from .mdf_tex_processor_base import image_to_array
 from .tga_file import write_tga_rgba8
+from . import tex_window
 
 _CH = {'R': 0, 'G': 1, 'B': 2, 'A': 3}
 _CH_ITEMS = [('R', 'R', ''), ('G', 'G', ''), ('B', 'B', ''), ('A', 'A', '')]
@@ -341,8 +342,6 @@ def _compose_channels(channel_map, path_a, path_b, out_dir, name_hint, encode_oc
     (it could only come from unpacking an existing NRRO/NRRC texture) that
     guessing wrong is a worse default than always encoding.
     """
-    import numpy as np
-
     sources = {}
     if path_a and os.path.isfile(path_a):
         sources['A'] = path_a
@@ -376,6 +375,17 @@ def _compose_channels(channel_map, path_a, path_b, out_dir, name_hint, encode_oc
         loaded[key] = image_to_array(img)
         bpy.data.images.remove(img)
 
+    result = _compose_arrays(channel_map, loaded, encode_octahedral)
+    out_path = os.path.join(out_dir, f"{name_hint}_composed.tga")
+    return write_tga_rgba8(out_path, result)
+
+
+def _compose_arrays(channel_map, loaded, encode_octahedral=False):
+    """_compose_channels on ``{'A'|'B': (h, w, 4) array}`` of one size; returns
+    the composed array.  The preview calls this on downscaled planes."""
+    import numpy as np
+
+    ref_h, ref_w = next(iter(loaded.values())).shape[:2]
     result = np.zeros((ref_h, ref_w, 4), dtype=np.float32)
     for out_ch, (src_key, ch_idx, invert) in channel_map.items():
         oi = _CH[out_ch]
@@ -399,9 +409,7 @@ def _compose_channels(channel_map, path_a, path_b, out_dir, name_hint, encode_oc
         g = result[:, :, _CH['G']]
         a = result[:, :, _CH['A']]
         result[:, :, _CH['G']], result[:, :, _CH['A']] = encode_normal_ga(g, a)
-
-    out_path = os.path.join(out_dir, f"{name_hint}_composed.tga")
-    return write_tga_rgba8(out_path, result)
+    return result
 
 
 # ── Detail normal map overlay (SINGLE mode only) ────────────────────────────
@@ -458,6 +466,19 @@ def _blend_detail_normal(base_path, detail_path, tiling_x, tiling_y, out_dir, na
 
     base_arr = _load_arr(base_path, "base")
     detail_arr = _load_arr(detail_path, "detail")
+    mask_arr = _load_arr(mask_path, "mask") if mask_path else None
+    result = _blend_detail_arrays(base_arr, detail_arr, tiling_x, tiling_y,
+                                  mask_arr, mask_channel, mask_invert)
+    out_path = os.path.join(out_dir, f"{name_hint}.tga")
+    return write_tga_rgba8(out_path, result)
+
+
+def _blend_detail_arrays(base_arr, detail_arr, tiling_x, tiling_y,
+                         mask_arr=None, mask_channel='R', mask_invert=False):
+    """_blend_detail_normal on arrays. Tiling and the mask are in the base's UV
+    space, so a downscaled base (the preview) gives the same picture smaller."""
+    import numpy as np
+
     h, w = base_arr.shape[0], base_arr.shape[1]
 
     detail_tiled = _tile_sample_bilinear(detail_arr, w, h, tiling_x, tiling_y)
@@ -466,8 +487,7 @@ def _blend_detail_normal(base_path, detail_path, tiling_x, tiling_y, out_dir, na
     detail_xy = detail_tiled[:, :, :2] * 2.0 - 1.0
 
     mask = None
-    if mask_path:
-        mask_arr = _load_arr(mask_path, "mask")
+    if mask_arr is not None:
         mask = _tile_sample_bilinear(mask_arr, w, h, 1.0, 1.0)[:, :, _CH[mask_channel]]
         mask = np.clip(mask, 0.0, 1.0)
         if mask_invert:
@@ -483,9 +503,7 @@ def _blend_detail_normal(base_path, detail_path, tiling_x, tiling_y, out_dir, na
     result[:, :, 0:2] = xy * 0.5 + 0.5
     result[:, :, 2] = z
     result[:, :, 3] = base_arr[:, :, 3]
-
-    out_path = os.path.join(out_dir, f"{name_hint}.tga")
-    return write_tga_rgba8(out_path, result)
+    return result
 
 
 # ── Color adjust (COLOR preset only) ────────────────────────────────────────
@@ -578,6 +596,84 @@ def _apply_color_adjustments(path, exposure, saturation, vibrance, out_dir, name
 
     out_path = os.path.join(out_dir, f"{name_hint}.tga")
     return write_tga_rgba8(out_path, arr)
+
+
+# ── Preview (the 贴图处理 window) ──────────────────────────────────────────────
+
+def _match_sizes(loaded):
+    """Nearest-resample every plane to the largest one, as the export's loader
+    does with img.scale -- downscaled sources need not share a size."""
+    import numpy as np
+    ref_h, ref_w = max((a.shape[:2] for a in loaded.values()), key=lambda hw: hw[0] * hw[1])
+    out = {}
+    for k, a in loaded.items():
+        h, w = a.shape[:2]
+        if (h, w) != (ref_h, ref_w):
+            rows = (np.arange(ref_h) * h // ref_h).clip(0, h - 1)
+            cols = (np.arange(ref_w) * w // ref_w).clip(0, w - 1)
+            a = a[rows[:, None], cols[None, :]]
+        out[k] = a
+    return out
+
+
+def build_preview(s, load):
+    """The converted image as an array, by the same steps execute takes.
+
+    *load(path)* returns that file's pixels (downscaled, for the preview) or
+    None.  Returns ``(array or None, note)``."""
+    src_a = bpy.path.abspath(s.src_a) if s.src_a else ""
+    src_b = bpy.path.abspath(s.src_b) if s.src_b else ""
+    encode_octahedral = _preset_needs_octahedral_encode(s.preset)
+    a = load(src_a) if src_a else None
+    if a is None:
+        return None, 'no_source'
+
+    if s.channel_mode == 'SINGLE':
+        arr = a
+        if s.preset in ('NONCOLOR', 'NRRO', 'CUSTOM') and s.detail_enabled and s.detail_path:
+            detail = load(bpy.path.abspath(s.detail_path))
+            if detail is not None:
+                mask = None
+                if s.detail_mask_enabled and s.detail_mask_path:
+                    mask = load(bpy.path.abspath(s.detail_mask_path))
+                    if mask is None:
+                        return None, 'detail_mask_missing'
+                arr = _blend_detail_arrays(arr, detail, s.detail_tiling_x, s.detail_tiling_y,
+                                           mask, s.detail_mask_channel, s.detail_mask_invert)
+        if s.src_a_invert or encode_octahedral:
+            channel_map = {c: ('A', i, s.src_a_invert) for c, i in _CH.items()}
+            arr = _compose_arrays(channel_map, {'A': arr}, encode_octahedral)
+    else:
+        b = load(src_b) if src_b else None
+        loaded = _match_sizes({'A': a, **({'B': b} if b is not None else {})})
+        if s.channel_mode == 'RGB_A':
+            if b is not None:
+                alpha_entry = ('B', 0, s.src_b_invert)
+            else:
+                alpha_entry = ('CONST0', 0, False) if s.alpha_fill_black else ('CONST1', 0, False)
+            channel_map = {
+                'R': ('A', 0, s.src_a_invert), 'G': ('A', 1, s.src_a_invert),
+                'B': ('A', 2, s.src_a_invert), 'A': alpha_entry,
+            }
+        else:
+            channel_map = {}
+            for ch in ('R', 'G', 'B', 'A'):
+                key = ch.lower()
+                src_key = getattr(s, f"ch_{key}_source")
+                invert = (s.src_a_invert if src_key == 'A'
+                          else s.src_b_invert if src_key == 'B' else False)
+                channel_map[ch] = (src_key, _CH[getattr(s, f"ch_{key}_channel")], invert)
+        arr = _compose_arrays(channel_map, loaded, encode_octahedral)
+
+    if _grade_applies(s) and s.color_grade != 'NONE':
+        from . import color_grade
+        arr = color_grade.grade(arr, s.color_grade)
+    if (s.preset in ('COLOR', 'CUSTOM') and s.color_adjust_enabled
+            and (s.adjust_exposure or s.adjust_saturation or s.adjust_vibrance)):
+        arr = arr.copy()
+        arr[:, :, :3] = _apply_color_adjust(arr[:, :, :3], s.adjust_exposure,
+                                            s.adjust_saturation, s.adjust_vibrance)
+    return arr, ''
 
 
 def _import_mhwtex_convert():
@@ -747,6 +843,139 @@ class MT_OT_TexConvertSnapSize(bpy.types.Operator):
         return {'FINISHED'}
 
 
+TEX_CONVERT_TAG = "tex_convert"     # the tool window's screen tag for this sidebar
+
+
+def draw_tex_convert(layout, s):
+    """The 贴图处理 settings, drawn in the window's sidebar."""
+    # Everything that describes the *output file* stays together at the
+    # top; the channel plumbing that produces its pixels comes after.
+    layout.prop(s, "target", text=T("core.tex_convert_base.target_name"))
+    layout.prop(s, "preset", text=T("core.tex_convert_base.preset_name"))
+    fmt_row = layout.row(align=True)
+    fmt_row.prop(s, "format", text=T("core.tex_convert_base.format_name"))
+    fmt_row.operator("mt.tex_convert_guess_format", text="", icon='FILE_REFRESH')
+    if s.src_a and not s.format_guess_ok:
+        layout.label(text=T("core.tex_convert_base.guess_fallback_warning"), icon='ERROR')
+    mip_row = layout.row(align=True)
+    mip_row.prop(s, "generate_mipmaps", text=T("core.tex_convert_base.generate_mipmaps_name"))
+    if s.generate_mipmaps and s.format in _QUALITY_MIP_FORMATS:
+        mip_row.prop(s, "mipmap_strategy", text="")
+
+    layout.separator()
+
+    layout.prop(s, "channel_mode", expand=True)
+    layout.separator()
+
+    # Image selection
+    if s.channel_mode == 'SINGLE':
+        layout.prop(s, "src_a", text=T("core.tex_convert_base.src_a_name"))
+    elif s.channel_mode == 'RGB_A':
+        layout.prop(s, "src_a", text=T("core.tex_convert_base.rgb_source_label"))
+        layout.prop(s, "src_b", text=T("core.tex_convert_base.src_b_name"))
+        if not s.src_b:
+            layout.prop(s, "alpha_fill_black", text=T("core.tex_convert_base.alpha_fill_black_name"))
+    else:  # RGBA
+        layout.prop(s, "src_a", text=T("core.tex_convert_base.src_image_a"))
+        layout.prop(s, "src_b", text=T("core.tex_convert_base.src_image_b"))
+
+    # Adjust — hangs off the source image, not the output channel; future
+    # brightness/saturation etc. adjustments go here too.
+    if s.src_a or (s.src_b and s.channel_mode != 'SINGLE'):
+        layout.separator()
+        adj_box = layout.box()
+        adj_box.label(text=T("core.tex_convert_base.adjust_header"))
+        if s.channel_mode == 'RGB_A':
+            # src_a is always the RGB source and src_b always the Alpha
+            # source in this mode, so the labels can say so directly.
+            if s.src_a:
+                adj_box.prop(s, "src_a_invert", text=T("core.tex_convert_base.invert_rgb_name"))
+            if s.src_b:
+                adj_box.prop(s, "src_b_invert", text=T("core.tex_convert_base.invert_alpha_name"))
+        elif s.channel_mode == 'RGBA':
+            # A single image can feed any mix of destination channels
+            # here, so invert is a single flag for the whole image again
+            # (not split by RGB vs Alpha, unlike RGB_A above).
+            if s.src_a:
+                adj_box.prop(s, "src_a_invert", text=T("core.tex_convert_base.invert_a_label"))
+            if s.src_b:
+                adj_box.prop(s, "src_b_invert", text=T("core.tex_convert_base.invert_b_label"))
+        else:  # SINGLE
+            adj_box.prop(s, "src_a_invert", text=T("core.tex_convert_base.invert_name"))
+            # Detail overlay is a normal-map technique (UDN blend), so it
+            # only makes sense for NONCOLOR/NRRO -- CUSTOM stays fully open
+            # since the user picked it precisely to bypass preset gating.
+            if s.preset in ('NONCOLOR', 'NRRO', 'CUSTOM'):
+                adj_box.separator()
+                adj_box.prop(s, "detail_enabled", text=T("core.tex_convert_base.detail_enabled_name"))
+                if s.detail_enabled:
+                    adj_box.prop(s, "detail_path", text=T("core.tex_convert_base.detail_map_name"))
+                    tile_row = adj_box.row(align=True)
+                    tile_row.prop(s, "detail_tiling_x", text=T("core.tex_convert_base.detail_tiling_x_name"))
+                    tile_row.prop(s, "detail_tiling_y", text=T("core.tex_convert_base.detail_tiling_y_name"))
+                    adj_box.prop(s, "detail_mask_enabled", text=T("core.tex_convert_base.detail_mask_enabled_name"))
+                    if s.detail_mask_enabled:
+                        mask_row = adj_box.row(align=True)
+                        mask_row.prop(s, "detail_mask_path", text=T("core.tex_convert_base.detail_mask_path_name"))
+                        mask_row.prop(s, "detail_mask_channel", text="")
+                        adj_box.prop(s, "detail_mask_invert", text=T("core.tex_convert_base.detail_mask_invert_name"))
+                        adj_box.label(text=T("core.tex_convert_base.detail_mask_hint"), icon='INFO')
+
+        # Exposure/Saturation/Vibrance only make sense on real color data,
+        # not normal/mask/packed textures, so this is gated on COLOR --
+        # CUSTOM stays fully open for the same reason as detail overlay above.
+        if s.preset in ('COLOR', 'CUSTOM'):
+            adj_box.separator()
+            if _grade_applies(s):
+                grade_row = adj_box.row(align=True)
+                grade_row.label(text=T("core.color_grade.label"))
+                grade_row.prop(s, "color_grade", text="")
+            adj_box.prop(s, "color_adjust_enabled", text=T("core.tex_convert_base.color_adjust_enabled_name"))
+            if s.color_adjust_enabled:
+                col = adj_box.column(align=True)
+                col.prop(s, "adjust_exposure", text=T("core.tex_convert_base.adjust_exposure_name"))
+                col.prop(s, "adjust_saturation", text=T("core.tex_convert_base.adjust_saturation_name"))
+                col.prop(s, "adjust_vibrance", text=T("core.tex_convert_base.adjust_vibrance_name"))
+
+    # RGBA channel mapping: only pick source image/constant + source channel
+    if s.channel_mode == 'RGBA':
+        layout.separator()
+        for ch in ('r', 'g', 'b', 'a'):
+            row = layout.row(align=True)
+            row.label(text=ch.upper())
+            row.prop(s, f"ch_{ch}_source", text="")
+            row.prop(s, f"ch_{ch}_channel", text="")
+
+    layout.separator()
+    layout.prop(s, "output_path", text=T("core.tex_convert_base.output_path_name"))
+    layout.label(text=T("core.tex_convert_base.output_empty_hint"), icon='INFO')
+
+    # Output size last: it is a consequence of everything above, and the
+    # non-power-of-two warning is the thing to leave on screen.
+    layout.separator()
+    size = output_size(s)
+    if size:
+        w, h = size
+        ok = is_power_of_two(w) and is_power_of_two(h)
+        row = layout.row()
+        row.alert = not ok
+        row.label(text=T("core.tex_convert_base.output_size_label").format(w=w, h=h),
+                  icon='TEXTURE' if ok else 'ERROR')
+        if not ok:
+            warn = layout.row()
+            warn.alert = True
+            warn.label(text=T("core.tex_convert_base.npot_warning"))
+    else:
+        layout.label(text=T("core.tex_convert_base.output_size_unknown"), icon='INFO')
+
+    layout.prop(s, "resize_enabled", text=T("core.tex_convert_base.resize_name"))
+    if s.resize_enabled:
+        size_row = layout.row(align=True)
+        size_row.prop(s, "out_width", text=T("core.tex_convert_base.width_name"))
+        size_row.prop(s, "out_height", text=T("core.tex_convert_base.height_name"))
+        size_row.operator("mt.tex_convert_snap_size", text="", icon='FILE_REFRESH')
+
+
 class MT_OT_TexConvertDialog(bpy.types.Operator):
     """Convert a single image directly to the target game's .tex texture."""
     bl_idname  = "mt.tex_convert_dialog"
@@ -764,140 +993,14 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
         s = context.scene.tex_convert_tool
         combo = (s.format, s.generate_mipmaps)
         s.preset = next((k for k, v in _PRESET_SETTINGS.items() if v == combo), 'CUSTOM')
-        return context.window_manager.invoke_props_dialog(self, width=420)
+        # Its own Image Editor window, with the output previewed live.
+        note = tex_window.open_tool_window(context, TEX_CONVERT_TAG)
+        if note:
+            self.report({'INFO'}, T("core.tex_window." + note))
+        return {'FINISHED'}
 
     def draw(self, context):
-        layout = self.layout
-        s = context.scene.tex_convert_tool
-
-        layout.label(text=T('core.tex_convert_base.dialog_title'))
-
-        # Everything that describes the *output file* stays together at the
-        # top; the channel plumbing that produces its pixels comes after.
-        layout.prop(s, "target", text=T("core.tex_convert_base.target_name"))
-        layout.prop(s, "preset", text=T("core.tex_convert_base.preset_name"))
-        fmt_row = layout.row(align=True)
-        fmt_row.prop(s, "format", text=T("core.tex_convert_base.format_name"))
-        fmt_row.operator("mt.tex_convert_guess_format", text="", icon='FILE_REFRESH')
-        if s.src_a and not s.format_guess_ok:
-            layout.label(text=T("core.tex_convert_base.guess_fallback_warning"), icon='ERROR')
-        mip_row = layout.row(align=True)
-        mip_row.prop(s, "generate_mipmaps", text=T("core.tex_convert_base.generate_mipmaps_name"))
-        if s.generate_mipmaps and s.format in _QUALITY_MIP_FORMATS:
-            mip_row.prop(s, "mipmap_strategy", text="")
-
-        layout.separator()
-
-        layout.prop(s, "channel_mode", expand=True)
-        layout.separator()
-
-        # Image selection
-        if s.channel_mode == 'SINGLE':
-            layout.prop(s, "src_a", text=T("core.tex_convert_base.src_a_name"))
-        elif s.channel_mode == 'RGB_A':
-            layout.prop(s, "src_a", text=T("core.tex_convert_base.rgb_source_label"))
-            layout.prop(s, "src_b", text=T("core.tex_convert_base.src_b_name"))
-            if not s.src_b:
-                layout.prop(s, "alpha_fill_black", text=T("core.tex_convert_base.alpha_fill_black_name"))
-        else:  # RGBA
-            layout.prop(s, "src_a", text=T("core.tex_convert_base.src_image_a"))
-            layout.prop(s, "src_b", text=T("core.tex_convert_base.src_image_b"))
-
-        # Adjust — hangs off the source image, not the output channel; future
-        # brightness/saturation etc. adjustments go here too.
-        if s.src_a or (s.src_b and s.channel_mode != 'SINGLE'):
-            layout.separator()
-            adj_box = layout.box()
-            adj_box.label(text=T("core.tex_convert_base.adjust_header"))
-            if s.channel_mode == 'RGB_A':
-                # src_a is always the RGB source and src_b always the Alpha
-                # source in this mode, so the labels can say so directly.
-                if s.src_a:
-                    adj_box.prop(s, "src_a_invert", text=T("core.tex_convert_base.invert_rgb_name"))
-                if s.src_b:
-                    adj_box.prop(s, "src_b_invert", text=T("core.tex_convert_base.invert_alpha_name"))
-            elif s.channel_mode == 'RGBA':
-                # A single image can feed any mix of destination channels
-                # here, so invert is a single flag for the whole image again
-                # (not split by RGB vs Alpha, unlike RGB_A above).
-                if s.src_a:
-                    adj_box.prop(s, "src_a_invert", text=T("core.tex_convert_base.invert_a_label"))
-                if s.src_b:
-                    adj_box.prop(s, "src_b_invert", text=T("core.tex_convert_base.invert_b_label"))
-            else:  # SINGLE
-                adj_box.prop(s, "src_a_invert", text=T("core.tex_convert_base.invert_name"))
-                # Detail overlay is a normal-map technique (UDN blend), so it
-                # only makes sense for NONCOLOR/NRRO -- CUSTOM stays fully open
-                # since the user picked it precisely to bypass preset gating.
-                if s.preset in ('NONCOLOR', 'NRRO', 'CUSTOM'):
-                    adj_box.separator()
-                    adj_box.prop(s, "detail_enabled", text=T("core.tex_convert_base.detail_enabled_name"))
-                    if s.detail_enabled:
-                        adj_box.prop(s, "detail_path", text=T("core.tex_convert_base.detail_map_name"))
-                        tile_row = adj_box.row(align=True)
-                        tile_row.prop(s, "detail_tiling_x", text=T("core.tex_convert_base.detail_tiling_x_name"))
-                        tile_row.prop(s, "detail_tiling_y", text=T("core.tex_convert_base.detail_tiling_y_name"))
-                        adj_box.prop(s, "detail_mask_enabled", text=T("core.tex_convert_base.detail_mask_enabled_name"))
-                        if s.detail_mask_enabled:
-                            mask_row = adj_box.row(align=True)
-                            mask_row.prop(s, "detail_mask_path", text=T("core.tex_convert_base.detail_mask_path_name"))
-                            mask_row.prop(s, "detail_mask_channel", text="")
-                            adj_box.prop(s, "detail_mask_invert", text=T("core.tex_convert_base.detail_mask_invert_name"))
-                            adj_box.label(text=T("core.tex_convert_base.detail_mask_hint"), icon='INFO')
-
-            # Exposure/Saturation/Vibrance only make sense on real color data,
-            # not normal/mask/packed textures, so this is gated on COLOR --
-            # CUSTOM stays fully open for the same reason as detail overlay above.
-            if s.preset in ('COLOR', 'CUSTOM'):
-                adj_box.separator()
-                if _grade_applies(s):
-                    grade_row = adj_box.row(align=True)
-                    grade_row.label(text=T("core.color_grade.label"))
-                    grade_row.prop(s, "color_grade", text="")
-                adj_box.prop(s, "color_adjust_enabled", text=T("core.tex_convert_base.color_adjust_enabled_name"))
-                if s.color_adjust_enabled:
-                    col = adj_box.column(align=True)
-                    col.prop(s, "adjust_exposure", text=T("core.tex_convert_base.adjust_exposure_name"))
-                    col.prop(s, "adjust_saturation", text=T("core.tex_convert_base.adjust_saturation_name"))
-                    col.prop(s, "adjust_vibrance", text=T("core.tex_convert_base.adjust_vibrance_name"))
-
-        # RGBA channel mapping: only pick source image/constant + source channel
-        if s.channel_mode == 'RGBA':
-            layout.separator()
-            for ch in ('r', 'g', 'b', 'a'):
-                row = layout.row(align=True)
-                row.label(text=ch.upper())
-                row.prop(s, f"ch_{ch}_source", text="")
-                row.prop(s, f"ch_{ch}_channel", text="")
-
-        layout.separator()
-        layout.prop(s, "output_path", text=T("core.tex_convert_base.output_path_name"))
-        layout.label(text=T("core.tex_convert_base.output_empty_hint"), icon='INFO')
-
-        # Output size last: it is a consequence of everything above, and the
-        # non-power-of-two warning is the thing to leave on screen.
-        layout.separator()
-        size = output_size(s)
-        if size:
-            w, h = size
-            ok = is_power_of_two(w) and is_power_of_two(h)
-            row = layout.row()
-            row.alert = not ok
-            row.label(text=T("core.tex_convert_base.output_size_label").format(w=w, h=h),
-                      icon='TEXTURE' if ok else 'ERROR')
-            if not ok:
-                warn = layout.row()
-                warn.alert = True
-                warn.label(text=T("core.tex_convert_base.npot_warning"))
-        else:
-            layout.label(text=T("core.tex_convert_base.output_size_unknown"), icon='INFO')
-
-        layout.prop(s, "resize_enabled", text=T("core.tex_convert_base.resize_name"))
-        if s.resize_enabled:
-            size_row = layout.row(align=True)
-            size_row.prop(s, "out_width", text=T("core.tex_convert_base.width_name"))
-            size_row.prop(s, "out_height", text=T("core.tex_convert_base.height_name"))
-            size_row.operator("mt.tex_convert_snap_size", text="", icon='FILE_REFRESH')
+        draw_tex_convert(self.layout, context.scene.tex_convert_tool)
 
     def execute(self, context):
         s = context.scene.tex_convert_tool
@@ -1041,6 +1144,102 @@ class MT_OT_TexConvertDialog(bpy.types.Operator):
             return {'CANCELLED'}
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+_PREVIEW_SHOW = {'show': 'OUTPUT'}      # 'OUTPUT' | 'A' | 'B': what the window shows
+
+
+class MT_OT_TexConvertPreviewShow(bpy.types.Operator):
+    """Choose what the window shows: the converted result or one source"""
+    bl_idname  = "mt.tex_convert_preview_show"
+    bl_label   = "Preview"
+    bl_options = {'INTERNAL'}
+
+    show: bpy.props.EnumProperty(items=[('OUTPUT', 'Output', ''), ('A', 'A', ''), ('B', 'B', '')])
+
+    def execute(self, context):
+        _PREVIEW_SHOW['show'] = self.show
+        return {'FINISHED'}
+
+
+def _preview_key(s, show):
+    paths = [s.src_a, s.src_b, s.detail_path, s.detail_mask_path]
+    vals = tuple((p.identifier, getattr(s, p.identifier)) for p in s.bl_rna.properties
+                 if p.identifier not in ('rna_type', 'name'))
+    def _mt(path):
+        try:
+            return os.path.getmtime(bpy.path.abspath(path)) if path else None
+        except OSError:
+            return None
+    return (show, vals, tuple(_mt(p) for p in paths))
+
+
+def _refresh_preview(context):
+    s = context.scene.tex_convert_tool
+    show = _PREVIEW_SHOW['show']
+    win = tex_window.tag_window(context.window_manager, TEX_CONVERT_TAG)
+    if show == 'OUTPUT':
+        arr, note = build_preview(s, tex_window.load_small)
+        if arr is None:
+            tex_window.show_array(win, None)
+            return note
+        from .color_grade import is_color_format
+        tex_window.show_array(win, arr, colour=is_color_format(s.format))
+        return ''
+    path = s.src_a if show == 'A' else s.src_b
+    return tex_window.show_file(win, path, colour=is_color_source(s, show))
+
+
+def is_color_source(s, which):
+    """Whether source A/B holds colour, judged by the target format, which is
+    what the preset says this conversion is."""
+    from .color_grade import is_color_format
+    return is_color_format(s.format) and (which == 'A' or s.channel_mode == 'RGBA')
+
+
+class MT_PT_TexConvert(bpy.types.Panel):
+    bl_label       = "Texture Processing"
+    bl_space_type  = 'IMAGE_EDITOR'
+    bl_region_type = 'UI'
+    bl_category    = "MOD Toolkit"
+    bl_options     = {'HIDE_HEADER'}     # bl_label is not translated; the title is drawn below
+
+    @classmethod
+    def poll(cls, context):
+        screen = context.screen
+        return bool(screen) and screen.get(tex_window.WINDOW_TAG) == TEX_CONVERT_TAG
+
+    def draw(self, context):
+        layout = self.layout
+        s = context.scene.tex_convert_tool
+        show = _PREVIEW_SHOW['show']
+
+        layout.label(text=T("core.tex_convert_base.dialog_title"), icon='TEXTURE')
+
+        row = layout.row(align=True)
+        row.label(text=T("core.tex_convert_base.preview_show"), icon='IMAGE_RGB')
+        for key, label in (('OUTPUT', T("core.tex_convert_base.preview_output")),
+                           ('A', "A"), ('B', "B")):
+            sub = row.row(align=True)
+            sub.enabled = key != 'B' or (s.channel_mode != 'SINGLE' and bool(s.src_b))
+            sub.operator("mt.tex_convert_preview_show", text=label,
+                         depress=show == key).show = key
+        if show == 'OUTPUT':
+            layout.label(text=T("core.tex_convert_base.preview_hint").format(
+                size=tex_window.PREVIEW_SIZE), icon='INFO')
+        layout.separator()
+
+        draw_tex_convert(layout, s)
+
+        layout.separator()
+        row = layout.row()
+        row.scale_y = 1.4
+        # EXEC: invoking would open the window again instead of converting.
+        row.operator_context = 'EXEC_DEFAULT'
+        row.operator("mt.tex_convert_dialog", text=T("core.tex_convert_base.convert"),
+                     icon='EXPORT')
+
+        tex_window.schedule(TEX_CONVERT_TAG, _preview_key(s, show), _refresh_preview)
 
 
 # ── Drag & drop: batch convert dropped images to DDS ─────────────────────────
@@ -1244,7 +1443,8 @@ class MT_FH_TexDropToPNG(bpy.types.FileHandler):
 
 classes = [TexConvertSettings, TexDropItem, MT_OT_TexConvertGuessFormat,
            MT_OT_TexConvertSnapSize,
-           MT_OT_TexConvertDialog, MT_OT_TexDropToDDS, MT_FH_TexDropToDDS,
+           MT_OT_TexConvertDialog, MT_OT_TexConvertPreviewShow, MT_PT_TexConvert,
+           MT_OT_TexDropToDDS, MT_FH_TexDropToDDS,
            MT_OT_TexDropToPNG, MT_FH_TexDropToPNG]
 
 

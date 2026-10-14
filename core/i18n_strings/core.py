@@ -506,6 +506,9 @@ STRINGS = {
     "core.mdf_tex_processor_ui_base.no_input": {"EN": "no input", "ZH": "无输入"},
     "core.mdf_tex_processor_ui_base.inverted_rule": {"EN": "(inverted by the slot)", "ZH": "（槽位规则反相）"},
     "core.mdf_tex_processor_ui_base.untouched": {"EN": "untouched", "ZH": "未配置"},
+    # The tool window (core/tex_window.py)
+    "core.tex_window.window_open": {
+        "EN": "The texture window is already open", "ZH": "贴图窗口已经打开"},
     # Feature-mask channels shared across games (core/mdf_tex_processor_base.py)
     "core.feature.film": {"EN": "Film (thin-film sheen)", "ZH": "薄膜 (Film 彩虹膜)"},
     "core.feature.wave_emit": {"EN": "Wave emit", "ZH": "波纹发光 (WaveEmit)"},
@@ -905,6 +908,12 @@ STRINGS = {
 
     # ── MT_OT_TexConvertDialog ───────────────────────────────────────────────
     "core.tex_convert_base.dialog_title": {"EN": "Texture Conversion", "ZH": "贴图处理"},
+    "core.tex_convert_base.preview_show": {"EN": "Show", "ZH": "显示"},
+    "core.tex_convert_base.preview_output": {"EN": "Result", "ZH": "结果"},
+    "core.tex_convert_base.preview_hint": {
+        "EN": "Result preview at {size}px; updates as you change settings",
+        "ZH": "结果按 {size}px 预览，改设置会自动更新"},
+    "core.tex_convert_base.convert": {"EN": "Convert", "ZH": "转换"},
     "core.tex_convert_base.dialog_desc": {
         "EN": "Convert a single image directly to the target game's .tex texture: manually pick the format "
               "(with filename pre-guessing), single/RGB+A/per-channel modes for channel filtering and inversion",
