@@ -492,7 +492,11 @@ class RE4_OT_BatchExport(bpy.types.Operator):
                                 arm_copy = context.active_object
                                 user_arm_obj.hide_viewport = prev_hidden
                                 user_arm_obj.select_set(False)
-                                if arm_copy is None:
+                                # 骨架被 H 隐藏 / 禁选 / 所在集合被隐藏时 select_set 静默不生效，
+                                # duplicate() 什么也没复制，活动物体仍是用户的真骨架——往下走会
+                                # 就地改掉它，再在 finally 里把它删掉。判同用 ==：bpy 包装对象每次
+                                # 取都是新的，is 不可靠。
+                                if arm_copy is None or arm_copy == user_arm_obj:
                                     self.report({'WARNING'}, T("re4.batch_export.fakebone_duplicate_failed"))
                                     fail_count += 1
                                 else:
