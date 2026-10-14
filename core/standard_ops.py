@@ -570,8 +570,13 @@ class MODDER_OT_DirectConvert(bpy.types.Operator):
                 # 步骤 C: 重命名主顶点组 -> 目标名
                 # 只有当名字不同时才改名，防止报错
                 if real_src_main and real_src_main != tgt_name:
-                    if tgt_name in vgs: vgs.remove(vgs[tgt_name])
-                    vgs[real_src_main].name = tgt_name
+                    if tgt_name in vgs:
+                        # 目标名已被占用时要合并，不能删：最常见的就是上面的 spine_03
+                        # 降级规则——spine_02 那条规则刚把 Chest 改成了这个名字，删掉
+                        # 它等于删掉整段胸部权重。
+                        weight_utils.merge_vgroups_multi(mesh_obj, [real_src_main], tgt_name)
+                    else:
+                        vgs[real_src_main].name = tgt_name
                     mesh_updated = True
             
             if mesh_updated:
