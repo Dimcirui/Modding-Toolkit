@@ -1717,11 +1717,16 @@ class MODDER_OT_SetBoneVisibility(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='POSE')
         for bone in arm_obj.data.bones:
             if self.mode == 'ALL':
-                bone.hide = False
+                hide = False
             elif self.mode == 'BASE':
-                bone.hide = bone.name not in preset_bones
+                hide = bone.name not in preset_bones
             else:  # PHYSICS
-                bone.hide = bone.name in preset_bones or bone.name in protected_bones
+                hide = bone.name in preset_bones or bone.name in protected_bones
+            bone.hide = hide
+            # Blender 5.x 的视口只认 PoseBone.hide（Bone.hide 不再决定姿态模式下的显隐）；4.x 没有这个属性
+            pose_bone = arm_obj.pose.bones.get(bone.name)
+            if pose_bone is not None and hasattr(pose_bone, "hide"):
+                pose_bone.hide = hide
 
         settings.bone_view_mode = self.mode
         labels = {
