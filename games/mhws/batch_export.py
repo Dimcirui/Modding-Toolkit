@@ -473,7 +473,7 @@ def _do_lua_bone_export(context, natives_root, settings, scene, armor_id, varian
         col_name = get_binding(scene, armor_id, variant, "head", filetype)
         if not col_name or col_name not in bpy.data.collections:
             continue
-        head_path = os.path.join(head_dir, f"ch00_{gender_dir}_0000.{filetype}.{MHWS_EXTS[filetype]}")
+        head_path = os.path.join(head_dir, f"ch00_{gender_dir}_0000.{MHWS_EXTS[filetype]}")
         export_func(head_path, col_name)
         head_written += 1
 
