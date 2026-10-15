@@ -935,12 +935,34 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
         # on it -- so every refusal in _port would otherwise leave a half-made second
         # model in the scene.  Global undo is off for the run; nothing else takes it
         # back.
-        result = self._port(context, arm)
+        try:
+            result = self._port(context, arm)
+        except Exception:
+            _discard_copy(arm, copy_col)
+            raise
         if 'CANCELLED' in result:
             _discard_copy(arm, copy_col)
         return result
 
     def _port(self, context, arm):
+        """_port_steps, plus taking the origin shift back if it does not finish.
+
+        The shift is applied before any validation, so on "Replace the Original"
+        every refusal below (blocked plan, missing reference, pose mismatch,
+        unbacked splits) used to leave the user's own rig moved by the origin
+        offset (1.0468 m for an MHRS pair) -- with global undo off for the run, so
+        nothing took it back.  A copy needs no such care: it is discarded whole.
+        """
+        dz = origin_shift(self.source_game, self.target_game)
+        result = {'CANCELLED'}
+        try:
+            result = self._port_steps(context, arm)
+        finally:
+            if 'CANCELLED' in result and dz and self.replace_original:
+                _translate_rig(arm, -dz)
+        return result
+
+    def _port_steps(self, context, arm):
         # Into the target's rig frame before anything measures against the
         # reference, which is imported in that frame.  Nothing downstream actually
         # depends on the order -- the insert rules are origin-agnostic (colocate and
@@ -953,6 +975,7 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
             _translate_rig(arm, dz)
 
         ref_arm = None
+        probe = None
         if self.reference_skeleton and self.reference_skeleton != "NONE":
             ref_arm = import_reference_armature(_REF_DIRS.get(self.target_game, ""),
                                                 self.reference_skeleton)
@@ -999,6 +1022,7 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
                     {b.name: b.matrix_local.to_3x3() for b in ref_arm.data.bones},
                     cross)
                 bpy.data.objects.remove(probe, do_unlink=True)
+                probe = None
                 if correction_set.pose_mismatch_suspected:
                     # Over half the bones failed the signed-permutation gate, which
                     # means the two rigs are not in the same physical pose -- the
@@ -1021,6 +1045,9 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
         finally:
             if ref_arm is not None:
                 bpy.data.objects.remove(ref_arm, do_unlink=True)
+            # Only still set when _tpose or derive_bone_correction raised.
+            if probe is not None:
+                bpy.data.objects.remove(probe, do_unlink=True)
 
         msg = T("core.mesh_port_ops.done").format(
             game=self.target_game, name=arm.name, **counts)
