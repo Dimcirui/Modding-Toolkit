@@ -13,6 +13,10 @@ _GROUP_PROP_MAP = {
     "腿部":       "show_leg_l",
     "手指 (左)":  "show_fingers",
     "手指 (右)":  "show_fingers",
+    # Missing until now, so both fell back to show_torso: toggling either aux
+    # group folded the torso group with it, and their 50 rows started open.
+    "辅助骨 (左)": "show_aux_l",
+    "辅助骨 (右)": "show_aux_r",
 }
 
 class MHW_PT_PresetEditor(bpy.types.Panel):

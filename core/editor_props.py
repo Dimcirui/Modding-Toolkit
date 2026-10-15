@@ -55,6 +55,9 @@ class EditorSettings(bpy.types.PropertyGroup):
     show_leg_l: bpy.props.BoolProperty(default=True)
     show_leg_r: bpy.props.BoolProperty(default=True)
     show_fingers: bpy.props.BoolProperty(default=False)
+    # The two aux-bone groups: 50 rows, all optional, so closed by default.
+    show_aux_l: bpy.props.BoolProperty(default=False)
+    show_aux_r: bpy.props.BoolProperty(default=False)
 
     # 编辑模式：X 预设（来源）或 Y 预设（目标）
     edit_mode: bpy.props.EnumProperty(

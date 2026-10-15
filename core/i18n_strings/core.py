@@ -427,6 +427,9 @@ STRINGS = {
         "EN": "Successfully loaded {kind} preset: {name} ({n} mapping(s))",
         "ZH": "成功加载{kind}预设: {name} ({n} 个映射)"},
     "core.editor_ops.deleted": {"EN": "Deleted: {name}", "ZH": "已删除: {name}"},
+    "core.editor_ops.delete_confirm": {
+        "EN": "Delete the preset file {name}? This cannot be undone.",
+        "ZH": "删除预设文件 {name}？此操作无法撤销。"},
     "core.editor_ops.delete_failed": {"EN": "Delete failed: {err}", "ZH": "删除失败: {err}"},
     "core.editor_ops.file_not_exist": {"EN": "File does not exist", "ZH": "文件不存在"},
     "core.editor_ops.folder_not_exist": {"EN": "Folder does not exist: {path}", "ZH": "文件夹不存在: {path}"},

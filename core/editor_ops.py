@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 from .i18n import T
+from .compat import HAS_DIALOG_TITLE
 from . import ui_config, bone_mapper
 from .bone_mapper import BoneMapManager, STANDARD_BONE_NAMES
 
@@ -348,6 +349,12 @@ class MODDER_OT_DeleteXPreset(bpy.types.Operator):
         return T("core.editor_ops.delete_preset_desc")
 
     def invoke(self, context, event):
+        # Name the file in the confirmation: the dropdown is shared with the
+        # converter, so "Delete Preset?" alone does not say which one goes.
+        name = _get_selected_filename(context, context.scene.mhw_preset_editor.edit_mode == 'X')
+        if HAS_DIALOG_TITLE and name:
+            return context.window_manager.invoke_confirm(
+                self, event, message=T("core.editor_ops.delete_confirm").format(name=name))
         return context.window_manager.invoke_confirm(self, event)
 
     def execute(self, context):
@@ -359,20 +366,26 @@ class MODDER_OT_DeleteXPreset(bpy.types.Operator):
             return {'CANCELLED'}
 
         filepath = os.path.join(_get_preset_dir(is_x), real_filename)
-        if os.path.exists(filepath):
-            try:
-                os.remove(filepath)
-                suite = context.scene.mhw_suite_settings
-                if is_x:
-                    suite.import_preset_enum = "NONE"
-                else:
-                    suite.target_preset_enum = "NONE"
-                self.report({'INFO'}, T("core.editor_ops.deleted").format(name=real_filename))
-            except Exception as e:
-                self.report({'ERROR'}, T("core.editor_ops.delete_failed").format(err=e))
-        else:
+        if not os.path.exists(filepath):
             self.report({'ERROR'}, T("core.editor_ops.file_not_exist"))
-
+            return {'CANCELLED'}
+        try:
+            os.remove(filepath)
+        except Exception as e:
+            self.report({'ERROR'}, T("core.editor_ops.delete_failed").format(err=e))
+            return {'CANCELLED'}
+        # Back to AUTO, which always exists.  This used to assign "NONE", an item
+        # only present when the folder is empty: the assignment raised after the
+        # file was already gone, and the except above reported "Delete failed".
+        suite = context.scene.mhw_suite_settings
+        try:
+            if is_x:
+                suite.import_preset_enum = "AUTO"
+            else:
+                suite.target_preset_enum = "AUTO"
+        except TypeError:
+            pass
+        self.report({'INFO'}, T("core.editor_ops.deleted").format(name=real_filename))
         return {'FINISHED'}
 
 # === 打开预设文件夹 ===
