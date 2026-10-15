@@ -7,6 +7,7 @@ from ...core.i18n import T
 from ...core.compat import op_available
 from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
 from ...core import console_export
+from ...core.export_verify import checked
 from .weapon_data import (
     WEAPON_FILE_TYPES,
     get_weapon_parts,
@@ -299,27 +300,27 @@ def _do_export_mod3(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     col = bpy.data.collections.get(collection_name)
     bpy.context.scene.mhw_mod3_toolpanel.exportMod3Collection = col
-    bpy.ops.mhw_mod3.export_mhw_mod3(
+    checked(filepath, lambda: bpy.ops.mhw_mod3.export_mhw_mod3(
         filepath=filepath,
         **MOD3_EXPORT_SETTINGS,
-    )
+    ))
 
 def _do_export_mrl3(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     col = bpy.data.collections.get(collection_name)
     bpy.context.scene.mhw_mrl3_toolpanel.exportMrl3Collection = col
-    bpy.ops.mhw_mrl3.export_mhw_mrl3(
+    checked(filepath, lambda: bpy.ops.mhw_mrl3.export_mhw_mrl3(
         filepath=filepath,
-    )
+    ))
 
 def _do_export_ctc(filepath, collection_name, export_ccl):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     col = bpy.data.collections.get(collection_name)
     bpy.context.scene.mhw_ctc_toolpanel.exportCTCCollection = col
-    bpy.ops.mhw_ctc.export_mhw_ctc(
+    checked(filepath, lambda: bpy.ops.mhw_ctc.export_mhw_ctc(
         filepath=filepath,
         exportCCL=export_ccl,
-    )
+    ))
 
 
 _EXPORT_FUNCS = {

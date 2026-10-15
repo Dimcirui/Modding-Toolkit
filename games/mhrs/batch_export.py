@@ -11,6 +11,7 @@ from ...core import console_export
 from ...core import export_autofix
 from ...core import mod_root
 from ...core import lua_bone_system
+from ...core.export_verify import checked
 
 # MHRS 游戏级文件后缀常量
 MHRS_EXTS = {
@@ -79,15 +80,15 @@ MESH_SETTINGS = {
 
 def _do_export_mesh(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    call_re_mesh_op('exportfile', filepath=filepath, targetCollection=collection_name, **MESH_SETTINGS)
+    checked(filepath, lambda: call_re_mesh_op('exportfile', filepath=filepath, targetCollection=collection_name, **MESH_SETTINGS))
 
 def _do_export_mdf2(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    bpy.ops.re_mdf.exportfile(filepath=filepath, targetCollection=collection_name)
+    checked(filepath, lambda: bpy.ops.re_mdf.exportfile(filepath=filepath, targetCollection=collection_name))
 
 def _do_export_chain(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    bpy.ops.re_chain.exportfile(filepath=filepath, targetCollection=collection_name)
+    checked(filepath, lambda: bpy.ops.re_chain.exportfile(filepath=filepath, targetCollection=collection_name))
 
 
 _EXPORT_FUNCS = {

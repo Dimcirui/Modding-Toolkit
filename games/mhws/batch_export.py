@@ -474,8 +474,13 @@ def _do_lua_bone_export(context, natives_root, settings, scene, armor_id, varian
         if not col_name or col_name not in bpy.data.collections:
             continue
         head_path = os.path.join(head_dir, f"ch00_{gender_dir}_0000.{MHWS_EXTS[filetype]}")
-        export_func(head_path, col_name)
-        head_written += 1
+        try:
+            export_func(head_path, col_name)
+            head_written += 1
+        except Exception as err:
+            # Same as every other part: a failed file is logged and counted out,
+            # it does not abort the whole export before the summary is reported.
+            print(f"[MHWs] FAILED head {filetype}: {err}")
 
     return True, T("mhws.batch_export.lua_bone_export_done").format(
         name=os.path.basename(out_path), missing=len(missing), head=head_written)

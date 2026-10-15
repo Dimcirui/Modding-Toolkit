@@ -30,6 +30,7 @@ from .re_mesh_compat import call_re_mesh_op, re_mesh_op_available
 from .bone_utils import align_armatures_by_name
 from . import console_export
 from . import mod_root
+from .export_verify import checked
 
 #: Slots a part can carry besides its mesh.  ``gpuc`` (Onimusha's cloth-sim cache)
 #: has no Blender-side editor, so it is only ever written as a blank file.
@@ -54,32 +55,32 @@ def _addon_dir():
 
 def do_export_mesh(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    call_re_mesh_op('exportfile', filepath=filepath, targetCollection=collection_name, **MESH_SETTINGS)
+    checked(filepath, lambda: call_re_mesh_op('exportfile', filepath=filepath, targetCollection=collection_name, **MESH_SETTINGS))
 
 
 def do_export_mdf2(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    bpy.ops.re_mdf.exportfile(filepath=filepath, targetCollection=collection_name)
+    checked(filepath, lambda: bpy.ops.re_mdf.exportfile(filepath=filepath, targetCollection=collection_name))
 
 
 def do_export_sfur(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    bpy.ops.re_sfur.exportfile(filepath=filepath, targetCollection=collection_name)
+    checked(filepath, lambda: bpy.ops.re_sfur.exportfile(filepath=filepath, targetCollection=collection_name))
 
 
 def do_export_fbxskel(filepath, armature_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    bpy.ops.re_fbxskel.exportfile(filepath=filepath, targetArmature=armature_name)
+    checked(filepath, lambda: bpy.ops.re_fbxskel.exportfile(filepath=filepath, targetArmature=armature_name))
 
 
 def do_export_chain2(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    bpy.ops.re_chain2.exportfile(filepath=filepath, targetCollection=collection_name)
+    checked(filepath, lambda: bpy.ops.re_chain2.exportfile(filepath=filepath, targetCollection=collection_name))
 
 
 def do_export_clsp(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    bpy.ops.re_clsp.exportfile(filepath=filepath, targetCollection=collection_name)
+    checked(filepath, lambda: bpy.ops.re_clsp.exportfile(filepath=filepath, targetCollection=collection_name))
 
 
 def _as_list(value):

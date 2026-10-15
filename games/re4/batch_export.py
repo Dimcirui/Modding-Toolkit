@@ -8,6 +8,7 @@ from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
 from ...core import console_export
 from ...core import export_autofix
 from ...core import mod_root
+from ...core.export_verify import checked
 
 
 def _get_export_schemes_dir():
@@ -158,19 +159,19 @@ MESH_SETTINGS = {
 
 def _do_export_mesh(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    call_re_mesh_op('exportfile', filepath=filepath, targetCollection=collection_name, **MESH_SETTINGS)
+    checked(filepath, lambda: call_re_mesh_op('exportfile', filepath=filepath, targetCollection=collection_name, **MESH_SETTINGS))
 
 def _do_export_mdf2(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    bpy.ops.re_mdf.exportfile(filepath=filepath, targetCollection=collection_name)
+    checked(filepath, lambda: bpy.ops.re_mdf.exportfile(filepath=filepath, targetCollection=collection_name))
 
 def _do_export_chain(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    bpy.ops.re_chain.exportfile(filepath=filepath, targetCollection=collection_name)
+    checked(filepath, lambda: bpy.ops.re_chain.exportfile(filepath=filepath, targetCollection=collection_name))
 
 def _do_export_fbxskel(filepath, armature_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    bpy.ops.re_fbxskel.exportfile(filepath=filepath, targetArmature=armature_name)
+    checked(filepath, lambda: bpy.ops.re_fbxskel.exportfile(filepath=filepath, targetArmature=armature_name))
 
 
 def _get_armature_from_collection(col_name):
