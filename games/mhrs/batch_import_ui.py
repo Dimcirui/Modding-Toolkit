@@ -2,6 +2,7 @@ import bpy
 from collections import defaultdict
 
 from ...core.i18n import T
+from ...core import mod_root
 from .batch_import import FT_ORDER
 from .batch_export import _load_scheme, get_mhrs_genders, MHRS_PARTS, MHRS_PART_LABEL_KEYS
 from .batch_export_ui import _FILETYPE_ICONS
@@ -81,7 +82,7 @@ class MHRS_OT_BatchImportDialog(bpy.types.Operator):
         layout.prop(settings, "mhrs_armor_scheme", text=T("core.export_prep.armor_pack"))
 
         # ── Mod Root ──
-        natives_root = scene.get("mhrs_natives_root", "")
+        natives_root = mod_root.read(scene, "mhrs_natives_root")
         row = layout.row(align=True)
         row.operator("mhrs.set_natives_root", text="Mod Root", icon='FILE_FOLDER')
         if natives_root:

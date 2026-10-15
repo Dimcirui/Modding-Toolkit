@@ -908,6 +908,27 @@ def _resolve_genders(gender_setting):
     return ['f', 'm']  # 'BOTH'
 
 
+def _mhwi_mod_root(picked):
+    """The folder that *contains* ``nativePC``, from whatever folder was picked.
+
+    Every MHWI path is built as ``<root>/nativePC/pl/...``.  Only a pick of
+    ``nativePC`` itself used to be stepped up from; picking ``nativePC/pl`` (or
+    deeper) stored that, and every export then wrote a doubled
+    ``.../nativePC/pl/nativePC/pl/...`` tree the game never reads.  The RE games'
+    core/mod_root.py applies the same walk-up for ``natives``.
+    """
+    path = os.path.abspath(picked).rstrip("/\\")
+    cur = path
+    for _ in range(5):
+        if os.path.basename(cur).lower() == "nativepc":
+            return os.path.dirname(cur)
+        parent = os.path.dirname(cur)
+        if parent == cur:
+            break
+        cur = parent
+    return path
+
+
 class MHWI_OT_SetNativesRoot(bpy.types.Operator):
     bl_idname = "mhwi.set_natives_root"
     bl_label  = "Set Mod Root"
@@ -924,10 +945,8 @@ class MHWI_OT_SetNativesRoot(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
     def execute(self, context):
-        path = self.directory.rstrip("/\\")
-        if os.path.basename(path).lower() == "nativepc":
-            path = os.path.dirname(path)
-        context.scene["mhwi_natives_root"] = path
+        context.scene["mhwi_natives_root"] = _mhwi_mod_root(self.directory)
+        path = context.scene["mhwi_natives_root"]
         self.report({'INFO'}, f"MHWI Mod root: {path}")
         return {'FINISHED'}
 

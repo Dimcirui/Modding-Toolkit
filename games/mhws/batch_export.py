@@ -291,7 +291,10 @@ def _do_bonesystem_export(context, settings, variant_armor_id):
     """
     from .fbxskel import load_reference_skeleton, export_fbxskel, write_fbxskel
 
-    natives_root  = context.scene.get("mhws_natives_root", "")
+    # Through mod_root like the mesh export: an old .blend holding ".../natives"
+    # otherwise sent the fbxskel/JSON to natives/natives/stm while the meshes
+    # went to the normalised root.
+    natives_root  = mod_root.read(context.scene, "mhws_natives_root")
     fbxskel_name  = settings.mhws_fbxskel_name.strip()
     user_arm      = settings.mhws_bs_armature
 

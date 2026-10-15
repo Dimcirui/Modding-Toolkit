@@ -27,6 +27,7 @@ import re
 from collections import defaultdict
 
 from ...core.i18n import T
+from ...core import mod_root
 from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
 from .batch_export import (
     MHRS_PARTS,
@@ -156,7 +157,7 @@ class MHRS_OT_ScanImportFiles(bpy.types.Operator):
     def execute(self, context):
         scene        = context.scene
         settings     = scene.mhw_suite_settings
-        natives_root = scene.get("mhrs_natives_root", "")
+        natives_root = mod_root.read(scene, "mhrs_natives_root")
         if not natives_root or not os.path.isdir(natives_root):
             self.report({'ERROR'}, T("core.export_prep.set_mod_root_first"))
             return {'CANCELLED'}

@@ -2,6 +2,7 @@ import bpy
 from collections import defaultdict
 
 from ...core.i18n import T
+from ...core import mod_root
 from .batch_import import FT_ORDER
 from .batch_export import _load_scheme, get_mhws_variants, _PART_LABEL_KEYS
 from .batch_export_ui import _FILETYPE_ICONS
@@ -79,7 +80,7 @@ class MHWS_OT_BatchImportDialog(bpy.types.Operator):
         layout.prop(settings, "mhws_armor_scheme", text=T("core.export_prep.armor_pack"))
 
         # ── Mod Root ──
-        natives_root = scene.get("mhws_natives_root", "")
+        natives_root = mod_root.read(scene, "mhws_natives_root")
         row = layout.row(align=True)
         row.operator("mhws.set_natives_root", text="Mod Root", icon='FILE_FOLDER')
         if natives_root:

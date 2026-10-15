@@ -4,6 +4,7 @@ import re
 from collections import defaultdict
 
 from ...core.i18n import T
+from ...core import mod_root
 from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
 from .batch_export import (
     MHWS_PARTS,
@@ -132,7 +133,7 @@ class MHWS_OT_ScanImportFiles(bpy.types.Operator):
     def execute(self, context):
         scene        = context.scene
         settings     = scene.mhw_suite_settings
-        natives_root = scene.get("mhws_natives_root", "")
+        natives_root = mod_root.read(scene, "mhws_natives_root")
         if not natives_root or not os.path.isdir(natives_root):
             self.report({'ERROR'}, T("mhws.batch_import.set_mod_root_first"))
             return {'CANCELLED'}
