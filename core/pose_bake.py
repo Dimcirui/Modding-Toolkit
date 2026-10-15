@@ -123,13 +123,25 @@ def _skin_matrices(arm_obj, obj):
     n = len(obj.data.vertices)
     acc = np.zeros((n, 4, 4), dtype=np.float64)
     total = np.zeros(n, dtype=np.float64)
+    # Gather (vertex, group slot, weight) in Python, then accumulate in one
+    # np.add.at -- a numpy 4x4 op per weight entry cost about 1 s per 50k-vertex
+    # mesh, and every T-pose tool now bakes through here.
+    slot_of = {gi: k for k, gi in enumerate(by_group)}
+    mats = np.array([by_group[gi] for gi in by_group], dtype=np.float64)
+    vi, si, wt = [], [], []
     for i, v in enumerate(obj.data.vertices):
         for g in v.groups:
-            m = by_group.get(g.group)
-            if m is None or g.weight == 0.0:
+            k = slot_of.get(g.group)
+            if k is None or g.weight == 0.0:
                 continue
-            acc[i] += m * g.weight
-            total[i] += g.weight
+            vi.append(i)
+            si.append(k)
+            wt.append(g.weight)
+    if vi:
+        vi = np.array(vi, dtype=np.int64)
+        wt = np.array(wt, dtype=np.float64)
+        np.add.at(acc, vi, mats[np.array(si, dtype=np.int64)] * wt[:, None, None])
+        np.add.at(total, vi, wt)
 
     weighted = total > 1e-12
     if not weighted.any():
