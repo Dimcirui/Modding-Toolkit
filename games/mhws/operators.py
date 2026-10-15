@@ -3,6 +3,7 @@ import sys
 import time
 import bpy
 from ...core.i18n import T
+from ...core import mesh_utils
 from ...core import poll_msg
 from ...core import weight_utils, facial_maps
 from ...core import bone_utils
@@ -46,6 +47,10 @@ class MHWS_OT_EndfieldFaceRename(bpy.types.Operator):
         return poll_msg.selected_mesh(cls, context)
 
     def execute(self, context):
+        with mesh_utils.object_mode(context):
+            return self._execute(context)
+
+    def _execute(self, context):
         total = 0
         for obj in context.selected_objects:
             if obj.type != 'MESH':
@@ -109,6 +114,10 @@ class MHWS_OT_FaceWeightSimplify(bpy.types.Operator):
         return poll_msg.active_mesh(cls, context)
     
     def execute(self, context):
+        with mesh_utils.object_mode(context):
+            return self._execute(context)
+
+    def _execute(self, context):
         obj = context.active_object
         
         # 1. 合并到 Head

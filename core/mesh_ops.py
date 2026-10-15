@@ -20,6 +20,7 @@ import unicodedata
 
 from .i18n import T, get_lang
 from . import poll_msg
+from . import mesh_utils
 from . import weight_utils
 
 
@@ -1246,6 +1247,10 @@ Groups whose suffixed name matches a real bone in the bound armature are skipped
         return poll_msg.selected_mesh(cls, context)
 
     def execute(self, context):
+        with mesh_utils.object_mode(context):
+            return self._execute(context)
+
+    def _execute(self, context):
         mesh_objects = [o for o in context.selected_objects if o.type == 'MESH']
         total_merged = 0
         total_skipped = 0

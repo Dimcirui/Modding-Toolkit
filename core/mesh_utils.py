@@ -17,7 +17,31 @@ order in the armature's ``['CUSTOM']`` property, which nothing in this addon
 reads.
 """
 
+import contextlib
+
 import numpy as np
+
+
+@contextlib.contextmanager
+def object_mode(context):
+    """Run a mesh-data edit in Object mode, returning to Edit Mesh afterwards.
+
+    In Edit Mesh mode obj.data still holds the state from before the user entered
+    it, and VertexGroup.add() raises -- so a vertex-group tool that polls fine
+    there read stale weights and then failed halfway.
+    """
+    import bpy
+    was_edit = context.mode == 'EDIT_MESH'
+    if was_edit:
+        bpy.ops.object.mode_set(mode='OBJECT')
+    try:
+        yield
+    finally:
+        if was_edit:
+            try:
+                bpy.ops.object.mode_set(mode='EDIT')
+            except RuntimeError:
+                pass
 
 _TEMP_PREFIX = "__mtk_split_"
 

@@ -3,6 +3,7 @@ import time
 import bpy
 import re
 from ...core.i18n import T
+from ...core import mesh_utils
 from ...core import poll_msg
 from ...core import (bone_utils, facial_bones, facial_maps, fork_resolver, preprocess_align,
                      ref_model_ops, ref_skeleton, weight_utils)
@@ -1239,6 +1240,10 @@ class MHWI_OT_EndfieldFaceRename(bpy.types.Operator):
         return poll_msg.selected_mesh(cls, context)
 
     def execute(self, context):
+        with mesh_utils.object_mode(context):
+            return self._execute(context)
+
+    def _execute(self, context):
         pairs = facial_maps.load("endfield_to_mhwi")
         if not pairs:
             self.report({'ERROR'}, T("mhwi.operators.endfield_map_missing"))
