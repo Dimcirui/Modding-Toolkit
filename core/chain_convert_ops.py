@@ -185,6 +185,27 @@ def _collection_game_code(collection, prefer_game=None):
 
 
 @gate
+def _rename_for_container(col, target_game):
+    """Give an in-place port's collection the target container's extension.
+
+    A port across containers (MHWilds .chain2 -> RE4R / MHRS .chain) rewrites the
+    content to the other format, but in place the collection kept its ".chain2"
+    name -- and RE Chain Editor's file type follows the name: the first click
+    inside it switched the panels back to chain2's flag vocabulary over .chain
+    data.  The copy path already names its result for the target
+    (ported_chain_collection_name); this does the same for the original, keeping
+    its stem, and renames the header to match as the copy path does.
+    """
+    from .chain_convert import CHAIN_EXT_BY_GAME, chain_file_type_for, chain_stem
+    ext = CHAIN_EXT_BY_GAME.get(target_game)
+    if not ext or chain_file_type_for(col.name) == ext.lstrip("."):
+        return
+    col.name = chain_stem(col.name) + ext
+    for obj in col.all_objects:
+        if obj.get("TYPE") == "RE_CHAIN_HEADER":
+            obj.name = f"CHAIN_HEADER {col.name}"
+
+
 class MODDER_OT_ConvertChainCrossGame(bpy.types.Operator):
     bl_idname = "modder.convert_chain_cross_game"
     bl_label = "Port Chain to Another Game"
@@ -382,6 +403,8 @@ class MODDER_OT_ConvertChainCrossGame(bpy.types.Operator):
         if not self.replace_original:
             col, _mapping = duplicate_chain_collection(
                 col, ported_chain_collection_name(col.name, self.target_game))
+        else:
+            _rename_for_container(col, self.target_game)
 
         rep = remap_collider_attachments(col, cross_map, target_armature=arm)
 
