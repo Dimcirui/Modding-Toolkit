@@ -1416,6 +1416,8 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context,
 
     tmp_remove  = []   # new links to remove afterward
     tmp_restore = []   # (kind, ...) tuples describing what to undo
+    guarded     = []   # (other material, its previous active node, guard node)
+    guard_name  = "__gen_bake_guard"
 
     orig_engine = context.scene.render.engine
     # print(f"[MDF Gen]   烘培 {material.name}/{pbr_type}: 原始引擎={orig_engine}", flush=True)
@@ -1556,6 +1558,24 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context,
             mesh_obj.select_set(True)
             context.view_layer.objects.active = mesh_obj
 
+        # Cycles bakes into the active Image Texture node of *every* material on
+        # the selected objects, clearing it first -- so on a multi-material mesh
+        # (still unseparated at this point) the user's own texture in material B,
+        # typically the last node they clicked, was overwritten with material A's
+        # bake: visible in the viewport, and lost for good once the file is saved.
+        # Every other material gets a throwaway target for the duration.
+        guard_img = bpy.data.images.new(guard_name, 8, 8, alpha=False, float_buffer=True)
+        for o in (mesh_objects or [mesh_obj]):
+            for slot in o.material_slots:
+                om = slot.material
+                if (om is None or om == material or not om.use_nodes
+                        or any(g[0] == om for g in guarded)):
+                    continue
+                gnode = om.node_tree.nodes.new('ShaderNodeTexImage')
+                gnode.image = guard_img
+                guarded.append((om, om.node_tree.nodes.active, gnode))
+                om.node_tree.nodes.active = gnode
+
         # print(f"[MDF Gen]   烘培 {material.name}/{pbr_type}: 开始 (type={bake_type}, size={size}, samples={cycles_scene.samples})", flush=True)
         bpy.ops.object.bake(type=bake_type, **bake_kwargs)
 
@@ -1598,6 +1618,14 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context,
             tree.nodes.active = orig_active_node
         except Exception:
             pass
+        for om, prev_node, gnode in guarded:
+            try:
+                om.node_tree.nodes.remove(gnode)
+                om.node_tree.nodes.active = prev_node
+            except Exception:
+                pass
+        if guard_name in bpy.data.images:
+            bpy.data.images.remove(bpy.data.images[guard_name])
         if img_name in bpy.data.images:
             bpy.data.images.remove(bpy.data.images[img_name])
         context.scene.render.engine = orig_engine
