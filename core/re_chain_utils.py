@@ -96,6 +96,9 @@ def _chain_cleanup_host(saved, category, op_name):
 
 _FAST_IMPORT_MARK = "_mtk_fast_chain_import"
 
+#: Groups / settings a .chain or .chain2 can hold (ubyte counts in the header).
+CHAIN_UBYTE_LIMIT = 255
+
 
 def _modules_with_attr(attr):
     """所有把 attr 作为可调用属性暴露出来的已加载模块。"""
@@ -765,7 +768,7 @@ def _create_chains_guess(armature, toolpanel, col, all_entries, chain_heads, phy
     return created, skipped
 
 
-def auto_create_re_chains(context, armature, config: REChainConfig):
+def auto_create_re_chains(context, armature, config: REChainConfig, report=None):
     """核心 RE Chain 创建逻辑，按游戏参数化配置。"""
     col = None
 
@@ -824,6 +827,26 @@ def auto_create_re_chains(context, armature, config: REChainConfig):
     print(f"[ChainGen] _decompose_chains: {t_decompose:.4f}s  "
           f"({len(chain_heads)} heads -> {len(all_entries)} paths, "
           f"{dup} duplicate(s) skipped)", file=sys.stderr)
+
+    # .chain / .chain2 store their group and settings counts as ubyte (RE Chain
+    # Editor's file_re_chain header): past 255 its exporter dies on a bare
+    # struct.error long after this has built everything.  SEPARATE makes one
+    # settings per chain, so both limits are the same count there.
+    existing = sum(1 for o in col.all_objects if o.get("TYPE") == "RE_CHAIN_CHAINGROUP")
+    if existing + len(all_entries) > CHAIN_UBYTE_LIMIT:
+        from .i18n import T
+        msg = T("core.re_chain_utils.too_many_chains").format(
+            n=existing + len(all_entries), existing=existing, limit=CHAIN_UBYTE_LIMIT)
+        print(f"[ChainGen] {msg}", file=sys.stderr)
+        if report is not None:
+            report({'ERROR'}, msg)
+        toolpanel.chainFileType = saved_file_type
+        if config.auto_create_collection:
+            # Created a moment ago for this run and still holding only its header.
+            for obj in list(col.all_objects):
+                bpy.data.objects.remove(obj, do_unlink=True)
+            bpy.data.collections.remove(col)
+        return {'CANCELLED'}
 
     created = 0
     skipped = 0

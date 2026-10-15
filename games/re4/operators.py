@@ -539,7 +539,7 @@ class RE4_OT_AutoCreateChains(bpy.types.Operator):
             collider_filter_path="",
             apply_angle_ramp=self.apply_angle_ramp,
         )
-        status = auto_create_re_chains(context, armature, config)
+        status = auto_create_re_chains(context, armature, config, report=self.report)
         if status == {'CANCELLED'}:
             self.report({'ERROR'}, T("core.re_chain_utils.create_chain_failed"))
             return {'CANCELLED'}

@@ -362,7 +362,7 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
         )
 
         armature = context.active_object
-        status = auto_create_re_chains(context, armature, config)
+        status = auto_create_re_chains(context, armature, config, report=self.report)
 
         if status == {'CANCELLED'}:
             self.report({'ERROR'}, T("mhws.operators.chain_create_failed"))

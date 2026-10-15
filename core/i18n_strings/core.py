@@ -443,6 +443,11 @@ STRINGS = {
     "core.bone_utils.no_folder": {"EN": "Preset folder not found", "ZH": "未找到文件夹"},
     "core.bone_utils.no_folder_desc": {"EN": "Check the addon's assets folder", "ZH": "请检查 assets 目录"},
     "core.bone_utils.no_armature": {"EN": "No armature available", "ZH": "无可用骨架"},
+    "core.re_chain_utils.too_many_chains": {
+        "EN": "{n} chains ({existing} already in the collection) -- a .chain/.chain2 holds at "
+              "most {limit}. Mark fewer chain heads",
+        "ZH": "共 {n} 条链（集合里已有 {existing} 条）——.chain/.chain2 最多只能放 {limit} 条。"
+              "请少标一些链头"},
     "core.editor_ops.deleted": {"EN": "Deleted: {name}", "ZH": "已删除: {name}"},
     "core.editor_ops.delete_confirm": {
         "EN": "Delete the preset file {name}? This cannot be undone.",
