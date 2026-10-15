@@ -277,7 +277,11 @@ class MHWI_OT_Mrl3GenRefresh(MdfGenRefreshBase):
 class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
     bl_idname  = "mhwi.mrl3_gen_process"
     bl_label   = "Generate MRL3 + Textures"
-    bl_options = {'REGISTER'}
+    # 'UNDO': this creates the MDF/MRL3 objects and separates meshes, and an op
+    # that creates scene data without it pushes no undo step at all -- the next
+    # Ctrl+Z then crashes Blender in the outliner draw (measured on the reference-
+    # model import and the batch importers).  Written files are not taken back.
+    bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def description(cls, context, properties):

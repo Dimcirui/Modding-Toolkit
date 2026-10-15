@@ -2629,7 +2629,11 @@ class QuickEntry:
 
 class MdfGenProcessBase(bpy.types.Operator):
     bl_label   = "Generate MDF2 + Textures"
-    bl_options = {'REGISTER'}
+    # 'UNDO': this creates the MDF/MRL3 objects and separates meshes, and an op
+    # that creates scene data without it pushes no undo step at all -- the next
+    # Ctrl+Z then crashes Blender in the outliner draw (measured on the reference-
+    # model import and the batch importers).  Written files are not taken back.
+    bl_options = {'REGISTER', 'UNDO'}
 
     _settings_attr     = ""
     _game_name         = ""
