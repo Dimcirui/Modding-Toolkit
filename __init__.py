@@ -248,9 +248,24 @@ def _start_chain_patch_timer():
         bpy.app.timers.register(_patch_chain_import, first_interval=0.5,
                                 persistent=True)
 
+def _unregister_step(label, fn):
+    """Run one unregister step; a failure is printed, not propagated.
+
+    Unregister used to be all-or-nothing: the first exception aborted every step
+    after it, leaving the rest registered, and the next enable then failed on
+    already-registered classes.  Measured trigger: when the updater bailed out of
+    its own register() (updater.error), unregister still unregistered its classes
+    and raised on the first one.
+    """
+    try:
+        fn()
+    except Exception as e:
+        print(f"[Modding-Toolkit] unregister {label} failed: {e}")
+
+
 def unregister():
-    addon_updater_ops.unregister()
-    bpy.utils.unregister_class(MT_Preferences)
+    _unregister_step("updater", addon_updater_ops.unregister)
+    _unregister_step("preferences", lambda: bpy.utils.unregister_class(MT_Preferences))
 
     if bpy.app.timers.is_registered(_patch_chain_import):
         bpy.app.timers.unregister(_patch_chain_import)
@@ -265,7 +280,7 @@ def unregister():
         pass
 
     for mod in reversed(modules):
-        mod.unregister()
+        _unregister_step(mod.__name__.rsplit(".", 1)[-1], mod.unregister)
 
 if __name__ == "__main__":
     register()
