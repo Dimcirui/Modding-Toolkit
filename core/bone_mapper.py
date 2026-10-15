@@ -170,6 +170,28 @@ class BoneMapManager:
             hit.update(n for n in names if fnmatch.fnmatchcase(n, pat))
         return hit
 
+    def _bone_lookup(self, armature_obj):
+        """(set of bone names, {归一化名: 实际骨名}) for *armature_obj*, cached.
+
+        Rebuilt only when the armature's bone names change.  The main panel's
+        "Show Mapping Details" calls get_matches_for_standard for ~52 keys on
+        every redraw, and each call used to re-normalise every bone with a regex
+        and test membership against a list: ~42 ms per redraw on an 800-bone
+        rig, so the sidebar lagged on mouse hover.
+        """
+        names = tuple(armature_obj.data.bones.keys())
+        hit = getattr(self, "_lookup_cache", None)
+        if hit is not None and hit[0] == names:
+            return hit[1], hit[2]
+        # 归一化查找表：{归一化名: 实际骨名}，碰撞时保留第一个
+        norm_lookup = {}
+        for b in names:
+            norm = _normalize_bone_name(b)
+            if norm not in norm_lookup:
+                norm_lookup[norm] = b
+        self._lookup_cache = (names, set(names), norm_lookup)
+        return self._lookup_cache[1], norm_lookup
+
     def get_matches_for_standard(self, armature_obj, standard_key, fold_aux=False):
         """
         【抢占式执行核心】
@@ -194,14 +216,7 @@ class BoneMapManager:
         if standard_key not in self.mapping_data:
             return None, []
         bone_entry = self.mapping_data[standard_key]
-        existing_bones = armature_obj.data.bones.keys()
-
-        # 归一化查找表：{归一化名: 实际骨名}，碰撞时保留第一个
-        norm_lookup = {}
-        for b in existing_bones:
-            norm = _normalize_bone_name(b)
-            if norm not in norm_lookup:
-                norm_lookup[norm] = b
+        existing_bones, norm_lookup = self._bone_lookup(armature_obj)
 
         def find_bone(name):
             """精确匹配优先，归一化匹配兜底，返回实际骨名"""
