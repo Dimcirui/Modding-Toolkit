@@ -363,12 +363,15 @@ class MHWI_OT_BatchImport(bpy.types.Operator):
 
         ok = fail = 0
         succeeded_groups = {}   # group_key -> kind，记录本次至少成功导入一个文件的装备/武器
+        # 配对 mrl3 的成败取决于它那个 mod3：在循环里先记下 mod3 的结果，循环结束后再计。
+        # 以前一遇到配对 mrl3 就记成功——它可能排在 mod3 前面，mod3 失败时汇总少算
+        # 失败，面板还会自动选中一套根本没导进来的装备。
+        mod3_ok = {}            # (group_key, gender, part) -> bool
+        paired_items = []
         for item in enabled:
             # 已通过 mod3 联合导入的 mrl3，跳过
             if item.filepath in paired_mrl3_paths:
-                ok += 1
-                succeeded_groups[item.group_key] = item.kind
-                print(f"[MHWI] Paired (via MOD3): {os.path.basename(item.filepath)}")
+                paired_items.append(item)
                 continue
 
             parent_col = _get_or_create_collection(item.group_key)
@@ -392,11 +395,25 @@ class MHWI_OT_BatchImport(bpy.types.Operator):
                             _link_under(col, target)
                 ok += 1
                 succeeded_groups[item.group_key] = item.kind
+                if item.filetype == "mod3":
+                    mod3_ok[(item.group_key, item.gender, item.part)] = True
                 suffix = " (+MRL3)" if mrl3_path else ""
                 print(f"[MHWI] Imported{suffix}: {os.path.basename(item.filepath)}")
             except Exception as e:
                 print(f"[MHWI] Import FAILED {item.filepath}: {e}")
                 fail += 1
+                if item.filetype == "mod3":
+                    mod3_ok[(item.group_key, item.gender, item.part)] = False
+
+        for item in paired_items:
+            if mod3_ok.get((item.group_key, item.gender, item.part)):
+                ok += 1
+                succeeded_groups[item.group_key] = item.kind
+                print(f"[MHWI] Paired (via MOD3): {os.path.basename(item.filepath)}")
+            else:
+                fail += 1
+                print(f"[MHWI] Paired MRL3 not imported (its MOD3 failed): "
+                      f"{os.path.basename(item.filepath)}")
 
         # 按面板中的显示顺序逐个选中，最后一个成为导出面板当前激活的项
         for g in context.scene.mhwi_import_groups:
