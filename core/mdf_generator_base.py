@@ -240,6 +240,30 @@ def _direct_image_behind(link):
     return None
 
 
+#: PBR channels whose data is colour.  Their DIRECT sources are image files,
+#: i.e. sRGB-encoded bytes, and every later step (composition, the measured-null
+#: comparison, the TGA write, the _SRGB-tagged DDS) treats channel data as such.
+_COLOR_PBR_TYPES = ('color', 'emissive')
+
+
+def _encode_linear_color(rgba):
+    """A Blender colour value (scene-linear) as the sRGB-encoded value an image
+    file would hold for it; alpha untouched.
+
+    Colour sockets and float-buffer bakes hold *linear* values.  Written raw into
+    a BC7_UNORM_SRGB slot, the game then decodes them a second time: a picker
+    grey of 0.5 is stored as 0.214 and comes out as 0.037 -- the solid and baked
+    parts of a model rendered much darker than its textured parts.
+    """
+    from .color_grade import linear_to_srgb
+    import numpy as np
+    vals = [float(c) for c in list(rgba)[:4]]
+    while len(vals) < 4:
+        vals.append(1.0)
+    rgb = linear_to_srgb(np.array(vals[:3], dtype=np.float32))
+    return (float(rgb[0]), float(rgb[1]), float(rgb[2]), vals[3])
+
+
 def _analyze_principled_input(principled_node, input_name, mat_name=None, pbr_type=None):
     """
     Returns ('DIRECT', filepath, source_channel) | ('SOLID', value) | ('BAKE', None).
@@ -273,6 +297,8 @@ def _analyze_principled_input(principled_node, input_name, mat_name=None, pbr_ty
             # Return that flat-normal constant so packed textures (NRR, RMT…) are
             # correct.  Matches the fallback already used for the Normal Map node path.
             return ('SOLID', (0.5, 0.5, 1.0, 1.0))
+        if pbr_type in _COLOR_PBR_TYPES and socket.type == 'RGBA':
+            return ('SOLID', _encode_linear_color(socket.default_value))
         return ('SOLID', socket.default_value)
 
     src = socket.links[0].from_node
@@ -1486,9 +1512,14 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context,
         bpy.ops.object.bake(type=bake_type, **bake_kwargs)
 
         from .mdf_tex_processor_base import image_to_array
+        arr = image_to_array(bake_img)
+        if pbr_type in _COLOR_PBR_TYPES:
+            # The bake target is a float buffer, so these are linear values; a
+            # colour channel has to land sRGB-encoded like an image file would.
+            from .color_grade import linear_to_srgb
+            arr[..., :3] = linear_to_srgb(arr[..., :3])
         out_path = _write_exact_rgba(
-            image_to_array(bake_img),
-            os.path.join(tmp_dir, f"_baked_{_slugify(material.name)}_{pbr_type}"))
+            arr, os.path.join(tmp_dir, f"_baked_{_slugify(material.name)}_{pbr_type}"))
 
         # Restore selection
         for o in prev_selected:
