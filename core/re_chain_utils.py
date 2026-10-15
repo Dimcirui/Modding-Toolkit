@@ -109,6 +109,19 @@ def _modules_with_attr(attr):
             continue
 
 
+def _owner_first(saved, original):
+    """*saved* ``[(host, fn)]`` with the host from *original*'s own addon first."""
+    owner = (getattr(original, "__module__", "") or "").split(".")
+    def shared(entry):
+        n = 0
+        for a, b in zip(getattr(entry[0], "__name__", "").split("."), owner):
+            if a != b:
+                break
+            n += 1
+        return n
+    return sorted(saved, key=shared, reverse=True)
+
+
 def _make_fast_import(original, align_hosts):
     def fast_import(*args, **kwargs):
         saved = []
@@ -127,8 +140,10 @@ def _make_fast_import(original, align_hosts):
                 except Exception:
                     pass
             # 循环外补一次：最后一次 per-group 调用本来就会扫全场景，
-            # 所以只调一次的终态与逐组调用的终态相同
-            for _host, fn in saved[:1]:
+            # 所以只调一次的终态与逐组调用的终态相同。
+            # 调的必须是这次导入所属插件自己的 alignChains：上游和 fork 同时加载时，
+            # saved 里排第一的可能是另一个插件的。
+            for _host, fn in _owner_first(saved, original)[:1]:
                 try:
                     t = time.perf_counter()
                     fn()
@@ -253,6 +268,15 @@ def _sync_chain_file_type(*_args):
 @bpy.app.handlers.persistent
 def _resubscribe_chain_type_sync(*_args):
     install_chain_type_sync()
+    # The fast-import patch is otherwise only attempted for ~10 s after this
+    # addon registers (__init__._patch_chain_import): RE Chain Editor, or its
+    # fork, enabled later -- or a switch between the two mid-session -- stayed
+    # on the O(G^2) import.  A file load is a cheap moment to catch up; the
+    # install is idempotent.
+    try:
+        install_fast_chain_import()
+    except Exception as e:
+        print(f"[ChainImport] fast import patch skipped: {e}", file=sys.stderr)
 
 
 def install_chain_type_sync():
