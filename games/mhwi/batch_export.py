@@ -1,5 +1,4 @@
 import bpy
-import json
 import os
 import shutil
 
@@ -17,6 +16,7 @@ from .weapon_data import (
     make_weapon_filepath, get_weapon_binding,
     get_selected_weapon,
 )
+from ...core import json_cache
 
 
 # 部位定义：(代码, 显示名 i18n key, mask索引)  mask顺序：手腿铠头腰
@@ -126,11 +126,7 @@ def get_mhwi_armor_sets_callback(self, context):
 def _load_armor_sets(filename):
     if not filename or filename == 'NONE':
         return None
-    filepath = os.path.join(_get_armor_sets_dir(), filename)
-    if not os.path.exists(filepath):
-        return None
-    with open(filepath, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    return json_cache.load(os.path.join(_get_armor_sets_dir(), filename))
 
 
 _hr_armor_cache = []

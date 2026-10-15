@@ -1,5 +1,4 @@
 import bpy
-import json
 import os
 import shutil
 
@@ -9,6 +8,7 @@ from ...core import console_export
 from ...core import export_autofix
 from ...core import mod_root
 from ...core.export_verify import checked
+from ...core import json_cache
 
 
 def _get_export_schemes_dir():
@@ -35,11 +35,7 @@ def get_schemes_callback(self, context):
 
 
 def _load_scheme(filename):
-    filepath = os.path.join(_get_export_schemes_dir(), filename)
-    if not os.path.exists(filepath):
-        return None
-    with open(filepath, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    return json_cache.load(os.path.join(_get_export_schemes_dir(), filename))
 
 
 def _make_key(character_id, entry_id, suffix):

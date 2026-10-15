@@ -1,6 +1,5 @@
 import bpy
 import contextlib
-import json
 import os
 import shutil
 
@@ -12,6 +11,7 @@ from ...core import export_autofix
 from ...core import mod_root
 from ...core import lua_bone_system
 from ...core.export_verify import checked
+from ...core import json_cache
 
 # MHRS 游戏级文件后缀常量
 MHRS_EXTS = {
@@ -123,11 +123,7 @@ def get_mhrs_schemes_callback(self, context):
 def _load_scheme(filename):
     if not filename or filename == 'NONE':
         return None
-    filepath = os.path.join(_get_mhrs_schemes_dir(), filename)
-    if not os.path.exists(filepath):
-        return None
-    with open(filepath, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    return json_cache.load(os.path.join(_get_mhrs_schemes_dir(), filename))
 
 
 _armor_cache = []

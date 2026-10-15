@@ -19,7 +19,6 @@ module registers its own set.  The class *bodies* live here once.
 """
 
 import os
-import json
 import shutil
 
 import bpy
@@ -32,6 +31,7 @@ from . import console_export
 from . import mod_root
 from .export_verify import checked
 from . import poll_msg
+from . import json_cache
 
 #: Slots a part can carry besides its mesh.  ``gpuc`` (Onimusha's cloth-sim cache)
 #: has no Blender-side editor, so it is only ever written as a blank file.
@@ -207,11 +207,7 @@ class SchemeExporter:
         return cache
 
     def load_scheme(self, filename):
-        filepath = os.path.join(self.schemes_dir(), filename)
-        if not os.path.exists(filepath):
-            return None
-        with open(filepath, 'r', encoding='utf-8') as f:
-            return json.load(f)
+        return json_cache.load(os.path.join(self.schemes_dir(), filename))
 
     # ── bindings (scene custom properties) ──────────────────────────────────
 

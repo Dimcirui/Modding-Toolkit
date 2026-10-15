@@ -1,7 +1,7 @@
 import os
-import json
 
 from ...core.i18n import T
+from ...core import json_cache
 
 
 def _addon_dir():
@@ -101,11 +101,7 @@ def get_mhwi_weapon_sets_callback(self, context):
 def _load_weapon_sets(filename):
     if not filename or filename == 'NONE':
         return None
-    filepath = os.path.join(_get_weapon_sets_dir(), filename)
-    if not os.path.exists(filepath):
-        return None
-    with open(filepath, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    return json_cache.load(os.path.join(_get_weapon_sets_dir(), filename))
 
 
 def get_weapon_entry(data, weapon_type, weapon_id):
