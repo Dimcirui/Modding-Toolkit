@@ -58,6 +58,14 @@ class RE4GenMaterialEntry(bpy.types.PropertyGroup):
     #: toon / AO options do not apply (AO comes from the shader) and a choice of
     #: which panel to read appears instead.
     uses_packed_shader: bpy.props.BoolProperty(default=False)
+    #: Same as MhwsGenMaterialEntry: set by Refresh when the material was
+    #: converted with a bundled prefab (a path outside material_preset's own
+    #: Presets/ scan), shown read-only, and read ahead of material_preset.
+    #: Without these two fields Refresh's assignment fell into its
+    #: `except AttributeError: pass` and the lock was silently dropped, so
+    #: guess_best_preset by material name won instead.
+    preset_locked: bpy.props.BoolProperty(default=False)
+    preset_path_override: bpy.props.StringProperty(default="")
     shader_source: bpy.props.EnumProperty(
         name="Shader Source",
         items=get_shader_source_items,
