@@ -3,6 +3,8 @@ import os
 import bpy
 import mathutils
 
+from .i18n import T, get_lang
+
 def set_roll_to_zero_recursive(root_bones):
     """递归将骨骼 Roll 设为 0"""
     processed = set()
@@ -193,7 +195,7 @@ def get_armature_enum_items(self, context):
         if obj.type == 'ARMATURE':
             _armature_enum_cache.append((obj.name, obj.name, ""))
     if not _armature_enum_cache:
-        _armature_enum_cache.append(("NONE", "无可用骨架", ""))
+        _armature_enum_cache.append(("NONE", T("core.bone_utils.no_armature"), ""))
     return _armature_enum_cache
 
 
@@ -246,6 +248,14 @@ def _read_preset_meta(filepath):
     except Exception:
         return '', ''
 
+#: Preset category (as stored in each JSON's preset_info) -> header i18n key.
+_CATEGORY_KEYS = {
+    '怪猎系':       "core.bone_utils.cat_monster_hunter",
+    'Capcom RE引擎': "core.bone_utils.cat_re_engine",
+    '通用平台':     "core.bone_utils.cat_generic",
+    '其他游戏':     "core.bone_utils.cat_other",
+}
+
 def _preset_dir(subdir):
     current_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.dirname(current_dir)
@@ -267,20 +277,22 @@ def get_preset_items(subdir):
     文件夹没变时返回同一个列表对象（见上方缓存说明）。
     """
     preset_dir = _preset_dir(subdir)
-    stamp = _folder_stamp(preset_dir)
+    # The language too: the headers and tooltips below go through T().
+    stamp = (_folder_stamp(preset_dir), get_lang())
     hit = _preset_items_cache.get(subdir)
     if hit is not None and hit[0] == stamp:
         return hit[1]
 
-    if stamp is None:
-        items = [('NONE', "未找到文件夹", "请检查 assets 目录")]
-    elif not stamp:
-        items = [('NONE', "无预设文件", "")]
+    files = stamp[0]
+    if files is None:
+        items = [('NONE', T("core.bone_utils.no_folder"), T("core.bone_utils.no_folder_desc"))]
+    elif not files:
+        items = [('NONE', T("core.bone_utils.no_presets"), "")]
     else:
         # 按分类分组，name/category 均从 JSON 内读取
         grouped = {}
         cat_order = ['怪猎系', 'Capcom RE引擎', '通用平台', '其他游戏']
-        for f, _mtime in stamp:
+        for f, _mtime in files:
             filepath = os.path.join(preset_dir, f)
             name, cat = _read_preset_meta(filepath)
             if not name:
@@ -293,11 +305,14 @@ def get_preset_items(subdir):
         for cat in cat_order:
             if cat not in grouped:
                 continue
-            items.append(('', cat, ''))  # 分组标题（不可选）
+            # The category stays the internal id (it is what the JSON stores);
+            # only the header shown is translated.
+            items.append(('', T(_CATEGORY_KEYS[cat]), ''))  # 分组标题（不可选）
             for f, display_name in grouped[cat]:
-                items.append((f, display_name, f"加载 {display_name} 预设"))
+                items.append((f, display_name,
+                              T("core.bone_utils.load_preset").format(name=display_name)))
         if not items:
-            items = [('NONE', "无预设文件", "")]
+            items = [('NONE', T("core.bone_utils.no_presets"), "")]
 
     _preset_items_cache[subdir] = (stamp, items)
     return items
@@ -309,7 +324,7 @@ def _presets_with_auto(subdir):
     hit = _preset_callback_cache.get(subdir)
     if hit is not None and hit[0] is base:
         return hit[1]
-    items = [("AUTO", "自动识别", "根据骨架骨骼覆盖率自动选择最匹配的预设")] + base
+    items = [("AUTO", T("core.bone_utils.auto_detect"), T("core.bone_utils.auto_detect_desc"))] + base
     _preset_callback_cache[subdir] = (base, items)
     return items
 

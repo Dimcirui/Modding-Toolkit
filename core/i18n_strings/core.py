@@ -429,6 +429,20 @@ STRINGS = {
     "core.mhwi_batch_port.step_raised": {
         "EN": "A step of this part failed with an error; see the system console",
         "ZH": "这个部位有一步出错了，详情见系统控制台"},
+    # ── core/bone_utils.py: the skeleton preset dropdowns ──
+    "core.bone_utils.auto_detect": {"EN": "Auto Detect", "ZH": "自动识别"},
+    "core.bone_utils.auto_detect_desc": {
+        "EN": "Pick the preset that covers the most of this armature's bones",
+        "ZH": "根据骨架骨骼覆盖率自动选择最匹配的预设"},
+    "core.bone_utils.cat_monster_hunter": {"EN": "Monster Hunter", "ZH": "怪猎系"},
+    "core.bone_utils.cat_re_engine": {"EN": "Capcom RE Engine", "ZH": "Capcom RE引擎"},
+    "core.bone_utils.cat_generic": {"EN": "Generic Platforms", "ZH": "通用平台"},
+    "core.bone_utils.cat_other": {"EN": "Other Games", "ZH": "其他游戏"},
+    "core.bone_utils.load_preset": {"EN": "Load the {name} preset", "ZH": "加载 {name} 预设"},
+    "core.bone_utils.no_presets": {"EN": "No preset files", "ZH": "无预设文件"},
+    "core.bone_utils.no_folder": {"EN": "Preset folder not found", "ZH": "未找到文件夹"},
+    "core.bone_utils.no_folder_desc": {"EN": "Check the addon's assets folder", "ZH": "请检查 assets 目录"},
+    "core.bone_utils.no_armature": {"EN": "No armature available", "ZH": "无可用骨架"},
     "core.editor_ops.deleted": {"EN": "Deleted: {name}", "ZH": "已删除: {name}"},
     "core.editor_ops.delete_confirm": {
         "EN": "Delete the preset file {name}? This cannot be undone.",
