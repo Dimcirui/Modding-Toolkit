@@ -136,7 +136,14 @@ def bound_pairs(scene, armor_id, variant):
     bound -- what auto-fix runs over.  Either collection may be None: a part
     with only a mesh still gets its weights cleaned."""
     out = []
-    for part_id, _name in MHWS_PARTS:
+    parts = [part_id for part_id, _name in MHWS_PARTS]
+    # The Lua Bone System's custom head is exported too (_do_lua_bone_export)
+    # but is not one of MHWS_PARTS, so its face mesh got no triangulate /
+    # weight / mirror fix before going out.
+    settings = getattr(scene, "mhw_suite_settings", None)
+    if settings is not None and getattr(settings, "mhws_use_lua_bone_system", False):
+        parts.append("head")
+    for part_id in parts:
         mdf = bpy.data.collections.get(get_binding(scene, armor_id, variant, part_id, "mdf2") or "")
         mesh = bpy.data.collections.get(get_binding(scene, armor_id, variant, part_id, "mesh") or "")
         if mdf is not None or mesh is not None:
