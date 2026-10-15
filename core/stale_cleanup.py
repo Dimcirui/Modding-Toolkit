@@ -18,8 +18,9 @@ free to go stale, and stale in the one direction that deletes a live file.
 Two things are exempt from deletion, for the same reason: the addon does not own them.
 
 * ``assets/presets/`` -- the bone-preset editor writes here, so a user's own preset is
-  a leftover by the rule above and must not be treated as one.  These are *reported*
-  separately instead.
+  a leftover by the rule above and must not be treated as one -- and likewise the other
+  folders in ``KEEP_PREFIXES``, which users extend by dropping in a JSON.  These are
+  *reported* separately instead.
 * anything under a top-level ``*updater*`` directory -- the updater's own state and its
   backup of the previous version.  Deleting the backup would remove the only way back.
 
@@ -38,8 +39,20 @@ import shutil
 
 MANIFEST_NAME = "MANIFEST.txt"
 
-#: Reported, never deleted -- see the module docstring.
-KEEP_PREFIXES = ("assets/presets/",)
+#: Reported, never deleted -- see the module docstring.  Besides the presets, the
+#: folders the addon lists by scanning for "*.json", where a user extends it by
+#: dropping a file in (core/facial_maps.py says so in as many words): a scheme,
+#: armour or weapon table, or facial map added by hand is not in the manifest
+#: either, and was deleted as a leftover.
+KEEP_PREFIXES = (
+    "assets/presets/",
+    "assets/facial_maps/",
+    "assets/export_schemes/",
+    "assets/mhws/armor_sets/",
+    "assets/mhrs/armor_sets/",
+    "assets/mhwi/armor_sets/",
+    "assets/mhwi/weapon_sets/",
+)
 
 
 def addon_root():

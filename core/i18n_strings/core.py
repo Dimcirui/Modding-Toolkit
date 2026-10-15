@@ -2582,10 +2582,11 @@ STRINGS = {
     "core.stale_cleanup_ops.and_more": {
         "EN": "... and {n} more", "ZH": "……另有 {n} 项"},
     "core.stale_cleanup_ops.kept_note": {
-        "EN": "{n} file(s) under assets/presets/ are left alone -- the preset editor "
-              "writes there, so your own presets look like leftovers too",
-        "ZH": "assets/presets/ 下的 {n} 个文件不会动 —— 预设编辑器往那里写，"
-              "你自建的预设也会被判成残留"},
+        "EN": "{n} file(s) in folders you can add to (presets, facial maps, export schemes, "
+              "armour / weapon tables) are left alone -- your own files there look like "
+              "leftovers too",
+        "ZH": "可自行添加文件的目录（预设、面部对应表、导出方案、装备 / 武器表）下的 {n} 个文件"
+              "不会动 —— 你自己放进去的文件看起来也像遗留文件"},
     "core.stale_cleanup_ops.confirm": {
         "EN": "This cannot be undone. The full list is in the system console",
         "ZH": "此操作不可撤销。完整清单已打印到系统控制台"},

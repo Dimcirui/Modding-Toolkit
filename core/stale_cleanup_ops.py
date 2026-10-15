@@ -51,7 +51,7 @@ class MODDER_OT_CleanStaleFiles(bpy.types.Operator):
         for rel in self._stale:
             print(f"[Modding-Toolkit]   stale: {rel}")
         for rel in self._kept:
-            print(f"[Modding-Toolkit]   kept (assets/presets/): {rel}")
+            print(f"[Modding-Toolkit]   kept (user folder): {rel}")
         return context.window_manager.invoke_props_dialog(self, width=460)
 
     def draw(self, context):
