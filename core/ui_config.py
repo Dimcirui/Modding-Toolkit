@@ -69,11 +69,43 @@ for _s, _cn in (("L", "左"), ("R", "右")):
 del _s, _cn, _seg, _segcn, _i, _k, _j, _jcn
 
 
+def _lang():
+    # Lazy and forgiving: tests load this module on its own, without core.i18n.
+    try:
+        from .i18n import get_lang
+        return get_lang()
+    except Exception:
+        return "ZH"
+
+
+#: English for the group / subsection names below and the optional markers.  The
+#: Chinese strings stay the internal ids (ui/editor_panel.py keys its collapse
+#: properties on them); only what is drawn changes.  In English a bone shows its
+#: standard name, which every Chinese display name above already carries.
+_EN_LABELS = {
+    "躯干和头部": "Torso & Head", "脊椎": "Spine", "上半身": "Upper Body",
+    "手臂": "Arms", "左臂": "Left Arm", "右臂": "Right Arm",
+    "腿部": "Legs", "左腿": "Left Leg", "右腿": "Right Leg",
+    "手指 (左)": "Fingers (L)", "手指 (右)": "Fingers (R)",
+    "拇指": "Thumb", "食指": "Index", "中指": "Middle", "无名指": "Ring", "小指": "Pinky",
+    "辅助骨 (左)": "Aux Bones (L)", "辅助骨 (右)": "Aux Bones (R)",
+    "扭转骨": "Twist", "关节": "Joints",
+    "可选 | 上胸": "optional | upper chest", "可选": "optional",
+}
+
+
+def label(name):
+    """A group / subsection name of UI_HIERARCHY as it should be drawn."""
+    return name if _lang() == "ZH" else _EN_LABELS.get(name, name)
+
+
 def get_display_name(std_key):
     """获取骨骼的显示名，带可选标记"""
-    name = BONE_DISPLAY_NAMES.get(std_key, std_key)
+    zh = _lang() == "ZH"
+    name = BONE_DISPLAY_NAMES.get(std_key, std_key) if zh else std_key
     if std_key in OPTIONAL_BONES:
-        name += f"  [{OPTIONAL_BONES[std_key]}]"
+        mark = OPTIONAL_BONES[std_key]
+        name += f"  [{mark if zh else _EN_LABELS.get(mark, 'optional')}]"
     return name
 
 # 分组显示名

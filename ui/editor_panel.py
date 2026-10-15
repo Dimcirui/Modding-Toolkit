@@ -109,7 +109,7 @@ class MHW_PT_PresetEditor(bpy.types.Panel):
             row.prop(editor_settings, prop_name,
                      icon="TRIA_DOWN" if is_open else "TRIA_RIGHT",
                      icon_only=True, emboss=False)
-            row.label(text=group_name, icon=group_data['icon'])
+            row.label(text=ui_config.label(group_name), icon=group_data['icon'])
 
             if not is_open:
                 continue
