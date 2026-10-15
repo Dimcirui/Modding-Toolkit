@@ -7,6 +7,7 @@ from ...core.i18n import T
 from ...core.compat import op_available
 from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
 from ...core import console_export
+from ...core import export_autofix
 from ...core.export_verify import checked
 from .weapon_data import (
     WEAPON_FILE_TYPES,
@@ -619,28 +620,50 @@ class MHWI_OT_BatchExport(bpy.types.Operator):
         if not mesh_collections:
             return
 
+        # MHW Model Editor refuses a mod3 with more than 8 influences per vertex
+        # (blender_mod3.MAX_WEIGHTS_PER_VERT).  This used to trim to 12 -- the
+        # MHWS number -- so vertices with 9-12 survived the cleanup and the whole
+        # file was refused at export.  One source for the limit: export_autofix.
+        limit = export_autofix.max_influences('MHWI')
+
         if context.view_layer.objects.active is not None and context.mode != 'OBJECT':
             bpy.ops.object.mode_set(mode='OBJECT')
+        prev_active = context.view_layer.objects.active
+        prev_selected = list(context.selected_objects)
+        in_layer = context.view_layer.objects
         bpy.ops.object.select_all(action='DESELECT')
-        for col in mesh_collections:
-            for obj in [o for o in col.objects if o.type == 'MESH']:
-                context.view_layer.objects.active = obj
-                obj.select_set(True)
-                try: call_re_mesh_op('delete_loose')
-                except Exception: pass
-                try: call_re_mesh_op('solve_repeated_uvs')
-                except Exception: pass
-                try: call_re_mesh_op('remove_zero_weight_vertex_groups')
-                except Exception: pass
-                try:
-                    call_re_mesh_op('limit_total_normalize', maxWeights='12')
-                except Exception:
+        try:
+            for col in mesh_collections:
+                # An object in a collection excluded from the view layer cannot
+                # be made active; assigning it raised and aborted the export.
+                for obj in [o for o in col.objects if o.type == 'MESH' and o.name in in_layer]:
+                    in_layer.active = obj
+                    obj.select_set(True)
+                    try: call_re_mesh_op('delete_loose')
+                    except Exception: pass
+                    try: call_re_mesh_op('solve_repeated_uvs')
+                    except Exception: pass
+                    try: call_re_mesh_op('remove_zero_weight_vertex_groups')
+                    except Exception: pass
                     try:
-                        bpy.ops.object.vertex_group_limit_total(limit=12)
-                        bpy.ops.object.vertex_group_normalize_all(lock_active=False)
+                        call_re_mesh_op('limit_total_normalize', maxWeights=str(limit))
                     except Exception:
-                        pass
-                obj.select_set(False)
+                        try:
+                            bpy.ops.object.vertex_group_limit_total(limit=limit)
+                            bpy.ops.object.vertex_group_normalize_all(lock_active=False)
+                        except Exception:
+                            pass
+                    obj.select_set(False)
+        finally:
+            for o in prev_selected:
+                try:
+                    o.select_set(True)
+                except (ReferenceError, RuntimeError):
+                    pass
+            try:
+                in_layer.active = prev_active
+            except (ReferenceError, RuntimeError):
+                pass
 
     def _collect_target_cols(self, scene, model_id, rank, settings):
         """收集所有已绑定的唯一 mod3 和 mrl3 集合，供防石化注入使用。"""
