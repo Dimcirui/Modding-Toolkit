@@ -694,9 +694,10 @@ def _game_label(game_code):
 #: loads *every* shipped preset and tests all 47 standard slots against the rig.
 #: Uncached that is tens of preset loads per frame.
 #:
-#: Keyed on the bone count as well as the name so an armature edited between two
-#: openings of the dialog is re-tested rather than answered from a stale entry; a
-#: rename alone also misses, which is the cheap direction to be wrong in.
+#: Keyed on the bone names as well as the armature's name, so an armature edited
+#: between two openings of the dialog -- or a different file's armature that
+#: happens to share the name -- is re-tested rather than answered from a stale
+#: entry.
 _detect_cache = {}
 
 
@@ -719,7 +720,9 @@ def detect_armature_game(arm_obj, prefer_game=None):
     """
     if arm_obj is None or arm_obj.type != 'ARMATURE':
         return None
-    key = (arm_obj.name, len(arm_obj.data.bones), prefer_game)
+    # The bone names themselves, not just their count: another file's armature
+    # under the same name and size answered from this one's entry.
+    key = (arm_obj.name, hash(tuple(b.name for b in arm_obj.data.bones)), prefer_game)
     if key in _detect_cache:
         return _detect_cache[key]
 

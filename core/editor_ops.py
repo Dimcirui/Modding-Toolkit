@@ -283,6 +283,7 @@ class MODDER_OT_SaveXPreset(bpy.types.Operator):
         try:
             with open(filepath, 'w', encoding='utf-8') as f:
                 json.dump(final_data, f, indent=2, ensure_ascii=False)
+            _invalidate_mapping_preview()
             self.report({'INFO'}, T("core.editor_ops.preset_saved").format(
                 kind=('X' if is_x else 'Y'), filename=filename))
         except Exception as e:
@@ -338,6 +339,16 @@ class MODDER_OT_LoadXPreset(bpy.types.Operator):
             kind=('X' if is_x else 'Y'), name=display_name, n=loaded_count))
         return {'FINISHED'}
 
+def _invalidate_mapping_preview():
+    """The main panel's "Show Mapping Details" caches the loaded presets by name;
+    after a save or delete it kept showing the old mapping until restart."""
+    try:
+        from ..ui import main_panel
+        main_panel._mapping_detail_cache.clear()
+    except Exception:
+        pass
+
+
 # === 删除预设 ===
 class MODDER_OT_DeleteXPreset(bpy.types.Operator):
     bl_idname = "modder.delete_x_preset"
@@ -385,6 +396,7 @@ class MODDER_OT_DeleteXPreset(bpy.types.Operator):
                 suite.target_preset_enum = "AUTO"
         except TypeError:
             pass
+        _invalidate_mapping_preview()
         self.report({'INFO'}, T("core.editor_ops.deleted").format(name=real_filename))
         return {'FINISHED'}
 
