@@ -479,40 +479,46 @@ class RE4_OT_BatchExport(bpy.types.Operator):
                             else:
                                 prev_active = context.view_layer.objects.active
                                 prev_sel = [o for o in context.selected_objects]
-                                prev_hidden = user_arm_obj.hide_viewport
                                 for o in prev_sel:
                                     o.select_set(False)
-                                user_arm_obj.hide_viewport = False
-                                context.view_layer.objects.active = user_arm_obj
-                                user_arm_obj.select_set(True)
-                                bpy.ops.object.duplicate()
-                                arm_copy = context.active_object
-                                user_arm_obj.hide_viewport = prev_hidden
-                                user_arm_obj.select_set(False)
-                                # 骨架被 H 隐藏 / 禁选 / 所在集合被隐藏时 select_set 静默不生效，
-                                # duplicate() 什么也没复制，活动物体仍是用户的真骨架——往下走会
-                                # 就地改掉它，再在 finally 里把它删掉。判同用 ==：bpy 包装对象每次
-                                # 取都是新的，is 不可靠。
-                                if arm_copy is None or arm_copy == user_arm_obj:
-                                    self.report({'WARNING'}, T("re4.batch_export.fakebone_duplicate_failed"))
+                                # A hand copy rather than bpy.ops.object.duplicate(): that
+                                # works on the selection, and select_set() silently does
+                                # nothing on an armature hidden with H, unselectable, or in a
+                                # hidden collection -- the copy then failed (and before that
+                                # guard existed, the user's own rig was edited and deleted).
+                                # Linked to the scene root, so its visibility is its own.
+                                arm_copy = user_arm_obj.copy()
+                                arm_copy.data = user_arm_obj.data.copy()
+                                copy_data = arm_copy.data
+                                context.scene.collection.objects.link(arm_copy)
+                                arm_copy.hide_viewport = False
+                                arm_copy.hide_select = False
+                                arm_copy.hide_set(False)
+                                context.view_layer.objects.active = arm_copy
+                                arm_copy.select_set(True)
+                                try:
+                                    do_fakebone(context, arm_copy, native_path)
+                                    for fbxskel_path in fbxskel_paths:
+                                        full = os.path.join(natives_root, "natives", "STM", fbxskel_path.replace("/", os.sep))
+                                        label = T("re4.batch_export.label_fakebone")
+                                        try_export(_do_export_fbxskel, full, arm_copy.name, f"{label} {os.path.basename(fbxskel_path)}")
+                                except Exception as err:
+                                    print(f"[RE4] FAILED {T('re4.batch_export.label_fakebone')}: {err}")
                                     fail_count += 1
-                                else:
-                                    try:
-                                        do_fakebone(context, arm_copy, native_path)
-                                        for fbxskel_path in fbxskel_paths:
-                                            full = os.path.join(natives_root, "natives", "STM", fbxskel_path.replace("/", os.sep))
-                                            label = T("re4.batch_export.label_fakebone")
-                                            try_export(_do_export_fbxskel, full, arm_copy.name, f"{label} {os.path.basename(fbxskel_path)}")
-                                    except Exception as err:
-                                        print(f"[RE4] FAILED {T('re4.batch_export.label_fakebone')}: {err}")
-                                        fail_count += 1
-                                    finally:
-                                        if arm_copy is not None and arm_copy.name in bpy.data.objects:
-                                            bpy.data.objects.remove(arm_copy, do_unlink=True)
-                                        context.view_layer.objects.active = prev_active
-                                        for o in prev_sel:
-                                            if o.name in bpy.data.objects:
-                                                o.select_set(True)
+                                finally:
+                                    if context.mode != 'OBJECT':
+                                        try:
+                                            bpy.ops.object.mode_set(mode='OBJECT')
+                                        except RuntimeError:
+                                            pass
+                                    if arm_copy.name in bpy.data.objects:
+                                        bpy.data.objects.remove(arm_copy, do_unlink=True)
+                                    if copy_data.users == 0:
+                                        bpy.data.armatures.remove(copy_data)
+                                    context.view_layer.objects.active = prev_active
+                                    for o in prev_sel:
+                                        if o.name in bpy.data.objects:
+                                            o.select_set(True)
                 else:
                     for fbxskel_path in fbxskel_paths:
                         full = os.path.join(natives_root, "natives", "STM", fbxskel_path.replace("/", os.sep))
