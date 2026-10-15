@@ -744,9 +744,22 @@ class MHWI_OT_BatchExport(bpy.types.Operator):
                     "loadPhysics": False, "addNestedCollections": False,
                 }
                 try:
-                    importMHWMod3File(confuse_mod3, options)
+                    before = set(bpy.data.collections.keys())
+                    ok = importMHWMod3File(confuse_mod3, options)
+                    created = set(bpy.data.collections.keys()) - before
+                    # Only a collection this import created.  importMHWMod3File
+                    # returns False without raising when readMod3File fails, and
+                    # then never updates lastImportCollection -- whose stale value
+                    # is usually the armour the user imported to edit, i.e. a bound
+                    # target.  Its meshes were copied into every target (doubled
+                    # geometry in the export) and _cleanup_confuse then deleted the
+                    # user's own collection and everything in it.
                     src_col_name = context.scene.mhw_mod3_toolpanel.lastImportCollection
-                    src_col = bpy.data.collections.get(src_col_name)
+                    src_col = (bpy.data.collections.get(src_col_name)
+                               if ok is not False and src_col_name in created else None)
+                    if src_col is None and created:
+                        # Still clean up whatever a partial import left behind.
+                        temp_collections.extend(bpy.data.collections[n] for n in created)
                     if src_col:
                         temp_collections.append(src_col)
                         confuse_meshes = [o for o in src_col.all_objects if o.type == 'MESH']
