@@ -14,6 +14,10 @@ STRINGS = {
     # ══════════════════════════════════════════════════════════════════════
 
     # ── RE9_OT_AutoCreateChains ─────────────────────────────────────────────
+    "re9.operators.sync_no_bones": {"EN": "No bones selected", "ZH": "没有选中骨骼"},
+    "re9.operators.sync_descendant": {
+        "EN": "'{bone}' is a descendant of '{parent}'. Select only the first bone of each chain",
+        "ZH": "“{bone}”是“{parent}”的子孙骨。每条链只选第一根骨骼"},
     "re9.operators.auto_create_chains_desc": {
         "EN": "One-click create an RE Chain (RE9 defaults to the .chain2 format)",
         "ZH": "一键创建 RE Chain（RE9 默认 .chain2 格式）。"},

@@ -25,14 +25,15 @@ Do not select a physical bone AND its physical ancestor at the same time."""
         obj = context.active_object
         selected = [b for b in obj.data.edit_bones if b.select]
         if not selected:
-            self.report({"ERROR"}, "No bones selected")
+            self.report({"ERROR"}, T("re9.operators.sync_no_bones"))
             return {"CANCELLED"}
         selected_set = set(b.name for b in selected)
         for bone in selected:
             parent = bone.parent
             while parent:
                 if parent.name in selected_set:
-                    self.report({"ERROR"}, f"\'{bone.name}\' is descendant of \'{parent.name}\'. Select only the first bone in each chain")
+                    self.report({"ERROR"}, T("re9.operators.sync_descendant").format(
+                        bone=bone.name, parent=parent.name))
                     return {"CANCELLED"}
                 parent = parent.parent
 
