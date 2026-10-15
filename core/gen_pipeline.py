@@ -78,9 +78,29 @@ class SlotWriter:
         return binding, src
 
 
-def composition_cache_key(slot_type, channel_maps, strategies, pbr_channels, source_id):
+#: Switch for tests/test_generator_differential.py, which compares against the
+#: pre-2026-10-15 key (and so turns this off); the new key is covered by
+#: tests/test_composition_cache_key.py.  Never off in the addon.
+INPUTS_IN_KEY = True
+
+
+def composition_cache_key(slot_type, channel_maps, strategies, pbr_channels, source_id,
+                          inputs=None):
     """The key a composed/solid slot is cached under, or None when one of its
-    inputs cannot be cached (a bake: its file is only valid for this material)."""
+    inputs cannot be cached (a bake: its file is only valid for this material).
+
+    *inputs* carries what composition reads besides the strategies, and every
+    part of it that this slot uses goes into the key -- the cache is shared
+    across materials, so anything left out hands one material's result to the
+    next one that differs only there:
+
+    ``paths``  the files actually composed (a per-channel size override swaps in
+               a resized copy, while the strategy still names the original)
+    ``inv``    {pbr_type: inverted} -- the AO invert lives only here
+    ``ao``     (source id, strength) when AO is multiplied into the colour, which
+               'ao' never being a channel of such a game kept out of ``needed``
+    ``flags``  the normal channel's G flip / octahedral packing (normal slots only)
+    """
     ch_map = channel_maps[slot_type]
     needed = {src[0] for src in ch_map.values() if src is not None and isinstance(src, tuple)}
     parts = []
@@ -91,13 +111,29 @@ def composition_cache_key(slot_type, channel_maps, strategies, pbr_channels, sou
             return None
         parts.append((pt, sid))
     ch_ov = frozenset((k, v) for k, v in pbr_channels.items() if k in needed)
-    return (slot_type, tuple(parts), ch_ov)
+    if not inputs or not INPUTS_IN_KEY:
+        return (slot_type, tuple(parts), ch_ov)
+    paths = inputs.get('paths') or {}
+    inv = inputs.get('inv') or {}
+    # DIRECT sources only: a SOLID's value is already in its source id, and its
+    # generated file is named per material, so keying on it would only defeat
+    # sharing between materials that are in fact identical.
+    files = tuple((pt, os.path.normcase(os.path.normpath(paths[pt])) if paths.get(pt) else None)
+                  for pt in sorted(needed)
+                  if (strategies.get(pt) or ('',))[0] == 'DIRECT')
+    inverted = tuple(pt for pt in sorted(needed) if inv.get(pt))
+    ao = inputs.get('ao') if 'color' in needed else None
+    # The G flip and the octahedral packing only touch the normal channel, so they
+    # only key slots that read it -- an albedo stays shareable across materials
+    # that differ there.
+    flags = inputs.get('flags') if 'normal' in needed else None
+    return (slot_type, tuple(parts), ch_ov, files, inverted, ao, flags)
 
 
 def execute_plan(plan, slot_types, writer, *, channel_maps, strategies, pbr_channels,
                  slot_direct, compose, solid, stage, null_for, source_id,
                  placeholder=None, placeholder_fallback=None,
-                 emissive_slots=(), albedo_slots=(), use_toon=False):
+                 emissive_slots=(), albedo_slots=(), use_toon=False, cache_inputs=None):
     """Write every slot of ``plan``.
 
     compose(slot)         -> composed image path, or None (nothing to compose)
@@ -148,7 +184,8 @@ def execute_plan(plan, slot_types, writer, *, channel_maps, strategies, pbr_chan
             continue
 
         # SOLID / COMPOSE
-        key = composition_cache_key(slot_type, channel_maps, strategies, pbr_channels, source_id)
+        key = composition_cache_key(slot_type, channel_maps, strategies, pbr_channels, source_id,
+                                    inputs=cache_inputs)
         hit = writer.cached(key)
         if hit is not None:
             bindings[slot_type], files[slot_type] = hit[2], hit[0]

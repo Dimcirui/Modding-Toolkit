@@ -918,14 +918,29 @@ def run_generator_slots(job, mat, slot_types, pbr_paths, writer, temp_dir, tex_n
     # path is used instead -- doing both would darken twice.
     bake_ao = bool(pbr_paths.get('ao')) and not channel_maps_consume_ao(channel_maps)
 
+    flip_g = getattr(settings, 'flip_normal_g', False)
+    ao_strength = getattr(mat_entry, 'ao_strength', 1.0)
+
     def compose(st):
         return _compose_channels(
             st, pbr_paths, job.pbr_channels, temp_dir, tex_name,
             pbr_inv=job.pbr_inv, channel_maps=channel_maps,
-            normal_flip_g=getattr(settings, 'flip_normal_g', False),
+            normal_flip_g=flip_g,
             bake_ao_into_color=bake_ao,
-            ao_strength=getattr(mat_entry, 'ao_strength', 1.0),
+            ao_strength=ao_strength,
             **(compose_extra or {}))
+
+    # Everything compose() reads besides the strategies, for the shared cache key
+    # (see gen_pipeline.composition_cache_key).
+    ao_key = None
+    if bake_ao:
+        ao_src = pbr_paths.get('ao')
+        ao_key = (os.path.normcase(os.path.normpath(ao_src)) if ao_src else None,
+                  bool(job.pbr_inv.get('ao')), round(float(ao_strength), 6))
+    cache_inputs = {
+        'paths': pbr_paths, 'inv': job.pbr_inv, 'ao': ao_key,
+        'flags': (bool(flip_g), tuple(sorted((compose_extra or {}).items()))),
+    }
 
     return execute_plan(
         plan, slot_types, writer, channel_maps=channel_maps, strategies=job.strategies,
@@ -935,7 +950,8 @@ def run_generator_slots(job, mat, slot_types, pbr_paths, writer, temp_dir, tex_n
         stage=lambda src, st: stage_source_file(src, temp_dir, tex_name, st),
         null_for=null_for, source_id=_make_source_id,
         placeholder=placeholder, placeholder_fallback=PLACEHOLDER_FALLBACK,
-        emissive_slots=emissive_slots, albedo_slots=albedo_slots, use_toon=job.use_toon)
+        emissive_slots=emissive_slots, albedo_slots=albedo_slots, use_toon=job.use_toon,
+        cache_inputs=cache_inputs)
 
 
 def preview_plan(mat_entry, settings, channel_maps, null_for, *, is_mrl3=False,
