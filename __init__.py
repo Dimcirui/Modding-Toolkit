@@ -175,6 +175,24 @@ def register():
         mod.register()
 
     _start_chain_patch_timer()
+    if not bpy.app.timers.is_registered(_background_update_check):
+        bpy.app.timers.register(_background_update_check, first_interval=3.0)
+
+
+def _background_update_check():
+    """One-shot: honour the "Auto-check for Update" preference.
+
+    Nothing ever called addon_updater_ops.check_for_update_background(), so the
+    checkbox and its interval fields were drawn but no check ever ran.  The
+    updater's own docstring advises against doing it inside register(), hence
+    the timer.  With the preference off it returns without touching the network
+    (check_for_update_async bails on a disabled interval).
+    """
+    try:
+        addon_updater_ops.check_for_update_background()
+    except Exception as e:
+        print(f"[Modding-Toolkit] background update check skipped: {e}")
+    return None
 
 #: Remaining deferred attempts at patching RE Chain's import (see below).
 _chain_patch_retries = 20
@@ -236,6 +254,8 @@ def unregister():
 
     if bpy.app.timers.is_registered(_patch_chain_import):
         bpy.app.timers.unregister(_patch_chain_import)
+    if bpy.app.timers.is_registered(_background_update_check):
+        bpy.app.timers.unregister(_background_update_check)
     try:
         from .core.re_chain_utils import (uninstall_fast_chain_import,
                                           uninstall_chain_type_sync)
