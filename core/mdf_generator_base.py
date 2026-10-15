@@ -594,20 +594,38 @@ def shader_source_update(self, context):
 
 
 def _emissive_strength_is_zero(material):
-    """True if the active shader has no meaningful emission strength.
+    """True if the shader that actually renders has no emission strength.
 
-    For Principled BSDF: checks the Emission Strength socket.
+    For Principled BSDF and the packed shader: checks its Emission Strength socket.
     For Emission / MMDShaderDev shaders: always False (they are inherently emissive).
+
+    The shader is resolved the same way analyze_material_strategies resolves it --
+    the one wired to the Material Output, then the packed group, then any
+    Principled.  This used to read the *first* Principled in the tree, which for
+    a material converted to the packed shader is the old, disconnected one the
+    conversion keeps (Emission Strength 0 by default in 4.x), and for a packed
+    material made from the Add menu does not exist at all: either way the
+    emissive slots were planned NULL ahead of the texture plugged into the group.
     """
-    shader_type = detect_shader_type(material)
+    node, shader_type = _find_connected_shader(material)
     if shader_type in (SHADER_EMISSION, SHADER_MMD_DEV):
         return False
-    principled = _find_principled_bsdf(material)
-    if principled is None:
+    if shader_type == SHADER_UNKNOWN:
+        node = find_packed_shader_node(material)
+        if node is not None:
+            shader_type = SHADER_MTK_PACK
+        else:
+            node = _find_principled_bsdf(material)
+            shader_type = SHADER_PRINCIPLED if node is not None else SHADER_UNKNOWN
+    if shader_type == SHADER_MTK_PACK and node is None:
+        node = find_packed_shader_node(material)
+    if node is None or shader_type not in (SHADER_PRINCIPLED, SHADER_MTK_PACK):
         return True
-    sock = principled.inputs.get('Emission Strength')
+    sock = node.inputs.get('Emission Strength')
     if sock is None:
-        return True
+        # A packed spec without the socket gives no evidence either way; do not
+        # throw away an emissive texture on a guess.
+        return shader_type == SHADER_PRINCIPLED
     return not sock.is_linked and float(sock.default_value) == 0.0
 
 
