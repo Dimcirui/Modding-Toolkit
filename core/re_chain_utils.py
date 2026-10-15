@@ -429,6 +429,15 @@ def _build_physics_bones_set(context, armature):
     return {b.name for b in armature.data.bones if b.name not in preset_bones}
 
 
+def _file_type_for_format(chain_format, fallback):
+    """RE Chain Editor's chainFileType for a chain format ('.chain' / '.chain2')."""
+    if chain_format == '.chain2':
+        return 'chain2'
+    if chain_format == '.chain':
+        return 'chain'
+    return fallback
+
+
 def _auto_create_chain_collection(config: REChainConfig):
     """创建集合 + Chain Header 并应用游戏特调。
 
@@ -447,8 +456,13 @@ def _auto_create_chain_collection(config: REChainConfig):
         # Must be set before create_chain_header so the header object gets the right data type.
         # createChainCollection (inside create_chain_header) will also set chainFileType based
         # on the collection name, so we don't restore it here — the caller owns that.
-        toolpanel.chainFileType = config.chain_file_type
+        # From the format being created, not from a per-game constant: the
+        # dialog lets the user pick .chain or .chain2, and upstream reads this
+        # flag *before* it corrects it from the name, so a mismatch gave the
+        # header the other format's data class.
+        toolpanel.chainFileType = _file_type_for_format(config.chain_format, config.chain_file_type)
 
+        before = set(bpy.data.collections.keys())
         result = bpy.ops.re_chain.create_chain_header(
             collectionName=config.collection_name,
             chainFormat=config.chain_format,
@@ -456,8 +470,18 @@ def _auto_create_chain_collection(config: REChainConfig):
         if result != {'FINISHED'}:
             return None, None, "create_chain_header failed"
 
-        full_name = config.collection_name + config.chain_format
-        col = bpy.data.collections.get(full_name)
+        # Upstream builds with collections.new(), so a taken name comes back as
+        # "X.chain2.001" -- and points chainCollection at it.  Looking the
+        # requested name up instead returned the *old* collection: a second
+        # run (or MHWS's name prefilled from the vanilla import) built every
+        # chain into the previous result and left the new one holding only a
+        # header.
+        full_name = config.collection_name.strip() + config.chain_format
+        col = toolpanel.chainCollection
+        if col is None or col.name not in (set(bpy.data.collections.keys()) - before):
+            created = [n for n in set(bpy.data.collections.keys()) - before
+                       if n == full_name or n.startswith(full_name + ".")]
+            col = bpy.data.collections.get(created[0]) if len(created) == 1 else None
         if col is None:
             return None, None, f"Collection not found: {full_name}"
 
@@ -465,6 +489,8 @@ def _auto_create_chain_collection(config: REChainConfig):
             (o for o in col.all_objects if o.get("TYPE") == "RE_CHAIN_HEADER"),
             None
         )
+        if header is None:
+            return None, None, f"No chain header in {col.name}"
 
         if config.tuning:
             h = header.re_chain_header
@@ -743,7 +769,11 @@ def auto_create_re_chains(context, armature, config: REChainConfig):
         return {'CANCELLED'}
     toolpanel.chainCollection = col
     saved_file_type = toolpanel.chainFileType
-    toolpanel.chainFileType = config.chain_file_type
+    # The collection decides, not the game: an existing target can be either
+    # format, and forcing the game's constant gave a .chain the chain2 settings
+    # vocabulary (65536 = CollisionCharacter in chain2 is ScaleAnimation in v1).
+    from .chain_convert import chain_file_type_for
+    toolpanel.chainFileType = chain_file_type_for(col.name) or config.chain_file_type
 
     chain_heads = [pb for pb in armature.pose.bones if pb.get("chain_role") in ("head", "branch_head")]
     if not chain_heads:
