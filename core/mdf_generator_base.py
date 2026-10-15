@@ -1447,16 +1447,36 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context,
         bake_type   = 'EMIT' if principled is None else 'DIFFUSE'
         bake_kwargs = {}
 
+        def _neutralise(sock_name, value):
+            """Hold one Principled input at *value* for the bake, unlinking it if
+            needed; the finally block below puts link and value back."""
+            sock = principled.inputs.get(sock_name)
+            if sock is None:
+                return
+            if sock.is_linked:
+                tmp_restore.append(('link', sock.links[0].from_socket, sock))
+                tree.links.remove(sock.links[0])
+            orig = sock.default_value
+            tmp_restore.append(('default', sock,
+                                tuple(orig) if hasattr(orig, '__len__') else orig))
+            sock.default_value = value
+
         if principled is not None:
             if pbr_type == 'color':
                 bake_type   = 'DIFFUSE'
                 bake_kwargs = {'pass_filter': {'COLOR'}}
-                # Zero metallic temporarily so it doesn't darken the diffuse bake
-                m_sock = principled.inputs.get('Metallic')
-                if m_sock and not m_sock.is_linked:
-                    orig_val = m_sock.default_value
-                    m_sock.default_value = 0.0
-                    tmp_restore.append(('default', m_sock, orig_val))
+                # Everything that takes energy away from the diffuse colour pass
+                # is held neutral, linked or not.  Measured on 5.1 (base 0.8):
+                # Metallic 1 or Transmission 1 bake pure black, Alpha 0.5 bakes
+                # 167 instead of 231, Coat 1 bakes 223, and even the default
+                # Specular IOR Level 0.5 costs 4 levels (227); with all of them
+                # neutral the bake is exact.  Only the unlinked Metallic used to
+                # be handled, so a metallic texture baked its metal areas black.
+                _neutralise('Metallic', 0.0)
+                _neutralise('Transmission Weight', 0.0)
+                _neutralise('Coat Weight', 0.0)
+                _neutralise('Specular IOR Level', 0.0)
+                _neutralise('Alpha', 1.0)
 
             elif pbr_type == 'normal':
                 bake_type = 'NORMAL'
@@ -1491,9 +1511,19 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context,
                         tree.links.remove(e_sock.links[0])
                     lnk = tree.links.new(alpha_from, e_sock)
                     tmp_remove.append(lnk)
+                # EMIT is Emission Color x Emission Strength, and 4.x defaults the
+                # strength to 0: measured, an Alpha of 0.5 baked as 0, so the
+                # material shipped fully transparent.  The Alpha input itself
+                # also has to go to 1, or the emission is weighted by the alpha
+                # it is supposed to be measuring (alpha squared).
+                _neutralise('Emission Strength', 1.0)
+                _neutralise('Alpha', 1.0)
 
             elif pbr_type == 'emissive':
                 bake_type = 'EMIT'
+                # Emission is weighted by Alpha too (measured: 188 -> 137 at
+                # Alpha 0.5); the emissive map should not carry the cutout.
+                _neutralise('Alpha', 1.0)
 
         # Activate all meshes that share this material (or just the single one)
         prev_active   = context.view_layer.objects.active
