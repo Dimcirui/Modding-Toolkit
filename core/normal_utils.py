@@ -348,10 +348,13 @@ def reset_normals(objects, distance=1e-5, angle_limit=180.0, shade_smooth=True):
         distance, angle_limit, face_flip=np.concatenate(flip_all))
 
     for me, m, s, e, mirrored in parts:
-        # world -> local for a normal is the transpose of the linear part
+        # world -> local for a normal is the transpose of the linear part.  No
+        # sign flip for a mirrored object: face_flip above already turned its
+        # world normals into the displayed direction, and out @ m maps that
+        # straight back onto the local face side.  Negating again (as this used
+        # to) inverted every normal on a negatively scaled object -- measured on
+        # 5.1, 100% of its corner normals came out facing away from their faces.
         local = normalize(out[s:e] @ m)
-        if mirrored:
-            local = -local
         if shade_smooth:
             me.polygons.foreach_set("use_smooth", [True] * len(me.polygons))
         clear_intent(me)
