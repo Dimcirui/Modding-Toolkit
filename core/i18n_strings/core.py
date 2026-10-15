@@ -448,6 +448,13 @@ STRINGS = {
               "most {limit}. Mark fewer chain heads",
         "ZH": "共 {n} 条链（集合里已有 {existing} 条）——.chain/.chain2 最多只能放 {limit} 条。"
               "请少标一些链头"},
+    # RE4 / RE9 / Onimusha batch export summary
+    "core.export.done_with_fail": {
+        "EN": "Done: {exported} exported, {failed} failed, {skipped} skipped (see the console)",
+        "ZH": "完成: 导出 {exported}, 失败 {failed}, 跳过 {skipped}（详见控制台）"},
+    "core.export.done": {
+        "EN": "Done: {exported} exported, {skipped} skipped",
+        "ZH": "完成: 导出 {exported}, 跳过 {skipped}"},
     "core.editor_ops.deleted": {"EN": "Deleted: {name}", "ZH": "已删除: {name}"},
     "core.editor_ops.delete_confirm": {
         "EN": "Delete the preset file {name}? This cannot be undone.",

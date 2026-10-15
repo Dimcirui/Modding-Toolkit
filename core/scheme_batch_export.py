@@ -685,9 +685,11 @@ class SchemeExporter:
                                 try_blank("clsp", make_full(c, grp_bp), f"CLSP {entry_id}")
 
         if fail_count > 0:
-            op.report({'WARNING'}, f"Done: {export_count} exported, {fail_count} failed, {skip_count} skipped")
+            op.report({'WARNING'}, T("core.export.done_with_fail").format(
+                exported=export_count, failed=fail_count, skipped=skip_count))
         else:
-            op.report({'INFO'}, f"Done: {export_count} exported, {skip_count} skipped")
+            op.report({'INFO'}, T("core.export.done").format(
+                exported=export_count, skipped=skip_count))
         return {'FINISHED'}
 
 

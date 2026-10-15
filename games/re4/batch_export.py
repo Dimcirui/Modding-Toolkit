@@ -525,9 +525,11 @@ class RE4_OT_BatchExport(bpy.types.Operator):
                         try_export(_do_export_fbxskel, full, fbx_arm, f"FBXSKEL {os.path.basename(fbxskel_path)}")
 
         if fail_count > 0:
-            self.report({'WARNING'}, f"Done: {export_count} exported, {fail_count} failed, {skip_count} skipped")
+            self.report({'WARNING'}, T("core.export.done_with_fail").format(
+                exported=export_count, failed=fail_count, skipped=skip_count))
         else:
-            self.report({'INFO'}, f"Done: {export_count} exported, {skip_count} skipped")
+            self.report({'INFO'}, T("core.export.done").format(
+                exported=export_count, skipped=skip_count))
         return {'FINISHED'}
 
 
