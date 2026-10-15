@@ -1,5 +1,6 @@
 import bpy
 import os
+import re
 from collections import defaultdict
 
 from ...core.i18n import T
@@ -100,6 +101,14 @@ def scan_mhws_catalog(natives_root, scheme_filename, scene):
 # ── 辅助：Chain 导入 operator 可用性 ────────────────────────────────
 # RE Chain Editor 把 chain2/clsp 各自注册为独立分类（re_chain2 / re_clsp），
 # 不像 RE Mesh Editor 有社区分支改名的问题，因此直接查 bpy.ops 即可。
+
+#: Blender 给重名数据块追加的 ".001" 式后缀（与 games/mhrs/batch_import.py 相同）。
+_DUP_SUFFIX = re.compile(r"\.\d{3}$")
+
+
+def _strip_dup_suffix(name):
+    return _DUP_SUFFIX.sub("", name)
+
 
 def _chain2_import_available():
     return hasattr(bpy.ops, 're_chain2') and 'importfile' in dir(bpy.ops.re_chain2)
@@ -236,10 +245,23 @@ class MHWS_OT_BatchImport(bpy.types.Operator):
         op_ns = getattr(bpy.ops, f"re_{filetype}")
         op_ns.importfile('EXEC_DEFAULT', filepath=item.filepath, targetArmature=armature_name)
 
-    def _bind(self, scene, armor_id, variant, part_id, filetype, expected_col_name):
-        """导入成功后自动把生成的集合登记为导出绑定，省去手动 Pick Collection"""
-        if expected_col_name in bpy.data.collections:
-            set_binding(scene, armor_id, variant, part_id, filetype, expected_col_name)
+    def _bind(self, scene, armor_id, variant, part_id, filetype, expected_col_name, created):
+        """导入成功后自动把生成的集合登记为导出绑定，省去手动 Pick Collection。
+
+        认的是 *created* —— 这次导入新增出来的集合，与 MHRS 的 _bind 同一做法。
+        以前按名字查：场景里已有 ``X.mesh`` 时 RE Mesh Editor 会把新的建成
+        ``X.mesh.001``，按名字就绑上了旧的那个，于是导出的是上一次的模型，
+        而且看起来一切正常。名字仍用来在多个新集合里挑对的那个。
+        """
+        candidates = [c for c in created if _strip_dup_suffix(c) == expected_col_name]
+        if len(candidates) != 1:
+            # 一次导入里每种类型只新增一个集合，按类型后缀认唯一那个也可靠。
+            candidates = [c for c in created
+                          if _strip_dup_suffix(c).rsplit(".", 1)[-1] == filetype]
+        if len(candidates) != 1:
+            return False
+        set_binding(scene, armor_id, variant, part_id, filetype, candidates[0])
+        return True
 
     def execute(self, context):
         if not re_mesh_op_available('importfile'):
@@ -273,13 +295,17 @@ class MHWS_OT_BatchImport(bpy.types.Operator):
 
             if mesh_item:
                 try:
+                    before = set(bpy.data.collections.keys())
                     armature_name = self._import_mesh(mesh_item, mdf2_item, variant_armor_id, part_id)
+                    created = set(bpy.data.collections.keys()) - before
                     ok += 1
                     succeeded_variants[(armor_id, variant)] = None
-                    self._bind(scene, armor_id, variant, part_id, "mesh", f"{variant_armor_id}{part_id}.mesh")
+                    self._bind(scene, armor_id, variant, part_id, "mesh",
+                               f"{variant_armor_id}{part_id}.mesh", created)
                     if mdf2_item:
                         ok += 1
-                        self._bind(scene, armor_id, variant, part_id, "mdf2", f"{variant_armor_id}{part_id}.mdf2")
+                        self._bind(scene, armor_id, variant, part_id, "mdf2",
+                                   f"{variant_armor_id}{part_id}.mdf2", created)
                     print(f"[MHWs] Imported: {os.path.basename(mesh_item.filepath)}")
                 except Exception as e:
                     print(f"[MHWs] Mesh import FAILED {mesh_item.filepath}: {e}")
@@ -307,8 +333,11 @@ class MHWS_OT_BatchImport(bpy.types.Operator):
                     skip += 1
                     continue
                 try:
+                    before = set(bpy.data.collections.keys())
                     self._import_chain(chain_item, filetype, armature_name)
-                    self._bind(scene, armor_id, variant, part_id, filetype, f"{variant_armor_id}{part_id}.{filetype}")
+                    created = set(bpy.data.collections.keys()) - before
+                    self._bind(scene, armor_id, variant, part_id, filetype,
+                               f"{variant_armor_id}{part_id}.{filetype}", created)
                     ok += 1
                     succeeded_variants[(armor_id, variant)] = None
                     print(f"[MHWs] Imported: {os.path.basename(chain_item.filepath)} -> {armature_name}")
