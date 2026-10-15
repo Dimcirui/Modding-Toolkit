@@ -175,19 +175,34 @@ def apply_modifiers_keep_shape_keys(obj):
 
     prev_only, prev_idx = obj.show_only_shape_key, obj.active_shape_key_index
     obj.show_only_shape_key = True
+    # Capture each key raw.  Shape-key-lock evaluation still honours a key's own
+    # mute (a muted key falls back to the reference, so it was rebuilt as a copy
+    # of Basis) and its vertex-group mask (applied during capture *and* again by
+    # the kb.vertex_group restored below -- the mask counted twice).  Measured on
+    # 5.1: a muted +1 offset came back as 0, a 0.5-masked +1 offset as 0.5.
+    # Both are switched off for the capture and put back in the finally.
+    held = [(kb, kb.mute, kb.vertex_group) for kb in kbs]
     coords = []
-    for i in range(len(kbs)):
-        obj.active_shape_key_index = i
-        dg.update()
-        ev_me = obj.evaluated_get(dg).data
-        buf = np.empty(len(ev_me.vertices) * 3, np.float32)
-        ev_me.vertices.foreach_get("co", buf)
-        coords.append(buf)
+    try:
+        for kb, _m, _vg in held:
+            kb.mute = False
+            kb.vertex_group = ""
+        for i in range(len(kbs)):
+            obj.active_shape_key_index = i
+            dg.update()
+            ev_me = obj.evaluated_get(dg).data
+            buf = np.empty(len(ev_me.vertices) * 3, np.float32)
+            ev_me.vertices.foreach_get("co", buf)
+            coords.append(buf)
 
-    obj.active_shape_key_index = 0
-    dg.update()
-    new_me = bpy.data.meshes.new_from_object(obj.evaluated_get(dg))
-    obj.show_only_shape_key, obj.active_shape_key_index = prev_only, prev_idx
+        obj.active_shape_key_index = 0
+        dg.update()
+        new_me = bpy.data.meshes.new_from_object(obj.evaluated_get(dg))
+    finally:
+        for kb, mute, vgroup in held:
+            kb.mute = mute
+            kb.vertex_group = vgroup
+        obj.show_only_shape_key, obj.active_shape_key_index = prev_only, prev_idx
 
     nv = len(new_me.vertices)
     if any(len(c) // 3 != nv for c in coords):
