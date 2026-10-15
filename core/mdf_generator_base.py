@@ -1434,6 +1434,7 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context,
     tmp_restore = []   # (kind, ...) tuples describing what to undo
     guarded     = []   # (other material, its previous active node, guard node)
     guard_name  = "__gen_bake_guard"
+    prev_active, prev_selected = None, None
 
     orig_engine = context.scene.render.engine
     # print(f"[MDF Gen]   烘培 {material.name}/{pbr_type}: 原始引擎={orig_engine}", flush=True)
@@ -1605,11 +1606,6 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context,
         out_path = _write_exact_rgba(
             arr, os.path.join(tmp_dir, f"_baked_{_slugify(material.name)}_{pbr_type}"))
 
-        # Restore selection
-        for o in prev_selected:
-            o.select_set(True)
-        context.view_layer.objects.active = prev_active
-
         return out_path
 
     except Exception as e:
@@ -1634,6 +1630,17 @@ def _bake_pbr_channel(material, pbr_type, mesh_obj, size, tmp_dir, context,
             tree.nodes.active = orig_active_node
         except Exception:
             pass
+        # Selection is restored here rather than after the bake: a failed bake
+        # (no UVs, hidden mesh) used to leave the user's selection changed.
+        if prev_selected is not None:
+            for o in context.selected_objects:
+                o.select_set(False)
+            for o in prev_selected:
+                try:
+                    o.select_set(True)
+                except (ReferenceError, RuntimeError):
+                    pass
+            context.view_layer.objects.active = prev_active
         for om, prev_node, gnode in guarded:
             try:
                 om.node_tree.nodes.remove(gnode)
