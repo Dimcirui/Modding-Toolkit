@@ -120,6 +120,7 @@ class MT_Preferences(AddonPreferences):
         # Under the updater UI, because it is the updater's merge-never-delete
         # behaviour that creates the leftovers -- see core/stale_cleanup.py.
         stale_cleanup_ops.draw_preferences_row(layout)
+        stale_cleanup_ops.draw_kept_presets(layout)
 
 
 modules = [

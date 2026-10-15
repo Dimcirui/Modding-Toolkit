@@ -2581,6 +2581,13 @@ STRINGS = {
         "ZH": "残留 {n} 个文件，共 {mb} MB，另有 {pyc} 个 __pycache__ 目录："},
     "core.stale_cleanup_ops.and_more": {
         "EN": "... and {n} more", "ZH": "……另有 {n} 项"},
+    "core.stale_cleanup_ops.kept_presets_title": {
+        "EN": "The last update kept {n} preset(s) you had edited:",
+        "ZH": "上次更新保留了 {n} 个你改过的预设："},
+    "core.stale_cleanup_ops.kept_presets_hint": {
+        "EN": "The new official version of each sits beside it as <name>.json.new",
+        "ZH": "每个预设的官方新版放在它旁边，文件名为 <原名>.json.new"},
+    "core.stale_cleanup_ops.kept_presets_dismiss": {"EN": "Got It", "ZH": "知道了"},
     "core.stale_cleanup_ops.kept_note": {
         "EN": "{n} file(s) in folders you can add to (presets, facial maps, export schemes, "
               "armour / weapon tables) are left alone -- your own files there look like "

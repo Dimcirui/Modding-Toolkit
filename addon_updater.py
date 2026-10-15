@@ -1099,6 +1099,15 @@ class SingletonUpdater:
                     if keep:
                         kept_presets.append(rel)
                         print("Kept user-edited preset, not overwritten: " + rel)
+                        # Modding-Toolkit: the new official version used to go
+                        # down with the staging folder, freezing the user on their
+                        # edit for good.  It is kept beside it as "<name>.json.new"
+                        # (not a *.json, so no dropdown lists it) for them to
+                        # compare or adopt; the preferences list these files.
+                        try:
+                            shutil.copy2(srcFile, dest_file + ".new")
+                        except OSError:
+                            self.print_trace()
                         continue
 
                 # Decide to replace if file already exists, and copy new over.
