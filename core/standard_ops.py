@@ -1306,6 +1306,11 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
         # 5.2 第二轮：检测末端并创建 _End 骨骼
         # (此时所有基础物理骨已创建，位置对应 Source Head)
         end_bone_names = []  # 记录本次生成的 End 骨骼名，供 Phase 7 着色使用
+        # One pass over the meshes for every physics bone, rather than a full scan
+        # per leaf in the loop below -- unweighted tips (MMD 先 bones, hair ends)
+        # never exited early, ~100 leaves x 0.15 s on a 50k mesh.  mass > 0 is
+        # bone_has_weights' "any weight > 0", weights being non-negative.
+        leaf_mass = weight_utils.bone_weight_mass(mesh_objects, physics_bones_names)
 
         for p_name in physics_bones_names:
             src_bone = source_arm.data.bones.get(p_name)
@@ -1329,7 +1334,7 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
             if p_name in skipped_set:
                 needs_end = False   # 不生成链的子树，补 _End 没有意义
             elif is_leaf:
-                needs_end = weight_utils.bone_has_weights(p_name, mesh_objects)
+                needs_end = leaf_mass.get(p_name, 0.0) > 0.0
             elif is_fork and not has_main_continue_child:
                 needs_end = True
             else:
