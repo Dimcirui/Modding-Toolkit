@@ -426,6 +426,9 @@ STRINGS = {
     "core.editor_ops.preset_loaded": {
         "EN": "Successfully loaded {kind} preset: {name} ({n} mapping(s))",
         "ZH": "成功加载{kind}预设: {name} ({n} 个映射)"},
+    "core.mhwi_batch_port.step_raised": {
+        "EN": "A step of this part failed with an error; see the system console",
+        "ZH": "这个部位有一步出错了，详情见系统控制台"},
     "core.editor_ops.deleted": {"EN": "Deleted: {name}", "ZH": "已删除: {name}"},
     "core.editor_ops.delete_confirm": {
         "EN": "Delete the preset file {name}? This cannot be undone.",

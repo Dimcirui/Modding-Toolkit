@@ -324,6 +324,24 @@ def discard_source(group_col):
     return target.discard_source(group_col, is_mhwi_collection)
 
 
+def _guarded(step, fn, *args, **kwargs):
+    """``fn(...)``, with an exception turned into the same error dict a refusal gives.
+
+    The batch promises that a part which fails does not stop the others, but only
+    error *dicts* were handled: a nested operator reporting ERROR (RE Chain's
+    chain_from_bone with no header), a texconv or disk error in the texture port,
+    a failed snap -- each raised straight out of the loop, before discard_source
+    and the export, leaving half-built collections behind.
+    """
+    try:
+        return fn(*args, **kwargs)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"[MHWI batch port] {step} step raised: {e}")
+        return {"error": "core.mhwi_batch_port.step_raised"}
+
+
 def _run_part(context, part, *, target_game, dest_base_path, src_root, dst_root,
               temp_dir, tex_cache, reference, skip_textures=False):
     """Model, then materials, then physics, for one part.
@@ -334,16 +352,16 @@ def _run_part(context, part, *, target_game, dest_base_path, src_root, dst_root,
     """
     out = dict(part, mesh=None, mdf2=None, chain=None, armature=None, error=None)
 
-    model = mhwi_port_ops.run_port(context, part["mod3"], target_game,
-                                   reference=reference)
+    model = _guarded("model", mhwi_port_ops.run_port, context, part["mod3"], target_game,
+                     reference=reference)
     if model["error"]:
         out["error"] = model["error"]
         return out
     out["mesh"] = model["collection"]
     out["armature"] = model["armature"]
 
-    material = mrl3_port_ops.run_port(
-        context, part["mrl3"], target_game,
+    material = _guarded(
+        "materials", mrl3_port_ops.run_port, context, part["mrl3"], target_game,
         dest_base_path=dest_base_path, params_mode='BASIC',
         convert_textures=not skip_textures, cull_unused=True,
         mod3_col=part["mod3"], paths_only=skip_textures,
@@ -358,8 +376,8 @@ def _run_part(context, part, *, target_game, dest_base_path, src_root, dst_root,
         out["mdf2"] = material["collection"]
 
     if part["ctc"] is not None:
-        physics = ctc_port_ops.run_port(context, part["ctc"], out["armature"],
-                                        target_game, 'BASIC')
+        physics = _guarded("physics", ctc_port_ops.run_port, context, part["ctc"],
+                           out["armature"], target_game, 'BASIC')
         if physics["error"]:
             out["error"] = out["error"] or physics["error"]
         else:
