@@ -612,12 +612,20 @@ class MODDER_OT_UniversalSnap(bpy.types.Operator):
     def description(cls, context, properties):
         return T("core.standard_ops.universal_snap_desc")
 
+    @classmethod
+    def poll(cls, context):
+        return poll_msg.active_armature(cls, context)
+
     def execute(self, context):
         settings = context.scene.mhw_suite_settings
         selected_objs = [o for o in context.selected_objects if o.type == 'ARMATURE']
 
-        # 1. 检查选中项
-        if len(selected_objs) != 2 or not context.active_object:
+        # 1. 检查选中项。活动物体必须就是两个骨架之一：两个骨架选中、活动物体却是
+        # 网格时，后面的 mode_set(EDIT) 会把网格切进编辑模式，再在
+        # target_arm.data.edit_bones 上抛 AttributeError，把人卡在网格编辑模式里。
+        active = context.active_object
+        if (len(selected_objs) != 2 or active is None or active.type != 'ARMATURE'
+                or active not in selected_objs):
             self.report({'ERROR'}, T("core.standard_ops.snap_selection_error"))
             return {'CANCELLED'}
 
