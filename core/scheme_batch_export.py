@@ -31,6 +31,7 @@ from .bone_utils import align_armatures_by_name
 from . import console_export
 from . import mod_root
 from .export_verify import checked
+from . import poll_msg
 
 #: Slots a part can carry besides its mesh.  ``gpuc`` (Onimusha's cloth-sim cache)
 #: has no Blender-side editor, so it is only ever written as a blank file.
@@ -923,7 +924,7 @@ def build_classes(exp):
 
         @classmethod
         def poll(cls, context):
-            return bool(_group_clipboard)
+            return poll_msg.require(cls, _group_clipboard, "core.poll.need_copied_bindings")
 
         def execute(self, context):
             scene = context.scene

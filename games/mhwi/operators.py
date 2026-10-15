@@ -3,7 +3,7 @@ import time
 import bpy
 import re
 from ...core.i18n import T
-from ...core.compat import op_available
+from ...core import poll_msg
 from ...core import (bone_utils, facial_bones, facial_maps, fork_resolver, preprocess_align,
                      ref_model_ops, ref_skeleton, weight_utils)
 from ...core.bone_mapper import BoneMapManager, auto_detect_preset, resolve_preset
@@ -82,8 +82,7 @@ class MHWI_OT_PreprocessModel(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return (context.active_object is not None
-                and context.active_object.type == 'ARMATURE')
+        return poll_msg.active_armature(cls, context)
 
     @staticmethod
     def _select(context, *objs):
@@ -275,12 +274,8 @@ class MHWI_OT_AutoCreateChains(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return (
-            context.mode == 'POSE'
-            and context.active_object is not None
-            and context.active_object.type == 'ARMATURE'
-            and op_available('mhw_ctc', 'create_chain_from_bone')
-        )
+        return (poll_msg.pose_mode_armature(cls, context)
+                and poll_msg.addon(cls, 'mhw_ctc', 'create_chain_from_bone', "MHW Model Editor"))
 
     def invoke(self, context, _event):
         arm = context.active_object
@@ -854,10 +849,7 @@ class MHWI_OT_SplitPhysicsBones(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return (
-            context.active_object is not None
-            and context.active_object.type == 'ARMATURE'
-        )
+        return poll_msg.active_armature(cls, context)
 
     def _physics(self, armature):
         mapper = BoneMapManager()
@@ -1180,7 +1172,7 @@ class MHWI_OT_SetMeshDisplayCondition(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return any(o.type == 'MESH' for o in context.selected_objects)
+        return poll_msg.selected_mesh(cls, context)
 
     @classmethod
     def description(cls, context, properties):
@@ -1244,7 +1236,7 @@ class MHWI_OT_EndfieldFaceRename(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return any(o.type == 'MESH' for o in context.selected_objects)
+        return poll_msg.selected_mesh(cls, context)
 
     def execute(self, context):
         pairs = facial_maps.load("endfield_to_mhwi")
@@ -1306,7 +1298,7 @@ class MHWI_OT_AddFacialBones(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return any(o.type == 'ARMATURE' for o in bpy.data.objects)
+        return poll_msg.armature_in_scene(cls, context)
 
     def invoke(self, context, event):
         active = context.active_object

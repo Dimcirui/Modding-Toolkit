@@ -30,6 +30,7 @@ import bpy
 from bpy.props import BoolProperty, EnumProperty, StringProperty
 
 from .i18n import T
+from . import poll_msg
 from . import mdf_port
 from . import mdf_port_params
 from . import mdf_port_tex
@@ -331,7 +332,7 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
         # enabled whenever there is anything to port anywhere in the file, not
         # gated on the current selection -- _prefill below is what reads the
         # selection, to fill in the common case rather than to gate the button.
-        return bool(mdf_material_collections())
+        return poll_msg.require(cls, mdf_material_collections(), "core.poll.need_mdf_collection")
 
     def _prefill(self, context):
         """Default source_collection/dest_base_path off the active object.

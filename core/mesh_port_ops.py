@@ -35,6 +35,7 @@ from .bone_correction import (DEFAULT_TOLERANCE_DEG, derive_bone_correction,
 from .bone_mapper import BoneMapManager, auto_detect_preset, build_cross_game_map
 from . import twist_chain
 from .i18n import T
+from . import poll_msg
 from .mesh_port import PLUMBING_BONES, build_port_plan, origin_shift
 from .ref_skeleton import get_reference_skeleton_items, import_reference_armature
 from . import weight_utils
@@ -725,7 +726,7 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return any(o.type == 'ARMATURE' for o in bpy.data.objects)
+        return poll_msg.armature_in_scene(cls, context)
 
     def invoke(self, context, event):
         self._lines = []

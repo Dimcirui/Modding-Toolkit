@@ -2638,7 +2638,43 @@ STRINGS = {
         "EN": "The porting tools unlock once you have read this",
         "ZH": "阅读并确认后即可使用移植功能"},
     "core.port_consent.poll_blocked": {
-        "EN": "Read the cross-game porting notice first -- see the 移植 group in "
-              "the Modding Toolkit panel",
+        "EN": "Read the cross-game porting notice first -- see the Cross-Game Port "
+              "group in the Modding Toolkit panel",
         "ZH": "请先阅读并确认跨游戏移植使用须知（面板中的“移植”一组）"},
+
+    # ── core/poll_msg.py: why a button is greyed out (shown in its tooltip) ──
+    "core.poll.need_active_mesh": {
+        "EN": "Make a mesh the active object", "ZH": "需要以一个网格为活动物体"},
+    "core.poll.need_active_armature": {
+        "EN": "Make an armature the active object", "ZH": "需要以一个骨架为活动物体"},
+    "core.poll.need_selected_mesh": {
+        "EN": "Select at least one mesh", "ZH": "请至少选中一个网格"},
+    "core.poll.need_shape_keys": {
+        "EN": "The active mesh has no shape keys besides Basis",
+        "ZH": "活动网格除基型外没有形态键"},
+    "core.poll.need_visible_modifier": {
+        "EN": "The active mesh has no modifier enabled in the viewport to apply",
+        "ZH": "活动网格没有在视图中启用、可供应用的修改器"},
+    "core.poll.need_armature_in_file": {
+        "EN": "There is no armature in this file", "ZH": "当前文件里没有骨架"},
+    "core.poll.need_pose_mode": {
+        "EN": "Switch the armature to Pose Mode first", "ZH": "请先把骨架切换到姿态模式"},
+    "core.poll.need_edit_mode": {
+        "EN": "Switch the armature to Edit Mode first", "ZH": "请先把骨架切换到编辑模式"},
+    "core.poll.need_addon": {
+        "EN": "Needs {addon}, which is not installed or not enabled",
+        "ZH": "需要 {addon}，但它未安装或未启用"},
+    "core.poll.need_mdf_collection": {
+        "EN": "There is no .mdf2 collection in this file -- import or create one first",
+        "ZH": "当前文件里没有 .mdf2 集合，请先导入或新建"},
+    "core.poll.need_chain_collection": {
+        "EN": "There is no .chain / .chain2 collection in this file",
+        "ZH": "当前文件里没有 .chain / .chain2 集合"},
+    "core.poll.need_material_slot": {
+        "EN": "The active mesh has no material", "ZH": "活动网格没有材质"},
+    "core.poll.need_mesh_collection": {
+        "EN": "Pick the Mesh Collection in the generator first",
+        "ZH": "请先在生成器里选择网格集合"},
+    "core.poll.need_copied_bindings": {
+        "EN": "Copy a group's bindings first", "ZH": "请先复制一组的绑定"},
 }

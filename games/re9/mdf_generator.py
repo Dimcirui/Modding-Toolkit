@@ -16,6 +16,7 @@ from ...core.mdf_generator_base import (
     register_generator, unregister_generator,
 )
 from ...core.stable_enum import stable_enum
+from ...core import poll_msg
 
 # ── RE9 constants ──────────────────────────────────────────────────────────────
 
@@ -200,16 +201,14 @@ class RE9_OT_SelectSameMaterial(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         """Requires an active MESH object with a material set, and mesh_collection selected"""
+        if not poll_msg.active_mesh(cls, context):
+            return False
         obj = context.active_object
-        if not obj or obj.type != 'MESH':
-            return False
-        if not obj.material_slots:
-            return False
-        settings = context.scene.re9_mdf_generator
-        if not settings.mesh_collection:
-            return False
-        mat = obj.material_slots[obj.active_material_index].material
-        return mat is not None
+        if not context.scene.re9_mdf_generator.mesh_collection:
+            return poll_msg.deny(cls, "core.poll.need_mesh_collection")
+        mat = (obj.material_slots[obj.active_material_index].material
+               if obj.material_slots else None)
+        return poll_msg.require(cls, mat is not None, "core.poll.need_material_slot")
 
     def execute(self, context):
         settings = context.scene.re9_mdf_generator

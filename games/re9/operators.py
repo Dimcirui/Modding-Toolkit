@@ -1,6 +1,6 @@
 import bpy
 from ...core.i18n import T
-from ...core.compat import op_available
+from ...core import poll_msg
 from ...core.re_chain_utils import REChainConfig, auto_create_re_chains, _is_valid_chain_collection
 from ...core.bone_mapper import auto_detect_preset, BoneMapManager
 from ...core.standard_ops import _build_fuzzy_preset_bones, _run_bone_color_refresh
@@ -19,9 +19,7 @@ Do not select a physical bone AND its physical ancestor at the same time."""
 
     @classmethod
     def poll(cls, context):
-        return (context.active_object
-                and context.active_object.type == "ARMATURE"
-                and context.mode == "EDIT_ARMATURE")
+        return poll_msg.edit_mode_armature(cls, context)
 
     def execute(self, context):
         obj = context.active_object
@@ -159,10 +157,8 @@ class RE9_OT_AutoCreateChains(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return (context.mode == 'POSE'
-                and context.active_object is not None
-                and context.active_object.type == 'ARMATURE'
-                and op_available('re_chain', 'create_chain_settings'))
+        return (poll_msg.pose_mode_armature(cls, context)
+                and poll_msg.addon(cls, 're_chain', 'create_chain_settings', "RE Chain Editor"))
 
     def invoke(self, context, event):
         arm = context.active_object
@@ -285,7 +281,7 @@ class RE9_OT_AddFacialBones(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return any(o.type == 'ARMATURE' for o in bpy.data.objects)
+        return poll_msg.armature_in_scene(cls, context)
 
     def invoke(self, context, event):
         active = context.active_object

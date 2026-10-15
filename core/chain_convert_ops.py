@@ -21,6 +21,7 @@ from .chain_convert import (apply_target_game_settings, duplicate_chain_collecti
                             ported_chain_collection_name, relocalise_node_frames,
                             remap_collider_attachments)
 from .i18n import T
+from . import poll_msg
 from .mesh_port_ops import collection_armatures, is_mesh_collection, mesh_collections
 from .port_consent import gate
 
@@ -205,7 +206,7 @@ class MODDER_OT_ConvertChainCrossGame(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return bool(_chain_collections())
+        return poll_msg.require(cls, _chain_collections(), "core.poll.need_chain_collection")
 
     def _prefill(self, context):
         """Default source_collection off the active object, and

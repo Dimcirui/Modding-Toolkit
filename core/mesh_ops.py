@@ -19,6 +19,7 @@ import re
 import unicodedata
 
 from .i18n import T, get_lang
+from . import poll_msg
 from . import weight_utils
 
 
@@ -107,10 +108,7 @@ class MHW_OT_ShapeKeyToWeights(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        obj = context.active_object
-        return (obj and obj.type == 'MESH'
-                and obj.data.shape_keys
-                and len(obj.data.shape_keys.key_blocks) > 1)
+        return poll_msg.shape_keys(cls, context)
 
     def invoke(self, context, event):
         obj = context.active_object
@@ -359,10 +357,7 @@ class MHW_OT_MMDFaceWeights(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        obj = context.active_object
-        return (obj and obj.type == 'MESH'
-                and obj.data.shape_keys
-                and len(obj.data.shape_keys.key_blocks) > 1)
+        return poll_msg.shape_keys(cls, context)
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self, width=280)
@@ -466,8 +461,7 @@ Unselected faces keep their own normals; the boundary transitions on its own."""
 
     @classmethod
     def poll(cls, context):
-        obj = context.active_object
-        return obj is not None and obj.type == 'MESH'
+        return poll_msg.active_mesh(cls, context)
 
     @classmethod
     def description(cls, context, properties):
@@ -573,8 +567,7 @@ touching the split vertices, sharp edges or material borders the game needs
 
     @classmethod
     def poll(cls, context):
-        obj = context.active_object
-        return obj is not None and obj.type == 'MESH'
+        return poll_msg.active_mesh(cls, context)
 
     @classmethod
     def description(cls, context, properties):
@@ -677,10 +670,7 @@ with the encoding basis (see core/normal_utils.py)"""
 
     @classmethod
     def poll(cls, context):
-        obj = context.active_object
-        return (obj is not None and obj.type == 'MESH'
-                and obj.data.shape_keys is not None
-                and len(obj.data.shape_keys.key_blocks) > 1)
+        return poll_msg.shape_keys(cls, context)
 
     @classmethod
     def description(cls, context, properties):
@@ -859,7 +849,7 @@ and re-encoded against each one's own shape-keyed geometry
 
     @classmethod
     def poll(cls, context):
-        return any(o.type == 'MESH' for o in context.selected_objects)
+        return poll_msg.selected_mesh(cls, context)
 
     @classmethod
     def description(cls, context, properties):
@@ -1000,8 +990,7 @@ custom split normals pointing where they were (see core/normal_utils.py)"""
 
     @classmethod
     def poll(cls, context):
-        obj = context.active_object
-        return obj is not None and obj.type == 'MESH'
+        return poll_msg.active_mesh(cls, context)
 
     @classmethod
     def description(cls, context, properties):
@@ -1085,11 +1074,9 @@ rebuilding every key on top of the result (see core/shapekey_utils.py)"""
 
     @classmethod
     def poll(cls, context):
-        obj = context.active_object
-        return (obj is not None and obj.type == 'MESH'
-                and obj.data.shape_keys
-                and len(obj.data.shape_keys.key_blocks) > 1
-                and any(m.show_viewport for m in obj.modifiers))
+        return (poll_msg.shape_keys(cls, context)
+                and poll_msg.require(cls, any(m.show_viewport for m in context.active_object.modifiers),
+                                     "core.poll.need_visible_modifier"))
 
     @classmethod
     def description(cls, context, properties):
@@ -1142,7 +1129,7 @@ shape keys and vertex groups each fragment inherited (see core/mesh_utils.py)"""
 
     @classmethod
     def poll(cls, context):
-        return any(o.type == 'MESH' for o in context.selected_objects)
+        return poll_msg.selected_mesh(cls, context)
 
     @classmethod
     def description(cls, context, properties):
@@ -1201,7 +1188,7 @@ replacing one (see core/mesh_utils.py)"""
 
     @classmethod
     def poll(cls, context):
-        return any(o.type == 'MESH' for o in context.selected_objects)
+        return poll_msg.selected_mesh(cls, context)
 
     @classmethod
     def description(cls, context, properties):
@@ -1256,7 +1243,7 @@ Groups whose suffixed name matches a real bone in the bound armature are skipped
 
     @classmethod
     def poll(cls, context):
-        return any(o.type == 'MESH' for o in context.selected_objects)
+        return poll_msg.selected_mesh(cls, context)
 
     def execute(self, context):
         mesh_objects = [o for o in context.selected_objects if o.type == 'MESH']
@@ -1301,7 +1288,7 @@ class MHW_OT_ClearEmptyVGroups(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return any(o.type == 'MESH' for o in context.selected_objects)
+        return poll_msg.selected_mesh(cls, context)
 
     @classmethod
     def description(cls, context, properties):

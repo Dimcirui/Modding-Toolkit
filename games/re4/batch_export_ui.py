@@ -1,6 +1,7 @@
 import bpy
 from bpy.props import BoolProperty, CollectionProperty, IntProperty, StringProperty
 from ...core.i18n import T
+from ...core import poll_msg
 from ...core import pre_export_check_ops as pec
 from ...core import export_autofix
 from ...core import mod_root
@@ -232,7 +233,7 @@ class RE4_OT_PasteGroupBindings(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return bool(_group_clipboard)
+        return poll_msg.require(cls, _group_clipboard, "core.poll.need_copied_bindings")
 
     def execute(self, context):
         scene = context.scene

@@ -22,6 +22,7 @@ from ...core.mdf_tex_processor_base import _import_tex_utils, _CH_ENUM_ITEMS, mi
 from ...core.slot_resolver import resolve_dds_format, write_slot_tex
 from ...core.gen_pipeline import SlotWriter
 from ...core.stable_enum import stable_enum
+from ...core import poll_msg
 from .mrl3_coef_rules import transparent_coefs
 from .mrl3_tex_processor import (
     MHWI_SLOT_CHANNEL_MAPS, MHWI_NULL_TEX,
@@ -511,16 +512,14 @@ class MHWI_OT_SelectSameMaterial(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         """必须有激活 MESH 物体，且其材质在 material_list 中有对应条目"""
+        if not poll_msg.active_mesh(cls, context):
+            return False
         obj = context.active_object
-        if not obj or obj.type != 'MESH':
-            return False
-        if not obj.material_slots:
-            return False
-        settings = context.scene.mhwi_mrl3_generator
-        if not settings.mesh_collection:
-            return False
-        mat = obj.material_slots[obj.active_material_index].material
-        return mat is not None
+        if not context.scene.mhwi_mrl3_generator.mesh_collection:
+            return poll_msg.deny(cls, "core.poll.need_mesh_collection")
+        mat = (obj.material_slots[obj.active_material_index].material
+               if obj.material_slots else None)
+        return poll_msg.require(cls, mat is not None, "core.poll.need_material_slot")
 
     def execute(self, context):
         settings = context.scene.mhwi_mrl3_generator

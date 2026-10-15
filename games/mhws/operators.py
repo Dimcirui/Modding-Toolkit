@@ -3,7 +3,7 @@ import sys
 import time
 import bpy
 from ...core.i18n import T
-from ...core.compat import op_available
+from ...core import poll_msg
 from ...core import weight_utils, facial_maps
 from ...core import bone_utils
 from ...core import ref_skeleton
@@ -43,7 +43,7 @@ class MHWS_OT_EndfieldFaceRename(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return any(o.type == 'MESH' for o in context.selected_objects)
+        return poll_msg.selected_mesh(cls, context)
 
     def execute(self, context):
         total = 0
@@ -106,7 +106,7 @@ class MHWS_OT_FaceWeightSimplify(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.active_object and context.active_object.type == 'MESH'
+        return poll_msg.active_mesh(cls, context)
     
     def execute(self, context):
         obj = context.active_object
@@ -268,10 +268,8 @@ class MHWS_OT_AutoCreateChains(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return (context.mode == 'POSE'
-                and context.active_object is not None
-                and context.active_object.type == 'ARMATURE'
-                and op_available('re_chain', 'create_chain_settings'))
+        return (poll_msg.pose_mode_armature(cls, context)
+                and poll_msg.addon(cls, 're_chain', 'create_chain_settings', "RE Chain Editor"))
 
     def invoke(self, context, event):
         arm = context.active_object
@@ -566,10 +564,7 @@ class MHWS_OT_PreprocessModel(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return (
-            context.active_object is not None
-            and context.active_object.type == 'ARMATURE'
-        )
+        return poll_msg.active_armature(cls, context)
 
     def execute(self, context):
         settings = context.scene.mhw_suite_settings
@@ -701,7 +696,7 @@ class MHWS_OT_AddFacialBones(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return any(o.type == 'ARMATURE' for o in bpy.data.objects)
+        return poll_msg.armature_in_scene(cls, context)
 
     def invoke(self, context, event):
         active = context.active_object
@@ -816,8 +811,7 @@ class MHWS_OT_OptimizeSkeleton(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        obj = context.active_object
-        return obj is not None and obj.type == 'ARMATURE'
+        return poll_msg.active_armature(cls, context)
 
     def execute(self, context):
         arm_obj = context.active_object
@@ -1017,8 +1011,7 @@ class MHWS_OT_OptimizeAuxBones(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        obj = context.active_object
-        return obj is not None and obj.type == 'ARMATURE'
+        return poll_msg.active_armature(cls, context)
 
     def execute(self, context):
         arm_obj = context.active_object

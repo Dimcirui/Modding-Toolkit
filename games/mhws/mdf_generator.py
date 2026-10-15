@@ -16,6 +16,7 @@ from ...core.mdf_generator_base import (
 from ...core.i18n import T
 from ...core.color_grade import color_grade_items, DEFAULT_MODE_INDEX
 from ...core.stable_enum import stable_enum
+from ...core import poll_msg
 
 # ── MHWS constants ─────────────────────────────────────────────────────────────
 
@@ -215,16 +216,14 @@ class MHWS_OT_SelectSameMaterial(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         """必须有激活 MESH 物体，且其材质已设置，mesh_collection 已选择"""
+        if not poll_msg.active_mesh(cls, context):
+            return False
         obj = context.active_object
-        if not obj or obj.type != 'MESH':
-            return False
-        if not obj.material_slots:
-            return False
-        settings = context.scene.mhws_mdf_generator
-        if not settings.mesh_collection:
-            return False
-        mat = obj.material_slots[obj.active_material_index].material
-        return mat is not None
+        if not context.scene.mhws_mdf_generator.mesh_collection:
+            return poll_msg.deny(cls, "core.poll.need_mesh_collection")
+        mat = (obj.material_slots[obj.active_material_index].material
+               if obj.material_slots else None)
+        return poll_msg.require(cls, mat is not None, "core.poll.need_material_slot")
 
     def execute(self, context):
         settings = context.scene.mhws_mdf_generator

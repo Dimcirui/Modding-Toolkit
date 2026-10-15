@@ -1,5 +1,6 @@
 import bpy, mathutils, json
 from .i18n import T
+from . import poll_msg
 from .bone_mapper import (BoneMapManager, STANDARD_BONE_NAMES, _normalize_bone_name,
                           auto_detect_preset, resolve_preset, standard_keys, is_aux_key,
                           AUX_PARENT)
@@ -176,8 +177,7 @@ class MODDER_OT_NormalizeDeformWeights(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        obj = context.active_object
-        return obj is not None and obj.type == 'ARMATURE'
+        return poll_msg.active_armature(cls, context)
 
     def execute(self, context):
         arm_obj = context.active_object
