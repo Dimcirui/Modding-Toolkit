@@ -3,7 +3,7 @@ core/i18n_strings/core.py — bilingual STRINGS table for core/*.py.
 
 Covers: core/standard_ops.py, core/pose_ops.py, core/editor_ops.py,
 core/editor_props.py, core/mdf_tex_processor_base.py, core/mdf_generator_base.py,
-core/mdf_material_convert_base.py, core/update_ops.py.
+core/mdf_material_convert_base.py.
 
 Key naming convention: "core.<module_name_without_.py>.<short_purpose>".
 Keys are namespaced per source module even where wording is repeated, so this
@@ -833,18 +833,6 @@ STRINGS = {
               "贴图: 已写出 {tex}, 占位 {placeholder} 张 (无原版默认可用), "
               "待写出 {pending} (未设置目标 Mod 根目录), "
               "原版跳过 {vskip}, 无对应槛位跳过 {noslot}, 未找到源贴图 {nosrc}"},
-
-    # ══════════════════════════════════════════════════════════════════════
-    # core/update_ops.py
-    # ══════════════════════════════════════════════════════════════════════
-
-    "core.update_ops.check_updates_desc": {"EN": "Check for addon updates", "ZH": "检查插件更新"},
-    "core.update_ops.new_version_found": {
-        "EN": "New version found: v{remote} (current: v{local})", "ZH": "发现新版本: v{remote} (当前: v{local})"},
-    "core.update_ops.already_latest": {
-        "EN": "You are already on the latest version", "ZH": "当前已是最新版本"},
-    "core.update_ops.check_failed": {
-        "EN": "Update check failed: {err}", "ZH": "检查更新失败: {err}"},
 
     # ══════════════════════════════════════════════════════════════════════
     # core/tex_convert_base.py
