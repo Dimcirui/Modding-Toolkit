@@ -1536,6 +1536,29 @@ class MODDER_OT_MergePhysicsWeights(bpy.types.Operator):
         return {'FINISHED'}
 
 
+def apply_bone_renames(edit_bones, rename_map):
+    """Rename edit bones per *rename_map* ``{current: target}``; returns the count.
+
+    Two passes through temporary names.  Renaming in one pass broke chains: with
+    ``{A: B, B: C}``, A became B, and the B->C step then found that *new* B
+    (formerly A) and renamed it to C -- which happens whenever a source preset's
+    name for one standard key is the target's name for another.  A bone that is
+    not itself being renamed but holds a target name still steps aside to
+    ``<name>_old``, as before.
+    """
+    moving = [(edit_bones[old], new) for old, new in rename_map.items()
+              if old in edit_bones and old != new]
+    moving_names = {eb.name for eb, _new in moving}
+    for _eb, new in moving:
+        if new in edit_bones and new not in moving_names:
+            edit_bones[new].name = new + "_old"
+    for i, (eb, _new) in enumerate(moving):
+        eb.name = f"__mtk_rename_{i}"
+    for eb, new in moving:
+        eb.name = new
+    return len(moving)
+
+
 class MODDER_OT_RenameBonesToTarget(bpy.types.Operator):
     bl_idname = "modder.rename_bones_to_target"
     bl_label = "Rename Base Bones (X->Y)"
@@ -1604,16 +1627,8 @@ class MODDER_OT_RenameBonesToTarget(bpy.types.Operator):
         # 进入编辑模式执行改名
         bpy.ops.object.mode_set(mode='EDIT')
         edit_bones = arm_obj.data.edit_bones
-        renamed_count = 0
-        
-        for old_name, new_name in rename_map.items():
-            if old_name in edit_bones:
-                # 如果目标名已被占用 (可能有同名骨骼), 先给它加后缀避让
-                if new_name in edit_bones and new_name != old_name:
-                    edit_bones[new_name].name = new_name + "_old"
-                edit_bones[old_name].name = new_name
-                renamed_count += 1
-        
+        renamed_count = apply_bone_renames(edit_bones, rename_map)
+
         bpy.ops.object.mode_set(mode='OBJECT')
         self.report({'INFO'}, T("core.standard_ops.renamed_to_target_done").format(n=renamed_count))
         return {'FINISHED'}
