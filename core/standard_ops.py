@@ -238,12 +238,17 @@ class MODDER_OT_ApplyStandardX(bpy.types.Operator):
         from . import pose_bake
         meshes = pose_bake.attached_meshes(arm_obj)
         bpy.ops.object.mode_set(mode='OBJECT')
+        # 没找到主骨名时，使用标准名作为目标顶点组，方便后续手动处理。
+        # One map and one pass per mesh (an aux claimed twice keeps its first
+        # target, as the sequential merges did: the second found it gone).
+        aux_map = {}
+        for std_key, (main_name, aux_list) in analysis.items():
+            for aux in aux_list or ():
+                aux_map.setdefault(aux, main_name if main_name else std_key)
         for mesh_obj in meshes:
-            for std_key, (main_name, aux_list) in analysis.items():
-                if aux_list:
-                    # 没找到主骨名时，使用标准名作为目标顶点组，方便后续手动处理
-                    target_vg = main_name if main_name else std_key
-                    weight_utils.merge_vgroups_multi(mesh_obj, aux_list, target_vg)
+            mesh_map = {a: t for a, t in aux_map.items() if a in mesh_obj.vertex_groups}
+            if mesh_map:
+                weight_utils.merge_vertex_groups([mesh_obj], mesh_map)
 
         # 4. 骨骼重命名 (Edit Mode)
         bpy.ops.object.mode_set(mode='EDIT')
@@ -1526,21 +1531,14 @@ class MODDER_OT_MergePhysicsWeights(bpy.types.Operator):
         
         for mesh_obj in selected_meshes:
             vgs = mesh_obj.vertex_groups
-            merged_in_mesh = 0
-            
-            for phys_name, base_name in physics_to_base.items():
-                if phys_name not in vgs:
-                    continue  # 这个网格没有这根物理骨的权重
-                
-                # 确保基础骨骼的顶点组存在
-                if base_name not in vgs:
-                    vgs.new(name=base_name)
-                
-                # 合并权重
-                weight_utils.merge_vgroups_multi(mesh_obj, [phys_name], base_name)
-                merged_in_mesh += 1
-            
-            total_merged += merged_in_mesh
+            # One pass over the vertices for every physics group at once, instead
+            # of a full pass per physics bone: ~300 MMD physics bones on a 50k
+            # mesh took 30-45 s that way.  Equivalent here -- every target is a
+            # base bone and never itself merged, and both clamp the sum at 1.
+            mesh_map = {p: b for p, b in physics_to_base.items() if p in vgs}
+            if mesh_map:
+                weight_utils.merge_vertex_groups([mesh_obj], mesh_map)
+            total_merged += len(mesh_map)
         
         self.report({'INFO'}, T("core.standard_ops.merge_physics_done").format(
             meshes=len(selected_meshes), groups=total_merged))
