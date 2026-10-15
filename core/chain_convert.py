@@ -682,6 +682,45 @@ def remap_collider_attachments(collection, cross_map, target_armature=None,
 LINK_GROUP_REFS = ("chainGroupAObject", "chainGroupBObject")
 
 
+def _remap_internal_refs(obj, mapping):
+    """Point *obj*'s modifier and constraint object references at the copies.
+
+    ``Object.copy()`` keeps every such pointer on the original.  Parents are
+    rewired by hand above, but nothing touched the rest: a copied capsule root's
+    REChainGeometryNodes inputs (Socket_0 / Socket_1) still named the *source's*
+    start/end empties, and hooks and constraints pointing inside the collection
+    likewise -- so the ported capsules were drawn on the source rig, nudging an
+    endpoint did not move the visible capsule, and they vanished if the source
+    was deleted.  Export read the BoneName properties and was unaffected.
+
+    Only references to objects of the copied set move; one to anything outside it
+    (the armature) is left alone, which relocalise_node_frames deals with.
+    Duck-typed like the rest of this file.
+    """
+    def swap(value):
+        name = getattr(value, "name", None)
+        return mapping.get(name) if isinstance(name, str) else None
+
+    for mod in getattr(obj, "modifiers", ()):
+        rna = getattr(mod, "bl_rna", None)
+        for prop in (getattr(rna, "properties", ()) if rna is not None else ()):
+            if (getattr(prop, "type", "") == 'POINTER' and not getattr(prop, "is_readonly", True)
+                    and getattr(getattr(prop, "fixed_type", None), "identifier", "") == "Object"):
+                new = swap(getattr(mod, prop.identifier, None))
+                if new is not None:
+                    setattr(mod, prop.identifier, new)
+        # Geometry-nodes inputs are ID properties on the modifier itself.
+        if getattr(mod, "type", "") == 'NODES' and hasattr(mod, "keys"):
+            for key in list(mod.keys()):
+                new = swap(mod[key])
+                if new is not None:
+                    mod[key] = new
+    for con in getattr(obj, "constraints", ()):
+        new = swap(getattr(con, "target", None))
+        if new is not None:
+            con.target = new
+
+
 def duplicate_chain_collection(collection, name, link_into=None):
     """Deep-copy a chain collection and return ``(new_collection, {old: new})``.
 
@@ -778,6 +817,7 @@ def duplicate_chain_collection(collection, name, link_into=None):
         if obj.parent is not None:
             copy.parent = mapping.get(obj.parent.name, obj.parent)
             copy.matrix_parent_inverse = obj.matrix_parent_inverse.copy()
+        _remap_internal_refs(copy, mapping)
 
     # Collision roots hang off the chain header, and that is not inherited: a
     # .chain/.chain2 creates them parented to it (blender_re_chain.py:830,866)
