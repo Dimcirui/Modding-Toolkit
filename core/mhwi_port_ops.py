@@ -41,7 +41,7 @@ import math
 import bpy
 from mathutils import Matrix, Vector
 
-from . import bone_utils, mhwi_port, pose_bake, ref_model, ref_model_ops
+from . import bone_utils, mhwi_port, pose_bake, ref_model, ref_model_ops, weight_utils
 from .bone_mapper import build_cross_game_map
 from .i18n import T
 from .port_consent import gate
@@ -297,7 +297,8 @@ def assemble_collection(src_col, ref_arm, meshes, game=DST_GAME):
 
 # ── 6. vertex groups ────────────────────────────────────────────────────────────
 
-def rename_vertex_groups(context, meshes, dst_preset=DST_PRESET):
+def rename_vertex_groups(context, meshes, dst_preset=DST_PRESET, *,
+                         src_arm=None, name_map=None, target_game=None):
     """Rename the meshes' vertex groups from MHWI names to MHWilds names.
 
     ``modder.direct_convert`` is the same button a user would press ("Rename Vertex
@@ -318,13 +319,41 @@ def rename_vertex_groups(context, meshes, dst_preset=DST_PRESET):
         settings.import_preset_enum, settings.target_preset_enum = saved
 
     # A group named for an MHWI base bone that the preset never mapped survives the
-    # rename -- ``MhBone_000``, the origin, is the one this hits.  It names no bone on
-    # the new rig, so it can only confuse the exporter's bone/group matching.
+    # rename.  It names no bone on the new rig, so it cannot stay -- but deleting it
+    # outright (as this used to) also deleted its weights, and the unmapped base ids
+    # are not only the origin: 064-069 (skirt attach), 100-104, 247-253 are too.  A
+    # waist or leg armour whose skirt top is weighted to 064/067 lost those weights,
+    # and vertices weighted only to them ended up unweighted.  So the weights go
+    # where step 7 sends the bones' physics children: the per-game override first
+    # (064 -> the thigh), else the nearest ancestor the presets do map.  Only a
+    # group with nowhere to go -- MhBone_000, the root -- is removed.
     # Physics groups are left alone: they are the ones step 7 grafts bones for.
+    overrides = mhwi_port.physics_parent_overrides(target_game) if target_game else {}
+    parents = ({b.name: (b.parent.name if b.parent else None) for b in src_arm.data.bones}
+               if src_arm is not None else {})
+    name_map = name_map or {}
     for mesh in meshes:
         for vg in list(mesh.vertex_groups):
-            if mhwi_port.is_base_bone(vg.name):
+            if not mhwi_port.is_base_bone(vg.name):
+                continue
+            home = _unmapped_group_home(vg.name, overrides, parents, name_map)
+            if home:
+                weight_utils.merge_vgroups_multi(mesh, [vg.name], home)
+            else:
                 mesh.vertex_groups.remove(vg)
+
+
+def _unmapped_group_home(name, overrides, parents, name_map):
+    """Target-rig bone an unmapped MHWI base group's weights belong to, or None."""
+    if overrides.get(name):
+        return overrides[name]
+    node, seen = parents.get(name), set()
+    while node is not None and node not in seen:
+        seen.add(node)
+        if name_map.get(node):
+            return name_map[node]
+        node = parents.get(node)
+    return None
 
 
 # ── 7. physics bones ────────────────────────────────────────────────────────────
@@ -520,7 +549,8 @@ def run_port(context, src_col, target_game, *, reference=None):
 
     snap_reference_to_model(context, work_arm, ref_arm, cfg["preset"])
     out_col = assemble_collection(src_col, ref_arm, work_meshes, target_game)
-    rename_vertex_groups(context, work_meshes, cfg["preset"])
+    rename_vertex_groups(context, work_meshes, cfg["preset"], src_arm=work_arm,
+                         name_map=dict(cross.mapping), target_game=target_game)
     grafted, orphans, rehomed = transplant_physics(
         work_arm, ref_arm, dict(cross.mapping), target_game)
 
