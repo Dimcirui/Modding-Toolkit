@@ -11,7 +11,7 @@ from ...core.mdf_generator_base import (
     get_shader_source_items, shader_source_update,
     MdfGenRefreshBase,
     analyse_entry, bake_entry, run_generator_slots,
-    _slugify, _strip_blender_suffix, _separate_mesh_by_material,
+    _slugify, _strip_blender_suffix, _separate_mesh_by_material, report_tex_name_collisions,
     _is_albedo_slot, _generate_solid_texture_path,
     _detect_max_tex_size, _find_meshes_by_material,
     load_mhwi_preset_enum_items, bundled_mhwi_preset,
@@ -351,6 +351,7 @@ class MHWI_OT_Mrl3GenProcess(bpy.types.Operator):
                     fail_count += 1
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
+        report_tex_name_collisions(self, settings.material_list)
 
         _t_sep = time.time()
         try:

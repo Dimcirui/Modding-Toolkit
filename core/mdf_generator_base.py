@@ -1969,6 +1969,30 @@ def _strip_blender_suffix(name):
     return re.sub(r'\.\d+$', '', name)
 
 
+def colliding_tex_names(entries):
+    """``[(name, [blender materials])]`` for the names two or more *entries* share.
+
+    _strip_blender_suffix is deliberate -- a ``Body.001`` is usually an import
+    duplicate of ``Body`` and should land on the same files -- but when the two
+    really are different materials, the later one silently overwrites the
+    earlier one's textures and gets the same MDF material name.  The generator
+    cannot tell the cases apart, so it says so instead of guessing.
+    """
+    groups = {}
+    for e in entries:
+        mat = getattr(e, 'blender_material', '') or ''
+        if mat:
+            groups.setdefault(_slugify(_strip_blender_suffix(mat)), []).append(mat)
+    return [(n, ms) for n, ms in groups.items() if len(ms) > 1]
+
+
+def report_tex_name_collisions(op, entries):
+    clashes = colliding_tex_names(entries)
+    if clashes:
+        op.report({'WARNING'}, T("core.mdf_generator_base.tex_name_collision").format(
+            n=len(clashes), names="; ".join(" / ".join(ms) for _n, ms in clashes[:3])))
+
+
 # ── RE Engine Group_G_Sub_S__Name mesh naming ───────────────────────────────
 
 _GROUP_SUB_RE = re.compile(r'^Group_(\d+)_Sub_(\d+)__(.+)$')
@@ -2679,6 +2703,7 @@ class MdfGenProcessBase(bpy.types.Operator):
             print(f"[{cls._log_tag}] Mesh separate/rename warning: {e}")
 
         print(f"[{cls._log_tag}] ★ 总耗时: {time.time() - _t_total:.2f}s ★", flush=True)
+        report_tex_name_collisions(self, settings.material_list)
         if self._unresolved_channels:
             _n = sum(len(c) for _m, c in self._unresolved_channels)
             _detail = "; ".join("%s: %s" % (m, ", ".join(c))

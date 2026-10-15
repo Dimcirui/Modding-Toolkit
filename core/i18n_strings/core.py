@@ -577,6 +577,12 @@ STRINGS = {
         "ZH": "合成 {compose} · 直接 {direct} · 空贴图 {default} · 不变 {skip}"},
 
     "core.mdf_tex_processor_base.generate_mipmaps_label": {"EN": "Generate MipMaps", "ZH": "生成 MipMaps"},
+    "core.mdf_generator_base.tex_name_collision": {
+        "EN": "{n} name(s) are shared by more than one material once Blender's .001 suffix "
+              "is dropped, so they write the same texture files and MDF material name "
+              "(the later one wins). Fine for import duplicates; otherwise rename one: {names}",
+        "ZH": "有 {n} 个名字在去掉 Blender 的 .001 后缀后被多个材质共用，它们会写同一组贴图文件、"
+              "同一个 MDF 材质名（后处理的覆盖先处理的）。导入产生的副本无妨；否则请改名其中一个: {names}"},
     "core.mdf_generator_base.unresolved_channels": {
         "EN": "{n} PBR channel(s) had no usable source and fell back to a null texture. "
               "Their node chain is too complex to read and the bake did not run: {names}",
