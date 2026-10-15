@@ -120,10 +120,10 @@ class MHW_OT_GeneralTools(bpy.types.Operator):
             selected_names = [b.name for b in selected_bones]
 
             # Gather bound meshes (used for tail-bone detection)
-            mesh_objects = [o for o in bpy.data.objects
-                            if o.type == 'MESH' and
-                            any(m.type == 'ARMATURE' and m.object == arm_obj
-                                for m in o.modifiers)]
+            # attached_meshes, not a modifier filter: a mesh whose Armature modifier has an
+            # empty target (or none, parented by hand) still carries this rig's weights.
+            from . import pose_bake
+            mesh_objects = pose_bake.attached_meshes(arm_obj)
 
             # Group into chains
             chains = weight_utils.build_bone_chains(selected_names, arm_obj)

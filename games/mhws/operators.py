@@ -1056,11 +1056,10 @@ class MHWS_OT_OptimizeAuxBones(bpy.types.Operator):
             if bones.get(base) is not None and bones.get(hj) is not None
         ]
 
-        mesh_objects = [
-            o for o in bpy.data.objects
-            if o.type == 'MESH'
-            and any(m.type == 'ARMATURE' and m.object == arm_obj for m in o.modifiers)
-        ]
+        # attached_meshes, not a modifier filter: a mesh whose Armature modifier has an
+        # empty target (or none, parented by hand) still carries this rig's weights.
+        from ...core import pose_bake
+        mesh_objects = pose_bake.attached_meshes(arm_obj)
 
         renamed = 0
         for obj in mesh_objects:

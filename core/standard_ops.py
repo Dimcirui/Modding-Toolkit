@@ -233,7 +233,10 @@ class MODDER_OT_ApplyStandardX(bpy.types.Operator):
             if main or auxs: analysis[std_key] = (main, auxs)
 
         # 3. 权重合并
-        meshes = [o for o in bpy.data.objects if o.type == 'MESH' and o.find_armature() == arm_obj]
+        # attached_meshes, not a modifier filter: a mesh whose Armature modifier has an
+        # empty target (or none, parented by hand) still carries this rig's weights.
+        from . import pose_bake
+        meshes = pose_bake.attached_meshes(arm_obj)
         bpy.ops.object.mode_set(mode='OBJECT')
         for mesh_obj in meshes:
             for std_key, (main_name, aux_list) in analysis.items():
@@ -1065,10 +1068,10 @@ class MODDER_OT_SmartGraftBones(bpy.types.Operator):
             self.report({'WARNING'}, T("core.standard_ops.no_physics_bones_detected"))
             return None
 
-        mesh_objects = [o for o in bpy.data.objects
-                        if o.type == 'MESH'
-                        and any(m.type == 'ARMATURE' and m.object == source_arm
-                                for m in o.modifiers)]
+        # attached_meshes, not a modifier filter: a mesh whose Armature modifier has an
+        # empty target (or none, parented by hand) still carries this rig's weights.
+        from . import pose_bake
+        mesh_objects = pose_bake.attached_meshes(source_arm)
         return dict(source_arm=source_arm, target_arm=target_arm,
                     src_mapper=src_mapper, tgt_mapper=tgt_mapper,
                     src_to_std=src_to_std, std_to_tgt_bone=std_to_tgt_bone,
