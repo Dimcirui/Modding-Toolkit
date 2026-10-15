@@ -1730,29 +1730,37 @@ def _maybe_resize_direct(src_path, target_size, tmp_dir):
     tmp_dir and return its path.  Otherwise return src_path unchanged.
     Uses bpy.data.images so no Pillow dependency is required.
     """
+    img = None
     try:
-        img = bpy.data.images.load(src_path, check_existing=True)
-        native = max(img.size[0], img.size[1])
+        # A private copy, read as data.  check_existing=True handed back the
+        # user's own image: for a 16-bit PNG / TIFF / EXR (a float buffer) its
+        # pixels are linearised by its sRGB colour space and premultiplied, and
+        # were written raw -- the resized texture came out darker than the
+        # source.  Colour space and alpha mode are set before the first .size,
+        # which is what loads the buffer.
+        img = bpy.data.images.load(src_path, check_existing=False)
+        img.colorspace_settings.name = 'Non-Color'
+        img.alpha_mode = 'CHANNEL_PACKED'
+        w, h = img.size
+        native = max(w, h)
         if native <= target_size:
             return src_path
 
         import hashlib
         tag = hashlib.md5(f"{src_path}_{target_size}".encode()).hexdigest()[:8]
-        ext = os.path.splitext(src_path)[1] or '.png'
-        out_path = os.path.join(tmp_dir, f"resized_{tag}{ext}")
+        out_base = os.path.join(tmp_dir, f"resized_{tag}")
 
         from .mdf_tex_processor_base import image_to_array
-        img_copy = img.copy()
-        try:
-            img_copy.scale(target_size, target_size)
-            out_path = _write_exact_rgba(image_to_array(img_copy),
-                                         os.path.splitext(out_path)[0])
-        finally:
-            bpy.data.images.remove(img_copy)
-        return out_path
+        # Keep the aspect ratio: a non-square source used to be squashed square.
+        k = target_size / native
+        img.scale(max(1, round(w * k)), max(1, round(h * k)))
+        return _write_exact_rgba(image_to_array(img), out_base)
     except Exception as e:
         print(f"[MDF Gen] resize failed for {src_path} → {target_size}px: {e}")
         return src_path
+    finally:
+        if img is not None:
+            bpy.data.images.remove(img)
 
 
 # ── Channel size override operator ─────────────────────────────────────────────
