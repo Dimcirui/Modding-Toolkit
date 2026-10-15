@@ -263,6 +263,19 @@ def convert_to_raw_rgba(filepath, out_dir, verbose=False, allow_slow_codec=False
     # here as out_dir, and the symptom is a FileNotFoundError (80070002) on the
     # *next* use of a source that had silently vanished.
     work = tempfile.mkdtemp(prefix='raw_rgba_', dir=out_dir or None)
+
+    # The same two input fixes convert_to_dds applies -- this path skipped both,
+    # and it is the one every colour slot takes under the default SRGB grade
+    # (slot_resolver.grade_source_file) and every QUALITY-mip slot takes.
+    # Measured on 5.1: an sRGB-tagged PNG grey 128 read back as 55 (then graded
+    # a second time), and a staging TGA with alpha 0 read back as alpha 255 --
+    # a fully metallic ALBD (A = 1 - metallic) shipped as fully dielectric.
+    # The sanitised copy goes into `work`, so the cleanup below removes it too.
+    filepath = _sanitize_png_color_metadata(filepath, work)
+    from .tga_file import is_staging_tga
+    if filepath.lower().endswith('.tga') and is_staging_tga(filepath):
+        args += ['-tgazeroalpha']
+
     _run_texconv(dll, filepath, args, work, verbose=verbose, allow_slow_codec=allow_slow_codec)
 
     tga_path = os.path.join(work, os.path.splitext(os.path.basename(filepath))[0] + '.tga')
