@@ -489,6 +489,7 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
 
         try:
             for obj in targets:
+                new_obj = None
                 try:
                     old_data = obj.re_mdf_material
                     old_name = old_data.materialName
@@ -655,6 +656,15 @@ class MODDER_OT_PortMdfMaterialCrossGame(bpy.types.Operator):
                     print(f"[MDF Port] convert failed for '{obj.name}': {e}")
                     import traceback
                     traceback.print_exc()
+                    # A half-made result must not stay: it already carries the
+                    # source's materialName but still has the prefab's literal
+                    # texture paths (the null fallback never ran), so the export
+                    # would ship it as if it were a real port.
+                    if new_obj is not None:
+                        try:
+                            bpy.data.objects.remove(new_obj, do_unlink=True)
+                        except (ReferenceError, RuntimeError):
+                            pass
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
 
