@@ -928,7 +928,7 @@ def relocalise_node_frames(collection, target_armature, dry_run=False):
     # stubs.  Only this one function needs a real rotation type.
     from mathutils import Matrix
 
-    relocalised = unchanged = 0
+    relocalised = unchanged = same_rig = 0
     missing, no_source = [], []
 
     for obj in list(collection.all_objects):
@@ -939,7 +939,13 @@ def relocalise_node_frames(collection, target_armature, dry_run=False):
         if not bone:
             continue
 
-        src_rot = _bone_rot(getattr(con, "target", None), bone)
+        src_arm = getattr(con, "target", None)
+        if src_arm is not None and src_arm == target_armature:
+            # Already on the target rig -- an in-place mesh port got there first.
+            # Then "before" and "after" are the same bone and nothing can be
+            # re-expressed; the caller warns when that matters.
+            same_rig += 1
+        src_rot = _bone_rot(src_arm, bone)
         dst_rot = _bone_rot(target_armature, bone)
         if dst_rot is None:
             missing.append((obj.name, bone))
@@ -969,7 +975,7 @@ def relocalise_node_frames(collection, target_armature, dry_run=False):
                     c.target = target_armature
 
     return {'relocalised': relocalised, 'unchanged': unchanged,
-            'missing': missing, 'no_source': no_source}
+            'missing': missing, 'no_source': no_source, 'same_rig': same_rig}
 
 
 def collider_attach_bones(collection):

@@ -464,6 +464,14 @@ class MODDER_OT_ConvertChainCrossGame(bpy.types.Operator):
         if frames['relocalised']:
             self.report({'INFO'}, T("core.chain_convert_ops.frames_relocalised").format(
                 n=frames['relocalised'], kept=frames['unchanged']))
+        from .mesh_port_ops import FAMILY_A
+        crossing = (self.source_game in FAMILY_A) != (self.target_game in FAMILY_A)
+        if crossing and frames.get('same_rig'):
+            # The angle limits of these nodes kept the source convention: their
+            # constraints already named the (converted) target rig, so there was
+            # no "before" orientation left to measure.
+            self.report({'WARNING'}, T("core.chain_convert_ops.frames_same_rig").format(
+                n=frames['same_rig']))
         if frames['missing'] or frames['no_source']:
             self.report({'WARNING'}, T("core.chain_convert_ops.frames_skipped").format(
                 n=len(frames['missing']) + len(frames['no_source'])))

@@ -455,6 +455,12 @@ STRINGS = {
     "core.export.done": {
         "EN": "Done: {exported} exported, {skipped} skipped",
         "ZH": "完成: 导出 {exported}, 跳过 {skipped}"},
+    "core.chain_convert_ops.frames_same_rig": {
+        "EN": "{n} chain node(s) were already constrained to the target rig (the mesh was "
+              "ported in place first), so their angle limits keep the source convention. "
+              "Port the chain before the mesh, or port the mesh to a copy",
+        "ZH": "有 {n} 个链节点的约束已经指向目标骨架（网格先做了原地移植），它们的角度限制"
+              "仍是源游戏的朝向约定。请先移植链再移植网格，或把网格移植成副本"},
     "core.editor_ops.deleted": {"EN": "Deleted: {name}", "ZH": "已删除: {name}"},
     "core.editor_ops.delete_confirm": {
         "EN": "Delete the preset file {name}? This cannot be undone.",
