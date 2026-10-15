@@ -15,6 +15,7 @@ from ...core.mdf_generator_base import (
     MdfGenRefreshBase, MdfGenProcessBase,
     register_generator, unregister_generator,
 )
+from ...core.stable_enum import stable_enum
 
 # ── RE4 constants ──────────────────────────────────────────────────────────────
 
@@ -33,7 +34,8 @@ def _re4_get_presets(self, context):
 
 class RE4GenMaterialEntry(bpy.types.PropertyGroup):
     blender_material: bpy.props.StringProperty(name="Blender Material")
-    material_preset:  bpy.props.EnumProperty(
+    material_preset:  stable_enum(
+        "material_preset",
         name="Preset",
         description="MDF2 material preset from RE Mesh Editor",
         items=_re4_get_presets,

@@ -24,6 +24,7 @@ from ..games.mhwi.batch_export import (
 )
 from ..games.mhwi.weapon_data import get_mhwi_weapon_sets_callback, get_weapon_type_items
 from ..core.bone_mapper import BoneMapManager
+from ..core.stable_enum import stable_enum
 
 # Mapping detail preview cache: {(x_preset, y_preset): (mapper_x, mapper_y)}
 _mapping_detail_cache = {}
@@ -169,14 +170,18 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         default=True,
     )
 
-    # Preset selection (X/Y) - used by the standard converter
-    import_preset_enum: bpy.props.EnumProperty(
+    # Preset selection (X/Y) - used by the standard converter.  stable_enum: these
+    # list a folder, and a plain dynamic enum's selection shifts when a file is
+    # added -- see core/stable_enum.py.
+    import_preset_enum: stable_enum(
+        "import_preset_enum",
         name="Source Preset (X)",
         description="Select the skeleton structure of the imported model",
         items=get_import_presets_callback,
     )
 
-    target_preset_enum: bpy.props.EnumProperty(
+    target_preset_enum: stable_enum(
+        "target_preset_enum",
         name="Target Game (Y)",
         description="Select the target game to export to",
         items=get_target_presets_callback,
@@ -207,14 +212,16 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
     show_pose_convert: bpy.props.BoolProperty(name="Pose Convert", default=False)
 
     # Pose-convert-only preset (independent of the standard converter's X/Y presets)
-    pose_import_preset_enum: bpy.props.EnumProperty(
+    pose_import_preset_enum: stable_enum(
+        "pose_import_preset_enum",
         name="Skeleton Preset",
         description="Preset used to recognize bone names",
         items=get_import_presets_callback,
     )
 
     # Saved pose record selection
-    pose_preset_enum: bpy.props.EnumProperty(
+    pose_preset_enum: stable_enum(
+        "pose_preset_enum",
         name="Pose Record",
         description="Select a saved pose matrix record",
         items=get_pose_presets_callback

@@ -16,7 +16,7 @@ import math
 import os
 import copy
 import mathutils
-from .i18n import T
+from .i18n import T, get_lang
 from .bone_mapper import BoneMapManager, STANDARD_BONE_NAMES, resolve_preset
 from .bone_utils import get_import_presets_callback
 
@@ -31,7 +31,10 @@ def _get_pose_presets_dir():
     os.makedirs(d, exist_ok=True)
     return d
 
-_pose_preset_cache = []
+#: (stamp, items).  Same rule as the skeleton presets in core/bone_utils.py: an
+#: unchanged folder hands back the same list object, both for Blender's
+#: string-lifetime trap and because core/stable_enum.py calls this from get().
+_pose_preset_cache = (None, [])
 
 def _read_pose_preset_name(filepath, fallback):
     try:
@@ -42,17 +45,22 @@ def _read_pose_preset_name(filepath, fallback):
 
 def get_pose_presets_callback(self, context):
     global _pose_preset_cache
-    _pose_preset_cache = []
     d = _get_pose_presets_dir()
-    if os.path.exists(d):
-        for f in sorted(os.listdir(d)):
-            if f.endswith('.json'):
-                fallback = f[:-5]  # strip .json
-                name = _read_pose_preset_name(os.path.join(d, f), fallback)
-                _pose_preset_cache.append((f, name, ""))
-    if not _pose_preset_cache:
-        _pose_preset_cache.append(('NONE', T("core.pose_ops.no_record"), ""))
-    return _pose_preset_cache
+    try:
+        files = tuple(sorted((e.name, e.stat().st_mtime_ns) for e in os.scandir(d)
+                             if e.is_file() and e.name.endswith('.json')))
+    except OSError:
+        files = ()
+    # The empty-folder label goes through T(), so the language is part of the key.
+    stamp = (files, get_lang())
+    if _pose_preset_cache[0] == stamp:
+        return _pose_preset_cache[1]
+    items = [(f, _read_pose_preset_name(os.path.join(d, f), f[:-5]), "")
+             for f, _mtime in files]
+    if not items:
+        items = [('NONE', T("core.pose_ops.no_record"), "")]
+    _pose_preset_cache = (stamp, items)
+    return items
 
 
 # ============================================================

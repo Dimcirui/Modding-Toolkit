@@ -230,9 +230,12 @@ def find_bone_smart(bones, name):
     return None
 
 # 【关键】：全局缓存列表，防止 Blender C 层持有的字符串指针因 Python GC 变成野指针
-# 这是 Blender EnumProperty 动态回调的已知陷阱：回调返回的列表必须有持久引用
-_import_preset_cache = []
-_target_preset_cache = []
+# 这是 Blender EnumProperty 动态回调的已知陷阱：回调返回的列表必须有持久引用。
+# 现在按"文件夹里的文件名 + 各自 mtime"缓存：没变就交还**同一个**列表对象，
+# 只有预设增删改时才重建。以前每次回调（每次重绘、每次 Python 读取枚举值）都把 30 多份
+# JSON 全部重新解析一遍；而且 core/stable_enum.py 的 get() 也要调这里，不能每次都重建。
+_preset_items_cache = {}     # subdir -> (stamp, items)
+_preset_callback_cache = {}  # subdir -> (stamp, items with AUTO in front)
 
 def _read_preset_meta(filepath):
     """读取 preset_info 中的 name 和 category，文件损坏时 fallback。"""
@@ -243,58 +246,78 @@ def _read_preset_meta(filepath):
     except Exception:
         return '', ''
 
+def _preset_dir(subdir):
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    root_dir = os.path.dirname(current_dir)
+    return os.path.join(root_dir, "assets", subdir)
+
+def _folder_stamp(preset_dir):
+    """文件名 + mtime 的元组；目录不存在时为 None。目录自身的 mtime 不可靠，不用它。"""
+    try:
+        return tuple(sorted((e.name, e.stat().st_mtime_ns) for e in os.scandir(preset_dir)
+                            if e.is_file() and e.name.endswith('.json')))
+    except OSError:
+        return None
+
 def get_preset_items(subdir):
     """
     扫描指定子目录下的所有 .json 文件，按分类分组并插入分隔标题。
     subdir: "presets/import" 或 "presets/bone"
     显示名和分类均从 JSON 内 preset_info 读取，与文件名无关。
+    文件夹没变时返回同一个列表对象（见上方缓存说明）。
     """
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    root_dir = os.path.dirname(current_dir)
-    preset_dir = os.path.join(root_dir, "assets", subdir)
+    preset_dir = _preset_dir(subdir)
+    stamp = _folder_stamp(preset_dir)
+    hit = _preset_items_cache.get(subdir)
+    if hit is not None and hit[0] == stamp:
+        return hit[1]
 
-    if not os.path.exists(preset_dir):
-        return [('NONE', "未找到文件夹", "请检查 assets 目录")]
+    if stamp is None:
+        items = [('NONE', "未找到文件夹", "请检查 assets 目录")]
+    elif not stamp:
+        items = [('NONE', "无预设文件", "")]
+    else:
+        # 按分类分组，name/category 均从 JSON 内读取
+        grouped = {}
+        cat_order = ['怪猎系', 'Capcom RE引擎', '通用平台', '其他游戏']
+        for f, _mtime in stamp:
+            filepath = os.path.join(preset_dir, f)
+            name, cat = _read_preset_meta(filepath)
+            if not name:
+                name = os.path.splitext(f)[0]  # fallback 到文件名 stem
+            if not cat or cat not in cat_order:
+                cat = '其他游戏'               # fallback 分类
+            grouped.setdefault(cat, []).append((f, name))
 
-    files = sorted(f for f in os.listdir(preset_dir) if f.endswith('.json'))
-    if not files:
-        return [('NONE', "无预设文件", "")]
+        items = []
+        for cat in cat_order:
+            if cat not in grouped:
+                continue
+            items.append(('', cat, ''))  # 分组标题（不可选）
+            for f, display_name in grouped[cat]:
+                items.append((f, display_name, f"加载 {display_name} 预设"))
+        if not items:
+            items = [('NONE', "无预设文件", "")]
 
-    # 按分类分组，name/category 均从 JSON 内读取
-    grouped = {}
-    cat_order = ['怪猎系', 'Capcom RE引擎', '通用平台', '其他游戏']
-    for f in files:
-        filepath = os.path.join(preset_dir, f)
-        name, cat = _read_preset_meta(filepath)
-        if not name:
-            name = os.path.splitext(f)[0]  # fallback 到文件名 stem
-        if not cat or cat not in cat_order:
-            cat = '其他游戏'               # fallback 分类
-        grouped.setdefault(cat, []).append((f, name))
-
-    items = []
-    for cat in cat_order:
-        if cat not in grouped:
-            continue
-        items.append(('', cat, ''))  # 分组标题（不可选）
-        for f, display_name in grouped[cat]:
-            items.append((f, display_name, f"加载 {display_name} 预设"))
-
-    return items if items else [('NONE', "无预设文件", "")]
+    _preset_items_cache[subdir] = (stamp, items)
+    return items
 
 # --- 回调函数接口 ---
 
+def _presets_with_auto(subdir):
+    base = get_preset_items(subdir)
+    hit = _preset_callback_cache.get(subdir)
+    if hit is not None and hit[0] is base:
+        return hit[1]
+    items = [("AUTO", "自动识别", "根据骨架骨骼覆盖率自动选择最匹配的预设")] + base
+    _preset_callback_cache[subdir] = (base, items)
+    return items
+
 def get_import_presets_callback(self, context):
-    _import_preset_cache.clear()
-    _import_preset_cache.append(("AUTO", "自动识别", "根据骨架骨骼覆盖率自动选择最匹配的预设"))
-    _import_preset_cache.extend(get_preset_items("presets/import"))
-    return _import_preset_cache
+    return _presets_with_auto("presets/import")
 
 def get_target_presets_callback(self, context):
-    _target_preset_cache.clear()
-    _target_preset_cache.append(("AUTO", "自动识别", "根据骨架骨骼覆盖率自动选择最匹配的预设"))
-    _target_preset_cache.extend(get_preset_items("presets/bone"))
-    return _target_preset_cache
+    return _presets_with_auto("presets/bone")
 
 _VALID_ALIGN_MODES = ('FULL', 'POS_ONLY', 'POS_ROLL')
 

@@ -19,7 +19,7 @@ import shutil
 import time
 import types
 
-from .i18n import T
+from .i18n import T, get_lang
 from .slot_defaults import SlotNulls
 from .gen_slot_plan import plan_slots
 from .gen_pipeline import SlotWriter, execute_plan
@@ -2009,24 +2009,41 @@ def bundled_mhwi_preset():
     return path if os.path.isfile(path) else None
 
 
+#: (key, items) -- see load_mhwi_preset_enum_items.
+_mhwi_preset_items_cache = (None, None)
+
+
 def load_mhwi_preset_enum_items():
     """EnumProperty items from MHW Model Editor's MaterialPresets, else the
-    bundled fallback.  'NONE' is only reached when even that is missing."""
-    items = []
+    bundled fallback.  'NONE' is only reached when even that is missing.
+
+    Rescanned on every call like load_preset_enum_items, and for the same reason
+    the unchanged result is handed back as the same list object: Blender keeps
+    the pointers an items= callback returns, and core/stable_enum.py calls this
+    from the enum's get()."""
+    global _mhwi_preset_items_cache
+    paths = []
     preset_dir = get_mhwi_preset_dir()
     if preset_dir:
         try:
             for entry in sorted(os.scandir(preset_dir), key=lambda e: e.name):
                 if entry.is_file() and entry.name.endswith('.json'):
-                    items.append((entry.path, entry.name[:-5], entry.path))
+                    paths.append((entry.path, entry.name[:-5]))
         except Exception:
             pass
-    if items:
-        return items
-    fallback = bundled_mhwi_preset()
-    if fallback:
-        return [(fallback, T("core.mdf_generator_base.mhwi_preset_bundled"), fallback)]
-    return [('NONE', T("core.mdf_generator_base.mhwi_preset_none"), '')]
+    key = (tuple(paths), get_lang())
+    if _mhwi_preset_items_cache[0] == key:
+        return _mhwi_preset_items_cache[1]
+    if paths:
+        items = [(path, name, path) for path, name in paths]
+    else:
+        fallback = bundled_mhwi_preset()
+        if fallback:
+            items = [(fallback, T("core.mdf_generator_base.mhwi_preset_bundled"), fallback)]
+        else:
+            items = [('NONE', T("core.mdf_generator_base.mhwi_preset_none"), '')]
+    _mhwi_preset_items_cache = (key, items)
+    return items
 
 
 def _import_mhwi_create_collection():

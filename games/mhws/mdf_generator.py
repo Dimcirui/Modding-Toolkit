@@ -15,6 +15,7 @@ from ...core.mdf_generator_base import (
 )
 from ...core.i18n import T
 from ...core.color_grade import color_grade_items, DEFAULT_MODE_INDEX
+from ...core.stable_enum import stable_enum
 
 # ── MHWS constants ─────────────────────────────────────────────────────────────
 
@@ -34,7 +35,8 @@ def _mhws_get_presets(self, context):
 
 class MhwsGenMaterialEntry(bpy.types.PropertyGroup):
     blender_material: bpy.props.StringProperty(name="Blender Material")
-    material_preset:  bpy.props.EnumProperty(
+    material_preset:  stable_enum(
+        "material_preset",
         name="Preset",
         description="MDF2 material preset from RE Mesh Editor",
         items=_mhws_get_presets,

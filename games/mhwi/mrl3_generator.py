@@ -21,6 +21,7 @@ from ...core.mdf_generator_base import (
 from ...core.mdf_tex_processor_base import _import_tex_utils, _CH_ENUM_ITEMS, mip_strategy_prop
 from ...core.slot_resolver import resolve_dds_format, write_slot_tex
 from ...core.gen_pipeline import SlotWriter
+from ...core.stable_enum import stable_enum
 from .mrl3_coef_rules import transparent_coefs
 from .mrl3_tex_processor import (
     MHWI_SLOT_CHANNEL_MAPS, MHWI_NULL_TEX,
@@ -105,8 +106,8 @@ def _mhwi_find_meshes_by_material(mod3_col, material_name):
 
 class MhwiGenMaterialEntry(bpy.types.PropertyGroup):
     blender_material: bpy.props.StringProperty()
-    material_preset:  bpy.props.EnumProperty(
-        name="Preset", items=_mhwi_get_presets)
+    material_preset:  stable_enum(
+        "material_preset", name="Preset", items=_mhwi_get_presets)
     expanded:         bpy.props.BoolProperty(default=True)
     strategy_display: bpy.props.StringProperty()
     strat_color:      bpy.props.StringProperty(default="?")
