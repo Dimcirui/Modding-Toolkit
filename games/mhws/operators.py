@@ -80,24 +80,28 @@ def _transfer_partial(obj, source_names, targets_with_ratios):
             tgt_vg = obj.vertex_groups.new(name=tgt_name)
         target_vgs.append((tgt_vg, ratio))
 
-    for src_name in source_names:
-        src_vg = obj.vertex_groups.get(src_name)
-        if src_vg is None:
-            continue
-        for vert in obj.data.vertices:
-            try:
-                src_w = src_vg.weight(vert.index)
-            except RuntimeError:
-                continue
+    src_vgs = [vg for vg in (obj.vertex_groups.get(n) for n in source_names) if vg is not None]
+    if not src_vgs:
+        return
+    by_index = {vg.index: vg for vg in obj.vertex_groups}
+    # One read of each vertex's own groups instead of vg.weight() per (source,
+    # vertex) -- which raises RuntimeError for every vertex outside the group:
+    # ~30 sources x every face vertex, about a million exceptions.  Same result:
+    # vertices are independent, and within one the sources run in the same order.
+    for vert in obj.data.vertices:
+        w = {g.group: g.weight for g in vert.groups}
+        touched = set()
+        for src_vg in src_vgs:
+            src_w = w.get(src_vg.index, 0.0)
             if src_w <= 0.0:
                 continue
             for tgt_vg, ratio in target_vgs:
-                try:
-                    tgt_w = tgt_vg.weight(vert.index)
-                except RuntimeError:
-                    tgt_w = 0.0
-                tgt_vg.add([vert.index], min(tgt_w + src_w * ratio, 1.0), 'REPLACE')
-            src_vg.add([vert.index], src_w * remain_ratio, 'REPLACE')
+                w[tgt_vg.index] = min(w.get(tgt_vg.index, 0.0) + src_w * ratio, 1.0)
+                touched.add(tgt_vg.index)
+            w[src_vg.index] = src_w * remain_ratio
+            touched.add(src_vg.index)
+        for idx in touched:
+            by_index[idx].add([vert.index], w[idx], 'REPLACE')
 
 
 class MHWS_OT_FaceWeightSimplify(bpy.types.Operator):
