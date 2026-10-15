@@ -48,6 +48,13 @@ MESH_SETTINGS = {
 }
 
 
+#: Types with no meaningful empty file, skipped instead of blanked -- the same
+#: call MHRS made for .chain (games/mhrs/batch_export.py NO_BLANK_FILE_TYPES).
+#: There were never blank chain2/clsp files, so these slots only ever printed
+#: "SKIP blank (file not found)".
+NO_BLANK_FILE_TYPES = {"chain2", "clsp"}
+
+
 def _addon_dir():
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -170,8 +177,20 @@ class SchemeExporter:
         mantle joints, the generic blank has none of them, and the game crashed
         loading it (2026-10-14).
         """
-        return os.path.join(_addon_dir(), "assets", "blank_files", self.spec.blank_dir,
-                            filename or f"blank.{filetype}")
+        d = os.path.join(_addon_dir(), "assets", "blank_files", self.spec.blank_dir)
+        if filename:
+            return os.path.join(d, filename)
+        plain = os.path.join(d, f"blank.{filetype}")
+        if os.path.isfile(plain):
+            return plain
+        # Some blanks carry their version in the name, as the game files do
+        # (re9's is blank.sfur.5); looking for "blank.sfur" alone never found it,
+        # so every unbound RE9 sfur slot was skipped instead of blanked.
+        try:
+            versioned = sorted(f for f in os.listdir(d) if f.startswith(f"blank.{filetype}."))
+        except OSError:
+            versioned = []
+        return os.path.join(d, versioned[0]) if versioned else plain
 
     # ── schemes ─────────────────────────────────────────────────────────────
 
@@ -438,6 +457,10 @@ class SchemeExporter:
 
         def try_blank(filetype, filepath, label, filename=None):
             nonlocal export_count, skip_count
+            if filetype in NO_BLANK_FILE_TYPES:
+                print(f"{tag} {label}: not bound, left as is (no blank for {filetype})")
+                skip_count += 1
+                return
             blank_src = self.blank_path(filetype, filename)
             if os.path.isfile(blank_src):
                 os.makedirs(os.path.dirname(filepath), exist_ok=True)
