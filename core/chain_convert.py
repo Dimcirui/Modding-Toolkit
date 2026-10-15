@@ -43,6 +43,8 @@ points gives, at bone-slot level, **no destination the author did not also use**
 in either target -- every difference is a collider they chose to add or drop.
 """
 
+import re
+
 import bpy
 
 from .bone_correction import mat3_mul, relocalise_frame
@@ -249,6 +251,8 @@ def export_operator_for(game_code):
 #: Extensions a chain-side collection name can carry, longest first so ``.chain2``
 #: is never mistaken for ``.chain`` + a stray ``2``.
 _CHAIN_EXTS = (".chain2", ".chain", ".clsp")
+#: Blender's duplicate-name suffix (".001").
+_DUP_SUFFIX = re.compile(r"\.\d{3,}$")
 
 #: What RE-Chain-Editor's own createChainCollection stamps on a chain collection
 #: (blender_re_chain.py:88-89); blender_re_clsp.py:361-362 uses the same colour with
@@ -296,19 +300,33 @@ def chain_file_type_for(collection_name):
     treated as ``.chain``: matching its behaviour matters more than being
     stricter, since the whole point is to agree with what an import would set.
     """
-    if not collection_name or collection_name.endswith(".clsp"):
+    # Judged on the name without Blender's ".001": a second import of the same
+    # file is "X.chain2.001", and reading that as not-.chain2 switched RE Chain
+    # Editor to the v1 flag vocabulary on the first click inside it -- the very
+    # mismatch this function exists to prevent.  Upstream decides from the
+    # *requested* name, which never carries the suffix.
+    base = _split_dup_suffix(collection_name or "")[0]
+    if not base or base.endswith(".clsp"):
         return None
-    if ".chain" not in collection_name:
+    if ".chain" not in base:
         return None
-    return "chain2" if collection_name.endswith(".chain2") else "chain"
+    return "chain2" if base.endswith(".chain2") else "chain"
+
+
+def _split_dup_suffix(name):
+    """``('char.chain2', '.001')`` from ``'char.chain2.001'``; ``(name, '')`` otherwise."""
+    m = _DUP_SUFFIX.search(name)
+    return (name[:m.start()], m.group()) if m else (name, "")
 
 
 def chain_stem(name):
-    """``'char'`` from ``'char.chain'`` / ``'char.chain2'`` / ``'char.clsp'``."""
+    """``'char'`` from ``'char.chain'`` / ``'char.chain2'`` / ``'char.clsp'``,
+    and from the same with Blender's ``.001`` duplicate suffix after it."""
+    base = _split_dup_suffix(name)[0]
     for ext in _CHAIN_EXTS:
-        if name.endswith(ext):
-            return name[:-len(ext)]
-    return name
+        if base.endswith(ext):
+            return base[:-len(ext)]
+    return base
 
 
 def ported_chain_collection_name(source_name, target_game):
@@ -543,10 +561,14 @@ def _sibling_clsp_collection(collection):
     # links the copy in beside the original, so a parent can hold both
     # ``char.clsp`` and ``char_RE4.clsp`` -- taking whichever came first would
     # hand the port the *original's* colliders and silently remap those.
-    stem = chain_stem(name)
+    # The duplicate suffix has to agree too: a second import makes "char.chain2.001"
+    # and "char.clsp.001" side by side with the first pair, and the stem alone
+    # cannot tell which .clsp belongs to which chain.
+    stem, dup = chain_stem(name), _split_dup_suffix(name)[1]
     for parent in parents:
         for sib in parent.children:
-            if sib.get("~TYPE") == CLSP_COLLECTION_TYPE and chain_stem(sib.name) == stem:
+            if (sib.get("~TYPE") == CLSP_COLLECTION_TYPE and chain_stem(sib.name) == stem
+                    and _split_dup_suffix(sib.name)[1] == dup):
                 return sib
     return None
 
