@@ -111,7 +111,9 @@ def _skin_matrices(arm_obj, obj):
     by_group = {}
     for vg in obj.vertex_groups:
         pb = bones.get(vg.name)
-        if pb is None:
+        # A non-deform bone's group is ignored by the Armature modifier, so it
+        # must not move vertices here either.
+        if pb is None or not pb.bone.use_deform:
             continue
         by_group[vg.index] = np.array(
             (pb.matrix @ pb.bone.matrix_local.inverted()), dtype=np.float64)

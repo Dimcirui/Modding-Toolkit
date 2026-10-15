@@ -832,7 +832,50 @@ class MODDER_OT_DeletePosePreset(bpy.types.Operator):
 # 共用的网格处理函数
 # ============================================================
 
+def _needs_modifier_bake(arm_obj, meshes):
+    """True when core.pose_bake's linear blend skinning would not reproduce what
+    the Armature modifier shows: dual-quaternion (Preserve Volume), multi-modifier,
+    a vertex-group mask, envelopes, or B-Bone segments on a deform bone."""
+    for obj in meshes:
+        for mod in obj.modifiers:
+            if mod.type == 'ARMATURE' and mod.object == arm_obj and (
+                    mod.use_deform_preserve_volume or mod.use_multi_modifier
+                    or mod.vertex_group or mod.use_bone_envelopes):
+                return True
+    return any(b.use_deform and b.bbone_segments > 1 for b in arm_obj.data.bones)
+
+
 def _apply_and_rebind(arm_obj):
+    """Make the current pose the rest pose, carrying the deformed meshes with it.
+
+    Done by core.pose_bake.bake_pose_to_rest, which applies only the armature's
+    deformation.  The previous way -- convert(target='MESH') on every recursive
+    child, then a fresh Armature modifier linked onto them -- applied *every*
+    modifier (Subsurf, Mirror, Solidify...), dropped every shape key (MMD morphs
+    before MMD Face Weights), only baked meshes that were children of the rig, and
+    rebound nothing when the active child happened not to be a mesh.  That path is
+    kept only for the modifier settings the bake does not model.
+    """
+    from . import pose_bake
+    bpy.ops.object.mode_set(mode='OBJECT')
+    meshes = pose_bake.bound_meshes(arm_obj)
+    if _needs_modifier_bake(arm_obj, meshes):
+        return _apply_and_rebind_by_convert(arm_obj)
+    for obj in meshes:
+        obj.hide_set(False)
+    pose_bake.bake_pose_to_rest(arm_obj)
+    bpy.ops.object.select_all(action='DESELECT')
+    arm_obj.select_set(True)
+    for obj in arm_obj.children_recursive:
+        try:
+            obj.select_set(True)
+        except RuntimeError:
+            pass
+    bpy.context.view_layer.objects.active = arm_obj
+    return len(meshes)
+
+
+def _apply_and_rebind_by_convert(arm_obj):
     bpy.ops.object.mode_set(mode='OBJECT')
     
     mesh_children = [obj for obj in bpy.data.objects 
