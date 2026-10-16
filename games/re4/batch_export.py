@@ -254,7 +254,8 @@ class RE4_OT_BatchExport(bpy.types.Operator):
         ids = export_autofix.enabled_items(context, 'RE4')
         done = export_autofix.apply(context, 'RE4', pairs, ids)
         meshes = [mesh for _g, _mdf, mesh in pairs if mesh is not None]
-        with export_autofix.temporary(context, 'RE4', pairs, ids) as tmp,                 shapekey_export.session(context, 'RE4', meshes, natives_root):
+        with export_autofix.temporary(context, 'RE4', pairs, ids) as tmp, \
+                shapekey_export.session(context, 'RE4', meshes, natives_root):
             result = self._export(context, scene, settings, natives_root, scheme)
         fixed = {k: v for k, v in list(done.items()) + list(tmp.items()) if v}
         if fixed:

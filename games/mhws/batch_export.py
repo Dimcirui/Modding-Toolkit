@@ -558,7 +558,8 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
         done = export_autofix.apply(context, 'MHWS', pairs, ids,
                                     bound_physics(scene, armor_id, variant, armor_set))
         meshes = [mesh for _p, _mdf, mesh in pairs if mesh is not None]
-        with export_autofix.temporary(context, 'MHWS', pairs, ids) as tmp,                 shapekey_export.session(context, 'MHWS', meshes, natives_root) as sk:
+        with export_autofix.temporary(context, 'MHWS', pairs, ids) as tmp, \
+                shapekey_export.session(context, 'MHWS', meshes, natives_root) as sk:
             result = self._export(context, scene, settings, natives_root, armor_id, armor_set,
                                   variant, variant_armor_id, base_path, parts_mask)
             # SKS names the model after the armor ID and binds it through the

@@ -407,7 +407,8 @@ class MHRS_OT_BatchExport(bpy.types.Operator):
         ids = export_autofix.enabled_items(context, 'MHRS')
         done = export_autofix.apply(context, 'MHRS', pairs, ids)
         meshes = [mesh for _p, _mdf, mesh in pairs if mesh is not None]
-        with export_autofix.temporary(context, 'MHRS', pairs, ids) as tmp,                 shapekey_export.session(context, 'MHRS', meshes, natives_root) as sk:
+        with export_autofix.temporary(context, 'MHRS', pairs, ids) as tmp, \
+                shapekey_export.session(context, 'MHRS', meshes, natives_root) as sk:
             result = self._export(context, scene, settings, natives_root, armor_id, armor_set,
                                   gender, parts_mask)
             # SKS names the model <sex>_<number> and binds it through the body
