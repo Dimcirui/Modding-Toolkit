@@ -284,6 +284,14 @@ def _copy_bone_matrices(context, src_arm, dst_arm):
     bpy.ops.object.mode_set(mode='OBJECT')
 
 
+def preset_default_name(settings, variant_armor_id):
+    """SKS preset name when the user left it empty: the Bonesystem FBXSkel
+    name when that export is on, else the body part's export ID."""
+    if settings.mhws_use_bonesystem and settings.mhws_fbxskel_name.strip():
+        return settings.mhws_fbxskel_name.strip()
+    return f"{variant_armor_id}2"
+
+
 def _do_bonesystem_export(context, settings, variant_armor_id):
     """
     Generate reference skeleton, copy user's armature pose onto it,
@@ -565,7 +573,8 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
             # SKS names the model after the armor ID and binds it through the
             # body part (slot 2); see core/sks_profiles.write_presets.
             paths, msg = shapekey_export.write_presets(
-                sk, natives_root, variant_armor_id, f"{variant_armor_id}2", variant_armor_id)
+                sk, natives_root, variant_armor_id, f"{variant_armor_id}2",
+                preset_default_name(settings, variant_armor_id))
             if msg:
                 self.report({'INFO'}, T(msg).format(n=len(paths)))
         fixed = {k: v for k, v in list(done.items()) + list(tmp.items()) if v}

@@ -413,9 +413,9 @@ class MHRS_OT_BatchExport(bpy.types.Operator):
                                   gender, parts_mask)
             # SKS names the model <sex>_<number> and binds it through the body
             # part (f_body279 -> f_279); see the Rise adapter's model_of.
-            model = f"{gender}_{armor_id}"
+            body = f"{gender}_body{armor_id}"
             paths, msg = shapekey_export.write_presets(
-                sk, natives_root, model, f"{gender}_body{armor_id}", model)
+                sk, natives_root, f"{gender}_{armor_id}", body, body)
             if msg:
                 self.report({'INFO'}, T(msg).format(n=len(paths)))
         fixed = {k: v for k, v in list(done.items()) + list(tmp.items()) if v}

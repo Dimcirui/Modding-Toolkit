@@ -9,8 +9,9 @@ greyed out and nothing extra is passed, so the export is what it always was.
 Which keys go out is done without touching the fork: its exporter already skips
 muted keys (and ``DUMMY_`` names and locked keys, which it bakes instead), so a
 filter mutes the keys it leaves out for the length of one mesh export and puts
-the flags back afterwards.  The split between expression (表情) and sculpt (捏脸)
-keys is ShapeKeySystem's own, see :mod:`core.sks_profiles`.
+the flags back afterwards; the filters that force expression keys out unmute and
+unlock them for that time too.  The split between expression (表情) and sculpt
+(捏脸) keys is ShapeKeySystem's own, see :mod:`core.sks_profiles`.
 
 For the games SKS supports, the export can also write an SKS preset into the mod
 (``reframework/data/ShapeKeySystem/mods/<model>/``): a sculpt preset holding the
@@ -45,11 +46,20 @@ GAMES = {
              "sks": "mhrise", "steam": "MonsterHunterRise"},
 }
 
-#: The fork's shapeKeyExportMode values, in the order they are offered.  MODE0
-#: is the fork's broken legacy mode and is never passed.
-MODES = ("NO", "MODE1", "KEEPNORMALS", "KEEPNORMALS_SURFACE")
-DEFAULT_MODE_INDEX = 3      # KEEPNORMALS_SURFACE, the fork's own default
+#: The fork's shapeKeyExportMode values offered, with their enum numbers (kept
+#: from when NO and KEEPNORMALS were offered too, so saved choices still read).
+#: "Don't export" is the ``export`` checkbox, passed as NO.  MODE0 is the fork's
+#: broken legacy mode and is never passed.
+MODES = (("MODE1", 1), ("KEEPNORMALS_SURFACE", 3))
+DEFAULT_MODE = "KEEPNORMALS_SURFACE"    # the fork's own default
+NO_MODE = "NO"
+#: Key filters with their enum numbers (FOLLOW was ALL; EXPR_SCULPT is new).
+FILTERS = (("FOLLOW", 0), ("EXPR_SCULPT", 3), ("EXPRESSION", 1), ("SCULPT", 2))
+#: Filters that need an expression profile; without one they act as FOLLOW.
+NEEDS_PROFILE = ("EXPR_SCULPT", "EXPRESSION")
 DUMMY_PREFIX = "DUMMY_"
+#: Sculpt keys at this value or below count as 0 (left out by the sculpt filters).
+ZERO = 1e-6
 #: SKS clamps sculpt values to its slider cap, which goes up to 5 (Sculpt.lua).
 SCULPT_MAX = 5.0
 
@@ -66,7 +76,8 @@ def reme_features():
 
 
 def available_modes(game):
-    """Modes the installed REME takes for *game*; [] when it exports none."""
+    """Modes the installed REME takes for *game* (from :data:`MODES`); [] when
+    it exports none or cannot be told not to."""
     if reme_features().get(GAMES[game]["feature"], 0) < 1:
         return []
     cat = get_re_mesh_category()
@@ -77,7 +88,9 @@ def available_modes(game):
         ids = {i.identifier for i in props["shapeKeyExportMode"].enum_items}
     except (AttributeError, KeyError, RuntimeError):
         return []
-    return [m for m in MODES if m in ids]
+    if NO_MODE not in ids:
+        return []
+    return [m for m, _n in MODES if m in ids]
 
 
 def is_sks_game(game):
@@ -107,15 +120,14 @@ _FILTER_ITEMS = []
 
 
 _MODE_LABELS = {
-    "NO": ("core.shapekey_export.mode_no", "core.shapekey_export.mode_no_desc"),
     "MODE1": ("core.shapekey_export.mode_mode1", "core.shapekey_export.mode_mode1_desc"),
-    "KEEPNORMALS": ("core.shapekey_export.mode_keepnormals",
-                    "core.shapekey_export.mode_keepnormals_desc"),
     "KEEPNORMALS_SURFACE": ("core.shapekey_export.mode_keepnormals_surface",
                             "core.shapekey_export.mode_keepnormals_surface_desc"),
 }
 _FILTER_LABELS = {
-    "ALL": ("core.shapekey_export.filter_all", "core.shapekey_export.filter_all_desc"),
+    "FOLLOW": ("core.shapekey_export.filter_follow", "core.shapekey_export.filter_follow_desc"),
+    "EXPR_SCULPT": ("core.shapekey_export.filter_expr_sculpt",
+                    "core.shapekey_export.filter_expr_sculpt_desc"),
     "EXPRESSION": ("core.shapekey_export.filter_expression",
                    "core.shapekey_export.filter_expression_desc"),
     "SCULPT": ("core.shapekey_export.filter_sculpt", "core.shapekey_export.filter_sculpt_desc"),
@@ -123,21 +135,23 @@ _FILTER_LABELS = {
 
 
 def _mode_items(self, context):
-    _MODE_ITEMS[:] = [(m, T(_MODE_LABELS[m][0]), T(_MODE_LABELS[m][1]), i)
-                      for i, m in enumerate(MODES)]
+    _MODE_ITEMS[:] = [(m, T(_MODE_LABELS[m][0]), T(_MODE_LABELS[m][1]), n) for m, n in MODES]
     return _MODE_ITEMS
 
 
 def _filter_items(self, context):
-    _FILTER_ITEMS[:] = [(f, T(lbl), T(desc), i)
-                        for i, (f, (lbl, desc)) in enumerate(_FILTER_LABELS.items())]
+    _FILTER_ITEMS[:] = [(f, T(_FILTER_LABELS[f][0]), T(_FILTER_LABELS[f][1]), n)
+                        for f, n in FILTERS]
     return _FILTER_ITEMS
 
 
 class MT_ShapeKeyExportSettings(bpy.types.PropertyGroup):
+    export: BoolProperty(
+        name="Export Shape Keys", description="Export the meshes' shape keys as blendshapes",
+        default=True)
     mode: EnumProperty(
-        name="Shape Keys", description="Whether and how the meshes' shape keys are exported",
-        items=_mode_items, default=DEFAULT_MODE_INDEX)
+        name="Normal Format", description="How the shape keys' normals are exported",
+        items=_mode_items, default=dict(MODES)[DEFAULT_MODE])
     key_filter: EnumProperty(
         name="Keys", description="Which shape keys are exported",
         items=_filter_items, default=0)
@@ -150,7 +164,9 @@ class MT_ShapeKeyExportSettings(bpy.types.PropertyGroup):
         description="Also write an SKS sculpt preset with the current values and a binding into the mod",
         default=True)
     preset_name: StringProperty(
-        name="Preset Name", description="Name of the sculpt preset; empty = the model ID")
+        name="Preset Name",
+        description="Name of the sculpt preset; empty = the Bonesystem FBXSkel name when that "
+                    "is in use, else the body part's export ID")
 
 
 def settings_of(scene, game):
@@ -166,21 +182,26 @@ def _mesh_objects(collection):
             and o.data.shape_keys is not None and len(o.data.shape_keys.key_blocks) > 1]
 
 
-def exportable_keys(obj):
-    """The keys the fork would export from *obj*: not the basis, not DUMMY_,
-    not muted, not locked (locked keys are baked into the base)."""
+def candidate_keys(obj):
+    """The keys a filter can send out of *obj*: not the basis, not DUMMY_.
+    Whether they are muted (unticked) or locked is up to the filter."""
     blocks = obj.data.shape_keys.key_blocks
     basis = blocks.get("Basis") or blocks[0]
-    return [k for k in blocks
-            if k != basis and not k.name.startswith(DUMMY_PREFIX)
-            and not k.mute and not k.lock_shape]
+    return [k for k in blocks if k != basis and not k.name.startswith(DUMMY_PREFIX)]
+
+
+def is_active(k):
+    """Ticked and unlocked: what the fork exports as a blendshape (it bakes
+    locked keys into the base instead)."""
+    return not k.mute and not k.lock_shape
 
 
 def part_names(collection):
-    """Exportable key names of one exported mesh (= one SKS part), in order."""
+    """Candidate key names of one exported mesh (= one SKS part), in order.
+    Unticked and locked keys count, so a forcing filter classifies them too."""
     seen, out = set(), []
     for obj in _mesh_objects(collection):
-        for k in exportable_keys(obj):
+        for k in candidate_keys(obj):
             if k.name not in seen:
                 seen.add(k.name)
                 out.append(k.name)
@@ -212,6 +233,52 @@ def split_keys(lib, profile_id, collection):
     return [n for n in names if n in expr], [n for n in names if n not in expr]
 
 
+def effective_filter(key_filter, profile_id):
+    """The filter in effect: the ones that need a profile fall back to FOLLOW."""
+    if not key_filter or (key_filter in NEEDS_PROFILE and not profile_id):
+        return "FOLLOW"
+    return key_filter
+
+
+def exports(k, is_expr, key_filter):
+    """Whether *key_filter* sends key *k* out."""
+    if key_filter == "FOLLOW":
+        return is_active(k)
+    if is_expr:     # forced out, ticked or not, locked or not
+        return key_filter in ("EXPR_SCULPT", "EXPRESSION")
+    if key_filter == "EXPRESSION":
+        return False
+    return is_active(k) and abs(k.value) > ZERO
+
+
+def plan(lib, profile_id, collection, key_filter):
+    """``[(obj, key, is_expr, exported)]`` for every candidate key of one mesh."""
+    expr = set(split_keys(lib, profile_id, collection)[0]) if lib is not None and profile_id else set()
+    return [(obj, k, k.name in expr, exports(k, k.name in expr, key_filter))
+            for obj in _mesh_objects(collection) for k in candidate_keys(obj)]
+
+
+def inactive_expression_keys(lib, profile_id, collections):
+    """``[(object name, key name, muted, locked)]``: expression keys that a
+    FOLLOW export leaves out because they are unticked or locked."""
+    out = []
+    for col in collections:
+        for obj, k, is_expr, _out in plan(lib, profile_id, col, "FOLLOW"):
+            if is_expr and not is_active(k):
+                out.append((obj.name, k.name, k.mute, k.lock_shape))
+    return out
+
+
+def effective_mode(pg, modes):
+    """The shapeKeyExportMode to pass: NO when unticked, the chosen mode, else
+    the default, else None (pass nothing)."""
+    if not pg.export:
+        return NO_MODE
+    if pg.mode in modes:
+        return pg.mode
+    return DEFAULT_MODE if DEFAULT_MODE in modes else None
+
+
 # ── The export run ───────────────────────────────────────────────────────────
 
 class _Session:
@@ -239,13 +306,13 @@ def session(context, game, collections=(), mod_root=None):
     s = None
     modes = available_modes(game) if pg is not None else []
     if modes:
-        mode = pg.mode if pg.mode in modes else None
-        key_filter, profile_id, lib = "ALL", None, None
-        if is_sks_game(game) and mode != "NO":
+        mode = effective_mode(pg, modes)
+        key_filter, profile_id, lib = "FOLLOW", None, None
+        if is_sks_game(game) and mode != NO_MODE:
             lib = library(game, mod_root)
             profile_id = pick_profile(pg, lib.rank(
                 [n for c in collections for n in part_names(c)]))
-            key_filter = pg.key_filter if profile_id else "ALL"
+            key_filter = effective_filter(pg.key_filter, profile_id)
         s = _Session(game, pg, mode, key_filter, profile_id, lib)
         print(f"[{game}] shape keys: mode={mode or 'REME default'} filter={key_filter} "
               f"profile={profile_id or '-'}")
@@ -264,47 +331,51 @@ def export_kwargs():
 
 @contextmanager
 def filtered(collection_name):
-    """Mute the keys the session's filter leaves out of this mesh for the length
-    of its export, and note the sculpt values it does export."""
+    """For the length of this mesh's export, mute the keys the session's filter
+    leaves out and unmute / unlock the expression keys it forces out; note the
+    sculpt values it exports.  Every flag goes back afterwards."""
     s = _ACTIVE
     col = bpy.data.collections.get(collection_name) if collection_name else None
-    if s is None or col is None or s.mode == "NO":
+    if s is None or col is None or s.mode == NO_MODE:
         yield
         return
-    expr = set()
-    if s.lib is not None and s.profile_id:
-        expr = set(split_keys(s.lib, s.profile_id, col)[0])
-    muted = []
+    changed = []        # (key, mute, lock_shape) as they were
+    left_out = forced = 0
     try:
-        for obj in _mesh_objects(col):
-            for k in exportable_keys(obj):
-                is_expr = k.name in expr
-                keep = (s.key_filter == "ALL"
-                        or (s.key_filter == "EXPRESSION" and is_expr)
-                        or (s.key_filter == "SCULPT" and not is_expr))
-                if not keep:
+        for _obj, k, is_expr, out in plan(s.lib, s.profile_id, col, s.key_filter):
+            if not out:
+                if is_active(k):        # inactive keys are already left out (or baked)
+                    changed.append((k, k.mute, k.lock_shape))
                     k.mute = True
-                    muted.append(k)
-                    continue
-                s.exported_keys += 1
-                if is_expr:
-                    s.expression_exported = True
-                else:
-                    key = sks_profiles.key_of(k.name)
-                    v = min(max(float(k.value), 0.0), SCULPT_MAX)
-                    s.values[key] = max(v, s.values.get(key, 0.0))
-        if muted:
-            print(f"[{s.game}] {collection_name}: {len(muted)} shape keys left out ({s.key_filter})")
+                    left_out += 1
+                continue
+            if not is_active(k):
+                changed.append((k, k.mute, k.lock_shape))
+                k.mute = False
+                k.lock_shape = False
+                forced += 1
+            s.exported_keys += 1
+            if is_expr:
+                s.expression_exported = True
+            else:
+                key = sks_profiles.key_of(k.name)
+                v = min(max(float(k.value), 0.0), SCULPT_MAX)
+                s.values[key] = max(v, s.values.get(key, 0.0))
+        if left_out or forced:
+            print(f"[{s.game}] {collection_name}: {left_out} shape keys left out, "
+                  f"{forced} forced out ({s.key_filter})")
         yield
     finally:
-        for k in muted:
-            k.mute = False
+        for k, mute, lock in reversed(changed):
+            k.mute = mute
+            k.lock_shape = lock
 
 
 def write_presets(s, mod_root, model, rep_part, default_name):
     """Write the session's SKS preset into *mod_root*.  Returns (paths, message
-    key) -- no paths when there was nothing to write or it is switched off."""
-    if s is None or not is_sks_game(s.game) or s.mode in (None, "NO") or not s.pg.write_preset:
+    key) -- no paths when there was nothing to write or it is switched off.
+    *default_name* names the preset when the user left the name empty."""
+    if s is None or not is_sks_game(s.game) or s.mode in (None, NO_MODE) or not s.pg.write_preset:
         return [], None
     if s.exported_keys == 0:
         return [], "core.shapekey_export.preset_nothing"
@@ -320,6 +391,7 @@ def write_presets(s, mod_root, model, rep_part, default_name):
 # ── UI ───────────────────────────────────────────────────────────────────────
 
 _rank_cache = {}        # game -> ranked list from the last draw (for the picker)
+_inactive_cache = {}    # game -> inactive expression keys from the last draw
 _PROFILE_ITEMS = []
 
 
@@ -333,16 +405,15 @@ def draw(layout, scene, game, collections, mod_root=None):
     modes = available_modes(game)
     row = box.row(align=True)
     row.enabled = bool(modes)
-    row.prop(pg, "mode", text=T("core.shapekey_export.mode_label"), icon='SHAPEKEY_DATA')
+    row.prop(pg, "export", text=T("core.shapekey_export.export_toggle"), icon='SHAPEKEY_DATA')
     if not modes:
         box.label(text=T("core.shapekey_export.need_fork"), icon='INFO')
         return
+    if not pg.export:
+        return
+    box.prop(pg, "mode", text=T("core.shapekey_export.mode_label"))
     if pg.mode not in modes:
         box.label(text=T("core.shapekey_export.mode_unsupported"), icon='ERROR')
-        return
-    if pg.mode == "NO":
-        box.label(text=T("core.shapekey_export.mode_no_hint"), icon='INFO')
-        return
     if not is_sks_game(game):
         return
 
@@ -350,29 +421,47 @@ def draw(layout, scene, game, collections, mod_root=None):
     ranked = ranked_profiles(game, collections, mod_root)
     _rank_cache[game] = ranked
     profile_id = pick_profile(pg, ranked)
-    hit = next((r for r in ranked if r[0] == profile_id), None)
+    key_filter = effective_filter(pg.key_filter, profile_id)
 
-    row = box.row(align=True)
-    row.prop(pg, "key_filter", text=T("core.shapekey_export.filter_label"))
-    row = box.row(align=True)
-    row.label(text=T("core.shapekey_export.profile_label"))
-    if hit is None:
-        text = T("core.shapekey_export.profile_none")
+    box.prop(pg, "key_filter", text=T("core.shapekey_export.filter_label"))
+    if key_filter == "SCULPT":
+        box.label(text=T("core.shapekey_export.sculpt_only_hint"), icon='INFO')
     else:
-        text = T("core.shapekey_export.profile_entry").format(
-            name=hit[1], hits=hit[2], total=hit[3])
-        if not pg.profile:
-            text = T("core.shapekey_export.profile_auto").format(entry=text)
-    op = row.operator("mt.sks_pick_profile", text=text, icon='DOWNARROW_HLT')
-    op.game = game
+        hit = next((r for r in ranked if r[0] == profile_id), None)
+        row = box.row(align=True)
+        row.label(text=T("core.shapekey_export.profile_label"))
+        if hit is None:
+            text = T("core.shapekey_export.profile_none")
+        else:
+            text = T("core.shapekey_export.profile_entry").format(
+                name=hit[1], hits=hit[2], total=hit[3])
+            if not pg.profile:
+                text = T("core.shapekey_export.profile_auto").format(entry=text)
+        op = row.operator("mt.sks_pick_profile", text=text, icon='DOWNARROW_HLT')
+        op.game = game
 
-    n_expr = n_sculpt = 0
+    if key_filter == "FOLLOW" and profile_id:
+        inactive = inactive_expression_keys(lib, profile_id, collections)
+        _inactive_cache[game] = inactive
+        if inactive:
+            row = box.row(align=True)
+            row.alert = True
+            row.label(text=T("core.shapekey_export.inactive_expr").format(n=len(inactive)),
+                      icon='ERROR')
+            op = row.operator("mt.sks_inactive_expression_keys",
+                              text=T("core.shapekey_export.inactive_details"))
+            op.game = game
+
+    n_expr = n_sculpt = n_out = 0
     for col in collections:
-        e, sc = split_keys(lib, profile_id, col)
-        n_expr += len(e)
-        n_sculpt += len(sc)
-    key_filter = pg.key_filter if profile_id else "ALL"
-    n_out = {"ALL": n_expr + n_sculpt, "EXPRESSION": n_expr, "SCULPT": n_sculpt}[key_filter]
+        names_out, names_expr, names_sculpt = set(), set(), set()
+        for _obj, k, is_expr, out in plan(lib, profile_id, col, key_filter):
+            (names_expr if is_expr else names_sculpt).add(k.name)
+            if out:
+                names_out.add(k.name)
+        n_expr += len(names_expr)
+        n_sculpt += len(names_sculpt)
+        n_out += len(names_out)
     box.label(text=T("core.shapekey_export.count").format(
         out=n_out, expr=n_expr, sculpt=n_sculpt), icon='INFO')
     if key_filter != pg.key_filter:
@@ -421,7 +510,57 @@ class MT_OT_SKSPickProfile(bpy.types.Operator):
         return {'FINISHED'}
 
 
-classes = [MT_OT_SKSPickProfile]
+_STATE_KEYS = {(True, False): "core.shapekey_export.state_muted",
+               (False, True): "core.shapekey_export.state_locked",
+               (True, True): "core.shapekey_export.state_both"}
+_DETAIL_ROWS = 30
+
+
+class MT_OT_SKSInactiveExpressionKeys(bpy.types.Operator):
+    """The expression keys an "as ticked / locked" export leaves out, and a
+    button that ticks and unlocks them all."""
+    bl_idname = "mt.sks_inactive_expression_keys"
+    bl_label = "Unticked / Locked Expression Keys"
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+
+    game: StringProperty(options={'HIDDEN'})
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.shapekey_export.inactive_details_desc")
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(
+            self, width=420, title=T("core.shapekey_export.inactive_title"),
+            confirm_text=T("core.shapekey_export.activate_all"))
+
+    def draw(self, context):
+        col = self.layout.column(align=True)
+        rows = _inactive_cache.get(self.game, [])
+        for obj, key, muted, locked in rows[:_DETAIL_ROWS]:
+            r = col.row(align=True)
+            r.label(text=T("core.shapekey_export.inactive_row").format(obj=obj, key=key),
+                    icon='SHAPEKEY_DATA')
+            r.label(text=T(_STATE_KEYS[(bool(muted), bool(locked))]))
+        if len(rows) > _DETAIL_ROWS:
+            col.label(text=T("core.shapekey_export.inactive_more").format(n=len(rows) - _DETAIL_ROWS))
+
+    def execute(self, context):
+        n = 0
+        for obj_name, key_name, _m, _l in _inactive_cache.get(self.game, []):
+            obj = bpy.data.objects.get(obj_name)
+            keys = obj.data.shape_keys if obj is not None and obj.type == 'MESH' else None
+            k = keys.key_blocks.get(key_name) if keys is not None else None
+            if k is not None and not is_active(k):
+                k.mute = False
+                k.lock_shape = False
+                n += 1
+        _inactive_cache.pop(self.game, None)
+        self.report({'INFO'}, T("core.shapekey_export.activated").format(n=n))
+        return {'FINISHED'}
+
+
+classes = [MT_OT_SKSPickProfile, MT_OT_SKSInactiveExpressionKeys]
 
 
 def register():

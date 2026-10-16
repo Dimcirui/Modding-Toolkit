@@ -2718,41 +2718,64 @@ STRINGS = {
     "core.poll.need_copied_bindings": {
         "EN": "Copy a group's bindings first", "ZH": "请先复制一组的绑定"},
     # core/shapekey_export.py -- shape keys in the batch export dialogs
-    "core.shapekey_export.mode_label": {"EN": "Shape Keys", "ZH": "形态键"},
-    "core.shapekey_export.mode_no": {"EN": "Don't Export", "ZH": "不导出"},
-    "core.shapekey_export.mode_no_desc": {
-        "EN": "Export the meshes without shape keys", "ZH": "网格不带形态键导出"},
-    "core.shapekey_export.mode_mode1": {"EN": "Recalculate Normals (in game)", "ZH": "游戏内重算法线"},
+    "core.shapekey_export.export_toggle": {"EN": "Export Shape Keys", "ZH": "导出形态键"},
+    "core.shapekey_export.mode_label": {"EN": "Normal Format", "ZH": "法线格式"},
+    "core.shapekey_export.mode_mode1": {
+        "EN": "Export, Recalculate Normals in Game", "ZH": "导出并实时重算法线"},
     "core.shapekey_export.mode_mode1_desc": {
         "EN": "Write the normal-recalculation tables; the game recomputes normals as keys move",
-        "ZH": "写入法线重算表，由游戏随形态键重算法线"},
-    "core.shapekey_export.mode_keepnormals": {"EN": "Keep Normals (as in Blender)", "ZH": "保留法线（同 Blender）"},
-    "core.shapekey_export.mode_keepnormals_desc": {
-        "EN": "Store each key's normals as Blender shows them", "ZH": "按 Blender 中的样子保存每个形态键的法线"},
+        "ZH": "写入法线重算表，由游戏随形态键实时重算法线"},
     "core.shapekey_export.mode_keepnormals_surface": {
-        "EN": "Keep Normals (surface turn)", "ZH": "保留法线（随表面转动）"},
+        "EN": "Export, Keep Normals (Recommended)", "ZH": "导出并保留法线（推荐）"},
     "core.shapekey_export.mode_keepnormals_surface_desc": {
-        "EN": "Store each key's normals turned only with the surface (RE Mesh Editor's default)",
-        "ZH": "每个形态键的法线只随表面转动（RE Mesh Editor 默认）"},
+        "EN": "Store each key's normals, turned only with the surface (RE Mesh Editor's default)",
+        "ZH": "保存每个形态键的法线，只随表面转动（RE Mesh Editor 默认）"},
     "core.shapekey_export.need_fork": {
         "EN": "Needs RE-Mesh-Editor-BlendShape", "ZH": "需要 RE-Mesh-Editor-BlendShape"},
     "core.shapekey_export.mode_unsupported": {
         "EN": "The installed RE Mesh Editor lacks this mode; its own default is used",
         "ZH": "当前 RE Mesh Editor 不支持这个模式，导出时用它自己的默认值"},
-    "core.shapekey_export.mode_no_hint": {
-        "EN": "Locked shape keys are still baked into the mesh",
-        "ZH": "已锁定的形态键仍会烘焙进网格"},
     "core.shapekey_export.filter_label": {"EN": "Export", "ZH": "导出"},
-    "core.shapekey_export.filter_all": {"EN": "All Keys", "ZH": "全部形态键"},
-    "core.shapekey_export.filter_all_desc": {
-        "EN": "Export every shape key (expression and sculpt)", "ZH": "导出全部形态键（表情和捏脸）"},
-    "core.shapekey_export.filter_expression": {"EN": "Expression Only", "ZH": "仅表情"},
+    "core.shapekey_export.filter_follow": {"EN": "As Ticked / Locked", "ZH": "按勾选和锁定"},
+    "core.shapekey_export.filter_follow_desc": {
+        "EN": "Export exactly what the shape key list says: ticked keys go out, unticked ones don't, "
+              "locked ones are baked into the mesh",
+        "ZH": "完全按形态键列表的设置：打勾的导出，不打勾的不导出，上锁的烘焙进网格"},
+    "core.shapekey_export.filter_expr_sculpt": {
+        "EN": "Expression + Sculpt Keys", "ZH": "导出表情、捏脸形态键"},
+    "core.shapekey_export.filter_expr_sculpt_desc": {
+        "EN": "Every expression key (even unticked or locked), plus the ticked, unlocked sculpt keys "
+              "whose value is not 0",
+        "ZH": "全部表情形态键（无视打勾和上锁），以及打勾、未上锁且数值不为 0 的捏脸形态键"},
+    "core.shapekey_export.filter_expression": {
+        "EN": "Expression Keys Only", "ZH": "仅导出表情形态键"},
     "core.shapekey_export.filter_expression_desc": {
-        "EN": "Only the keys the expression profile drives", "ZH": "只导出表情方案驱动的形态键"},
-    "core.shapekey_export.filter_sculpt": {"EN": "Sculpt Only", "ZH": "仅捏脸"},
+        "EN": "Every expression key, even unticked or locked ones; no sculpt keys",
+        "ZH": "只导出表情形态键（无视打勾和上锁），不导出捏脸形态键"},
+    "core.shapekey_export.filter_sculpt": {"EN": "Sculpt Keys Only", "ZH": "仅导出捏脸形态键"},
     "core.shapekey_export.filter_sculpt_desc": {
-        "EN": "Only the keys the expression profile does not drive",
-        "ZH": "只导出表情方案不驱动的形态键"},
+        "EN": "Only the ticked, unlocked sculpt keys whose value is not 0; no expression keys",
+        "ZH": "只导出打勾、未上锁且数值不为 0 的捏脸形态键，不导出表情形态键"},
+    "core.shapekey_export.sculpt_only_hint": {
+        "EN": "No expression keys are exported with this option",
+        "ZH": "此选项不会导出任何表情形态键"},
+    "core.shapekey_export.inactive_expr": {
+        "EN": "{n} expression keys are unticked or locked and won't be exported",
+        "ZH": "有 {n} 个表情形态键未打勾或已上锁，不会导出"},
+    "core.shapekey_export.inactive_details": {"EN": "Details", "ZH": "查看详情"},
+    "core.shapekey_export.inactive_details_desc": {
+        "EN": "List the unticked / locked expression keys, and activate them all",
+        "ZH": "列出未打勾或已上锁的表情形态键，并可一键全部激活"},
+    "core.shapekey_export.inactive_title": {
+        "EN": "Unticked / Locked Expression Keys", "ZH": "未打勾或已上锁的表情形态键"},
+    "core.shapekey_export.inactive_row": {"EN": "{obj}: {key}", "ZH": "{obj}：{key}"},
+    "core.shapekey_export.state_muted": {"EN": "Unticked", "ZH": "未打勾"},
+    "core.shapekey_export.state_locked": {"EN": "Locked", "ZH": "已上锁"},
+    "core.shapekey_export.state_both": {"EN": "Unticked, Locked", "ZH": "未打勾、已上锁"},
+    "core.shapekey_export.inactive_more": {"EN": "... and {n} more", "ZH": "……另有 {n} 个"},
+    "core.shapekey_export.activate_all": {"EN": "Activate All", "ZH": "全部激活"},
+    "core.shapekey_export.activated": {
+        "EN": "Activated {n} expression keys", "ZH": "已激活 {n} 个表情形态键"},
     "core.shapekey_export.profile_label": {"EN": "Expression Profile", "ZH": "表情方案"},
     "core.shapekey_export.profile_entry": {
         "EN": "{name}  {hits}/{total}", "ZH": "{name}  {hits}/{total}"},
@@ -2768,10 +2791,10 @@ STRINGS = {
         "EN": "{out} keys exported  (expression {expr}, sculpt {sculpt})",
         "ZH": "导出 {out} 个形态键（表情 {expr}，捏脸 {sculpt}）"},
     "core.shapekey_export.filter_needs_profile": {
-        "EN": "No expression profile matches, so every key is exported",
-        "ZH": "没有匹配的表情方案，将导出全部形态键"},
+        "EN": "No expression profile matches, so keys are exported as ticked / locked",
+        "ZH": "没有匹配的表情方案，将按勾选和锁定导出"},
     "core.shapekey_export.write_preset": {"EN": "Write SKS Preset", "ZH": "写入 SKS 预设"},
-    "core.shapekey_export.preset_name": {"EN": "Name", "ZH": "名称"},
+    "core.shapekey_export.preset_name": {"EN": "Preset Name", "ZH": "预设名称"},
     "core.shapekey_export.preset_written": {
         "EN": "SKS preset written ({n} files)", "ZH": "已写入 SKS 预设（{n} 个文件）"},
     "core.shapekey_export.preset_nothing": {
