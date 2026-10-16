@@ -2735,6 +2735,8 @@ STRINGS = {
     "core.shapekey_export.mode_unsupported": {
         "EN": "The installed RE Mesh Editor lacks this mode; its own default is used",
         "ZH": "当前 RE Mesh Editor 不支持这个模式，导出时用它自己的默认值"},
+    "core.shapekey_export.use_sks": {
+        "EN": "Use ShapeKeySystem", "ZH": "使用形态键系统 ShapeKeySystem"},
     "core.shapekey_export.filter_label": {"EN": "Export", "ZH": "导出"},
     "core.shapekey_export.filter_follow": {"EN": "As Ticked / Locked", "ZH": "按勾选和锁定"},
     "core.shapekey_export.filter_follow_desc": {

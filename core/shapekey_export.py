@@ -152,6 +152,11 @@ class MT_ShapeKeyExportSettings(bpy.types.PropertyGroup):
     mode: EnumProperty(
         name="Normal Format", description="How the shape keys' normals are exported",
         items=_mode_items, default=dict(MODES)[DEFAULT_MODE])
+    use_sks: BoolProperty(
+        name="Use ShapeKeySystem",
+        description="Sort keys into expression / sculpt by an SKS expression profile and write an "
+                    "SKS preset; off = keys export as ticked / locked",
+        default=True)
     key_filter: EnumProperty(
         name="Keys", description="Which shape keys are exported",
         items=_filter_items, default=0)
@@ -331,7 +336,7 @@ def session(context, game, collections=(), mod_root=None):
     if modes:
         mode = effective_mode(pg, modes)
         key_filter, profile_id, lib = "FOLLOW", None, None
-        if is_sks_game(game) and mode != NO_MODE:
+        if is_sks_game(game) and pg.use_sks and mode != NO_MODE:
             lib = library(game, mod_root)
             profile_id = pick_profile(pg, lib.rank(
                 [n for c in collections for n in part_names(c)]))
@@ -398,7 +403,8 @@ def write_presets(s, mod_root, model, rep_part, default_name):
     """Write the session's SKS preset into *mod_root*.  Returns (paths, message
     key) -- no paths when there was nothing to write or it is switched off.
     *default_name* names the preset when the user left the name empty."""
-    if s is None or not is_sks_game(s.game) or s.mode in (None, NO_MODE) or not s.pg.write_preset:
+    if (s is None or not is_sks_game(s.game) or s.mode in (None, NO_MODE)
+            or not s.pg.use_sks or not s.pg.write_preset):
         return [], None
     if s.exported_keys == 0:
         return [], "core.shapekey_export.preset_nothing"
@@ -439,6 +445,10 @@ def draw(layout, scene, game, collections, mod_root=None):
         box.label(text=T("core.shapekey_export.mode_unsupported"), icon='ERROR')
     if not is_sks_game(game):
         return
+    box.prop(pg, "use_sks", text=T("core.shapekey_export.use_sks"))
+    if not pg.use_sks:
+        return
+    box = box.box()     # everything below needs ShapeKeySystem
 
     lib = library(game, mod_root)
     ranked = ranked_profiles(game, collections, mod_root)
