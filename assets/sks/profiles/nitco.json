@@ -1,0 +1,27 @@
+{
+  "schema": "sks.profile/1",
+  "id": "nitco",
+  "name": "nitco（ニトコ）",
+  "description": "nitco 原生形态键（eye_blink_left、eye_zitome、mouth_fun、eyebrows_angry、VRM_lookup 等）。Blink Left / Lowerlid Left 等 VRChat 键是空键，不使用。标了 guessed 的需要游戏实测。",
+  "aliases": [],
+  "channels": [
+    {"name": "eyebrows_up", "group": "brow", "sum": [{"s": "browOuterUp.L", "k": 0.5}, {"s": "browOuterUp.R", "k": 0.5}], "note": "眉毛上移；左右合一的键，左右信号各取一半。最大位移 14.1mm（nitco）。整条眉毛上移"},
+    {"name": "eyebrows_down", "group": "brow", "sum": [{"s": "browDown.L", "k": 0.5}, {"s": "browDown.R", "k": 0.5}], "note": "眉毛下压；左右合一的键，左右信号各取一半。最大位移 25.9mm（nitco）"},
+    {"name": "eyebrows_sad", "group": "brow", "sum": [{"s": "browInnerUp.L", "k": 0.5}, {"s": "browInnerUp.R", "k": 0.5}], "note": "眉头上提；左右合一的键，左右信号各取一半。最大位移 10.3mm（nitco）。eyebrows_sad：眉头上提、眉尾下垂"},
+    {"name": "eyebrows_angry", "group": "brow", "sum": [{"s": "browBring.L", "k": 0.5}, {"s": "browBring.R", "k": 0.5}], "note": "眉头下压（皱眉）；左右合一的键，左右信号各取一半。最大位移 9.4mm（nitco）"},
+    {"name": "eye_blink_left", "group": "eye", "s": "blink.L", "note": "闭眼（左侧）。最大位移 35.1mm（nitco）"},
+    {"name": "eye_blink_right", "group": "eye", "s": "blink.R", "note": "闭眼（右侧）。最大位移 35.1mm（nitco）"},
+    {"name": "eye_zitome", "group": "eye", "sum": [{"s": "eyeSquint.L", "k": 0.5}, {"s": "eyeSquint.R", "k": 0.5}], "note": "上眼睑下降、眼裂缩小；左右合一的键，左右信号各取一半。最大位移 9.9mm（nitco）"},
+    {"name": "eye_open", "group": "eye", "sum": [{"s": "eyeWide.L", "k": 0.5}, {"s": "eyeWide.R", "k": 0.5}], "guessed": true, "note": "睁大眼；左右合一的键，左右信号各取一半。最大位移 5.6mm（nitco）"},
+    {"name": "mouth_a", "group": "mouth", "s": "jawOpen", "note": "张嘴。最大位移 11.5mm（nitco）"},
+    {"name": "mouth_u", "group": "mouth", "sum": [{"s": "funnel.L", "k": 0.5}, {"s": "funnel.R", "k": 0.5}], "guessed": true, "note": "u 口型（嘴唇收拢）；左右合一的键，左右信号各取一半。最大位移 11.5mm（nitco）"},
+    {"name": "mouth_fun", "group": "mouth", "min": [{"const": 1}, {"sum": [{"s": "smile.L", "k": 0.5}, {"s": "smile.R", "k": 0.5}, {"s": "smileMinor.L", "k": 0.25}, {"s": "smileMinor.R", "k": 0.25}]}], "note": "嘴角上扬；左右合一的键，左右信号各取一半。最大位移 2.0mm（nitco）"},
+    {"name": "mouth_frown", "group": "mouth", "sum": [{"s": "frown.L", "k": 0.5}, {"s": "frown.R", "k": 0.5}], "guessed": true, "note": "嘴角下垂；左右合一的键，左右信号各取一半。最大位移 3.6mm（nitco）。唇中上拱的 ∩ 形，嘴角略降"},
+    {"name": "mouth_stretch", "group": "mouth", "sum": [{"s": "stretch.L", "k": 0.5}, {"s": "stretch.R", "k": 0.5}], "note": "嘴角向外、嘴变宽；左右合一的键，左右信号各取一半。最大位移 6.0mm（nitco）"},
+    {"name": "mouth_shrink", "group": "mouth", "sum": [{"s": "funnelTogether.L", "k": 0.5}, {"s": "funnelTogether.R", "k": 0.5}], "guessed": true, "note": "嘴角向内、嘴变窄；左右合一的键，左右信号各取一半。最大位移 6.0mm（nitco）"},
+    {"name": "VRM_lookup", "group": "gaze", "gaze_set": "look", "sum": [{"eye": "L", "axis": "pitch", "sign": 1, "k": 0.5}, {"eye": "R", "axis": "pitch", "sign": 1, "k": 0.5}], "note": "虹膜上移。最大位移 4.5mm（nitco）。视线方向按 Shinano 游戏实测换算：虹膜移向角色自身左侧(+X) 对应 yaw +1。"},
+    {"name": "VRM_lookdown", "group": "gaze", "gaze_set": "look", "sum": [{"eye": "L", "axis": "pitch", "sign": -1, "k": 0.5}, {"eye": "R", "axis": "pitch", "sign": -1, "k": 0.5}], "note": "虹膜下移。最大位移 6.1mm（nitco）。视线方向按 Shinano 游戏实测换算：虹膜移向角色自身左侧(+X) 对应 yaw +1。"},
+    {"name": "VRM_lookleft", "group": "gaze", "gaze_set": "look", "sum": [{"eye": "L", "axis": "yaw", "sign": 1, "k": 0.5}, {"eye": "R", "axis": "yaw", "sign": 1, "k": 0.5}], "note": "虹膜移向角色左侧。最大位移 12.1mm（nitco）。视线方向按 Shinano 游戏实测换算：虹膜移向角色自身左侧(+X) 对应 yaw +1。"},
+    {"name": "VRM_lookright", "group": "gaze", "gaze_set": "look", "sum": [{"eye": "L", "axis": "yaw", "sign": -1, "k": 0.5}, {"eye": "R", "axis": "yaw", "sign": -1, "k": 0.5}], "note": "虹膜移向角色右侧。最大位移 12.1mm（nitco）。视线方向按 Shinano 游戏实测换算：虹膜移向角色自身左侧(+X) 对应 yaw +1。"}
+  ]
+}

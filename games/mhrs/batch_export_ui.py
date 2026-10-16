@@ -3,6 +3,7 @@ import bpy
 from ...core.i18n import T
 from ...core import pre_export_check_ops as pec
 from ...core import export_autofix
+from ...core import shapekey_export
 from ...core import mod_root
 from .batch_export import (
     MHRS_PARTS, MHRS_PART_LABEL_KEYS,
@@ -260,6 +261,8 @@ class MHRS_OT_BatchExportDialog(bpy.types.Operator):
         row = layout.row(align=True)
         row.prop(settings, "mhrs_use_blank_export", text=T("ui.prop.use_blank_export"), icon='FILE_BLANK')
         export_autofix.draw_toggle(row, settings, 'MHRS')
+        shapekey_export.draw(layout, scene, 'MHRS',
+                             [m for _p, _d, m in bound_pairs(scene, armor_id, gender) if m is not None], natives_root)
 
         self._draw_shadow(layout, settings, scene, armor_id, gender, parts_mask)
 

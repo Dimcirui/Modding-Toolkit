@@ -13,6 +13,7 @@ from ...core import mod_root
 from ...core import lua_bone_system
 from ...core.i18n import T
 from ...core import json_cache
+from ...core import shapekey_export
 
 # MHWs 游戏级文件后缀常量
 MHWS_EXTS = {
@@ -556,9 +557,16 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
         ids = export_autofix.enabled_items(context, 'MHWS')
         done = export_autofix.apply(context, 'MHWS', pairs, ids,
                                     bound_physics(scene, armor_id, variant, armor_set))
-        with export_autofix.temporary(context, 'MHWS', pairs, ids) as tmp:
+        meshes = [mesh for _p, _mdf, mesh in pairs if mesh is not None]
+        with export_autofix.temporary(context, 'MHWS', pairs, ids) as tmp,                 shapekey_export.session(context, 'MHWS', meshes, natives_root) as sk:
             result = self._export(context, scene, settings, natives_root, armor_id, armor_set,
                                   variant, variant_armor_id, base_path, parts_mask)
+            # SKS names the model after the armor ID and binds it through the
+            # body part (slot 2); see core/sks_profiles.write_presets.
+            paths, msg = shapekey_export.write_presets(
+                sk, natives_root, variant_armor_id, f"{variant_armor_id}2", variant_armor_id)
+            if msg:
+                self.report({'INFO'}, T(msg).format(n=len(paths)))
         fixed = {k: v for k, v in list(done.items()) + list(tmp.items()) if v}
         if fixed:
             print("[MHWs] auto-fix: " + ", ".join(f"{k}={v}" for k, v in fixed.items()))

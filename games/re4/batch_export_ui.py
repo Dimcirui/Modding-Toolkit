@@ -4,6 +4,7 @@ from ...core.i18n import T
 from ...core import poll_msg
 from ...core import pre_export_check_ops as pec
 from ...core import export_autofix
+from ...core import shapekey_export
 from ...core import mod_root
 from .batch_export import (
     _load_scheme, _get_binding, _set_binding,
@@ -438,6 +439,8 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
         layout.separator()
         layout.prop(settings, "re4_use_blank_export", text=T("ui.prop.use_blank_export"), icon='FILE_BLANK')
         export_autofix.draw_toggle(layout, settings, 'RE4')
+        shapekey_export.draw(layout, scene, 'RE4',
+                             [m for _p, _d, m in bound_pairs(scene, scheme, use_simplified) if m is not None], natives_root)
 
         # Run the check before the list draws, so each row can carry its own
         # issue icon; the summary line at the bottom reuses the same result.

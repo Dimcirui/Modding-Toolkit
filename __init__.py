@@ -37,6 +37,7 @@ from .core import pre_export_check_ops
 from .core import pre_export_fix_ops
 from .core import ref_model_ops
 from .core import stale_cleanup_ops
+from .core import shapekey_export
 from . import ui, games
 
 class MT_Preferences(AddonPreferences):
@@ -162,6 +163,8 @@ modules = [
     pre_export_fix_ops,
     ref_model_ops,
     stale_cleanup_ops,
+    # The SKS profile picker in the batch export dialogs.
+    shapekey_export,
     games,
     ui,
 ]

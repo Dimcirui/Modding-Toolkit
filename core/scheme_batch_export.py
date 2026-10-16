@@ -32,6 +32,7 @@ from . import mod_root
 from .export_verify import checked
 from . import poll_msg
 from . import json_cache
+from . import shapekey_export
 
 #: Slots a part can carry besides its mesh.  ``gpuc`` (Onimusha's cloth-sim cache)
 #: has no Blender-side editor, so it is only ever written as a blank file.
@@ -63,7 +64,10 @@ def _addon_dir():
 
 def do_export_mesh(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    checked(filepath, lambda: call_re_mesh_op('exportfile', filepath=filepath, targetCollection=collection_name, **MESH_SETTINGS))
+    # Shape-key mode and key filter of the batch export running, if any.
+    with shapekey_export.filtered(collection_name):
+        checked(filepath, lambda: call_re_mesh_op('exportfile', filepath=filepath, targetCollection=collection_name,
+                                                  **MESH_SETTINGS, **shapekey_export.export_kwargs()))
 
 
 def do_export_mdf2(filepath, collection_name):
@@ -373,7 +377,8 @@ class SchemeExporter:
             mdf_panel.activeGame = spec.mdf_active_game
         try:
             if spec.autofix_game is None:
-                return self._export(op, context, scene, settings, natives_root, scheme)
+                return self._export_with_shapekeys(op, context, scene, settings, natives_root,
+                                                   scheme, scheme_file)
             # Auto-fix only after every check above has passed: an export that
             # cancels must not leave its fixes behind. Persistent fixes first (one
             # undo step), then the temporary ones wrap the export itself and come
@@ -382,7 +387,8 @@ class SchemeExporter:
             ids = export_autofix.enabled_items(context, spec.autofix_game)
             done = export_autofix.apply(context, spec.autofix_game, pairs, ids)
             with export_autofix.temporary(context, spec.autofix_game, pairs, ids) as tmp:
-                result = self._export(op, context, scene, settings, natives_root, scheme)
+                result = self._export_with_shapekeys(op, context, scene, settings, natives_root,
+                                                     scheme, scheme_file)
             fixed = {k: v for k, v in list(done.items()) + list(tmp.items()) if v}
             if fixed:
                 print(f"[{spec.code}] auto-fix: " + ", ".join(f"{k}={v}" for k, v in fixed.items()))
@@ -392,6 +398,21 @@ class SchemeExporter:
         finally:
             if spec.mdf_active_game and mdf_panel is not None and prev_game is not None:
                 mdf_panel.activeGame = prev_game
+
+    def _export_with_shapekeys(self, op, context, scene, settings, natives_root, scheme, scheme_file):
+        """_export under this game's shape-key settings, then the SKS preset."""
+        game = self.spec.code
+        meshes = [mesh for _label, _mdf, mesh in
+                  self.bound_pairs(scene, scheme, self.use_simplified(scene)) if mesh is not None]
+        with shapekey_export.session(context, game, meshes, natives_root) as sk:
+            result = self._export(op, context, scene, settings, natives_root, scheme)
+            model = shapekey_export.GAMES[game].get("model")
+            if model:
+                paths, msg = shapekey_export.write_presets(
+                    sk, natives_root, model, model, os.path.splitext(scheme_file)[0])
+                if msg:
+                    op.report({'INFO'}, T(msg).format(n=len(paths)))
+        return result
 
     def _export(self, op, context, scene, settings, natives_root, scheme):
         spec = self.spec
@@ -1121,6 +1142,8 @@ def build_classes(exp):
             layout.prop(settings, spec.blank_setting, text=T("ui.prop.use_blank_export"), icon='FILE_BLANK')
             if spec.autofix_game is not None:
                 export_autofix.draw_toggle(layout, settings, spec.autofix_game)
+            shapekey_export.draw(layout, scene, spec.code,
+                                 [m for _p, _d, m in exp.bound_pairs(scene, scheme, use_simplified) if m is not None], natives_root)
 
             # Run the check before the list draws, so each row can carry its own
             # issue icon; the summary line at the bottom reuses the same result.

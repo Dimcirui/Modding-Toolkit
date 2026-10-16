@@ -12,6 +12,7 @@ from ...core import mod_root
 from ...core import lua_bone_system
 from ...core.export_verify import checked
 from ...core import json_cache
+from ...core import shapekey_export
 
 # MHRS 游戏级文件后缀常量
 MHRS_EXTS = {
@@ -80,7 +81,10 @@ MESH_SETTINGS = {
 
 def _do_export_mesh(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    checked(filepath, lambda: call_re_mesh_op('exportfile', filepath=filepath, targetCollection=collection_name, **MESH_SETTINGS))
+    # Shape-key mode and key filter of the batch export running, if any.
+    with shapekey_export.filtered(collection_name):
+        checked(filepath, lambda: call_re_mesh_op('exportfile', filepath=filepath, targetCollection=collection_name,
+                                                  **MESH_SETTINGS, **shapekey_export.export_kwargs()))
 
 def _do_export_mdf2(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
@@ -402,7 +406,8 @@ class MHRS_OT_BatchExport(bpy.types.Operator):
         pairs = bound_pairs(scene, armor_id, gender)
         ids = export_autofix.enabled_items(context, 'MHRS')
         done = export_autofix.apply(context, 'MHRS', pairs, ids)
-        with export_autofix.temporary(context, 'MHRS', pairs, ids) as tmp:
+        meshes = [mesh for _p, _mdf, mesh in pairs if mesh is not None]
+        with export_autofix.temporary(context, 'MHRS', pairs, ids) as tmp,                 shapekey_export.session(context, 'MHRS', meshes, natives_root):
             result = self._export(context, scene, settings, natives_root, armor_id, armor_set,
                                   gender, parts_mask)
         fixed = {k: v for k, v in list(done.items()) + list(tmp.items()) if v}

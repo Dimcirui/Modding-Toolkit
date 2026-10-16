@@ -2717,4 +2717,65 @@ STRINGS = {
         "ZH": "请先在生成器里选择网格集合"},
     "core.poll.need_copied_bindings": {
         "EN": "Copy a group's bindings first", "ZH": "请先复制一组的绑定"},
+    # core/shapekey_export.py -- shape keys in the batch export dialogs
+    "core.shapekey_export.mode_label": {"EN": "Shape Keys", "ZH": "形态键"},
+    "core.shapekey_export.mode_no": {"EN": "Don't Export", "ZH": "不导出"},
+    "core.shapekey_export.mode_no_desc": {
+        "EN": "Export the meshes without shape keys", "ZH": "网格不带形态键导出"},
+    "core.shapekey_export.mode_mode1": {"EN": "Recalculate Normals (in game)", "ZH": "游戏内重算法线"},
+    "core.shapekey_export.mode_mode1_desc": {
+        "EN": "Write the normal-recalculation tables; the game recomputes normals as keys move",
+        "ZH": "写入法线重算表，由游戏随形态键重算法线"},
+    "core.shapekey_export.mode_keepnormals": {"EN": "Keep Normals (as in Blender)", "ZH": "保留法线（同 Blender）"},
+    "core.shapekey_export.mode_keepnormals_desc": {
+        "EN": "Store each key's normals as Blender shows them", "ZH": "按 Blender 中的样子保存每个形态键的法线"},
+    "core.shapekey_export.mode_keepnormals_surface": {
+        "EN": "Keep Normals (surface turn)", "ZH": "保留法线（随表面转动）"},
+    "core.shapekey_export.mode_keepnormals_surface_desc": {
+        "EN": "Store each key's normals turned only with the surface (RE Mesh Editor's default)",
+        "ZH": "每个形态键的法线只随表面转动（RE Mesh Editor 默认）"},
+    "core.shapekey_export.need_fork": {
+        "EN": "Needs RE-Mesh-Editor-BlendShape", "ZH": "需要 RE-Mesh-Editor-BlendShape"},
+    "core.shapekey_export.mode_unsupported": {
+        "EN": "The installed RE Mesh Editor lacks this mode; its own default is used",
+        "ZH": "当前 RE Mesh Editor 不支持这个模式，导出时用它自己的默认值"},
+    "core.shapekey_export.mode_no_hint": {
+        "EN": "Locked shape keys are still baked into the mesh",
+        "ZH": "已锁定的形态键仍会烘焙进网格"},
+    "core.shapekey_export.filter_label": {"EN": "Export", "ZH": "导出"},
+    "core.shapekey_export.filter_all": {"EN": "All Keys", "ZH": "全部形态键"},
+    "core.shapekey_export.filter_all_desc": {
+        "EN": "Export every shape key (expression and sculpt)", "ZH": "导出全部形态键（表情和捏脸）"},
+    "core.shapekey_export.filter_expression": {"EN": "Expression Only", "ZH": "仅表情"},
+    "core.shapekey_export.filter_expression_desc": {
+        "EN": "Only the keys the expression profile drives", "ZH": "只导出表情方案驱动的形态键"},
+    "core.shapekey_export.filter_sculpt": {"EN": "Sculpt Only", "ZH": "仅捏脸"},
+    "core.shapekey_export.filter_sculpt_desc": {
+        "EN": "Only the keys the expression profile does not drive",
+        "ZH": "只导出表情方案不驱动的形态键"},
+    "core.shapekey_export.profile_label": {"EN": "Expression Profile", "ZH": "表情方案"},
+    "core.shapekey_export.profile_entry": {
+        "EN": "{name}  {hits}/{total}", "ZH": "{name}  {hits}/{total}"},
+    "core.shapekey_export.profile_auto": {"EN": "Auto: {entry}", "ZH": "自动：{entry}"},
+    "core.shapekey_export.profile_auto_item": {"EN": "Auto (best match)", "ZH": "自动（最佳匹配）"},
+    "core.shapekey_export.profile_none": {
+        "EN": "No profile matches -- all keys count as sculpt",
+        "ZH": "没有匹配的方案，全部按捏脸处理"},
+    "core.shapekey_export.pick_profile_desc": {
+        "EN": "SKS expression profiles, best match first (matched channels / channels)",
+        "ZH": "SKS 表情方案，按匹配率从高到低（匹配通道数/通道总数）"},
+    "core.shapekey_export.count": {
+        "EN": "{out} keys exported  (expression {expr}, sculpt {sculpt})",
+        "ZH": "导出 {out} 个形态键（表情 {expr}，捏脸 {sculpt}）"},
+    "core.shapekey_export.filter_needs_profile": {
+        "EN": "No expression profile matches, so every key is exported",
+        "ZH": "没有匹配的表情方案，将导出全部形态键"},
+    "core.shapekey_export.write_preset": {"EN": "Write SKS Preset", "ZH": "写入 SKS 预设"},
+    "core.shapekey_export.preset_name": {"EN": "Name", "ZH": "名称"},
+    "core.shapekey_export.preset_written": {
+        "EN": "SKS preset written ({n} files)", "ZH": "已写入 SKS 预设（{n} 个文件）"},
+    "core.shapekey_export.preset_nothing": {
+        "EN": "No shape keys were exported, so no SKS preset was written",
+        "ZH": "没有导出形态键，未写入 SKS 预设"},
 }
+

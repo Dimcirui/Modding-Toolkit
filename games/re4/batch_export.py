@@ -9,6 +9,7 @@ from ...core import export_autofix
 from ...core import mod_root
 from ...core.export_verify import checked
 from ...core import json_cache
+from ...core import shapekey_export
 
 
 def _get_export_schemes_dir():
@@ -155,7 +156,10 @@ MESH_SETTINGS = {
 
 def _do_export_mesh(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    checked(filepath, lambda: call_re_mesh_op('exportfile', filepath=filepath, targetCollection=collection_name, **MESH_SETTINGS))
+    # Shape-key mode and key filter of the batch export running, if any.
+    with shapekey_export.filtered(collection_name):
+        checked(filepath, lambda: call_re_mesh_op('exportfile', filepath=filepath, targetCollection=collection_name,
+                                                  **MESH_SETTINGS, **shapekey_export.export_kwargs()))
 
 def _do_export_mdf2(filepath, collection_name):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
@@ -249,7 +253,8 @@ class RE4_OT_BatchExport(bpy.types.Operator):
         pairs = bound_pairs(scene, scheme, scene.get("re4_use_simplified", True))
         ids = export_autofix.enabled_items(context, 'RE4')
         done = export_autofix.apply(context, 'RE4', pairs, ids)
-        with export_autofix.temporary(context, 'RE4', pairs, ids) as tmp:
+        meshes = [mesh for _g, _mdf, mesh in pairs if mesh is not None]
+        with export_autofix.temporary(context, 'RE4', pairs, ids) as tmp,                 shapekey_export.session(context, 'RE4', meshes, natives_root):
             result = self._export(context, scene, settings, natives_root, scheme)
         fixed = {k: v for k, v in list(done.items()) + list(tmp.items()) if v}
         if fixed:

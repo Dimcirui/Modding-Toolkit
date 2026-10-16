@@ -9,6 +9,7 @@ from .batch_export import (
 from ...core.i18n import T
 from ...core import pre_export_check_ops as pec
 from ...core import export_autofix
+from ...core import shapekey_export
 from ...core import mod_root
 
 EXPORTER_WINDOW_WIDTH = 580
@@ -270,6 +271,8 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
         row = layout.row(align=True)
         row.prop(settings, "mhws_use_blank_export", text=T("ui.prop.use_blank_export"), icon='FILE_BLANK')
         export_autofix.draw_toggle(row, settings, 'MHWS')
+        shapekey_export.draw(layout, scene, 'MHWS',
+                             [m for _p, _d, m in bound_pairs(scene, armor_id, variant) if m is not None], natives_root)
 
         self._draw_body_reshape(layout, settings, scene, armor_id, variant)
 

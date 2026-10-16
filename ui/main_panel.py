@@ -3,6 +3,7 @@ import os
 import re
 from ..core.i18n import T, draw_language_toggle, get_lang
 from ..core import bone_utils, ui_config, export_autofix
+from ..core.shapekey_export import MT_ShapeKeyExportSettings
 from . import game_sections
 from ..core.mdf_generator_base import (
     MHW_OT_SetChannelSize, MHW_OT_SetShaderSource,
@@ -401,6 +402,12 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         description="For slots with no collection selected, copy in the built-in blank file instead of skipping",
         default=True,
     )
+    # Shape keys in each batch export (core/shapekey_export.py).
+    mhws_shapekeys: bpy.props.PointerProperty(type=MT_ShapeKeyExportSettings)
+    re4_shapekeys: bpy.props.PointerProperty(type=MT_ShapeKeyExportSettings)
+    re9_shapekeys: bpy.props.PointerProperty(type=MT_ShapeKeyExportSettings)
+    mhrs_shapekeys: bpy.props.PointerProperty(type=MT_ShapeKeyExportSettings)
+    oni_shapekeys: bpy.props.PointerProperty(type=MT_ShapeKeyExportSettings)
 
     # MHRS batch export
     mhrs_armor_scheme: bpy.props.EnumProperty(
@@ -813,6 +820,7 @@ _sk_enum_cache: list = []
 # register / unregister
 # ==========================================
 classes = [
+    MT_ShapeKeyExportSettings,     # before the settings that point at it
     MHW_PT_SuiteSettings,
     MHW_OT_SetChannelSize,
     MHW_OT_SetShaderSource,
