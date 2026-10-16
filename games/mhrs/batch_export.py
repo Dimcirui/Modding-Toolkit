@@ -407,9 +407,16 @@ class MHRS_OT_BatchExport(bpy.types.Operator):
         ids = export_autofix.enabled_items(context, 'MHRS')
         done = export_autofix.apply(context, 'MHRS', pairs, ids)
         meshes = [mesh for _p, _mdf, mesh in pairs if mesh is not None]
-        with export_autofix.temporary(context, 'MHRS', pairs, ids) as tmp,                 shapekey_export.session(context, 'MHRS', meshes, natives_root):
+        with export_autofix.temporary(context, 'MHRS', pairs, ids) as tmp,                 shapekey_export.session(context, 'MHRS', meshes, natives_root) as sk:
             result = self._export(context, scene, settings, natives_root, armor_id, armor_set,
                                   gender, parts_mask)
+            # SKS names the model <sex>_<number> and binds it through the body
+            # part (f_body279 -> f_279); see the Rise adapter's model_of.
+            model = f"{gender}_{armor_id}"
+            paths, msg = shapekey_export.write_presets(
+                sk, natives_root, model, f"{gender}_body{armor_id}", model)
+            if msg:
+                self.report({'INFO'}, T(msg).format(n=len(paths)))
         fixed = {k: v for k, v in list(done.items()) + list(tmp.items()) if v}
         if fixed:
             print("[MHRS] auto-fix: " + ", ".join(f"{k}={v}" for k, v in fixed.items()))

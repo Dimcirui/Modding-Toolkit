@@ -41,7 +41,8 @@ GAMES = {
              "sks": "onimusha_wots", "steam": "OnimushaWotS", "model": "musashi"},
     "RE4":  {"feature": "re4_blendshape_export", "prop": "re4_shapekeys"},
     "RE9":  {"feature": "re9_blendshape_export", "prop": "re9_shapekeys"},
-    "MHRS": {"feature": "mhrise_blendshape_export", "prop": "mhrs_shapekeys"},
+    "MHRS": {"feature": "mhrise_blendshape_export", "prop": "mhrs_shapekeys",
+             "sks": "mhrise", "steam": "MonsterHunterRise"},
 }
 
 #: The fork's shapeKeyExportMode values, in the order they are offered.  MODE0
