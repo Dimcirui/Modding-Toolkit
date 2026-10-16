@@ -269,6 +269,29 @@ def inactive_expression_keys(lib, profile_id, collections):
     return out
 
 
+def count_keys(lib, profile_id, collections, key_filter):
+    """(exported, expression, used sculpt, unused sculpt) key counts, by name
+    per mesh.  A sculpt key is used when it is ticked, unlocked and not 0."""
+    n_out = n_expr = n_used = n_unused = 0
+    for col in collections:
+        out, expr, used, unused = set(), set(), set(), set()
+        for _obj, k, is_expr, exported in plan(lib, profile_id, col, key_filter):
+            if exported:
+                out.add(k.name)
+            if is_expr:
+                expr.add(k.name)
+            elif is_active(k) and abs(k.value) > ZERO:
+                used.add(k.name)
+            else:
+                unused.add(k.name)
+        unused -= used      # a name used on one object of the mesh is used
+        n_out += len(out)
+        n_expr += len(expr)
+        n_used += len(used)
+        n_unused += len(unused)
+    return n_out, n_expr, n_used, n_unused
+
+
 def effective_mode(pg, modes):
     """The shapeKeyExportMode to pass: NO when unticked, the chosen mode, else
     the default, else None (pass nothing)."""
@@ -452,18 +475,9 @@ def draw(layout, scene, game, collections, mod_root=None):
                               text=T("core.shapekey_export.inactive_details"))
             op.game = game
 
-    n_expr = n_sculpt = n_out = 0
-    for col in collections:
-        names_out, names_expr, names_sculpt = set(), set(), set()
-        for _obj, k, is_expr, out in plan(lib, profile_id, col, key_filter):
-            (names_expr if is_expr else names_sculpt).add(k.name)
-            if out:
-                names_out.add(k.name)
-        n_expr += len(names_expr)
-        n_sculpt += len(names_sculpt)
-        n_out += len(names_out)
+    n_out, n_expr, n_used, n_unused = count_keys(lib, profile_id, collections, key_filter)
     box.label(text=T("core.shapekey_export.count").format(
-        out=n_out, expr=n_expr, sculpt=n_sculpt), icon='INFO')
+        out=n_out, expr=n_expr, used=n_used, unused=n_unused), icon='INFO')
     if key_filter != pg.key_filter:
         box.label(text=T("core.shapekey_export.filter_needs_profile"), icon='ERROR')
 

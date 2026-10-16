@@ -2788,8 +2788,8 @@ STRINGS = {
         "EN": "SKS expression profiles, best match first (matched channels / channels)",
         "ZH": "SKS 表情方案，按匹配率从高到低（匹配通道数/通道总数）"},
     "core.shapekey_export.count": {
-        "EN": "{out} keys exported  (expression {expr}, sculpt {sculpt})",
-        "ZH": "导出 {out} 个形态键（表情 {expr}，捏脸 {sculpt}）"},
+        "EN": "{out} keys exported  (expression {expr}, sculpt used {used}, unused {unused})",
+        "ZH": "导出 {out} 个形态键（表情 {expr}，已使用 {used}，未使用 {unused}）"},
     "core.shapekey_export.filter_needs_profile": {
         "EN": "No expression profile matches, so keys are exported as ticked / locked",
         "ZH": "没有匹配的表情方案，将按勾选和锁定导出"},
