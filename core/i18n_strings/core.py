@@ -30,16 +30,14 @@ STRINGS = {
         "EN": "Align the body bones of the target game armature to the source preset bones (select target armature last)",
         "ZH": "将目标游戏骨架的身体骨骼对齐来源预设骨骼（后选要修改的目标骨架）"},
     "core.standard_ops.smart_graft_desc": {
-        "EN": "Smart physics bone graft (with end-bone extension):\n"
-              "1. Copy physics bones (direct world-space alignment).\n"
-              "2. Auto-generate _End bones at the tip of physics chains (before verticalizing).\n"
-              "3. Force-disconnect bones to prevent position snapping.\n"
-              "4. Reset all grafted bones to point straight up (Z+).",
-        "ZH": "智能物理骨移植 (末端延伸版):\n"
-              "1. 复制物理骨骼 (直接世界坐标对齐)。\n"
-              "2. 【新功能】自动为物理链末端添加 _End 骨骼 (在竖直重置前生成)。\n"
-              "3. 强制断开连接，防止位置吸附。\n"
-              "4. 统一将所有移植骨骼重置为竖直向上 (Z+)。"},
+        "EN": "Graft the source armature's physics bones onto the target.\n"
+              "A dialog picks the clean-ups: drop helper bones, halve chains, resolve branches, "
+              "add tail (_End) bones; for MHWI also the skirt's front chain and the slot estimate.\n"
+              "Grafted bones are disconnected and point straight up (Z+).",
+        "ZH": "把来源骨架的物理骨移植到目标骨架。\n"
+              "弹窗里选择要用的优化：剔除辅助骨、简化物理链（折半）、处理支链、添加尾骨骼；"
+              "MHWI 另有拆除裙子正前物理链和名额估算。\n"
+              "移植的骨骼断开连接，统一竖直向上 (Z+)。"},
     "core.standard_ops.merge_physics_weights_desc": {
         "EN": "Merge physics bone vertex group weights into their nearest base bone (determined by X preset).\n"
               "For downgrade scenarios where physics is unsupported or unneeded",
@@ -226,14 +224,25 @@ STRINGS = {
         "EN": "Use the \"Remove Physics Limit\" plugin (arm / wst / leg same as body)",
         "ZH": "使用「解除物理上限」插件（arm / wst / leg 与 body 等同）"},
     "core.standard_ops.graft_dissolve_centre": {
-        "EN": "Dissolve front centre chain (weights to left / right chains)",
-        "ZH": "拆掉正前方中央链（权重分给左右两条链）"},
+        "EN": "Remove the skirt's front chain (weights to the chains beside it)",
+        "ZH": "拆除裙子正前物理链（权重分给左右两条链）"},
     "core.standard_ops.graft_dissolve_centre_named": {
-        "EN": "Dissolve front centre chain: {names}",
-        "ZH": "拆掉正前方中央链: {names}"},
+        "EN": "Remove the skirt's front chain: {names}",
+        "ZH": "拆除裙子正前物理链: {names}"},
     "core.standard_ops.graft_decimate": {
-        "EN": "Decimate chains (keep ends, drop every other bone)",
-        "ZH": "抽稀物理链（保留首尾，隔一根删一根）"},
+        "EN": "Simplify chains (halve: keep ends, drop every other bone)",
+        "ZH": "简化物理链（折半：保留首尾，隔一根删一根）"},
+    "core.standard_ops.graft_drop_helpers": {
+        "EN": "Drop helper bones (no weight anywhere in their subtree)",
+        "ZH": "剔除辅助骨（整条都没有权重的骨骼）"},
+    "core.standard_ops.graft_resolve_forks": {
+        "EN": "Resolve branches (drop empty roots, continue the main branch)",
+        "ZH": "处理支链（删掉空的根骨，识别主链延续）"},
+    "core.standard_ops.graft_add_end": {
+        "EN": "Add tail bones (_End)", "ZH": "添加尾骨骼（_End）"},
+    "core.standard_ops.graft_count": {
+        "EN": "{n} physics bones will be grafted ({e} of them tail bones)",
+        "ZH": "将移植 {n} 根物理骨骼（其中尾骨骼 {e} 根）"},
     "core.standard_ops.graft_budget_header": {
         "EN": "Estimated MHWI slots (base skeleton {base} bones):",
         "ZH": "MHWI 名额估算（本体 {base} 根骨）："},
