@@ -118,6 +118,14 @@ def _face_weights(game):
               'SHAPEKEY_DATA', props={'target_game': game})
 
 
+def _configure_shape_keys(game_code):
+    """Last in the rig group: set the selected meshes' shape-key ticks / locks
+    the way one of batch export's key filters would export them."""
+    return op("mt.sks_configure_shape_keys",
+              "ui.game_sections.btn_configure_shape_keys", 'SHAPEKEY_DATA',
+              props={'game': game_code})
+
+
 def _batch_export(prefix, label_key, needs='re_mesh'):
     return op(f"{prefix}.batch_export_dialog", label_key, 'EXPORT', needs=needs)
 
@@ -243,6 +251,7 @@ SECTIONS = {
             _face_weights('MHWS'),
             op("mhws.add_facial_bones", "ui.main_panel.btn_add_facial_bones",
                'SHAPEKEY_DATA'),
+            _configure_shape_keys('MHWS'),
         ],
         'material': [
             # Above the processor/generator pair for the same reason as MHWI:
@@ -273,6 +282,7 @@ SECTIONS = {
             _face_weights('RE4'),
             op("re4.add_facial_bones", "ui.main_panel.btn_add_facial_bones",
                'SHAPEKEY_DATA'),
+            _configure_shape_keys('RE4'),
         ],
         'material': [
             # Above the processor/generator pair for the same reason as
@@ -301,7 +311,7 @@ SECTIONS = {
                   'IMPORT', needs='re_mesh_import'),
                _pre_export_check('MHRS'),
                _batch_export('mhrs', "ui.game_sections.btn_batch_export_mhrs")],
-        'rig': [],
+        'rig': [_configure_shape_keys('MHRS')],
         'material': [
             # MHRS has only one archetype (see games/mhrs/shader_defs.py's
             # module docstring), so this is pinned like MHWI's button --
@@ -349,6 +359,7 @@ SECTIONS = {
         'label': "Onimusha Tools", 'icon': 'GHOST_ENABLED',
         'io': [_ref_model('ONI'),
                _batch_export('oni', "ui.game_sections.btn_batch_export_oni")],
+        'rig': [_configure_shape_keys('ONI')],
     },
 }
 

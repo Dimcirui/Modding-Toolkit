@@ -56,6 +56,7 @@ NO_MODE = "NO"
 #: Key filters with their enum numbers (FOLLOW was ALL; EXPR_SCULPT is new).
 FILTERS = (("FOLLOW", 0), ("EXPR_SCULPT", 3), ("EXPRESSION", 1), ("SCULPT", 2))
 #: Filters that need an expression profile; without one they act as FOLLOW.
+#: SCULPT needs one too while it is scoped to meshes with expression keys.
 NEEDS_PROFILE = ("EXPR_SCULPT", "EXPRESSION")
 DUMMY_PREFIX = "DUMMY_"
 #: Sculpt keys at this value or below count as 0 (left out by the sculpt filters).
@@ -168,6 +169,11 @@ class MT_ShapeKeyExportSettings(bpy.types.PropertyGroup):
         name="Write SKS Preset",
         description="Also write an SKS sculpt preset with the current values and a binding into the mod",
         default=True)
+    only_expression_meshes: BoolProperty(
+        name="Only Meshes with Expression Keys",
+        description="On: the key option applies only to meshes with an expression key; the others "
+                    "export as ticked / locked.  Off: it applies to every mesh",
+        default=True)
     preset_name: StringProperty(
         name="Preset Name",
         description="Name of the sculpt preset; empty = the Bonesystem FBXSkel name when that "
@@ -238,9 +244,10 @@ def split_keys(lib, profile_id, collection):
     return [n for n in names if n in expr], [n for n in names if n not in expr]
 
 
-def effective_filter(key_filter, profile_id):
+def effective_filter(key_filter, profile_id, scoped=False):
     """The filter in effect: the ones that need a profile fall back to FOLLOW."""
-    if not key_filter or (key_filter in NEEDS_PROFILE and not profile_id):
+    needs = NEEDS_PROFILE + (("SCULPT",) if scoped else ())
+    if not key_filter or (key_filter in needs and not profile_id):
         return "FOLLOW"
     return key_filter
 
@@ -256,11 +263,22 @@ def exports(k, is_expr, key_filter):
     return is_active(k) and abs(k.value) > ZERO
 
 
-def plan(lib, profile_id, collection, key_filter):
+def object_rows(obj, expr, key_filter, scoped=False):
+    """``[(key, is_expr, exported)]`` for one object.  *scoped*: the filter
+    applies only to an object with at least one expression key, and any other
+    object exports as ticked / locked, so clothing that shares a part with the
+    face keeps its keys."""
+    keys = candidate_keys(obj)
+    if scoped and not any(k.name in expr for k in keys):
+        key_filter = "FOLLOW"
+    return [(k, k.name in expr, exports(k, k.name in expr, key_filter)) for k in keys]
+
+
+def plan(lib, profile_id, collection, key_filter, scoped=False):
     """``[(obj, key, is_expr, exported)]`` for every candidate key of one mesh."""
     expr = set(split_keys(lib, profile_id, collection)[0]) if lib is not None and profile_id else set()
-    return [(obj, k, k.name in expr, exports(k, k.name in expr, key_filter))
-            for obj in _mesh_objects(collection) for k in candidate_keys(obj)]
+    return [(obj, k, is_expr, out) for obj in _mesh_objects(collection)
+            for k, is_expr, out in object_rows(obj, expr, key_filter, scoped)]
 
 
 def inactive_expression_keys(lib, profile_id, collections):
@@ -274,13 +292,13 @@ def inactive_expression_keys(lib, profile_id, collections):
     return out
 
 
-def count_keys(lib, profile_id, collections, key_filter):
+def count_keys(lib, profile_id, collections, key_filter, scoped=False):
     """(exported, expression, used sculpt, unused sculpt) key counts, by name
     per mesh.  A sculpt key is used when it is ticked, unlocked and not 0."""
     n_out = n_expr = n_used = n_unused = 0
     for col in collections:
         out, expr, used, unused = set(), set(), set(), set()
-        for _obj, k, is_expr, exported in plan(lib, profile_id, col, key_filter):
+        for _obj, k, is_expr, exported in plan(lib, profile_id, col, key_filter, scoped):
             if exported:
                 out.add(k.name)
             if is_expr:
@@ -310,8 +328,9 @@ def effective_mode(pg, modes):
 # ── The export run ───────────────────────────────────────────────────────────
 
 class _Session:
-    def __init__(self, game, pg, mode, key_filter, profile_id, lib):
+    def __init__(self, game, pg, mode, key_filter, profile_id, lib, scoped=False):
         self.game = game
+        self.scoped = scoped            # filter only meshes with expression keys
         self.pg = pg
         self.mode = mode                # None = pass nothing (REME default)
         self.key_filter = key_filter
@@ -335,13 +354,14 @@ def session(context, game, collections=(), mod_root=None):
     modes = available_modes(game) if pg is not None else []
     if modes:
         mode = effective_mode(pg, modes)
-        key_filter, profile_id, lib = "FOLLOW", None, None
+        key_filter, profile_id, lib, scoped = "FOLLOW", None, None, False
         if is_sks_game(game) and pg.use_sks and mode != NO_MODE:
             lib = library(game, mod_root)
             profile_id = pick_profile(pg, lib.rank(
                 [n for c in collections for n in part_names(c)]))
-            key_filter = effective_filter(pg.key_filter, profile_id)
-        s = _Session(game, pg, mode, key_filter, profile_id, lib)
+            scoped = pg.only_expression_meshes
+            key_filter = effective_filter(pg.key_filter, profile_id, scoped)
+        s = _Session(game, pg, mode, key_filter, profile_id, lib, scoped)
         print(f"[{game}] shape keys: mode={mode or 'REME default'} filter={key_filter} "
               f"profile={profile_id or '-'}")
     prev, _ACTIVE = _ACTIVE, s
@@ -370,7 +390,7 @@ def filtered(collection_name):
     changed = []        # (key, mute, lock_shape) as they were
     left_out = forced = 0
     try:
-        for _obj, k, is_expr, out in plan(s.lib, s.profile_id, col, s.key_filter):
+        for _obj, k, is_expr, out in plan(s.lib, s.profile_id, col, s.key_filter, s.scoped):
             if not out:
                 if is_active(k):        # inactive keys are already left out (or baked)
                     changed.append((k, k.mute, k.lock_shape))
@@ -454,24 +474,27 @@ def draw(layout, scene, game, collections, mod_root=None):
     ranked = ranked_profiles(game, collections, mod_root)
     _rank_cache[game] = ranked
     profile_id = pick_profile(pg, ranked)
-    key_filter = effective_filter(pg.key_filter, profile_id)
+    scoped = pg.only_expression_meshes
+    key_filter = effective_filter(pg.key_filter, profile_id, scoped)
 
     box.prop(pg, "key_filter", text=T("core.shapekey_export.filter_label"))
-    if key_filter == "SCULPT":
+    if pg.key_filter != "FOLLOW":
+        box.prop(pg, "only_expression_meshes",
+                 text=T("core.shapekey_export.only_expression_meshes"))
+    if pg.key_filter == "SCULPT":
         box.label(text=T("core.shapekey_export.sculpt_only_hint"), icon='INFO')
+    hit = next((r for r in ranked if r[0] == profile_id), None)
+    row = box.row(align=True)
+    row.label(text=T("core.shapekey_export.profile_label"))
+    if hit is None:
+        text = T("core.shapekey_export.profile_none")
     else:
-        hit = next((r for r in ranked if r[0] == profile_id), None)
-        row = box.row(align=True)
-        row.label(text=T("core.shapekey_export.profile_label"))
-        if hit is None:
-            text = T("core.shapekey_export.profile_none")
-        else:
-            text = T("core.shapekey_export.profile_entry").format(
-                name=hit[1], hits=hit[2], total=hit[3])
-            if not pg.profile:
-                text = T("core.shapekey_export.profile_auto").format(entry=text)
-        op = row.operator("mt.sks_pick_profile", text=text, icon='DOWNARROW_HLT')
-        op.game = game
+        text = T("core.shapekey_export.profile_entry").format(
+            name=hit[1], hits=hit[2], total=hit[3])
+        if not pg.profile:
+            text = T("core.shapekey_export.profile_auto").format(entry=text)
+    op = row.operator("mt.sks_pick_profile", text=text, icon='DOWNARROW_HLT')
+    op.game = game
 
     if key_filter == "FOLLOW" and profile_id:
         inactive = inactive_expression_keys(lib, profile_id, collections)
@@ -485,7 +508,7 @@ def draw(layout, scene, game, collections, mod_root=None):
                               text=T("core.shapekey_export.inactive_details"))
             op.game = game
 
-    n_out, n_expr, n_used, n_unused = count_keys(lib, profile_id, collections, key_filter)
+    n_out, n_expr, n_used, n_unused = count_keys(lib, profile_id, collections, key_filter, scoped)
     box.label(text=T("core.shapekey_export.count").format(
         out=n_out, expr=n_expr, used=n_used, unused=n_unused), icon='INFO')
     if key_filter != pg.key_filter:
@@ -584,7 +607,179 @@ class MT_OT_SKSInactiveExpressionKeys(bpy.types.Operator):
         return {'FINISHED'}
 
 
-classes = [MT_OT_SKSPickProfile, MT_OT_SKSInactiveExpressionKeys]
+# ── Configuring the keys ahead of export ─────────────────────────────────────
+#
+# The forcing filters only change the flags for the length of one export.  This
+# writes the same changes into the selected meshes for good, so the user can
+# start from what a filter would export and then tick more keys by hand, and
+# export "as ticked / locked".
+
+#: The filters the configure dialog offers: every one except FOLLOW.
+CONFIGURE_FILTERS = ("EXPR_SCULPT", "EXPRESSION", "SCULPT")
+
+
+def configure_library(game):
+    """The profile library for *game*: its SKS one, or for a game SKS doesn't
+    support the shared profiles alone (key names, not the game, decide a match)."""
+    if is_sks_game(game):
+        return library(game)
+    return sks_profiles.library(None)
+
+
+def configure_groups(objects):
+    """``[(part key names, [objects])]``: the selected meshes with shape keys,
+    grouped by their collection, which stands for one exported mesh (= one SKS
+    part).  Names come from every mesh in that collection, as the export sees
+    them; a mesh that sits only in the scene's root collection is its own part."""
+    groups = {}
+    for obj in objects:
+        if (obj.type != 'MESH' or obj.data.shape_keys is None
+                or len(obj.data.shape_keys.key_blocks) < 2):
+            continue
+        col = next((c for c in obj.users_collection
+                    if bpy.data.collections.get(c.name) == c), None)
+        groups.setdefault(col.name if col is not None else "\0" + obj.name, (col, []))[1].append(obj)
+    out = []
+    for col, objs in groups.values():
+        seen, names = set(), []
+        for o in (_mesh_objects(col) if col is not None else []) + objs:
+            for k in candidate_keys(o):
+                if k.name not in seen:
+                    seen.add(k.name)
+                    names.append(k.name)
+        out.append((names, objs))
+    return out
+
+
+def configure_plan(lib, profile_id, groups, key_filter):
+    """``[(key, is_expr, exported)]`` over every candidate key of the grouped meshes.
+    Never scoped: the user picks the meshes by selecting them."""
+    out = []
+    for names, objs in groups:
+        expr = lib.expression_names(profile_id, names) if profile_id else set()
+        for obj in objs:
+            out.extend(object_rows(obj, expr, key_filter))
+    return out
+
+
+def configure_changes(plan_rows):
+    """(keys to tick / unlock, keys to untick): what :func:`filtered` would change."""
+    on = [k for k, _e, out in plan_rows if out and not is_active(k)]
+    off = [k for k, _e, out in plan_rows if not out and is_active(k)]
+    return on, off
+
+
+_CONF_FILTER_ITEMS = []
+_CONF_PROFILE_ITEMS = []
+_conf_rank_cache = {}   # game -> ranked list for the open dialog
+
+
+def _conf_filter_items(self, context):
+    _CONF_FILTER_ITEMS[:] = [(f, T(_FILTER_LABELS[f][0]), T(_FILTER_LABELS[f][1]), i)
+                             for i, f in enumerate(CONFIGURE_FILTERS)]
+    return _CONF_FILTER_ITEMS
+
+
+def _conf_profile_items(self, context):
+    items = [("__AUTO__", T("core.shapekey_export.profile_auto_item"), "")]
+    for pid, name, hits, total, source in _conf_rank_cache.get(self.game, []):
+        items.append((pid, T("core.shapekey_export.profile_entry").format(
+            name=name, hits=hits, total=total), source))
+    _CONF_PROFILE_ITEMS[:] = [(a, b, c, i) for i, (a, b, c) in enumerate(items)]
+    return _CONF_PROFILE_ITEMS
+
+
+class MT_OT_SKSConfigureShapeKeys(bpy.types.Operator):
+    """Tick, untick and unlock the selected meshes' shape keys the way one of
+    the batch export's key filters would export them."""
+    bl_idname = "mt.sks_configure_shape_keys"
+    bl_label = "Configure Selected Meshes' Shape Keys"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    game: StringProperty(options={'HIDDEN'})
+    key_filter: EnumProperty(name="Keys", items=_conf_filter_items)
+    profile: EnumProperty(name="Expression Profile", items=_conf_profile_items)
+
+    @classmethod
+    def description(cls, context, properties):
+        return T("core.shapekey_export.configure_desc")
+
+    @classmethod
+    def poll(cls, context):
+        return any(o.type == 'MESH' for o in context.selected_objects)
+
+    def _state(self, context):
+        lib = configure_library(self.game)
+        groups = configure_groups(context.selected_objects)
+        profile_id = None
+        ranked = _conf_rank_cache.get(self.game, [])
+        ids = {r[0] for r in ranked}
+        if self.profile != "__AUTO__" and self.profile in ids:
+            profile_id = self.profile
+        elif ranked and ranked[0][2] > 0:
+            profile_id = ranked[0][0]
+        rows = configure_plan(lib, profile_id, groups, self.key_filter)
+        return lib, groups, profile_id, rows
+
+    def invoke(self, context, event):
+        if self.game not in GAMES:
+            return {'CANCELLED'}
+        groups = configure_groups(context.selected_objects)
+        if not groups:
+            self.report({'WARNING'}, T("core.shapekey_export.configure_none"))
+            return {'CANCELLED'}
+        _conf_rank_cache[self.game] = configure_library(self.game).rank(
+            [n for names, _o in groups for n in names])
+        pg = settings_of(context.scene, self.game)
+        if pg is not None:
+            if pg.key_filter in CONFIGURE_FILTERS:
+                self.key_filter = pg.key_filter
+            ids = {r[0] for r in _conf_rank_cache[self.game]}
+            self.profile = pg.profile if pg.profile in ids else "__AUTO__"
+        return context.window_manager.invoke_props_dialog(
+            self, width=420, title=T("core.shapekey_export.configure_title"),
+            confirm_text=T("core.shapekey_export.configure_apply"))
+
+    def draw(self, context):
+        col = self.layout.column()
+        col.prop(self, "key_filter", text=T("core.shapekey_export.filter_label"))
+        col.prop(self, "profile", text=T("core.shapekey_export.profile_label"))
+        _lib, groups, profile_id, rows = self._state(context)
+        if profile_id is None and self.key_filter in NEEDS_PROFILE:
+            col.label(text=T("core.shapekey_export.configure_no_profile"), icon='ERROR')
+        on, off = configure_changes(rows)
+        n_expr = sum(1 for _k, e, _o in rows if e)
+        box = col.box()
+        box.label(text=T("core.shapekey_export.configure_summary").format(
+            meshes=sum(len(o) for _n, o in groups), keys=len(rows), expr=n_expr),
+            icon='INFO')
+        box.label(text=T("core.shapekey_export.configure_changes").format(
+            on=len(on), off=len(off)), icon='SHAPEKEY_DATA')
+        box.label(text=T("core.shapekey_export.configure_hint"))
+
+    def execute(self, context):
+        if self.game not in GAMES:
+            return {'CANCELLED'}
+        if self.game not in _conf_rank_cache:     # run without the dialog (redo / script)
+            groups = configure_groups(context.selected_objects)
+            _conf_rank_cache[self.game] = configure_library(self.game).rank(
+                [n for names, _o in groups for n in names])
+        _lib, _groups, profile_id, rows = self._state(context)
+        if profile_id is None and self.key_filter in NEEDS_PROFILE:
+            self.report({'WARNING'}, T("core.shapekey_export.configure_no_profile"))
+            return {'CANCELLED'}
+        on, off = configure_changes(rows)
+        for k in on:
+            k.mute = False
+            k.lock_shape = False
+        for k in off:
+            k.mute = True
+        self.report({'INFO'}, T("core.shapekey_export.configure_done").format(
+            on=len(on), off=len(off)))
+        return {'FINISHED'}
+
+
+classes = [MT_OT_SKSPickProfile, MT_OT_SKSInactiveExpressionKeys, MT_OT_SKSConfigureShapeKeys]
 
 
 def register():

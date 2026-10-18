@@ -261,6 +261,7 @@ STRINGS = {
     "ui.main_panel.btn_mhws_optimize_skeleton":   {"EN": "Optimize Wilds Skeleton", "ZH": "优化荒野骨架"},
     "ui.main_panel.btn_mhws_optimize_aux":        {"EN": "Optimize Auxiliary Bones & Weights", "ZH": "优化辅助骨骼及权重"},
     "ui.main_panel.btn_add_facial_bones":         {"EN": "One-Click Add Facial Bones", "ZH": "一键添加表情骨"},
+    "ui.game_sections.btn_configure_shape_keys":  {"EN": "Configure Selected Meshes' Shape Keys", "ZH": "配置选中网格形态键"},
     "ui.main_panel.btn_mdf_tex_processor":        {"EN": "MDF2 Processor", "ZH": "MDF2 处理器"},
     "ui.main_panel.btn_mdf_generator":            {"EN": "MDF2 Generator", "ZH": "MDF2 生成器"},
     "ui.main_panel.btn_create_re_chain":          {"EN": "One-Click Create RE Chain", "ZH": "一键创建 RE Chain"},

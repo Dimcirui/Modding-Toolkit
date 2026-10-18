@@ -2746,7 +2746,9 @@ STRINGS = {
         "ZH": "当前 RE Mesh Editor 不支持这个模式，导出时用它自己的默认值"},
     "core.shapekey_export.use_sks": {
         "EN": "Use ShapeKeySystem", "ZH": "使用形态键系统 ShapeKeySystem"},
-    "core.shapekey_export.filter_label": {"EN": "Export", "ZH": "导出"},
+    "core.shapekey_export.filter_label": {"EN": "Keys to Export", "ZH": "导出范围"},
+    "core.shapekey_export.only_expression_meshes": {
+        "EN": "Only Meshes with Expression Keys", "ZH": "只处理含表情键的网格"},
     "core.shapekey_export.filter_follow": {"EN": "As Ticked / Locked", "ZH": "按勾选和锁定"},
     "core.shapekey_export.filter_follow_desc": {
         "EN": "Export exactly what the shape key list says: ticked keys go out, unticked ones don't, "
@@ -2811,5 +2813,28 @@ STRINGS = {
     "core.shapekey_export.preset_nothing": {
         "EN": "No shape keys were exported, so no SKS preset was written",
         "ZH": "没有导出形态键，未写入 SKS 预设"},
+    "core.shapekey_export.configure_desc": {
+        "EN": "Tick, untick and unlock the selected meshes' shape keys the way a batch export "
+              "key option would export them; tick more by hand afterwards and export as ticked / locked",
+        "ZH": "按批量导出里某个形态键导出选项，直接设置选中网格形态键的勾选和锁定；"
+              "之后可再手动勾选更多，导出时选“按勾选和锁定”"},
+    "core.shapekey_export.configure_title": {"EN": "Configure Selected Meshes' Shape Keys", "ZH": "配置选中网格形态键"},
+    "core.shapekey_export.configure_apply": {"EN": "Apply", "ZH": "应用"},
+    "core.shapekey_export.configure_none": {
+        "EN": "No selected mesh has shape keys", "ZH": "选中的网格都没有形态键"},
+    "core.shapekey_export.configure_no_profile": {
+        "EN": "No expression profile matches, so expression keys can't be told apart",
+        "ZH": "没有匹配的表情方案，无法区分表情形态键"},
+    "core.shapekey_export.configure_summary": {
+        "EN": "{meshes} meshes, {keys} keys (expression {expr})",
+        "ZH": "{meshes} 个网格，{keys} 个形态键（表情 {expr}）"},
+    "core.shapekey_export.configure_changes": {
+        "EN": "Will tick / unlock {on}, untick {off}",
+        "ZH": "将勾选/解锁 {on} 个，取消勾选 {off} 个"},
+    "core.shapekey_export.configure_hint": {
+        "EN": "Then export with \"As Ticked / Locked\"", "ZH": "之后导出时选“按勾选和锁定”"},
+    "core.shapekey_export.configure_done": {
+        "EN": "Ticked / unlocked {on} keys, unticked {off}",
+        "ZH": "已勾选/解锁 {on} 个形态键，取消勾选 {off} 个"},
 }
 
