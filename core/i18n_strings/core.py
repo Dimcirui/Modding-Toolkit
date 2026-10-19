@@ -2813,6 +2813,11 @@ STRINGS = {
     "core.shapekey_export.preset_nothing": {
         "EN": "No shape keys were exported, so no SKS preset was written",
         "ZH": "没有导出形态键，未写入 SKS 预设"},
+    "core.shapekey_export.names_written": {
+        "EN": "SKS names table written ({n} files)", "ZH": "已写入 SKS 名字表（{n} 个文件）"},
+    "core.shapekey_export.preset_no_model": {
+        "EN": "ShapeKeySystem has no model for {who}, so no SKS preset or names table was written",
+        "ZH": "ShapeKeySystem 不支持 {who}，未写入 SKS 预设和名字表"},
     "core.shapekey_export.configure_desc": {
         "EN": "Tick, untick and unlock the selected meshes' shape keys the way a batch export "
               "key option would export them; tick more by hand afterwards and export as ticked / locked",

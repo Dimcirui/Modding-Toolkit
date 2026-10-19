@@ -143,6 +143,39 @@ def bound_pairs(scene, scheme, use_simplified):
     return out
 
 
+#: Scheme character -> the model SKS files RE4 bindings under: its actor
+#: (RE4R/Adapter.lua actor_of_path -- cha000 is Leon, cha200/800/801/803 Ada).
+#: SKS drives no other character's face.
+SKS_ACTORS = {"re4_leon": "leon", "re4_ada": "ada"}
+
+
+def part_id(mesh_path):
+    """SKS's RE4 part ID: the mesh file name without .mesh ("cha000_10")."""
+    return os.path.basename(mesh_path.replace("\\", "/")).split(".mesh", 1)[0]
+
+
+def sks_face_part(scene, scheme, use_simplified):
+    """The exported part with the most shape keys, slot 1x (the head) on a tie,
+    then scheme order; None when no exported mesh has any.  SKS saves a sculpt
+    preset against that part (API.lua primary_part), so the export does too."""
+    best, best_rank = None, None
+    character_id = scheme["character_id"]
+    for group in scheme.get("groups", []):
+        for entry in group["entries"]:
+            if not entry.get("mesh"):
+                continue
+            mesh_name, _mdf = resolve_mesh_mdf2(scene, character_id, group, entry, use_simplified)
+            col = bpy.data.collections.get(mesh_name) if mesh_name else None
+            n = len(shapekey_export.part_names(col)) if col is not None else 0
+            if not n:
+                continue
+            pid = part_id(entry["mesh"])
+            rank = (n, pid.rsplit("_", 1)[-1].startswith("1"))
+            if best_rank is None or rank > best_rank:
+                best, best_rank = pid, rank
+    return best
+
+
 MESH_SETTINGS = {
     "exportAllLODs": True,
     "autoSolveRepeatedUVs": True,
@@ -255,14 +288,34 @@ class RE4_OT_BatchExport(bpy.types.Operator):
         done = export_autofix.apply(context, 'RE4', pairs, ids)
         meshes = [mesh for _g, _mdf, mesh in pairs if mesh is not None]
         with export_autofix.temporary(context, 'RE4', pairs, ids) as tmp, \
-                shapekey_export.session(context, 'RE4', meshes, natives_root):
+                shapekey_export.session(context, 'RE4', meshes, natives_root) as sk:
             result = self._export(context, scene, settings, natives_root, scheme)
+            self._write_sks(sk, scene, scheme, natives_root)
         fixed = {k: v for k, v in list(done.items()) + list(tmp.items()) if v}
         if fixed:
             print("[RE4] auto-fix: " + ", ".join(f"{k}={v}" for k, v in fixed.items()))
             self.report({'INFO'}, T("core.pre_export_check_ops.autofix_done").format(
                 n=sum(fixed.values())))
         return result
+
+    def _write_sks(self, sk, scene, scheme, natives_root):
+        """SKS preset and names table.  The model is the actor and so is its
+        binding's part (Adapter.lua model_of / representative_of: "leon" ->
+        mods/leon/leon.json), which SKS falls back to for every part of that
+        actor; the sculpt preset targets the face part."""
+        if not shapekey_export.writes_sks_files(sk):
+            return
+        actor = SKS_ACTORS.get(scheme["character_id"])
+        if actor is None:
+            print(f"[RE4] SKS: no actor for {scheme['character_id']}, preset and names skipped")
+            self.report({'INFO'}, T("core.shapekey_export.preset_no_model").format(
+                who=scheme["character_id"]))
+            return
+        face = sks_face_part(scene, scheme, scene.get("re4_use_simplified", True))
+        paths, msg = shapekey_export.write_presets(
+            sk, natives_root, actor, actor, face or actor, target_part=face)
+        if msg:
+            self.report({'INFO'}, T(msg).format(n=len(paths)))
 
     def _export(self, context, scene, settings, natives_root, scheme):
         character_id = scheme["character_id"]

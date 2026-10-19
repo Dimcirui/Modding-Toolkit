@@ -29,6 +29,7 @@ import re
 PROFILE_SCHEMA = "sks.profile/1"
 SCULPT_SCHEMA = "sks.sculpt/1"
 BINDING_SCHEMA = "sks.binding/1"
+NAMES_SCHEMA = "sks.names/1"
 
 #: A part becomes an expression target only with this many distinct channels
 #: matched (SKS API.lua ``min_hits``).
@@ -426,20 +427,23 @@ def safe_id(name):
     return re.sub(r'[\\/:*?"<>|]', "_", str(name or "")).strip()
 
 
-def write_presets(mod_root, folder, rep_part, profile_id, sculpt_name, values):
+def write_presets(mod_root, folder, rep_part, profile_id, sculpt_name, values, target_part=None):
     """Write ``mods/<folder>/sculpt/<name>.json`` (when *values*) and the model's
     binding ``mods/<folder>/<rep_part>.json`` under *mod_root*.
 
     The binding is not "global", so a part's own binding -- the player's in
     user/, or another mod's -- still wins over it (Presets.lua lookup order).
-    Returns the paths written."""
+    The sculpt preset targets *target_part* (default *rep_part*): SKS applies a
+    preset with a target part to that part only on actor instances
+    (ActorInstances.lua), so where the representative is not a mesh (RE4's
+    "leon") it must name the face part.  Returns the paths written."""
     base = os.path.join(sks_data_dir(mod_root), "mods", safe_id(folder))
     written = []
     sculpt_id = safe_id(sculpt_name)
     if values and sculpt_id:
         path = os.path.join(base, "sculpt", sculpt_id + ".json")
         _dump(path, {"schema": SCULPT_SCHEMA, "name": sculpt_name,
-                     "target": {"part": rep_part}, "values": values})
+                     "target": {"part": target_part or rep_part}, "values": values})
         written.append(path)
     binding = {"schema": BINDING_SCHEMA, "part": rep_part}
     if profile_id:
@@ -451,6 +455,31 @@ def write_presets(mod_root, folder, rep_part, profile_id, sculpt_name, values):
         _dump(path, binding)
         written.append(path)
     return written
+
+
+def channel_names(names):
+    """Names for a names table: each minus _LODn, first spelling kept, in order."""
+    seen, out = set(), []
+    for n in names:
+        base = _LOD_SUFFIX.sub("", n)
+        if base and base not in seen:
+            seen.add(base)
+            out.append(base)
+    return out
+
+
+def write_names(mod_root, file_id, names):
+    """Write the names table ``mods/names/<file_id>.json`` (NameHash.lua): on
+    engines that keep only channel-name hashes SKS can name a channel only when
+    it knows the name, so a mod's own key names have to ship with it.  Returns
+    the paths written."""
+    names = channel_names(names)
+    fid = safe_id(file_id)
+    if not names or not fid:
+        return []
+    path = os.path.join(sks_data_dir(mod_root), "mods", "names", fid + ".json")
+    _dump(path, {"schema": NAMES_SCHEMA, "names": names})
+    return [path]
 
 
 def _dump(path, data):

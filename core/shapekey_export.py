@@ -16,7 +16,10 @@ unlock them for that time too.  The split between expression (表情) and sculpt
 For the games SKS supports, the export can also write an SKS preset into the mod
 (``reframework/data/ShapeKeySystem/mods/<model>/``): a sculpt preset holding the
 current values of the exported sculpt keys, and the model's binding naming the
-expression profile and that preset.
+expression profile and that preset.  Where the engine keeps only channel-name
+hashes (Rise, Onimusha, RE4) it also writes a names table
+(``mods/names/``) with the exported key names, without which SKS shows a mod's
+own keys as ``#XXXXXXXX``.
 
 The batch exporters wrap their run in :func:`session`; the mesh export helpers
 call :func:`filtered` and :func:`export_kwargs`, which do nothing outside one.
@@ -34,16 +37,20 @@ from .re_mesh_compat import get_re_mesh_category
 
 #: game code -> the fork's feature key, the settings attribute on
 #: ``scene.mhw_suite_settings``, and for SKS games the adapter id, the Steam
-#: folder, and how SKS names the model (None = from the export).
+#: folder, how SKS names the model (None = from the export), and whether SKS
+#: reads channel names back from their hashes only (the adapter's
+#: ``hash_names``: no getBlendShapeChannelName), so the mod needs a names table.
 GAMES = {
     "MHWS": {"feature": "wilds_blendshape_export", "prop": "mhws_shapekeys",
              "sks": "mhwilds", "steam": "MonsterHunterWilds"},
     "ONI":  {"feature": "oniwots_blendshape_export", "prop": "oni_shapekeys",
-             "sks": "onimusha_wots", "steam": "OnimushaWotS", "model": "musashi"},
-    "RE4":  {"feature": "re4_blendshape_export", "prop": "re4_shapekeys"},
+             "sks": "onimusha_wots", "steam": "OnimushaWotS", "model": "musashi",
+             "hash_names": True},
+    "RE4":  {"feature": "re4_blendshape_export", "prop": "re4_shapekeys",
+             "sks": "re4", "steam": "RESIDENT EVIL 4  BIOHAZARD RE4", "hash_names": True},
     "RE9":  {"feature": "re9_blendshape_export", "prop": "re9_shapekeys"},
     "MHRS": {"feature": "mhrise_blendshape_export", "prop": "mhrs_shapekeys",
-             "sks": "mhrise", "steam": "MonsterHunterRise"},
+             "sks": "mhrise", "steam": "MonsterHunterRise", "hash_names": True},
 }
 
 #: The fork's shapeKeyExportMode values offered, with their enum numbers (kept
@@ -337,6 +344,7 @@ class _Session:
         self.profile_id = profile_id
         self.lib = lib
         self.values = {}                # sculpt key -> value, across all meshes
+        self.names = []                 # exported key names, first seen first
         self.expression_exported = False
         self.exported_keys = 0
 
@@ -403,6 +411,8 @@ def filtered(collection_name):
                 k.lock_shape = False
                 forced += 1
             s.exported_keys += 1
+            if k.name not in s.names:
+                s.names.append(k.name)
             if is_expr:
                 s.expression_exported = True
             else:
@@ -419,22 +429,42 @@ def filtered(collection_name):
             k.lock_shape = lock
 
 
-def write_presets(s, mod_root, model, rep_part, default_name):
-    """Write the session's SKS preset into *mod_root*.  Returns (paths, message
-    key) -- no paths when there was nothing to write or it is switched off.
-    *default_name* names the preset when the user left the name empty."""
-    if (s is None or not is_sks_game(s.game) or s.mode in (None, NO_MODE)
-            or not s.pg.use_sks or not s.pg.write_preset):
+def writes_sks_files(s):
+    """Whether the session writes anything for SKS (a preset or a names table)."""
+    return (s is not None and is_sks_game(s.game) and s.mode not in (None, NO_MODE)
+            and s.pg.use_sks and (s.pg.write_preset or GAMES[s.game].get("hash_names", False)))
+
+
+def write_presets(s, mod_root, model, rep_part, default_name, target_part=None):
+    """Write the session's SKS preset into *mod_root*, and for a hash-names game
+    the names table of the exported keys (that one even with the preset off).
+    Returns (paths, message key) -- no paths when there was nothing to write or
+    it is switched off.  *default_name* names the preset when the user left the
+    name empty; *target_part* is the part the sculpt preset targets (default
+    *rep_part*, see :func:`core.sks_profiles.write_presets`)."""
+    if not writes_sks_files(s):
         return [], None
+    nothing = "core.shapekey_export.preset_nothing" if s.pg.write_preset else None
     if s.exported_keys == 0:
-        return [], "core.shapekey_export.preset_nothing"
+        return [], nothing
     name = s.pg.preset_name.strip() or default_name
-    values = {k: round(v, 4) for k, v in sorted(s.values.items())}
-    profile = s.profile_id if s.expression_exported else None
-    paths = sks_profiles.write_presets(mod_root, model, rep_part, profile, name, values)
-    for p in paths:
-        print(f"[{s.game}] SKS preset -> {p}")
-    return paths, "core.shapekey_export.preset_written" if paths else "core.shapekey_export.preset_nothing"
+    paths = []
+    if s.pg.write_preset:
+        values = {k: round(v, 4) for k, v in sorted(s.values.items())}
+        profile = s.profile_id if s.expression_exported else None
+        paths = sks_profiles.write_presets(mod_root, model, rep_part, profile, name, values,
+                                           target_part)
+        for p in paths:
+            print(f"[{s.game}] SKS preset -> {p}")
+    names = []
+    if GAMES[s.game].get("hash_names"):
+        # one table per preset, so two mods for the same model don't overwrite each other's
+        names = sks_profiles.write_names(mod_root, f"{model}_{name}", s.names)
+        for p in names:
+            print(f"[{s.game}] SKS names -> {p}")
+    if paths:
+        return paths + names, "core.shapekey_export.preset_written"
+    return names, "core.shapekey_export.names_written" if names else nothing
 
 
 # ── UI ───────────────────────────────────────────────────────────────────────
