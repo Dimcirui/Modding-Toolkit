@@ -23,6 +23,9 @@ SPEC = SchemeExportSpec(
     # when its activeGame says so.
     mdf_active_game="ONIWOTS",
     check_game=None, autofix_game=None,
+    # SKS's Onimusha parts are the player root's slot children (Adapter.lua
+    # PARTS); Hair hangs under Head and is not one.
+    sks_parts=("Head", "Body", "Cloak", "Gauntlet", "Amulet"),
 )
 EXPORTER = SchemeExporter(SPEC)
 

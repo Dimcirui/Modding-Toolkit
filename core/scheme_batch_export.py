@@ -117,12 +117,15 @@ class SchemeExportSpec:
                        Onimusha's layout.
     *check_game* / *autofix_game*  the game key for the pre-export check and the
                        auto-fix, or None where that game is not registered there.
+    *sks_parts*        for an SKS game, the part IDs SKS gives the character's
+                       slots (a group's slot is the last word of its name), head
+                       first; the SKS sculpt preset targets one of them.
     """
 
     def __init__(self, code, op_prefix, key_prefix, title, scheme_dir, blank_dir,
                  natives_root_key, scheme_setting, blank_setting, fbxskel_base,
                  native_skeleton_dir=None, mdf_active_game=None,
-                 check_game=None, autofix_game=None):
+                 check_game=None, autofix_game=None, sks_parts=()):
         self.code = code
         self.op_prefix = op_prefix
         self.key_prefix = key_prefix
@@ -137,6 +140,7 @@ class SchemeExportSpec:
         self.mdf_active_game = mdf_active_game
         self.check_game = check_game
         self.autofix_game = autofix_game
+        self.sks_parts = tuple(sks_parts)
 
 
 class SchemeExporter:
@@ -409,10 +413,34 @@ class SchemeExporter:
             model = shapekey_export.GAMES[game].get("model")
             if model:
                 paths, msg = shapekey_export.write_presets(
-                    sk, natives_root, model, model, os.path.splitext(scheme_file)[0])
+                    sk, natives_root, model, model, os.path.splitext(scheme_file)[0],
+                    target_part=self.sks_face_part(scene, scheme, self.use_simplified(scene)))
                 if msg:
                     op.report({'INFO'}, T(msg).format(n=len(paths)))
         return result
+
+    def sks_face_part(self, scene, scheme, use_simplified):
+        """The SKS part the sculpt preset targets: of the slots in
+        ``spec.sks_parts``, the one whose exported meshes carry the most shape
+        keys, the earlier slot on a tie; None when none has any.  SKS saves a
+        preset against the part with the most channels (API.lua primary_part) and
+        applies one with a target only to that part on actor instances, so the
+        model name ("musashi", not a part) would never match."""
+        best, best_n = None, 0
+        for slot in self.spec.sks_parts:
+            names = set()
+            for group in scheme.get("groups", []):
+                if group["name"].split()[-1:] != [slot]:
+                    continue
+                for entry in group["entries"]:
+                    mesh_name, _mdf = self.resolve_mesh_mdf2(
+                        scene, scheme["character_id"], group, entry, use_simplified)
+                    col = bpy.data.collections.get(mesh_name) if mesh_name else None
+                    if col is not None:
+                        names.update(shapekey_export.part_names(col))
+            if len(names) > best_n:
+                best, best_n = slot, len(names)
+        return best
 
     def _export(self, op, context, scene, settings, natives_root, scheme):
         spec = self.spec
