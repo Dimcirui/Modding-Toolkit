@@ -32,6 +32,7 @@ import numpy as np
 
 from . import pre_export_check as pc
 from . import weight_utils
+from . import weight_table
 from . import export_prep
 
 #: (id, label key, tooltip key, bit, on by default).  Keys spelled out in full:
@@ -217,35 +218,44 @@ def _weight_issues(obj, max_influences):
     me = obj.data
     out = {'loose': 0, 'empty_groups': 0, 'tiny': 0, 'over': 0, 'refused': 0, 'unnormalized': 0}
 
-    n_loops = np.zeros(len(me.vertices), np.int32)
+    # Loose = no face corner uses it.  Both through foreach_get: a Python set
+    # of every polygon's edge_keys was a third of the whole pre-export check.
+    nv = len(me.vertices)
     corner_verts = np.empty(len(me.loops), np.int32)
     me.loops.foreach_get("vertex_index", corner_verts)
-    np.add.at(n_loops, corner_verts, 1)
-    edge_faces = {k for p in me.polygons for k in p.edge_keys}
-    out['loose'] = int((n_loops == 0).sum()) + sum(
-        1 for e in me.edges if e.key not in edge_faces)
+    corner_edges = np.empty(len(me.loops), np.int32)
+    me.loops.foreach_get("edge_index", corner_edges)
+    vert_used = np.zeros(nv, bool)
+    vert_used[corner_verts] = True
+    edge_used = np.zeros(len(me.edges), bool)
+    edge_used[corner_edges] = True
+    out['loose'] = int((~vert_used).sum() + (~edge_used).sum())
 
-    used = set()
     arm = obj.find_armature()
     idx = weight_utils.deform_group_indices(obj, arm) if arm else set()
-    for v in me.vertices:
-        rows = []
-        for g in v.groups:
-            used.add(g.group)
-            if g.group in idx:
-                rows.append(g.weight)
-        if not rows:
-            continue
-        live = [w for w in rows if w > 0.0]
-        if any(0.0 < w < pc.EXPORT_MIN_WEIGHT for w in live) and len(live) > 1:
-            out['tiny'] += 1
-        if len(live) > max_influences:
-            out['over'] += 1
-            # What the exporter itself counts, after dropping its cut-off.
-            if sum(1 for w in live if w >= pc.EXPORT_MIN_WEIGHT) > max_influences:
-                out['refused'] += 1
-        if pc.classify_weight_sum(sum(rows)) in ("under", "over"):
-            out['unnormalized'] += 1
+    v, g, w = weight_table.entries(me)
+    used = set(np.unique(g).tolist())
+
+    # Per vertex, over its deform rows only -- the same rules the per-vertex
+    # loop applied, as counts.
+    d = np.isin(g, np.fromiter(idx, np.int64))
+    dv, dw = v[d], w[d]
+    live = dw > 0.0
+    strong = dw >= pc.EXPORT_MIN_WEIGHT
+    count = lambda m: np.bincount(dv[m], minlength=nv)
+    n_rows = np.bincount(dv, minlength=nv)
+    n_live = count(live)
+    has_tiny = count(live & ~strong) > 0
+    over = n_live > max_influences
+    out['tiny'] = int((has_tiny & (n_live > 1)).sum())
+    out['over'] = int(over.sum())
+    # What the exporter itself counts, after dropping its cut-off.
+    out['refused'] = int((over & (count(strong) > max_influences)).sum())
+    # bincount adds each vertex's rows in vertex.groups order, as sum() did.
+    total = np.bincount(dv, weights=dw, minlength=nv)
+    eps = pc.WEIGHT_SUM_EPS
+    off = (total > eps) & ((total < 1.0 - eps) | (total > 1.0 + eps))
+    out['unnormalized'] = int((off & (n_rows > 0)).sum())
     keep = _modifier_groups(obj)
     out['empty_groups'] = sum(1 for vg in obj.vertex_groups
                               if vg.index not in used and vg.name not in keep)

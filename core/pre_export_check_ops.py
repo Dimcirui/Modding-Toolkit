@@ -55,6 +55,7 @@ from . import pre_export_report as pr
 from . import export_autofix
 from . import mdf_layouts
 from . import pre_export_physics as pphys
+from . import weight_table
 from .mdf_material_convert_base import _load_vanilla_art_paths
 from .mdf_port_tex import get_game_tex_config
 from .tex_file import read_tex_size
@@ -460,9 +461,8 @@ def unweighted_vertices(obj, arm):
     once the exporter has dropped weights below ``pc.EXPORT_MIN_WEIGHT`` --
     their row comes out all zero and then gets the whole 255 added to slot 0,
     so in game they follow bone index 0 (``file_re_mesh.py:1796-1810``)."""
-    idx = _weighted_group_indices(obj, arm)
-    return [v.index for v in obj.data.vertices
-            if not any(g.group in idx and g.weight >= pc.EXPORT_MIN_WEIGHT for g in v.groups)]
+    return weight_table.vertices_without(obj.data, _weighted_group_indices(obj, arm),
+                                         pc.EXPORT_MIN_WEIGHT)
 
 
 def _check_weights(meshes, part, arm):
@@ -504,11 +504,8 @@ def _check_vertex_groups(meshes, part, arm):
         if not bad:
             continue
         idx = {vg.index: vg.name for vg in bad}
-        weighted = set()
-        for v in obj.data.vertices:
-            for g in v.groups:
-                if g.group in idx and g.weight >= pc.EXPORT_MIN_WEIGHT:
-                    weighted.add(idx[g.group])
+        weighted = {idx[gi] for gi in weight_table.groups_with_weight(
+            obj.data, idx, pc.EXPORT_MIN_WEIGHT)}
         for name in sorted(weighted):
             out.append(pr.finding('bone', 'vgroup_no_bone',
                                   T(_K + "item_vgroup_no_bone").format(obj=obj.name, vg=name),
@@ -549,8 +546,7 @@ def _check_structure(mesh_col, meshes, part, game_code):
         weighted = set()
         for obj in meshes:
             names = {vg.index: vg.name for vg in obj.vertex_groups if vg.name in bones}
-            for v in obj.data.vertices:
-                weighted.update(names[g.group] for g in v.groups if g.group in names)
+            weighted.update(names[gi] for gi in weight_table.groups_with_weight(obj.data, names))
         limit = _MAX_WEIGHTED_BONES.get(game_code, 256)
         if len(weighted) > limit:
             out.append(pr.finding('bone', 'mesh_structure',
@@ -966,6 +962,13 @@ def export_armatures(pairs, autofix_pairs=None, physics=None):
 
 
 def run_checks_multi(context, game_code, pairs, natives_root, autofix_pairs=None, physics=None):
+    """``_run_checks_multi`` with every mesh's weights read once for all the
+    checks (see ``weight_table``)."""
+    with weight_table.cached():
+        return _run_checks_multi(context, game_code, pairs, natives_root, autofix_pairs, physics)
+
+
+def _run_checks_multi(context, game_code, pairs, natives_root, autofix_pairs=None, physics=None):
     """``(report, skipped, autofix_n)`` over ``(part label, mdf_col, mesh_col)`` pairs.
 
     A single-pair run passes ``""`` as the label, which keeps the part prefix
@@ -1085,6 +1088,9 @@ def gather_and_check(context, game_code, pairs, natives_root, autofix_pairs=None
     # Context only the calling dialog knows, for the fix buttons -- e.g. the
     # armor's folder as the last-resort texture path for quick generate.
     _LAST_RUN.update(hints or {})
+    # The result itself, so "View Details" can store it instead of running the
+    # whole check a second time for the same pairs.
+    _LAST_RUN['result'] = (report, skipped, autofix_n)
     return report, skipped, autofix_n
 
 
@@ -1173,6 +1179,12 @@ def _rerun_and_store(context):
     report, skipped, autofix_n = run_checks_multi(
         context, _LAST_RUN.get('game', ""), _pairs_from_last_run(), _LAST_RUN.get('root', ""),
         _autofix_pairs_from_last_run(), _physics_from_last_run())
+    _LAST_RUN['result'] = (report, skipped, autofix_n)
+    _store_result(context)
+
+
+def _store_result(context):
+    report, skipped, autofix_n = _LAST_RUN['result']
     _store(context, report, skipped)
     _LAST_RUN['autofix_n'] = autofix_n
 
@@ -1182,9 +1194,11 @@ class MODDER_OT_PreExportCheckView(bpy.types.Operator):
 
     ``gather_and_check`` (called from ``draw()``) cannot populate
     ``scene.mtk_pec_report`` itself -- Blender rejects a Scene write from a
-    draw callback -- so it only leaves ``_LAST_RUN`` with what a real
-    ``execute()`` needs to redo the check and store it properly: the game
-    code, the mod root, and each pair's collections by name.
+    draw callback -- so it leaves the result in ``_LAST_RUN`` for a real
+    ``execute()`` to store, together with what the fix buttons need to redo
+    the check later: the game code, the mod root, and each pair's collections
+    by name.  The result is the one the dialog's summary line shows, so the
+    details always agree with it.
     """
     bl_idname = "modder.pre_export_check_view"
     bl_label = "View Pre-export Check"
@@ -1195,7 +1209,10 @@ class MODDER_OT_PreExportCheckView(bpy.types.Operator):
         return T(_K + "report_desc")
 
     def execute(self, context):
-        _rerun_and_store(context)
+        if 'result' in _LAST_RUN:
+            _store_result(context)
+        else:
+            _rerun_and_store(context)
         bpy.ops.modder.pre_export_check_report('INVOKE_DEFAULT')
         return {'FINISHED'}
 

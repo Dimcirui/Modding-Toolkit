@@ -33,6 +33,7 @@ from .i18n import T
 from . import pre_export_check as pc
 from . import pre_export_report as pr
 from . import re_hash
+from . import weight_table
 
 _K = "core.pre_export_physics."
 
@@ -151,10 +152,8 @@ def _covered_bones(mesh_col, arm):
         names = {vg.index: vg.name for vg in obj.vertex_groups if vg.name in bones}
         if not names:
             continue
-        for v in obj.data.vertices:
-            for g in v.groups:
-                if g.group in names and g.weight >= pc.EXPORT_MIN_WEIGHT:
-                    weighted.add(names[g.group])
+        weighted.update(names[gi] for gi in weight_table.groups_with_weight(
+            obj.data, names, pc.EXPORT_MIN_WEIGHT))
     covered = set()
     for name in weighted:
         b = bones.get(name)
