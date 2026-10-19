@@ -18,6 +18,8 @@ reads.
 """
 
 import contextlib
+import itertools
+import re
 
 import numpy as np
 
@@ -249,8 +251,16 @@ def separate_by_materials(context, objects, rename=True, prune_keys=True,
 # ─────────────────────────────────────────────────────────────────────────────
 
 _OUTLINE_MATERIAL_NAME = "Outline"
-_OUTLINE_MODIFIER_NAME = "MTK_Outline"
 _OUTLINE_SUFFIX = "_Outline"
+#: Weld distance before the push: an imported RE mesh is split at every UV
+#: seam, and without welding each copy gets its own normal, so the pushed
+#: shell cracks open along the seams.
+_OUTLINE_WELD_DIST = 1e-5
+#: A face whose three corners all weigh below this sits on the body surface
+#: (zero push), so it is dropped instead of Z-fighting with the source.
+_OUTLINE_MIN_WEIGHT = 1e-4
+
+_REME_NAME = re.compile(r'^(?P<lod>(?:LOD_\d+_)?)Group_(?P<group>\d+)_Sub_(?P<sub>\d+)__(?P<mat>.+)$')
 
 
 def _object_in_collection(obj, collection):
@@ -275,140 +285,193 @@ def _get_or_create_outline_material():
     return material
 
 
-def _bake_outline_solidify(obj):
-    """Apply the shell's Solidify in place, turning the shell edge into real
-    geometry instead of a live modifier. Reuses shapekey_utils' shape-key-safe
-    apply path (Solidify's output vertex count is a function of topology, not
-    vertex position, so it's stable across shape keys the same way any other
-    non-topology-changing modifier is).
+def _outline_object_name(source, material_name):
+    """RE Mesh Editor name for the shell: same LOD prefix and Group as the
+    source, and a Sub index that makes it sort after every existing submesh of
+    that group in the source's collection(s).
 
-    Any other modifier copied onto the shell (most commonly an Armature
-    binding) is hidden for the duration so it (a) isn't itself baked — that
-    would freeze the shell to the current pose and kill future deformation —
-    and (b) doesn't feed Solidify posed coordinates instead of the bind pose.
-    It's restored to the modifier stack afterwards either way.
+    REME orders a group's submeshes by plain string sort of the object name and
+    writes vertices in that order, so a shell sorting last leaves every existing
+    vertex index unchanged. String sort is not numeric sort ('_' sorts above
+    every digit, so 'Sub_9__' beats 'Sub_10__' and any 'Sub_9x__'), hence the
+    search rather than max+1.
 
-    Silently leaves Solidify un-applied (still a perfectly usable live
-    modifier) if shapekey_utils' own safety check rejects the bake — never
-    destroys shape key data to force it through.
-
-    Returns True if the modifier was actually baked down.
+    Returns (name, sorted_last). A source that isn't REME-named keeps the plain
+    "<name>_Outline" (sorted_last True: there is no order to keep). sorted_last
+    is False when no Sub index can sort last, e.g. 'Sub_9__zzz' already exists.
     """
     import bpy
 
-    from . import shapekey_utils
+    m = _REME_NAME.match(source.name)
+    if m is None:
+        return source.name + _OUTLINE_SUFFIX, True
 
-    solidify = obj.modifiers.get(_OUTLINE_MODIFIER_NAME)
-    if solidify is None:
-        return False
+    lod, group = m['lod'], m['group']
+    siblings = []
+    for collection in source.users_collection:
+        for obj in collection.all_objects:
+            sm = _REME_NAME.match(obj.name)
+            if obj.type == 'MESH' and sm and sm['lod'] == lod and sm['group'] == group:
+                siblings.append((obj.name, int(sm['sub'])))
+    last = max(name for name, _ in siblings)
+    used = {sub for _, sub in siblings}
+    top = max(used)
 
-    # Name comparison, not `is`/`in` — separate accesses into a bpy_prop_collection
-    # can hand back distinct wrapper objects for the same underlying modifier.
-    other_mods = [m for m in obj.modifiers if m.name != solidify.name and m.show_viewport]
-    for mod in other_mods:
-        mod.show_viewport = False
+    def name_for(sub):
+        return f"{lod}Group_{group}_Sub_{sub}__{material_name}"
 
+    for sub in itertools.chain(range(top + 1, top + 1001), range(top + 1)):
+        name = name_for(sub)
+        if sub not in used and name > last and name not in bpy.data.objects:
+            return name, True
+    return name_for(top + 1), False
+
+
+def _build_outline_shell(mesh, weight_group_index, thickness):
+    """Turn mesh (a private copy) into an inverted-hull outline shell in place.
+
+    Only the outer layer is kept: every vertex moves along its outward normal by
+    thickness * weight (basis and every shape key by the same vector), winding
+    is reversed so the faces point inward and get backface-culled from the
+    front, and custom normals are set back to the outward normal so the shell is
+    lit like the surface it hugs.
+
+    weight_group_index None means uniform thickness (weight 1 everywhere).
+    """
+    import bmesh
+
+    bm = bmesh.new()
     try:
-        kbs = obj.data.shape_keys.key_blocks if obj.data.shape_keys else []
-        if len(kbs) >= 2:
-            ok, _key, _kwargs = shapekey_utils.check(obj)
-            if not ok:
-                return False
-            shapekey_utils.apply_modifiers_keep_shape_keys(obj)
-            return True
+        bm.from_mesh(mesh)
+        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=_OUTLINE_WELD_DIST)
+        bm.normal_update()
 
-        if kbs:
-            # Just a lone Basis key with nothing to preserve — drop it so
-            # the plain apply operator (which refuses any shape keys at all)
-            # stops objecting.
-            with bpy.context.temp_override(object=obj, active_object=obj,
-                                            selected_editable_objects=[obj]):
-                bpy.ops.object.shape_key_remove(all=True)
-        with bpy.context.temp_override(object=obj, active_object=obj,
-                                        selected_editable_objects=[obj]):
-            bpy.ops.object.modifier_apply(modifier=solidify.name)
-        return True
+        deform = bm.verts.layers.deform.active
+        shape_layers = list(bm.verts.layers.shape.values())
+        weight = bm.verts.layers.float.new("mtk_outline_w")
+        normal = [bm.verts.layers.float.new(f"mtk_outline_n{i}") for i in range(3)]
+
+        for v in bm.verts:
+            if weight_group_index is None:
+                w = 1.0
+            else:
+                w = v[deform].get(weight_group_index, 0.0) if deform is not None else 0.0
+            v[weight] = w
+            n = v.normal.copy()
+            for i in range(3):
+                v[normal[i]] = n[i]
+            d = n * (thickness * w)
+            v.co += d
+            for layer in shape_layers:
+                v[layer] = v[layer] + d
+
+        if weight_group_index is not None:
+            dead = [f for f in bm.faces if all(v[weight] < _OUTLINE_MIN_WEIGHT for v in f.verts)]
+            bmesh.ops.delete(bm, geom=dead, context='FACES_ONLY')
+
+        # Welding collapses faces that had two corners on one position (hair
+        # cards), and dropping faces strands vertices/edges -- REME refuses
+        # both (LooseVerticesOnSubMesh).
+        bad = [f for f in bm.faces if len(set(f.verts)) < 3 or f.calc_area() < 1e-14]
+        bmesh.ops.delete(bm, geom=bad, context='FACES_ONLY')
+        bmesh.ops.delete(bm, geom=[e for e in bm.edges if not e.link_faces], context='EDGES')
+        bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
+
+        # Split back along the UV seams the weld closed: every copy of a
+        # position already got the same push, so nothing cracks, and REME's
+        # repeated-UV solver is left with nothing to split.
+        uv_layers = list(bm.loops.layers.uv.values())
+        seams = []
+        for e in bm.edges:
+            if len(e.link_loops) != 2:
+                continue
+            l1, l2 = e.link_loops
+            # l1 runs a->b, l2 (other face) runs b->a: compare UVs per vertex
+            if any((l1[uv].uv - l2.link_loop_next[uv].uv).length > 1e-6
+                   or (l1.link_loop_next[uv].uv - l2[uv].uv).length > 1e-6
+                   for uv in uv_layers):
+                seams.append(e)
+        if seams:
+            bmesh.ops.split_edges(bm, edges=seams)
+
+        bmesh.ops.reverse_faces(bm, faces=list(bm.faces))
+
+        bm.verts.ensure_lookup_table()
+        outward = [(v[normal[0]], v[normal[1]], v[normal[2]]) for v in bm.verts]
+        for layer in normal + [weight]:
+            bm.verts.layers.float.remove(layer)
+        bm.to_mesh(mesh)
     finally:
-        for mod in other_mods:
-            mod.show_viewport = True
+        bm.free()
+
+    if hasattr(mesh, "use_auto_smooth"):  # pre-4.1 needs it for custom normals
+        mesh.use_auto_smooth = True
+    mesh.normals_split_custom_set_from_vertices(outward)
+    mesh.update()
 
 
 def _create_outline_object(context, source, vertex_group_name, thickness):
     """Full object duplicate (same modifier stack, vertex groups, shape keys,
-    parenting — everything obj.copy()+data.copy() carries over), so an
-    Armature modifier on the source keeps the shell deforming with it.
-    Only the material and the trailing Solidify (baked down via
-    _bake_outline_solidify) differ from the source.
+    parenting -- everything obj.copy()+data.copy() carries over), so an
+    Armature modifier on the source keeps the shell deforming with it. Only
+    the material, the name and the geometry (see _build_outline_shell) differ.
 
-    No link back to source is kept — this is a plain, disposable duplicate,
-    same as any other object.copy(). Naming it after the source is purely a
-    starting point; Blender auto-uniquifies (.001, .002, ...) if that name is
-    already taken by an earlier shell, so making several passes to join
-    together later just works.
+    No link back to source is kept -- this is a plain, disposable duplicate,
+    same as any other object.copy().
 
-    Returns (new_object, baked) where baked is False if the Solidify couldn't
-    be safely auto-applied and was left as a live modifier instead."""
+    Returns (new_object, sorted_last); see _outline_object_name."""
+    material = _get_or_create_outline_material()
+    name, sorted_last = _outline_object_name(source, material.name)
+
     new_obj = source.copy()
     new_obj.data = source.data.copy()
-    new_obj.name = source.name + _OUTLINE_SUFFIX
-    new_obj.data.name = source.data.name + _OUTLINE_SUFFIX
+    new_obj.name = name
+    new_obj.data.name = name
 
     for collection in source.users_collection:
         collection.objects.link(new_obj)
     if not new_obj.users_collection:
         context.scene.collection.objects.link(new_obj)
 
-    # Object.copy() carries over the source's current "selected" flag — clear
+    # Object.copy() carries over the source's current "selected" flag -- clear
     # it now that new_obj is in the view layer, or a second run over the same
     # selection (without reselecting in between) would sweep up every shell
     # the first run made too, cascading into outlines-of-outlines-of-outlines.
     new_obj.select_set(False)
 
-    # A dedicated shell only ever needs the one outline material — no
+    # A dedicated shell only ever needs the one outline material -- no
     # material_offset juggling to keep the source's other slots intact
     new_obj.data.materials.clear()
-    new_obj.data.materials.append(_get_or_create_outline_material())
+    new_obj.data.materials.append(material)
 
-    solidify = new_obj.modifiers.new(name=_OUTLINE_MODIFIER_NAME, type='SOLIDIFY')
-    solidify.thickness = thickness
-    solidify.use_flip_normals = True
-    solidify.use_quality_normals = True
-    if vertex_group_name:
-        solidify.vertex_group = vertex_group_name
-
-    baked = _bake_outline_solidify(new_obj)
-    return new_obj, baked
+    group = new_obj.vertex_groups.get(vertex_group_name) if vertex_group_name else None
+    _build_outline_shell(new_obj.data, group.index if group else None, thickness)
+    return new_obj, sorted_last
 
 
 def create_outline_shell(context, objects, vertex_group_name="", thickness=0.001, ignore_collection_name="IgnoreExport"):
-    """Create a brand new dedicated outline shell object for each source mesh.
+    """Create a brand new dedicated inverted-hull outline shell object for
+    each source mesh.
 
-    The shell is a full duplicate of the source (geometry, vertex group
-    weights, shape keys, modifier stack incl. any Armature binding) with its
-    materials replaced by a single backface-culled black material and a
-    flipped-normal Solidify appended and then applied — the source mesh
-    itself is never given a new material slot or modifier, and the shell
-    keeps only whatever modifiers (e.g. an Armature binding) it copied from
-    the source, so it still deforms with the body.
+    The shell is a full duplicate of the source (vertex group weights, shape
+    keys, modifier stack incl. any Armature binding) whose geometry is pushed
+    out along the normal by thickness and whose faces point inward, with its
+    materials replaced by a single backface-culled black material. The source
+    mesh itself is never touched.
 
     Every call is independent: there's no tracking back to the source and no
     re-use of a previous shell, so running this several times over the same
-    source (e.g. to join the results together afterwards, or to compare
-    different thickness/vertex-group settings) just adds more shells rather
-    than guessing which one to replace. Deleting a shell you don't want is
-    just deleting the object like any other.
+    source just adds more shells rather than guessing which one to replace.
 
-    vertex_group_name, when non-empty, drives the shell's Solidify per-vertex
-    thickness factor (looked up on the shell, which starts out with the exact
-    same groups/weights as the source since it's a straight data copy) —
-    sources missing a group by that name still get a shell, just with
-    uniform thickness, and are counted in the returned tally instead of
-    silently doing nothing (Blender's own vertex_group field doesn't
-    validate the name, so a typo would otherwise pass with no feedback).
+    vertex_group_name, when non-empty, scales the push per vertex by its
+    weight, and faces weighing ~0 at all three corners are dropped -- sources
+    missing a group by that name still get a shell, just with uniform
+    thickness, and are counted in the returned tally instead of silently
+    doing nothing.
 
-    Returns (created, missing_vertex_group, not_baked) counts — not_baked is
-    shells where auto-applying the Solidify was unsafe (per shapekey_utils'
-    own check) and it was left as a live modifier instead.
+    Returns (created, missing_vertex_group, not_last) counts -- not_last is
+    REME-named shells that couldn't be given a name sorting after every
+    existing submesh of their group (see _outline_object_name).
     """
     import bpy
 
@@ -417,7 +480,7 @@ def create_outline_shell(context, objects, vertex_group_name="", thickness=0.001
 
     ignore_collection = bpy.data.collections.get(ignore_collection_name) if ignore_collection_name else None
 
-    added = missing_vg = not_baked = 0
+    added = missing_vg = not_last = 0
 
     for obj in objects:
         if obj.type != 'MESH':
@@ -429,9 +492,9 @@ def create_outline_shell(context, objects, vertex_group_name="", thickness=0.001
         if vertex_group_name and vertex_group_name not in obj.vertex_groups:
             missing_vg += 1
 
-        _, baked = _create_outline_object(context, obj, vertex_group_name, thickness)
-        if not baked:
-            not_baked += 1
+        _, sorted_last = _create_outline_object(context, obj, vertex_group_name, thickness)
+        if not sorted_last:
+            not_last += 1
         added += 1
 
-    return added, missing_vg, not_baked
+    return added, missing_vg, not_last

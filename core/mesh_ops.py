@@ -1165,13 +1165,13 @@ shape keys and vertex groups each fragment inherited (see core/mesh_utils.py)"""
             n=n, keys=keys, groups=groups))
         return {'FINISHED'}
 class MHW_OT_CreateOutline(bpy.types.Operator):
-    """Create a brand new dedicated "<name>_Outline" shell object for each
-selected mesh (backface-culled black material + flipped-normal Solidify on a
-full duplicate, auto-applied — vertex groups, shape keys and the modifier
-stack, including any Armature binding, come along for the ride). The source
-mesh itself is never touched. Every run is independent — no tracking back to
-the source, so running it again just adds another shell rather than
-replacing one (see core/mesh_utils.py)"""
+    """Create a brand new inverted-hull outline shell object for each selected
+mesh: a full duplicate (vertex groups, shape keys and the modifier stack,
+including any Armature binding, come along for the ride) pushed out along the
+normal by the thickness, faces pointing inward, backface-culled black
+material. REME-named sources get a Group_X_Sub_Y__Outline name that sorts
+after every existing submesh. The source mesh itself is never touched (see
+core/mesh_utils.py)"""
     bl_idname = "mhw.create_outline"
     bl_label = "Create Outline"
     bl_options = {'REGISTER', 'UNDO'}
@@ -1182,7 +1182,7 @@ replacing one (see core/mesh_utils.py)"""
                     "(0 = no outline there, e.g. eyes/mouth interior); leave empty for uniform thickness")
     thickness: bpy.props.FloatProperty(
         name="Thickness", default=0.001, min=0.0, precision=4,
-        description="Solidify thickness on the newly created outline shell")
+        description="How far the outline shell sits outside the surface, along the normal")
     ignore_collection_name: bpy.props.StringProperty(
         name="Ignore Collection", default="IgnoreExport",
         description="Objects in this collection (or its sub-collections) are skipped")
@@ -1217,7 +1217,7 @@ replacing one (see core/mesh_utils.py)"""
             self.report({'ERROR'}, T("ui.main_panel.outline_no_mesh"))
             return {'CANCELLED'}
 
-        added, missing_vg, not_baked = mesh_utils.create_outline_shell(
+        added, missing_vg, not_last = mesh_utils.create_outline_shell(
             context, objects,
             vertex_group_name=self.vertex_group_name,
             thickness=self.thickness,
@@ -1230,8 +1230,8 @@ replacing one (see core/mesh_utils.py)"""
         msg = T("ui.main_panel.outline_done").format(added=added)
         if missing_vg:
             msg += T("ui.main_panel.outline_warn_missing_vgroup_suffix").format(n=missing_vg)
-        if not_baked:
-            msg += T("ui.main_panel.outline_warn_not_baked_suffix").format(n=not_baked)
+        if not_last:
+            msg += T("ui.main_panel.outline_warn_not_last_suffix").format(n=not_last)
         self.report({'INFO'}, msg)
         return {'FINISHED'}
 _RENAMED_VG_PATTERN = re.compile(r'^(.+)\.\d{3}$')

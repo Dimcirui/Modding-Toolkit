@@ -487,18 +487,16 @@ STRINGS = {
     # ── MHW_OT_CreateOutline ─────────────────────────────────────────────────────
     "ui.main_panel.btn_create_outline": {"EN": "Create Outline", "ZH": "一键描边"},
     "ui.main_panel.outline_tip": {
-        "EN": "Create a brand new '<name>_Outline' shell object for each selected mesh (backface-culled "
-              "black material + flipped-normal Solidify on a full duplicate, so vertex groups, shape keys "
-              "and any Armature binding carry over) without touching the source mesh itself. The Solidify "
-              "is auto-applied (same shape-key-safe path as 'Apply Modifiers (Keep Shape Keys)'), so the "
-              "shell ends up as real baked geometry rather than a live modifier. Every run is independent "
-              "— there's no tracking back to the source, so running it again just adds another shell "
-              "instead of replacing the last one",
-        "ZH": "给每个选中网格生成一份全新独立的 “<名字>_Outline” 描边网格（背面剔除黑色材质 + 翻转法线的 "
-              "Solidify，整份复制自源网格，顶点组权重/形态键/骨架绑定等都会带过去），源网格本身不会被改动。"
-              "Solidify 会自动应用（复用“对有形态键网格应用修改器”同一套形态键安全处理），描边网格最终是"
-              "实体几何，不是挂着的活动修改器。每次执行都是独立的——不会记录跟源网格的关联，"
-              "所以再执行一次只是多生成一份，不会替换掉上一份"},
+        "EN": "Create a brand new inverted-hull outline shell for each selected mesh: a full duplicate "
+              "(vertex groups, shape keys and any Armature binding carry over) pushed out along the normal "
+              "by Thickness (times the thickness vertex group's weight), faces pointing inward, with a "
+              "backface-culled black material. Faces weighing 0 are dropped. RE Mesh Editor-named meshes "
+              "get a 'Group_X_Sub_Y__Outline' name that sorts after every existing submesh, so existing "
+              "vertex indices don't change. The source mesh is never touched; every run adds another shell",
+        "ZH": "给每个选中网格生成一份全新的反壳描边网格：整份复制源网格（顶点组权重/形态键/骨架绑定都会带过去），"
+              "沿法线向外推出“厚度”（乘以厚度顶点组的权重），面朝内，配背面剔除的黑色材质；权重为 0 的面会被删掉。"
+              "按 RE Mesh Editor 规则命名的网格会得到 “Group_X_Sub_Y__Outline” 的名字，排在所有原有子网格之后，"
+              "原有顶点序号不变。源网格本身不会被改动；每执行一次就多生成一份"},
     "ui.main_panel.outline_field_vgroup": {"EN": "Thickness Vertex Group", "ZH": "厚度顶点组"},
     "ui.main_panel.outline_field_thickness": {"EN": "Thickness", "ZH": "厚度"},
     "ui.main_panel.outline_field_ignore_collection": {"EN": "Ignore Collection", "ZH": "忽略集合"},
@@ -512,9 +510,10 @@ STRINGS = {
     "ui.main_panel.outline_warn_missing_vgroup_suffix": {
         "EN": "; {n} source(s) have no vertex group by that name, outline thickness is uniform there",
         "ZH": "；其中 {n} 个源网格上没有该名字的顶点组，描边厚度按整网格统一处理"},
-    "ui.main_panel.outline_warn_not_baked_suffix": {
-        "EN": "; {n} shell(s) couldn't be safely auto-applied and were left as a live Solidify modifier",
-        "ZH": "；其中 {n} 份描边网格无法安全自动应用，Solidify 仍以活动修改器的形式保留"},
+    "ui.main_panel.outline_warn_not_last_suffix": {
+        "EN": "; {n} shell(s) couldn't be named to sort after every existing submesh of their group, "
+              "rename them before export or existing vertex indices will shift",
+        "ZH": "；其中 {n} 份描边网格无法命名成排在同组所有原有子网格之后，导出前请手动改名，否则原有顶点序号会变"},
 
     # ── MHW_OT_MergeRenamedVGroups ───────────────────────────────────────────────
     "ui.main_panel.merge_vg_done": {"EN": "Merge complete: {merged} vertex group(s) merged, {skipped} skipped (matches a real bone)",
