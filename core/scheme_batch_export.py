@@ -422,10 +422,12 @@ class SchemeExporter:
     def sks_face_part(self, scene, scheme, use_simplified):
         """The SKS part the sculpt preset targets: of the slots in
         ``spec.sks_parts``, the one whose exported meshes carry the most shape
-        keys, the earlier slot on a tie; None when none has any.  SKS saves a
-        preset against the part with the most channels (API.lua primary_part) and
-        applies one with a target only to that part on actor instances, so the
-        model name ("musashi", not a part) would never match."""
+        keys, the earlier slot on a tie; None when none has any.  It is what SKS's
+        own save writes for the player (API.lua primary_part: the part with the
+        most channels), so exported and in-game presets look the same.  Only
+        actor instances compare a preset's target with the part (ActorInstances.lua),
+        and only games whose adapter has additional_faces run them; elsewhere the
+        target is metadata."""
         best, best_n = None, 0
         for slot in self.spec.sks_parts:
             names = set()

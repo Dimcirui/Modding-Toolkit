@@ -24,7 +24,10 @@ SPEC = SchemeExportSpec(
     mdf_active_game="ONIWOTS",
     check_game=None, autofix_game=None,
     # SKS's Onimusha parts are the player root's slot children (Adapter.lua
-    # PARTS); Hair hangs under Head and is not one.
+    # PARTS); Hair hangs under Head and is not one.  The sculpt preset's target
+    # is metadata on ONI (its adapter has no additional_faces, so no actor
+    # instances).  Should it get them, the cutscene copy's parts are named after
+    # their mesh (ch001_.._event) and won't match "Head": drop the target then.
     sks_parts=("Head", "Body", "Cloak", "Gauntlet", "Amulet"),
 )
 EXPORTER = SchemeExporter(SPEC)
