@@ -144,9 +144,14 @@ class MdfConvertMaterialDialogBase(bpy.types.Operator):
 
     delete_original: BoolProperty(name="Delete Original Material", default=True)
 
+    # Selection is read from the view layer, not context.selected_objects:
+    # in a 3D view that is in local view (numpad /), selected_objects only
+    # lists objects inside the local view, and the MDF material empties --
+    # picked in the outliner -- almost never are, so the button greyed out.
     @classmethod
     def poll(cls, context):
-        return any(o.get("~TYPE") == "RE_MDF_MATERIAL" for o in context.selected_objects)
+        return any(o.get("~TYPE") == "RE_MDF_MATERIAL"
+                   for o in context.view_layer.objects.selected)
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self, width=420)
@@ -166,7 +171,7 @@ class MdfConvertMaterialDialogBase(bpy.types.Operator):
             self.report({'ERROR'}, T("core.mdf_material_convert_base.no_preset_selected"))
             return {'CANCELLED'}
 
-        targets = [o for o in list(context.selected_objects)
+        targets = [o for o in list(context.view_layer.objects.selected)
                    if o.get("~TYPE") == "RE_MDF_MATERIAL" and getattr(o, 're_mdf_material', None)]
         if not targets:
             self.report({'WARNING'}, T("core.mdf_material_convert_base.no_targets"))
