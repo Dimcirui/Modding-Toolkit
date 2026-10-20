@@ -4,7 +4,9 @@ __pycache__/
 **/__pycache__/
 MHW-Modding-Toolkit.code-workspace
 docs/superpowers/
-tests/
+tests/*
+!tests/blender_regressions.py
+!tests/README.md
 
 docs/
 # Local working data, not addon content: the chain/chain2 settings presets are
