@@ -30,7 +30,32 @@ SPEC = SchemeExportSpec(
     # their mesh (ch001_.._event) and won't match "Head": drop the target then.
     sks_parts=("Head", "Body", "Cloak", "Gauntlet", "Amulet"),
 )
-EXPORTER = SchemeExporter(SPEC)
+
+
+class OnimushaExporter(SchemeExporter):
+    """Share character export with optional face preparation and weapon schemes."""
+
+    def draw_scheme_options(self, layout, scene, scheme):
+        if scheme.get("resource_type") != "weapon":
+            layout.prop(scene.mhw_suite_settings, "oni_triangulate_face")
+
+    def _export_with_shapekeys(self, op, context, scene, settings, natives_root, scheme, scheme_file):
+        if scheme.get("resource_type") == "weapon":
+            # Weapon schemes do not use Musashi's character sculpt presets.
+            return self._export(op, context, scene, settings, natives_root, scheme)
+        if settings.oni_triangulate_face:
+            from ...core.export_prep import triangulated_for_export
+            collections = [mesh for _label, _mdf, mesh in
+                           self.bound_pairs(scene, scheme, self.use_simplified(scene)) if mesh is not None]
+            objects = {obj for collection in collections for obj in collection.all_objects}
+            with triangulated_for_export(objects, 'oni'):
+                return super()._export_with_shapekeys(
+                    op, context, scene, settings, natives_root, scheme, scheme_file)
+        return super()._export_with_shapekeys(
+            op, context, scene, settings, natives_root, scheme, scheme_file)
+
+
+EXPORTER = OnimushaExporter(SPEC)
 
 get_schemes_callback = EXPORTER.schemes_callback
 
