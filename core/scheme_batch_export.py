@@ -1129,6 +1129,10 @@ def build_classes(exp):
                 layout.label(text="Failed to load scheme", icon='ERROR')
                 return
 
+            draw_options = getattr(exp, "draw_scheme_options", None)
+            if draw_options:
+                draw_options(layout, scene, scheme)
+
             character_id = scheme["character_id"]
             use_simplified = exp.use_simplified(scene)
             self._sync_groups(scheme, scheme_file)

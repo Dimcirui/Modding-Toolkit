@@ -187,14 +187,11 @@ def convert_to_dds(filepath, dxgi_format_name, out_dir, generate_mips=True,
     """Convert an image (PNG/TGA/DDS/etc, whatever texconv itself supports) to a
     DX10-header DDS using the given DXGI format name (e.g. "BC7_UNORM_SRGB").
 
-    sRGB-ness is a *tag only*: the "SRGB" in dxgi_format_name goes into the DDS
-    header (and on to the .tex header) to tell the GPU how to decode, but the
-    pixel bytes are never gamma-converted — a source PNG is already sRGB-encoded,
-    so an extra decode/encode pass would only lose precision or, if it doesn't
-    round-trip exactly, darken the result. This deliberately does NOT pass
-    texconv's -srgb (TEX_FILTER_SRGB_IN|OUT), matching how kagenocookie's
-    REE-Content-Editor converts textures (DirectXTex called with plain
-    TexCompressFlags.Default and the sRGB-ness carried only by the format enum).
+    Treat sRGB output as encoded color input too. Setting an sRGB output format
+    without -srgb makes texconv encode untagged PNG/TGA bytes as if they were
+    linear, brightening the result. -srgb marks both sides of the conversion so
+    the top-level encoded values round-trip, while resizing and mip filtering
+    can operate in linear light. Linear/data formats do not receive this flag.
 
     Callers must still pass the format matching the texture's *role*, since that
     tag is what the shader honours (see core/mdf_tex_processor_base.py's
@@ -216,12 +213,14 @@ def convert_to_dds(filepath, dxgi_format_name, out_dir, generate_mips=True,
     dll = _load_dll()
 
     # Must happen before texconv sees the file: a PNG claiming to be sRGB gets
-    # gamma-decoded on load, which is precisely what this function promises not
-    # to do.  Applies to every source, not just Blender's own -- a PNG exported
-    # from Photoshop carries the same tags.
+    # interpreted differently from untagged input. Explicit input/output flags
+    # below define the conversion consistently. This also applies to PNGs from
+    # external editors such as Photoshop, not only Blender's staging files.
     filepath = _sanitize_png_color_metadata(filepath, out_dir)
 
     args = ['-f', dxgi_format_name, '-sepalpha']  # -sepalpha: without it, alpha gets mangled by mip generation
+    if dxgi_format_name.endswith('_SRGB'):
+        args += ['-srgb']
     if not generate_mips:
         args += ['-m', '1']
     else:

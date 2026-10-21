@@ -220,6 +220,12 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
         items=get_schemes_callback
     )
 
+    oni_triangulate_face: bpy.props.BoolProperty(
+        name="Triangulate Face Mesh",
+        description="Temporarily triangulate exported Onimusha meshes weighted to the head bone",
+        default=False,
+    )
+
     # Onimusha batch export scheme
     oni_export_scheme: bpy.props.EnumProperty(
         name="Export Scheme",
