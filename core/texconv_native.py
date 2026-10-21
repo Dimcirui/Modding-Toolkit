@@ -144,6 +144,43 @@ def _run_texconv(dll, file, args, out_dir, verbose=False, allow_slow_codec=False
         raise RuntimeError(err_buf.value)
 
 
+#: Mip chains stop once the shorter side reaches this, not at 1x1.  Measured on
+#: vanilla paks: 1317 of 1424 MHWilds .tex and 458 of 466 Onimusha .tex end at
+#: exactly 8 on the short side (non-square ones at 8x16 / 16x8), whatever the
+#: format; the rest are single-mip or special cases.  Some games crash on the
+#: 1-4 px levels a full chain adds.
+MIN_MIP_SIDE = 8
+
+
+def mip_level_count(width, height):
+    """How many levels a chain from (width, height) gets under MIN_MIP_SIDE:
+    halve until the shorter side is MIN_MIP_SIDE.  A texture already at or
+    below it keeps mip 0 only."""
+    n, side = 1, min(int(width), int(height))
+    while side > MIN_MIP_SIDE:
+        side //= 2
+        n += 1
+    return n
+
+
+def _read_image_size(filepath):
+    """(width, height) from a PNG / TGA / DDS header, or None for anything else
+    -- texconv then builds its own full chain, as before MIN_MIP_SIDE."""
+    try:
+        with open(filepath, 'rb') as f:
+            head = f.read(24)
+    except OSError:
+        return None
+    if head[:8] == _PNG_SIGNATURE and len(head) >= 24:
+        return struct.unpack('>II', head[16:24])
+    if head[:4] == b'DDS ' and len(head) >= 20:
+        h, w = struct.unpack_from('<II', head, 12)
+        return w, h
+    if filepath.lower().endswith('.tga') and len(head) >= 16:
+        return struct.unpack_from('<HH', head, 12)
+    return None
+
+
 def convert_to_dds(filepath, dxgi_format_name, out_dir, generate_mips=True,
                     image_filter="CUBIC", verbose=False, allow_slow_codec=False,
                     size=None):
@@ -187,6 +224,10 @@ def convert_to_dds(filepath, dxgi_format_name, out_dir, generate_mips=True,
     args = ['-f', dxgi_format_name, '-sepalpha']  # -sepalpha: without it, alpha gets mangled by mip generation
     if not generate_mips:
         args += ['-m', '1']
+    else:
+        dims = size or _read_image_size(filepath)
+        if dims:
+            args += ['-m', str(mip_level_count(*dims))]
     if image_filter:
         args += ['-if', image_filter]
     if size:
@@ -374,7 +415,7 @@ def convert_to_dds_area_mips(filepath, dxgi_format_name, out_dir, size=None,
             if level_dds and os.path.isfile(level_dds):
                 os.remove(level_dds)
 
-        if cw == 1 and ch == 1:
+        if min(cw, ch) <= MIN_MIP_SIDE:
             break
         nw, nh = max(1, cw // 2), max(1, ch // 2)
         bw, bh = cw // nw, ch // nh
