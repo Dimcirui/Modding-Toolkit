@@ -4,7 +4,7 @@ Filled in incrementally as each panel is migrated."""
 STRINGS = {
     # ── MHW_PT_SuiteSettings collapsible section headers ───────────────────────
     "ui.main_panel.basic_tools_header":     {"EN": "Basic Tools",               "ZH": "基础工具"},
-    "ui.main_panel.std_converter_header":   {"EN": "Skeleton & Mesh Convert", "ZH": "骨架&网格转换"},
+    "ui.main_panel.std_converter_header":   {"EN": "Skeleton & Mesh Convert", "ZH": "骨架 & 网格转换"},
     "ui.main_panel.pose_convert_header":    {"EN": "Pose Convert",              "ZH": "姿态转换"},
 
     # ── MHW_PT_SuiteSettings property draw-site label overrides ────────────────
@@ -23,7 +23,8 @@ STRINGS = {
                                                     "ZH": "忽略辅助骨"},
     "ui.main_panel.import_preset_label":       {"EN": "Source Preset (X)", "ZH": "来源预设 (X)"},
     "ui.main_panel.target_preset_label":       {"EN": "Target Game (Y)",   "ZH": "目标游戏 (Y)"},
-    "ui.main_panel.show_mapping_details_label":{"EN": "Show Mapping Details", "ZH": "显示映射细节"},
+    "ui.main_panel.mapping_details_header":    {"EN": "Mapping Details", "ZH": "映射细节"},
+    "ui.main_panel.align_mode_label":          {"EN": "Align Mode", "ZH": "对齐模式"},
     "ui.main_panel.pose_preset_field_label":   {"EN": "Skeleton Preset",   "ZH": "骨架预设"},
 
     # ── align_mode_override EnumProperty items (dynamic callback) ──────────────
@@ -139,10 +140,10 @@ STRINGS = {
     "已将 %s 对齐到 %s":     {"EN": "Aligned %s to %s",        "ZH": "已将 %s 对齐到 %s"},
 
     # ── MHW_PT_MainPanel.draw() section headers / static labels ────────────────
-    "ui.main_panel.label_bone_merge":            {"EN": "Bone & Weight Merge", "ZH": "骨骼&权重合并"},
-    "ui.main_panel.label_bone_processing":       {"EN": "Bone Processing",  "ZH": "骨骼处理"},
-    "ui.main_panel.label_mesh_processing":       {"EN": "Mesh Processing",  "ZH": "网格处理"},
-    "ui.main_panel.label_texture_processing":    {"EN": "Texture Processing", "ZH": "贴图处理"},
+    # Basic Tools' sub-panel headers
+    "ui.main_panel.bone_weight_header":          {"EN": "Bones & Weights", "ZH": "骨骼 & 权重"},
+    "ui.main_panel.mesh_header":                 {"EN": "Mesh",             "ZH": "网格"},
+    "ui.main_panel.texture_header":              {"EN": "Textures",         "ZH": "贴图"},
     "ui.main_panel.label_skeleton_cleanup":      {"EN": "Non-Physics Workflow", "ZH": "非物理流程工具"},
     "ui.main_panel.label_physics_chain_tools":   {"EN": "Physics Workflow", "ZH": "物理流程工具"},
     "ui.main_panel.label_bone_visibility":       {"EN": "Bone Visibility [X]:", "ZH": "骨骼显示 [X]:"},
@@ -261,6 +262,13 @@ STRINGS = {
     "ui.main_panel.btn_mhws_optimize_skeleton":   {"EN": "Optimize Wilds Skeleton", "ZH": "优化荒野骨架"},
     "ui.main_panel.btn_mhws_optimize_aux":        {"EN": "Optimize Auxiliary Bones & Weights", "ZH": "优化辅助骨骼及权重"},
     "ui.main_panel.btn_add_facial_bones":         {"EN": "One-Click Add Facial Bones", "ZH": "一键添加表情骨"},
+    # The game picker's tooltips (MT_Preferences.active_game)
+    "ui.game_sections.game_mhwi": {"EN": "Monster Hunter: World",       "ZH": "怪物猎人：世界"},
+    "ui.game_sections.game_mhws": {"EN": "Monster Hunter Wilds",        "ZH": "怪物猎人：荒野"},
+    "ui.game_sections.game_mhrs": {"EN": "Monster Hunter Rise",         "ZH": "怪物猎人：崛起"},
+    "ui.game_sections.game_re4":  {"EN": "Resident Evil 4",             "ZH": "生化危机 4 重制版"},
+    "ui.game_sections.game_re9":  {"EN": "Resident Evil Requiem",       "ZH": "生化危机：安魂曲"},
+    "ui.game_sections.game_oni":  {"EN": "Onimusha: Way of the Sword",  "ZH": "鬼武者：剑之道"},
     "ui.game_sections.btn_configure_shape_keys":  {"EN": "Configure Selected Meshes' Shape Keys", "ZH": "配置选中网格形态键"},
     "ui.main_panel.btn_mdf_tex_processor":        {"EN": "MDF2 Processor", "ZH": "MDF2 处理器"},
     "ui.main_panel.btn_mdf_generator":            {"EN": "MDF2 Generator", "ZH": "MDF2 生成器"},

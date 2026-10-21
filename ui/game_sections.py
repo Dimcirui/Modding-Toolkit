@@ -6,16 +6,20 @@ differently from one game to the next.  Adding anything meant editing five
 places, and forgetting one of them is exactly how the generator's slot-priority
 toggle ended up covering four games out of five.
 
-So the layout is a table now, and every game gets the same four groups in the
+So the layout is a table now, and every game gets the same groups in the
 same order:
 
-    导入&导出        getting the asset in and out of the game
-    骨架&网格处理     skeleton and mesh preparation
-    材质&贴图处理     materials and textures
+    导入 & 导出       getting the asset in and out of the game
+    骨架 & 网格处理    skeleton and mesh preparation
+    材质 & 贴图处理    materials and textures
     物理处理          physics: chains, and the bone work that feeds them
+    跨游戏移植        behind the port notice (core/port_consent.py)
 
-A group with no entries for a game is skipped rather than drawn empty, which is
-why MHRS shows three headings and the rest show four.
+One game is active at a time (the picker at the top of the sidebar, stored in
+the addon preferences), and each group is a native sub-panel of the root
+panel.  Because only one game is drawn, five panel classes cover every game:
+each one looks the active game up in this table, and its ``poll`` hides it when
+that game has nothing in the group -- which is why Onimusha shows two groups.
 
 Dependency guards stay per entry: several tools only work when one of the
 upstream addons is installed, and a disabled button plus one explanatory line
@@ -159,7 +163,6 @@ def _ref_model(game_code):
 
 SECTIONS = {
     'mhwi': {
-        'label': "MHWI Tools", 'icon': 'ARMATURE_DATA',
         'io': [
             _ref_model('MHWI'),
             op("mhwi.batch_import_dialog", "ui.main_panel.btn_batch_import",
@@ -233,7 +236,6 @@ SECTIONS = {
         ],
     },
     'mhws': {
-        'label': "MHWS Tools", 'icon': 'WORLD',
         'io': [
             _ref_model('MHWS'),
             op("mhws.batch_import_dialog", "ui.main_panel.btn_batch_import",
@@ -273,7 +275,6 @@ SECTIONS = {
         'port': _port('MHWS'),
     },
     're4': {
-        'label': "RE4 Tools", 'icon': 'GHOST_ENABLED',
         'io': [_ref_model('RE4'), _pre_export_check('RE4'),
                _batch_export('re4', "ui.game_sections.btn_batch_export_re4")],
         'rig': [
@@ -305,7 +306,6 @@ SECTIONS = {
         'port': _port('RE4'),
     },
     'mhrs': {
-        'label': "MHRS Tools", 'icon': 'GHOST_ENABLED',
         'io': [_ref_model('MHRS'),
                op("mhrs.batch_import_dialog", "ui.main_panel.btn_batch_import",
                   'IMPORT', needs='re_mesh_import'),
@@ -326,7 +326,6 @@ SECTIONS = {
         'port': _port('MHRS'),
     },
     're9': {
-        'label': "RE9 Tools", 'icon': 'GHOST_ENABLED',
         'io': [_ref_model('RE9'), _pre_export_check('RE9'),
                _batch_export('re9', "ui.game_sections.btn_batch_export_re9")],
         'rig': [
@@ -356,7 +355,6 @@ SECTIONS = {
     # A port *target* only (see mesh_port_ops.PORTABLE_GAMES), so no port group --
     # the port buttons live in the source game's section.
     'oni': {
-        'label': "Onimusha Tools", 'icon': 'GHOST_ENABLED',
         'io': [_ref_model('ONI'),
                _batch_export('oni', "ui.game_sections.btn_batch_export_oni")],
         'rig': [_configure_shape_keys('ONI')],
@@ -364,16 +362,87 @@ SECTIONS = {
 }
 
 
+# ── Active game ───────────────────────────────────────────────────────────────
+
+#: The picker's two rows: the Monster Hunter games (armour-set export), then the
+#: character games (scheme-driven batch export).  The picker draws them in this
+#: order, so it is also the order the games are offered in.
+GAME_ROWS = (("MHWI", "MHWS", "MHRS"),
+             ("RE4", "RE9", "ONI"))
+
+#: Shown before the user has ever picked one.
+DEFAULT_GAME = "MHWS"
+
+#: Full game names for the picker's tooltips.
+_GAME_NAME_KEYS = {
+    "MHWI": "ui.game_sections.game_mhwi",
+    "MHWS": "ui.game_sections.game_mhws",
+    "MHRS": "ui.game_sections.game_mhrs",
+    "RE4":  "ui.game_sections.game_re4",
+    "RE9":  "ui.game_sections.game_re9",
+    "ONI":  "ui.game_sections.game_oni",
+}
+
+#: Persistent backing for the items callback below: Blender's C side keeps the
+#: pointers, so a list built fresh inside the callback is freed too early.
+_game_item_cache = []
+
+
+def game_items(self, context):
+    """Items for ``MT_Preferences.active_game``: the short code as the button
+    text, the full name (translated) as its tooltip."""
+    _game_item_cache.clear()
+    _game_item_cache.extend(
+        (g, g, T(_GAME_NAME_KEYS[g]), i)
+        for i, g in enumerate(g for row in GAME_ROWS for g in row))
+    return _game_item_cache
+
+
+def default_game_index():
+    flat = [g for row in GAME_ROWS for g in row]
+    return flat.index(DEFAULT_GAME)
+
+
+def preferences(context):
+    """The addon preferences, or None when they cannot be found (a module-name
+    mismatch between installs, see ui/personal_tools_panel.py)."""
+    try:
+        from ..core.console_export import get_preferences
+        return get_preferences(context)
+    except Exception:
+        return None
+
+
+def active_game(context):
+    """The active game's key into SECTIONS ('mhws', ...)."""
+    prefs = preferences(context)
+    code = getattr(prefs, "active_game", None) or DEFAULT_GAME
+    key = code.lower()
+    return key if key in SECTIONS else DEFAULT_GAME.lower()
+
+
+def draw_game_picker(layout, context):
+    prefs = preferences(context)
+    if prefs is None:
+        return
+    col = layout.column(align=True)
+    for codes in GAME_ROWS:
+        row = col.row(align=True)
+        for code in codes:
+            row.prop_enum(prefs, "active_game", code)
+
+
 # ── Drawing ───────────────────────────────────────────────────────────────────
 
-def _draw_button(layout, entry, guard_state, missing):
+def _draw_button(layout, entry, guard_state, missing, icon=True):
     need = entry['needs']
     if need is not None:
         ok = guard_state[need]
         layout.enabled = ok
         if not ok:
             missing.add(need)
-    props = layout.operator(entry['op'], text=T(entry['text']), icon=entry['icon'])
+    props = layout.operator(entry['op'], text=T(entry['text']),
+                            icon=entry['icon'] if icon else 'NONE')
     for k, v in entry['props'].items():
         setattr(props, k, v)
 
@@ -382,41 +451,83 @@ def _visible(entry):
     return entry['only_if'] is None or entry['only_if']()
 
 
-def _draw_group(box, entries, guard_state):
-    missing = set()
-    col = box.column(align=True)
-    for entry in entries:
+def visible_entries(game_key, group):
+    """The group's entries that would draw: a pair counts if either half does."""
+    out = []
+    for entry in SECTIONS[game_key].get(group) or []:
         if isinstance(entry, list):
             pair = [e for e in entry if _visible(e)]
-            if not pair:
-                continue
-            row = col.row(align=True)
-            for e in pair:
-                _draw_button(row.row(align=True), e, guard_state, missing)
+            if pair:
+                out.append(pair)
         elif _visible(entry):
+            out.append(entry)
+    return out
+
+
+def _draw_group(layout, entries, guard_state):
+    missing = set()
+    col = layout.column(align=True)
+    for entry in entries:
+        if isinstance(entry, list):
+            row = col.row(align=True)
+            # A pair drops its icons: at the default sidebar width the English
+            # labels only fit side by side without them.
+            for e in entry:
+                _draw_button(row.row(align=True), e, guard_state, missing,
+                             icon=len(entry) == 1)
+        else:
             _draw_button(col.row(align=True), entry, guard_state, missing)
     # One line per missing dependency, not one per button that needs it.
     for need in sorted(missing):
         col.label(text=T(GUARDS[need][1]), icon='ERROR')
 
 
-def draw_section(layout, game_key):
-    """Draw one game's tool box."""
-    spec = SECTIONS[game_key]
+def draw_group(layout, game_key, group):
+    """Draw one group of one game's tools into a sub-panel's layout."""
+    entries = visible_entries(game_key, group)
+    if group == 'port' and not draw_gate(layout):
+        return
     guard_state = {name: probe() for name, (probe, _msg) in GUARDS.items()}
+    _draw_group(layout, entries, guard_state)
 
-    box = layout.box()
-    box.label(text=spec['label'], icon=spec['icon'])
 
-    for group in GROUP_ORDER:
-        entries = spec.get(group) or []
-        if not entries:
-            continue
-        label_key, icon = GROUP_LABELS[group]
-        sub = box.box()
-        sub.label(text=T(label_key), icon=icon)
-        # The heading stays visible while locked, so the group reads as
-        # 'not yet unlocked' rather than 'not available for this game'.
-        if group == 'port' and not draw_gate(sub):
-            continue
-        _draw_group(sub, entries, guard_state)
+# ── Sub-panels ────────────────────────────────────────────────────────────────
+
+#: Groups that start open the first time a user sees them.  Blender remembers
+#: each panel's open state from then on.
+_OPEN_BY_DEFAULT = {'io'}
+
+def _make_group_panel(group, parent_idname, order):
+    label_key, icon = GROUP_LABELS[group]
+
+    def poll(cls, context):
+        return bool(visible_entries(active_game(context), group))
+
+    def draw_header(self, context):
+        self.layout.label(text=T(label_key), icon=icon)
+
+    def draw(self, context):
+        draw_group(self.layout, active_game(context), group)
+
+    attrs = {
+        # Empty: the translated header comes from draw_header, and Blender
+        # would draw a bl_label next to it.
+        'bl_label': "",
+        'bl_idname': f"MTK_PT_game_{group}",
+        'bl_space_type': 'VIEW_3D',
+        'bl_region_type': 'UI',
+        'bl_category': 'MOD Toolkit',
+        'bl_parent_id': parent_idname,
+        'bl_order': order,
+        'poll': classmethod(poll),
+        'draw_header': draw_header,
+        'draw': draw,
+    }
+    if group not in _OPEN_BY_DEFAULT:
+        attrs['bl_options'] = {'DEFAULT_CLOSED'}
+    return type(f"MTK_PT_game_{group}", (bpy.types.Panel,), attrs)
+
+
+def make_group_panels(parent_idname):
+    """One sub-panel class per group, in GROUP_ORDER, under ``parent_idname``."""
+    return [_make_group_panel(g, parent_idname, i) for i, g in enumerate(GROUP_ORDER)]

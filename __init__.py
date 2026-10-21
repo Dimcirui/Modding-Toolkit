@@ -39,10 +39,20 @@ from .core import ref_model_ops
 from .core import stale_cleanup_ops
 from .core import shapekey_export
 from . import ui, games
+from .ui import game_sections
 
 class MT_Preferences(AddonPreferences):
     bl_idname = __name__
-    
+
+    # 侧栏顶部选中的游戏。放在偏好里而不是 Scene 上：切换游戏只是看哪一组按钮，
+    # 不该成为撤销步骤，也不该把 .blend 标成已修改；而且换文件时还记得。
+    active_game: EnumProperty(
+        name="Active Game",
+        description="The game whose tools the sidebar shows",
+        items=game_sections.game_items,
+        default=game_sections.default_game_index(),
+    )
+
     auto_check_update: BoolProperty(
         name="Auto-check for Update",
         description="If enabled, auto-check for updates using an interval",

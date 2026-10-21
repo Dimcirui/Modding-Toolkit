@@ -128,13 +128,17 @@ class MT_OT_set_language(bpy.types.Operator):
         return {"FINISHED"}
 
 
-def draw_language_toggle(layout):
-    """Draw a [English][中文] row, highlighting the current language."""
+def draw_language_toggle(layout, compact=False):
+    """Draw a [English][中文] row, highlighting the current language.
+
+    ``compact`` draws [EN][中] instead, for a panel header."""
     cur = get_lang()
     row = layout.row(align=True)
-    op_en = row.operator("mt.set_language", text="English", depress=(cur == "EN"))
+    op_en = row.operator("mt.set_language", text="EN" if compact else "English",
+                         depress=(cur == "EN"))
     op_en.lang = "EN"
-    op_zh = row.operator("mt.set_language", text="中文", depress=(cur == "ZH"))
+    op_zh = row.operator("mt.set_language", text="中" if compact else "中文",
+                         depress=(cur == "ZH"))
     op_zh.lang = "ZH"
 
 
