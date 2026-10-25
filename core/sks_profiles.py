@@ -433,25 +433,36 @@ def write_presets(mod_root, folder, rep_part, profile_id, sculpt_name, values, t
 
     The binding is not "global", so a part's own binding -- the player's in
     user/, or another mod's -- still wins over it (Presets.lua lookup order).
-    The sculpt preset targets *target_part* (default *rep_part*): SKS applies a
-    preset with a target part to that part only on actor instances
-    (ActorInstances.lua), so where the representative is not a mesh (RE4's
-    "leon") it must name the face part.  Returns the paths written."""
+    The sculpt preset targets *target_part* (default *rep_part*): the part it
+    was made on.  Returns the paths written.
+
+    Both files merge into what is already there, since a model is often
+    exported a part at a time: a run that exported only the body must not drop
+    the hair's values or the profile a face run bound.  This run's values win
+    key by key; an existing target and profile stay unless this run names a
+    profile."""
     base = os.path.join(sks_data_dir(mod_root), "mods", safe_id(folder))
     written = []
     sculpt_id = safe_id(sculpt_name)
     if values and sculpt_id:
         path = os.path.join(base, "sculpt", sculpt_id + ".json")
+        old = _load_json(path)
+        old = old if isinstance(old, dict) else {}
+        merged = dict(old.get("values") or {})
+        merged.update(values)
+        target = old.get("target") if isinstance(old.get("target"), dict) else None
         _dump(path, {"schema": SCULPT_SCHEMA, "name": sculpt_name,
-                     "target": {"part": target_part or rep_part}, "values": values})
+                     "target": target or {"part": target_part or rep_part}, "values": merged})
         written.append(path)
-    binding = {"schema": BINDING_SCHEMA, "part": rep_part}
+    path = os.path.join(base, safe_id(rep_part) + ".json")
+    old = _load_json(path) if os.path.isfile(path) else None
+    binding = dict(old) if isinstance(old, dict) and not old.get("deleted") else {}
+    binding.update({"schema": BINDING_SCHEMA, "part": rep_part})
     if profile_id:
         binding["profile"] = profile_id
     if values and sculpt_id:
         binding["sculpt"] = sculpt_name
     if len(binding) > 2:
-        path = os.path.join(base, safe_id(rep_part) + ".json")
         _dump(path, binding)
         written.append(path)
     return written
@@ -471,13 +482,18 @@ def channel_names(names):
 def write_names(mod_root, file_id, names):
     """Write the names table ``mods/names/<file_id>.json`` (NameHash.lua): on
     engines that keep only channel-name hashes SKS can name a channel only when
-    it knows the name, so a mod's own key names have to ship with it.  Returns
+    it knows the name, so a mod's own key names have to ship with it.  Names
+    already in the table stay (a part-at-a-time export adds to it).  Returns
     the paths written."""
     names = channel_names(names)
     fid = safe_id(file_id)
     if not names or not fid:
         return []
     path = os.path.join(sks_data_dir(mod_root), "mods", "names", fid + ".json")
+    old = _load_json(path)
+    old = old.get("names") if isinstance(old, dict) else None
+    if isinstance(old, list):
+        names = channel_names([str(n) for n in old] + names)
     _dump(path, {"schema": NAMES_SCHEMA, "names": names})
     return [path]
 
