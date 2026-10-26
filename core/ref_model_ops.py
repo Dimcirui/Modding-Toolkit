@@ -341,6 +341,17 @@ class MODDER_OT_ImportReferenceModel(bpy.types.Operator):
                 bpy.ops.modder.ree_to_tpose()
                 posed = True
 
+        # The RE9 bodies are FBX in RE9's file axes.  Where the installed REME
+        # converts RE9 axes on import (Dimcirui fork), show this one the same way, so
+        # it matches the user's own RE9 imports.  After the merges and the T-pose, as
+        # the port into RE9 does: those keep their validated file-axes path, and the
+        # conversion leaves the file axes -- what REME exports -- exactly as they are.
+        if game == "RE9" and _is_fbx_model(game, model):
+            from .mesh_port_ops import convert_to_reme_axes, reme_re9_axes_module
+            axes_mod = reme_re9_axes_module()
+            if axes_mod is not None:
+                convert_to_reme_axes(arm, axes_mod)
+
         # Last, so it collects whatever the merges and the T-pose left behind.
         # Compared by name rather than by object: the T-pose step rebinds meshes,
         # and a set of the objects from before would hold references to freed data.

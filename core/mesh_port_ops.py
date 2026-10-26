@@ -266,6 +266,27 @@ def revert_reme_axes(arm_obj):
     return corrections
 
 
+def file_axes_copy(arm_obj):
+    """A throwaway copy of *arm_obj* in RE9's file axes, or None when it is not
+    REME-converted (the rig itself already is in file axes then).
+
+    For code that reads bone frames off a user's rig to write a file without going
+    through REME's exporter, which is what multiplies C back.  The copy holds the
+    armature only; remove it with ``bpy.data.objects.remove`` and its data with
+    ``bpy.data.armatures.remove``.
+    """
+    if arm_obj.data.get("REMeshBoneAxes") != "RE9":
+        return None
+    copy = arm_obj.copy()
+    copy.data = arm_obj.data.copy()
+    copy.animation_data_clear()
+    bpy.context.scene.collection.objects.link(copy)
+    copy.hide_viewport = False          # revert_reme_axes enters Edit Mode on it
+    copy.hide_set(False)
+    revert_reme_axes(copy)
+    return copy
+
+
 def _fallback_table(source_game, target_game, cross):
     """The per-bone C to fall back on when the derivation rejects a bone.
 

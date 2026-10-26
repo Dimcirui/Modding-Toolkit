@@ -537,16 +537,24 @@ class SchemeExporter:
                         prev_sel = [o for o in context.selected_objects]
                         for o in prev_sel:
                             o.select_set(False)
-                        native_copy = None
+                        native_copy = source_copy = None
                         try:
                             bpy.ops.re_fbxskel.importfile(filepath=native_path)
                             native_copy = context.view_layer.objects.active
                             if native_copy is None or native_copy.type != 'ARMATURE':
                                 raise RuntimeError(f"导入原生骨架失败: {native_path}")
                             native_copy.select_set(False)
+                            # RE Mesh Editor 的 Dimcirui 分支导入 RE9 骨架时默认换轴（每根骨存
+                            # 自己的 C，导出时乘回）。原生骨架和用户骨架各自换没换轴不一定一致，
+                            # 而且 C 由各自的静止姿态算出：直接照抄朝向会把用户的朝向配上原生
+                            # 骨架的 C。所以两边都先回到文件轴向再对齐，结果与换轴之前逐字节相同。
+                            from .mesh_port_ops import file_axes_copy, revert_reme_axes
+                            if native_copy.data.get("REMeshBoneAxes") == "RE9":
+                                revert_reme_axes(native_copy)
+                            source_copy = file_axes_copy(user_arm_obj)
                             # 仅对齐位置/朝向，不生成假骨骼——把原生骨架（含仅存在于原生骨架
                             # 中的骨骼）整体对齐到用户绑定的骨架比例上，再导出对齐后的副本
-                            align_armatures_by_name(user_arm_obj, native_copy, mode='FULL')
+                            align_armatures_by_name(source_copy or user_arm_obj, native_copy, mode='FULL')
                             print(f"{tag} FBXSKEL (对齐原生骨架): {fbx_arm} -> {os.path.basename(full)}")
                             do_export_fbxskel(full, native_copy.name)
                             export_count += 1
@@ -556,6 +564,10 @@ class SchemeExporter:
                         finally:
                             if native_copy is not None and native_copy.name in bpy.data.objects:
                                 bpy.data.objects.remove(native_copy, do_unlink=True)
+                            if source_copy is not None:
+                                data = source_copy.data
+                                bpy.data.objects.remove(source_copy, do_unlink=True)
+                                bpy.data.armatures.remove(data)
                             context.view_layer.objects.active = prev_active
                             for o in prev_sel:
                                 if o.name in bpy.data.objects:
