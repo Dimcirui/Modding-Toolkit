@@ -229,6 +229,8 @@ STRINGS = {
     "ui.prop.cleanup_before_export": {"EN": "Clean Mesh Before Export", "ZH": "导出前清理网格"},
     "ui.prop.anti_plagiarism": {"EN": "Anti-Plagiarism", "ZH": "防石化"},
     "ui.prop.watermark": {"EN": "Add Watermark Effect", "ZH": "添加水印特效"},
+    "ui.prop.ignore_slot_limits": {
+        "EN": "Ignore Slot Limits (needs .pfb edit)", "ZH": "忽略槽位限制（需要改pfb）"},
     "ui.prop.use_blank_export": {"EN": "Use Blank Model for Unselected", "ZH": "未选部位使用空模"},
     "ui.prop.ao_image": {"EN": "AO Map", "ZH": "AO 贴图"},
     "ui.prop.use_ao": {"EN": "Add AO", "ZH": "添加 AO"},

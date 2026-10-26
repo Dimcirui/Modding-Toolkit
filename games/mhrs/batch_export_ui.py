@@ -9,7 +9,7 @@ from .batch_export import (
     MHRS_PARTS, MHRS_PART_LABEL_KEYS,
     _load_scheme, _resolve_part_file_types, _canonical_order_file_types,
     get_binding, set_binding,
-    get_mhrs_armor_callback, bound_pairs, jcns_slots,
+    get_mhrs_armor_callback, bound_pairs, jcns_slots, part_file_types, ignore_slot_limits,
 )
 from ...core import optional_editors
 
@@ -211,12 +211,12 @@ class MHRS_OT_BatchExportDialog(bpy.types.Operator):
         active_parts = [(pid, pname) for idx, (pid, pname) in enumerate(MHRS_PARTS)
                         if parts_mask & (1 << idx)]
 
+        unlocked = ignore_slot_limits(scene)
         per_part_fts = {}
         all_file_types = []
         for part_id, part_name in active_parts:
-            fts = _canonical_order_file_types(
-                _resolve_part_file_types(armor_set if armor_set else {}, part_id))
-            per_part_fts[part_id] = fts + jcns_slots(armor_set, gender, part_id)
+            fts = part_file_types(armor_set, part_id, unlocked)
+            per_part_fts[part_id] = fts + jcns_slots(armor_set, gender, part_id, unlocked)
             for ft in fts:
                 if ft not in all_file_types:
                     all_file_types.append(ft)
@@ -271,6 +271,7 @@ class MHRS_OT_BatchExportDialog(bpy.types.Operator):
         layout.separator()
         row = layout.row(align=True)
         row.prop(settings, "mhrs_use_blank_export", text=T("ui.prop.use_blank_export"), icon='FILE_BLANK')
+        row.prop(settings, "mhrs_ignore_slot_limits", text=T("ui.prop.ignore_slot_limits"), icon='UNLOCKED')
         export_autofix.draw_toggle(row, settings, 'MHRS')
         shapekey_export.draw(layout, scene, 'MHRS',
                              [m for _p, _d, m in bound_pairs(scene, armor_id, gender) if m is not None], natives_root)

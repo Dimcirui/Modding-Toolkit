@@ -4,6 +4,15 @@ import shutil
 
 from ...core.i18n import T
 from ...core import optional_editors
+from ...core.scheme_batch_export import unlocked_slots
+
+#: What "Ignore Slot Limits" can add to an entry (core/scheme_batch_export.unlocked_slots).
+UNLOCK_EXTS = {"chain": "chain.53", "jcns": "jcns.22", "gpuc": "gpuc.221108868"}
+
+
+def ignore_slot_limits(scene):
+    settings = getattr(scene, "mhw_suite_settings", None)
+    return bool(getattr(settings, "re4_ignore_slot_limits", False))
 from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
 from ...core import console_export
 from ...core import export_autofix
@@ -482,6 +491,15 @@ class RE4_OT_BatchExport(bpy.types.Operator):
                             try_export(optional_editors.EXPORTERS[optional_editors.slot_type(slot)],
                                        os.path.join(natives_root, "natives", path.replace("/", os.sep)),
                                        col, f"{optional_editors.slot_label(slot)} {entry_id}")
+
+                    # "Ignore Slot Limits": the slots the vanilla part lacks.
+                    if ignore_slot_limits(scene):
+                        for slot, rel in unlocked_slots("re4", entry, UNLOCK_EXTS):
+                            col = _get_binding(scene, character_id, entry_id, slot)
+                            if col and _get_enabled(scene, character_id, entry_id, slot):
+                                func = _do_export_chain if slot == "chain" else optional_editors.EXPORTERS[slot]
+                                try_export(func, make_full(rel, grp_bp), col,
+                                           f"{optional_editors.slot_label(slot)} {entry_id}")
 
         # --- FBXSKEL（在 mesh 之后执行，借助 mesh 导出对骨架唯一性的校验）---
         if fbxskel_paths and fbx_enabled:

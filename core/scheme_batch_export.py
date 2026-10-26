@@ -98,6 +98,33 @@ def do_export_clsp(filepath, collection_name):
     checked(filepath, lambda: bpy.ops.re_clsp.exportfile(filepath=filepath, targetCollection=collection_name))
 
 
+#: Physics slots an exporter writes itself, by type (RE4 adds "chain").
+PHYSICS_EXPORTERS = {"chain2": do_export_chain2, "clsp": do_export_clsp}
+
+
+def unlocked_slots(game, entry, exts):
+    """``[(slot, path relative to the entry's base)]`` that "Ignore Slot Limits"
+    adds to an entry: every type in *exts* its vanilla part does not ship, under
+    the mesh's own name beside the mesh -- the game loads them only from a .pfb
+    edited to.  jcns / gpuc only while their editor can export."""
+    mesh = entry.get("mesh")
+    if not mesh or not exts:
+        return []
+    folder, _sep, name = mesh.rpartition("/")
+    stem = name.split(".")[0]
+    vanilla = {slot for slot, _p in optional_editors.entry_slots(game, mesh, list(optional_editors.EDITORS))}
+    usable = optional_editors.available_slots()
+    out = []
+    for ft, ext in exts.items():
+        if ft in optional_editors.EDITORS:
+            if ft not in usable or ft in vanilla or entry.get(ft):
+                continue
+        elif entry.get(ft):
+            continue
+        out.append((ft, (folder + "/" if folder else "") + f"{stem}.{ext}"))
+    return out
+
+
 def _as_list(value):
     return value if isinstance(value, list) else [value]
 
@@ -123,12 +150,16 @@ class SchemeExportSpec:
     *sks_parts*        for an SKS game, the part IDs SKS gives the character's
                        slots (a group's slot is the last word of its name), head
                        first; the SKS sculpt preset targets one of them.
+    *unlock_setting* / *unlock_exts*  the "Ignore Slot Limits" toggle and the file
+                       extensions (with version) of the slots it can add -- see
+                       unlocked_slots().
     """
 
     def __init__(self, code, op_prefix, key_prefix, title, scheme_dir, blank_dir,
                  natives_root_key, scheme_setting, blank_setting, fbxskel_base,
                  native_skeleton_dir=None, mdf_active_game=None,
-                 check_game=None, autofix_game=None, sks_parts=()):
+                 check_game=None, autofix_game=None, sks_parts=(),
+                 unlock_setting=None, unlock_exts=None):
         self.code = code
         self.op_prefix = op_prefix
         self.key_prefix = key_prefix
@@ -144,6 +175,8 @@ class SchemeExportSpec:
         self.check_game = check_game
         self.autofix_game = autofix_game
         self.sks_parts = tuple(sks_parts)
+        self.unlock_setting = unlock_setting
+        self.unlock_exts = dict(unlock_exts or {})
 
 
 class SchemeExporter:
@@ -268,6 +301,10 @@ class SchemeExporter:
 
     def use_simplified(self, scene):
         return scene.get(self.simplified_key, False)
+
+    def unlocked(self, scene):
+        settings = getattr(scene, "mhw_suite_settings", None)
+        return bool(self.spec.unlock_setting and getattr(settings, self.spec.unlock_setting, False))
 
     # ── resolution (shared by export, check and auto-fix) ───────────────────
 
@@ -766,6 +803,15 @@ class SchemeExporter:
                                        os.path.join(natives_root, "natives", path.replace("/", os.sep)),
                                        col, f"{optional_editors.slot_label(slot)} {entry_id}")
 
+                    # "Ignore Slot Limits": the slots the vanilla part lacks.
+                    if self.unlocked(scene):
+                        for slot, rel in unlocked_slots(spec.scheme_dir, entry, spec.unlock_exts):
+                            col = self.get_binding(scene, character_id, entry_id, slot)
+                            if col and self.get_enabled(scene, character_id, entry_id, slot):
+                                func = PHYSICS_EXPORTERS.get(slot) or optional_editors.EXPORTERS[slot]
+                                try_export(func, make_full(rel, grp_bp), col,
+                                           f"{optional_editors.slot_label(slot)} {entry_id}")
+
         if fail_count > 0:
             op.report({'WARNING'}, T("core.export.done_with_fail").format(
                 exported=export_count, failed=fail_count, skipped=skip_count))
@@ -1087,6 +1133,8 @@ def build_classes(exp):
                     for sfx, _path in optional_editors.entry_slots(spec.scheme_dir, entry.get("mesh"),
                                                                    list(optional_editors.EDITORS)):
                         exp.set_binding(scene, char_id, entry["id"], sfx, "")
+                    for sfx in spec.unlock_exts:
+                        exp.set_binding(scene, char_id, entry["id"], sfx, "")
             for sfx in SLOTS:
                 exp.set_empty_binding(scene, char_id, sfx, "")
             self.report({'INFO'}, "All bindings for this scheme cleared")
@@ -1206,6 +1254,9 @@ def build_classes(exp):
             op_c.scheme_file = scheme_file
 
             layout.prop(settings, spec.blank_setting, text=T("ui.prop.use_blank_export"), icon='FILE_BLANK')
+            if spec.unlock_setting and not use_simplified:
+                # Per-entry slots: simplified mode binds whole groups.
+                layout.prop(settings, spec.unlock_setting, text=T("ui.prop.ignore_slot_limits"), icon='UNLOCKED')
             if spec.autofix_game is not None:
                 export_autofix.draw_toggle(layout, settings, spec.autofix_game)
             shapekey_export.draw(layout, scene, spec.code,
@@ -1339,14 +1390,17 @@ def build_classes(exp):
                         op_c.character_id = character_id; op_c.entry_id = entry_id; op_c.suffix = slot
                 optional = list(dict.fromkeys(
                     slot for slot, _p in optional_editors.entry_slots(spec.scheme_dir, entry.get("mesh"))))
-                for slot in optional:
+                extra = ([slot for slot, _r in unlocked_slots(spec.scheme_dir, entry, spec.unlock_exts)]
+                         if exp.unlocked(scene) else [])
+                for slot in optional + extra:
                     cur = exp.get_binding(scene, character_id, entry_id, slot)
                     entry_box.label(text=optional_editors.slot_label(slot),
-                                    icon='CONSTRAINT_BONE' if slot != "gpuc" else 'MOD_CLOTH')
+                                    icon={"gpuc": 'MOD_CLOTH', "chain2": 'PHYSICS',
+                                          "clsp": 'PHYSICS'}.get(slot, 'CONSTRAINT_BONE'))
                     row = entry_box.row(align=True)
                     # An unbound vanilla gpuc still goes out blank with the mesh.
                     unbound = ("GPUC: " + T("core.scheme_batch_export.gpuc_blank")
-                               if slot == "gpuc" and entry.get("gpuc") else "Select...")
+                               if slot == "gpuc" and entry.get("gpuc") and slot not in extra else "Select...")
                     op_p = row.operator(OPS.pick_binding, text=cur if cur else unbound, icon='DOWNARROW_HLT')
                     op_p.scope = "ENTRY"
                     op_p.slot = slot

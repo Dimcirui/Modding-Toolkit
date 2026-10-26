@@ -29,6 +29,8 @@ SPEC = SchemeExportSpec(
     # instances).  Should it get them, the cutscene copy's parts are named after
     # their mesh (ch001_.._event) and won't match "Head": drop the target then.
     sks_parts=("Head", "Body", "Cloak", "Gauntlet", "Amulet"),
+    unlock_setting="oni_ignore_slot_limits",
+    unlock_exts={"chain2": "chain2.17", "clsp": "clsp.3", "jcns": "jcns.36", "gpuc": "gpuc.260209505"},
 )
 EXPORTER = SchemeExporter(SPEC)
 

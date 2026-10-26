@@ -233,8 +233,6 @@ STRINGS = {
         "ZH": "Bonesystem 与 Lua Bone System 不能同时使用，本次只导出了 Bonesystem"},
     "mhws.batch_export_ui.use_bonesystem_label": {
         "EN": "Use Standalone-Skeleton Bonesystem", "ZH": "使用独立骨骼Bonesystem（踩蘑菇）"},
-    "mhws.batch_export_ui.ignore_slot_limits": {
-        "EN": "Ignore Slot Limits (needs .pfb edit)", "ZH": "忽略槽位限制（需要改pfb）"},
     "mhws.batch_export_ui.armature_label": {"EN": "Armature", "ZH": "骨架"},
     "mhws.batch_export_ui.fbxskel_name_label": {"EN": "FBXSkel Name", "ZH": "FBXSkel 名"},
     "mhws.batch_export_ui.use_lua_bone_system_label": {"EN": "Use Lua Bone System", "ZH": "使用 Lua Bone System"},

@@ -200,13 +200,32 @@ def _resolve_part_file_types(armor_set, part_id):
     return fts
 
 
-def jcns_slots(armor_set, gender, part_id):
+def ignore_slot_limits(scene):
+    """The batch exporter's "Ignore Slot Limits" toggle: every part gets a .chain and
+    a .jcns under its own name, for a mod whose .pfb was edited to load them."""
+    settings = getattr(scene, "mhw_suite_settings", None)
+    return bool(getattr(settings, "mhrs_ignore_slot_limits", False))
+
+
+def jcns_slots(armor_set, gender, part_id, unlocked=False):
     """The part's vanilla .jcns slots for this gender (the pack's "jcns", read off the
-    game's pak list), while REE JCNS Editor is installed; [] otherwise."""
-    if not armor_set or not optional_editors.available("jcns"):
+    game's pak list), while REE JCNS Editor is installed; [] otherwise.  *unlocked*
+    adds a plain "jcns" (the mesh's own name) where the vanilla part has none."""
+    if not optional_editors.available("jcns"):
         return []
-    return [optional_editors.jcns_slot(s)
-            for s in armor_set.get("jcns", {}).get(gender, {}).get(part_id, [])]
+    slots = [optional_editors.jcns_slot(s)
+             for s in (armor_set or {}).get("jcns", {}).get(gender, {}).get(part_id, [])]
+    if unlocked and "jcns" not in slots:
+        slots.append("jcns")
+    return slots
+
+
+def part_file_types(armor_set, part_id, unlocked=False):
+    """The part's file types: the pack's table, plus a .chain when unlocked."""
+    fts = list(_resolve_part_file_types(armor_set or {}, part_id))
+    if unlocked and "chain" not in fts:
+        fts.append("chain")
+    return _canonical_order_file_types(fts)
 
 
 def _make_filepath(natives_root, gender, code, part_id, filetype, suffix=""):
@@ -442,17 +461,19 @@ class MHRS_OT_BatchExport(bpy.types.Operator):
         fail_count = 0
         skip_count = 0
         use_blank = settings.mhrs_use_blank_export
+        unlocked = ignore_slot_limits(scene)
 
         for idx, (part_id, part_name) in enumerate(MHRS_PARTS):
             if not (parts_mask & (1 << idx)):
                 continue
-            part_fts = _canonical_order_file_types(
-                _resolve_part_file_types(armor_set, part_id))
-            for filetype in part_fts:
+            own_fts = _resolve_part_file_types(armor_set, part_id)
+            for filetype in part_file_types(armor_set, part_id, unlocked):
                 filepath = _make_filepath(natives_root, gender, armor_id, part_id, filetype)
                 label = f"{part_name} {filetype.upper()}"
 
                 col = get_binding(scene, armor_id, gender, part_id, filetype)
+                if not col and filetype not in own_fts:
+                    continue        # a slot only the unlock opened: nothing to blank
                 if not col:
                     if use_blank and filetype not in NO_BLANK_FILE_TYPES:
                         blank_src = _get_blank_path(filetype)
@@ -481,7 +502,7 @@ class MHRS_OT_BatchExport(bpy.types.Operator):
 
             # A jcns writes over the vanilla file of its slot; an unbound one is
             # left alone and not counted.
-            for slot in jcns_slots(armor_set, gender, part_id):
+            for slot in jcns_slots(armor_set, gender, part_id, unlocked):
                 col = get_binding(scene, armor_id, gender, part_id, slot)
                 if not col:
                     continue

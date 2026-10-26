@@ -25,6 +25,8 @@ SPEC = SchemeExportSpec(
     scheme_setting="re9_export_scheme", blank_setting="re9_use_blank_export",
     fbxskel_base="stm/character", native_skeleton_dir="re9",
     mdf_active_game="RE9", check_game="RE9", autofix_game="RE9",
+    unlock_setting="re9_ignore_slot_limits",
+    unlock_exts={"chain2": "chain2.15", "clsp": "clsp.3", "jcns": "jcns.35", "gpuc": "gpuc.250925365"},
 )
 EXPORTER = SchemeExporter(SPEC)
 

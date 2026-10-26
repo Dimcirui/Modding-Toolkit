@@ -13,6 +13,7 @@ from .batch_export import (
     _get_simplified_group_binding, _set_simplified_group_binding,
     _set_simplified_empty_binding,
     resolve_mesh_mdf2, bound_pairs,
+    UNLOCK_EXTS, ignore_slot_limits, unlocked_slots,
 )
 
 EXPORTER_WINDOW_WIDTH = 600
@@ -440,6 +441,9 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
 
         layout.separator()
         layout.prop(settings, "re4_use_blank_export", text=T("ui.prop.use_blank_export"), icon='FILE_BLANK')
+        if not use_simplified:
+            # Per-entry slots: simplified mode binds whole groups.
+            layout.prop(settings, "re4_ignore_slot_limits", text=T("ui.prop.ignore_slot_limits"), icon='UNLOCKED')
         export_autofix.draw_toggle(layout, settings, 'RE4')
         shapekey_export.draw(layout, scene, 'RE4',
                              [m for _p, _d, m in bound_pairs(scene, scheme, use_simplified) if m is not None], natives_root)
@@ -618,15 +622,19 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
                 op_p.scope = "ENTRY"; op_p.slot = "chain"
                 op_p.character_id = character_id; op_p.entry_id = entry_id
 
-            # jcns / gpuc the vanilla part ships, while their editor is installed.
-            for slot in dict.fromkeys(s for s, _p in optional_editors.entry_slots("re4", entry.get("mesh"))):
+            # jcns / gpuc the vanilla part ships, while their editor is installed;
+            # with "Ignore Slot Limits", whatever else the vanilla part lacks.
+            slots = list(dict.fromkeys(s for s, _p in optional_editors.entry_slots("re4", entry.get("mesh"))))
+            if ignore_slot_limits(scene):
+                slots += [s for s, _r in unlocked_slots("re4", entry, UNLOCK_EXTS)]
+            for slot in slots:
                 head = entry_box.row(align=True)
                 en = _get_enabled(scene, character_id, entry_id, slot)
                 op = head.operator("re4.toggle_entry", text="",
                                    icon='CHECKBOX_HLT' if en else 'CHECKBOX_DEHLT', emboss=False)
                 op.character_id = character_id; op.entry_id = entry_id; op.suffix = slot
                 cur = _get_binding(scene, character_id, entry_id, slot)
-                head.label(text=optional_editors.slot_label(slot),
+                head.label(text="Chain" if slot == "chain" else optional_editors.slot_label(slot),
                            icon='CONSTRAINT_BONE' if slot != "gpuc" else 'MOD_CLOTH')
                 row = entry_box.row(align=True)
                 op_p = row.operator("re4.pick_binding",

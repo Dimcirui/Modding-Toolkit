@@ -357,6 +357,30 @@ class MHW_PT_SuiteSettings(bpy.types.PropertyGroup):
                     "model ships. The game loads them only if the mod's .pfb is edited to reference them",
         default=False,
     )
+    mhrs_ignore_slot_limits: bpy.props.BoolProperty(
+        name="Ignore Slot Limits",
+        description="Give every part every slot (chain2, clsp, jcns, gpuc), not only the files its vanilla "
+                    "model ships. The game loads them only if the mod's .pfb is edited to reference them",
+        default=False,
+    )
+    re4_ignore_slot_limits: bpy.props.BoolProperty(
+        name="Ignore Slot Limits",
+        description="Give every part every slot (chain2, clsp, jcns, gpuc), not only the files its vanilla "
+                    "model ships. The game loads them only if the mod's .pfb is edited to reference them",
+        default=False,
+    )
+    re9_ignore_slot_limits: bpy.props.BoolProperty(
+        name="Ignore Slot Limits",
+        description="Give every part every slot (chain2, clsp, jcns, gpuc), not only the files its vanilla "
+                    "model ships. The game loads them only if the mod's .pfb is edited to reference them",
+        default=False,
+    )
+    oni_ignore_slot_limits: bpy.props.BoolProperty(
+        name="Ignore Slot Limits",
+        description="Give every part every slot (chain2, clsp, jcns, gpuc), not only the files its vanilla "
+                    "model ships. The game loads them only if the mod's .pfb is edited to reference them",
+        default=False,
+    )
     # 「导出前自动修正」 replaces the separate Clean Mesh / Triangulate Face toggles
     # (docs/pre_export_check_plan.md §3.1). Old .blend values for those two are
     # simply ignored; the only visible change is triangulation now defaulting on.

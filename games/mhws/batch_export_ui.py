@@ -260,7 +260,7 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
         layout.separator()
         row = layout.row(align=True)
         row.prop(settings, "mhws_use_blank_export", text=T("ui.prop.use_blank_export"), icon='FILE_BLANK')
-        row.prop(settings, "mhws_ignore_slot_limits", text=T("mhws.batch_export_ui.ignore_slot_limits"),
+        row.prop(settings, "mhws_ignore_slot_limits", text=T("ui.prop.ignore_slot_limits"),
                  icon='UNLOCKED')
         export_autofix.draw_toggle(row, settings, 'MHWS')
         shapekey_export.draw(layout, scene, 'MHWS',

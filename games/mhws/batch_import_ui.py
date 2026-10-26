@@ -95,7 +95,7 @@ class MHWS_OT_BatchImportDialog(bpy.types.Operator):
         # ── 解析按钮 ──
         row = layout.row(align=True)
         row.operator("mhws.scan_import_files", text=T("mhws.batch_import_ui.scan_btn"), icon='FILE_REFRESH')
-        row.prop(settings, "mhws_ignore_slot_limits", text=T("mhws.batch_export_ui.ignore_slot_limits"),
+        row.prop(settings, "mhws_ignore_slot_limits", text=T("ui.prop.ignore_slot_limits"),
                  icon='UNLOCKED')
 
         items  = scene.mhws_import_items
