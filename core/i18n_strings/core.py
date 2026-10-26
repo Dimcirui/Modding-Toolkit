@@ -635,22 +635,20 @@ STRINGS = {
               "Their node chain is too complex to read and the bake did not run: {names}",
         "ZH": "{n} 个 PBR 通道找不到可用的源, 已退回空贴图。它们的节点链读不出来, 烘培也没跑: {names}"},
     "core.color_grade.label": {"EN": "Colour Grade", "ZH": "色彩处理"},
-    "core.color_grade.none": {
-        "EN": "None (pick this if the textures come out too dark)",
-        "ZH": "无 (做出的贴图发黑再选这个)"},
+    "core.color_grade.none": {"EN": "None", "ZH": "无"},
     "core.color_grade.none_desc": {
         "EN": "Copy colour textures through unchanged. Colorimetrically the correct "
               "option -- this game's own albedo textures are sRGB-tagged and sRGB-encoded, "
-              "exactly like a normal source PNG. Pick it when the sRGB option makes the "
-              "result too dark, which means the source was already in the game's range",
+              "exactly like a normal source PNG",
         "ZH": "颜色贴图原样搬运。这是色彩学上正确的一档——本作原版反照率贴图就是 sRGB "
-              "标记 + sRGB 编码, 和普通源图一致。当 sRGB 那一档做出来偏黑时选它, "
-              "那说明源图本来就已经在游戏的口径里了"},
+              "标记 + sRGB 编码, 和普通源图一致"},
     "core.color_grade.srgb": {"EN": "sRGB -> Linear", "ZH": "sRGB 处理"},
     "core.color_grade.srgb_desc": {
-        "EN": "One sRGB-to-linear pass over every colour texture. A power curve: crushes "
-              "midtones and shadows, leaves white untouched (255 stays 255)",
-        "ZH": "对颜色贴图做一次 sRGB→线性。幂曲线: 压中间调和暗部, 白点不动 (255 仍是 255)"},
+        "EN": "One sRGB-to-linear pass over every colour texture, which darkens it. "
+              "A power curve: crushes midtones and shadows, leaves white untouched "
+              "(255 stays 255). Only for sources that look washed out in game",
+        "ZH": "对颜色贴图做一次 sRGB→线性, 会变暗。幂曲线: 压中间调和暗部, 白点不动 "
+              "(255 仍是 255)。只在源图进游戏后明显发白时用"},
     "core.color_grade.exposure": {"EN": "Exposure Down", "ZH": "降曝处理"},
     "core.color_grade.exposure_desc": {
         "EN": "Exposure -1.5EV, brightness -30, vibrance +30. A multiply plus an offset: "

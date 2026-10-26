@@ -129,6 +129,25 @@ def _is_signed(fmt_name):
     return 'SNORM' in fmt_name or 'SF16' in fmt_name
 
 
+def _is_srgb_source(filepath):
+    """True when *filepath* is a DDS whose DX10 header carries an _SRGB format.
+
+    Only a DDS has a format to read; PNG/TGA sources are taken as the bytes they
+    hold, which is what every caller wants.  A legacy (non-DX10) header cannot
+    express an sRGB format at all, so 'DX10' in the fourCC slot is the gate.
+    """
+    if not filepath.lower().endswith('.dds'):
+        return False
+    try:
+        with open(filepath, 'rb') as f:
+            head = f.read(148)
+    except OSError:
+        return False
+    if len(head) < 148 or head[:4] != b'DDS ' or head[84:88] != b'DX10':
+        return False
+    return dxgi.is_srgb(struct.unpack_from('<i', head, 128)[0])
+
+
 def _run_texconv(dll, file, args, out_dir, verbose=False, allow_slow_codec=False):
     args = list(args)
     if out_dir:
@@ -187,14 +206,11 @@ def convert_to_dds(filepath, dxgi_format_name, out_dir, generate_mips=True,
     """Convert an image (PNG/TGA/DDS/etc, whatever texconv itself supports) to a
     DX10-header DDS using the given DXGI format name (e.g. "BC7_UNORM_SRGB").
 
-    sRGB-ness is a *tag only*: the "SRGB" in dxgi_format_name goes into the DDS
-    header (and on to the .tex header) to tell the GPU how to decode, but the
-    pixel bytes are never gamma-converted — a source PNG is already sRGB-encoded,
-    so an extra decode/encode pass would only lose precision or, if it doesn't
-    round-trip exactly, darken the result. This deliberately does NOT pass
-    texconv's -srgb (TEX_FILTER_SRGB_IN|OUT), matching how kagenocookie's
-    REE-Content-Editor converts textures (DirectXTex called with plain
-    TexCompressFlags.Default and the sRGB-ness carried only by the format enum).
+    Treat sRGB output as encoded color input too. Setting an sRGB output format
+    without -srgb makes texconv encode untagged PNG/TGA bytes as if they were
+    linear, brightening the result. -srgb marks both sides of the conversion so
+    the top-level encoded values round-trip, while resizing and mip filtering
+    can operate in linear light. Linear/data formats do not receive this flag.
 
     Callers must still pass the format matching the texture's *role*, since that
     tag is what the shader honours (see core/mdf_tex_processor_base.py's
@@ -216,12 +232,17 @@ def convert_to_dds(filepath, dxgi_format_name, out_dir, generate_mips=True,
     dll = _load_dll()
 
     # Must happen before texconv sees the file: a PNG claiming to be sRGB gets
-    # gamma-decoded on load, which is precisely what this function promises not
-    # to do.  Applies to every source, not just Blender's own -- a PNG exported
-    # from Photoshop carries the same tags.
+    # interpreted differently from untagged input. Explicit input/output flags
+    # below define the conversion consistently. This also applies to PNGs from
+    # external editors such as Photoshop, not only Blender's staging files.
     filepath = _sanitize_png_color_metadata(filepath, out_dir)
 
     args = ['-f', dxgi_format_name, '-sepalpha']  # -sepalpha: without it, alpha gets mangled by mip generation
+    # Either side tagged sRGB is enough: an _SRGB DDS source going to a linear
+    # format would otherwise be decoded on the way in, the mirror of the
+    # brightening above.
+    if dxgi.is_srgb(dxgi_format_name) or _is_srgb_source(filepath):
+        args += ['-srgb']
     if not generate_mips:
         args += ['-m', '1']
     else:
@@ -295,6 +316,11 @@ def convert_to_raw_rgba(filepath, out_dir, verbose=False, allow_slow_codec=False
     dll = _load_dll()
 
     args = ['-f', 'R8G8B8A8_UNORM', '-ft', 'TGA']
+    # The read-side half of convert_to_dds's -srgb: an _SRGB source would
+    # otherwise be sRGB->linear decoded on the way out (128 reads back as 55).
+    # Once writes stopped double-encoding, nothing cancels that any more.
+    if _is_srgb_source(filepath):
+        args += ['-srgb']
 
     # Into a private subdirectory, not out_dir.  texconv names its output after
     # the input stem, so a .tga source that already lives in out_dir would have
@@ -306,7 +332,7 @@ def convert_to_raw_rgba(filepath, out_dir, verbose=False, allow_slow_codec=False
     work = tempfile.mkdtemp(prefix='raw_rgba_', dir=out_dir or None)
 
     # The same two input fixes convert_to_dds applies -- this path skipped both,
-    # and it is the one every colour slot takes under the default SRGB grade
+    # and it is the one every colour slot takes under a non-NONE grade
     # (slot_resolver.grade_source_file) and every QUALITY-mip slot takes.
     # Measured on 5.1: an sRGB-tagged PNG grey 128 read back as 55 (then graded
     # a second time), and a staging TGA with alpha 0 read back as alpha 255 --
@@ -436,8 +462,9 @@ def convert_to_png(filepath, out_dir, verbose=False, allow_slow_codec=False):
     8-bit PNG, always mip 0.
 
     Mirrors convert_to_dds's own rule in reverse: never gamma-convert, just hand
-    back the stored bytes. No -srgb/-srgbi/-srgbo regardless of whether the
-    source is tagged _SRGB — an editor (Photoshop, GIMP, ...) that instead
+    back the stored bytes. For an _SRGB source that takes -srgb, since
+    DirectXTex treats the tag as a colour space and would otherwise decode the
+    bytes into the UNORM PNG — an editor (Photoshop, GIMP, ...) that instead
     re-decodes on its own DDS import and re-encodes on PNG export is exactly
     what silently doubles the gamma curve on a round trip through an external
     tool. Keeping this byte-for-byte means feeding the PNG back into
@@ -450,6 +477,9 @@ def convert_to_png(filepath, out_dir, verbose=False, allow_slow_codec=False):
     dll = _load_dll()
 
     args = ['-f', 'R8G8B8A8_UNORM', '-ft', 'PNG']
+    # See convert_to_raw_rgba: keep the stored bytes, do not decode.
+    if _is_srgb_source(filepath):
+        args += ['-srgb']
     _run_texconv(dll, filepath, args, out_dir, verbose=verbose, allow_slow_codec=allow_slow_codec)
 
     base_name = os.path.splitext(os.path.basename(filepath))[0] + '.png'

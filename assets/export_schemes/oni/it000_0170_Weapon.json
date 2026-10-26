@@ -1,0 +1,44 @@
+{
+  "character": "it000_0170 Weapon",
+  "character_id": "it000_0170",
+  "resource_type": "weapon",
+  "weapon_id": "it000_0170",
+  "paired_resource_ids": [
+    "it000_0171"
+  ],
+  "slot_semantics": {
+    "00": "blade",
+    "10": "sheath"
+  },
+  "base_path": "stm/art/model/item/it0/it000_0170",
+  "groups": [
+    {
+      "name": "00 Blade",
+      "entries": [
+        {
+          "id": "it000_0170_00",
+          "note": "Blade slot 00",
+          "mesh": "it000_0170_00.mesh.260209350",
+          "mdf2": [
+            "it000_0170_00_A.mdf2.51"
+          ],
+          "simplified": "user"
+        }
+      ]
+    },
+    {
+      "name": "10 Sheath",
+      "entries": [
+        {
+          "id": "it000_0170_10",
+          "note": "Sheath slot 10",
+          "mesh": "it000_0170_10.mesh.260209350",
+          "mdf2": [
+            "it000_0170_10_A.mdf2.51"
+          ],
+          "simplified": "user"
+        }
+      ]
+    }
+  ]
+}

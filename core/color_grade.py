@@ -5,13 +5,12 @@
 实测原版 MHW 贴图 ``md_wood000_BML.tex`` 的格式是 ``BC1UNORMSRGB``，法线是
 ``BC5UNORM`` —— 也就是说 MHW 的 BML **就是 sRGB 标记 + sRGB 编码**，和生成器现在
 的做法一致。所以把 sRGB 源图原样搬进 .tex 在色彩学上**是正确的**，这里的处理不是
-在修正什么，而是在补 UE 之类的源游戏与 MHW 之间的**美术口径差**：源素材的反照率
-普遍更亮，直接搬过来在 MHW 的光照下发白发灰。
+在修正什么，只是给真有**美术口径差**的素材留的调色手段。
 
-既然是口径差而不是错误，就必须由使用者选。默认给的是 ``SRGB`` 而不是 ``NONE``——
-实测下来源素材（UE 解包那类）绝大多数需要这一档，让多数人开箱即用比"默认不动任何
-数据"更有用。代价是少数本来就在游戏口径里的素材会被做黑，所以 ``NONE`` 那一项的
-名字里直接写了这个症状（"做出的贴图发黑再选这个"），照着选就行。
+默认是 ``NONE``。以前默认过 ``SRGB``，因为"源图直通会泛白"——那其实是
+``texconv_native.convert_to_dds`` 对 ``_SRGB`` 目标多做了一次 linear→sRGB 编码，
+``SRGB`` 档先解一次恰好把它抵消了。转换修好之后（写入/读取都传 ``-srgb``），直通
+落盘的就是源图字节，``SRGB`` 档变成真的压暗，所以默认必须回到 ``NONE``。
 
 为什么在浮点缓冲上做
 --------------------
@@ -105,12 +104,10 @@ def is_color_format(dxgi_format_name):
 
 #: EnumProperty 的默认下标。动态 items（items=callback）的 default 只能是 int，
 #: 所以"默认选哪一档"由**顺序**决定 —— 改 MODES 的顺序就等于悄悄改了所有人的默认值。
-#: tests/test_color_grade.py 有一条断言钉着 MODES[DEFAULT_MODE_INDEX] == 'SRGB'。
+#: tests/test_color_grade.py 有一条断言钉着 MODES[DEFAULT_MODE_INDEX] == 'NONE'。
 #:
-#: 默认给 SRGB 而不是 NONE：实测下来源素材（UE 解包那类）绝大多数需要这一档，
-#: 让多数人开箱即用比"默认不动任何数据"更有用；不需要的那少数人会看到贴图发黑，
-#: 而 NONE 那一项的名字里直接写了这个症状，照着选就行。
-DEFAULT_MODE_INDEX = 1
+#: 默认 NONE：转换不再多编码一次之后，直通就是游戏里正确的那一版（见模块说明）。
+DEFAULT_MODE_INDEX = 0
 
 
 def color_grade_items():

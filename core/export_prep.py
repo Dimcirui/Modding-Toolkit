@@ -39,6 +39,7 @@ _GAME_BONE_PRESET = {
     'mhrs': 'mhwr.json',
     're4':  're4.json',
     're9':  're9.json',
+    'oni':  'oni.json',
 }
 
 _MODIFIER_NAME = "MTK_ExportTriangulate"
