@@ -3,6 +3,7 @@ import os
 import shutil
 
 from ...core.i18n import T
+from ...core import optional_editors
 from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
 from ...core import console_export
 from ...core import export_autofix
@@ -471,6 +472,16 @@ class RE4_OT_BatchExport(bpy.types.Operator):
                             try_export(_do_export_chain, make_full(entry["chain"], grp_bp), chain_col, f"CHAIN {entry_id}")
                         elif chain_en and use_blank:
                             try_blank("chain", make_full(entry["chain"], grp_bp), f"CHAIN {entry_id}")
+
+                    # jcns / gpuc the vanilla part ships, while their editor is
+                    # installed (core/scheme_batch_export.py does the same).  RE4's
+                    # gpuc is Keep Structure only: a cloth imported from its file.
+                    for slot, path in optional_editors.entry_slots("re4", entry.get("mesh")):
+                        col = _get_binding(scene, character_id, entry_id, slot)
+                        if col and _get_enabled(scene, character_id, entry_id, slot):
+                            try_export(optional_editors.EXPORTERS[optional_editors.slot_type(slot)],
+                                       os.path.join(natives_root, "natives", path.replace("/", os.sep)),
+                                       col, f"{optional_editors.slot_label(slot)} {entry_id}")
 
         # --- FBXSKEL（在 mesh 之后执行，借助 mesh 导出对骨架唯一性的校验）---
         if fbxskel_paths and fbx_enabled:

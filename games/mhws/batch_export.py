@@ -2,7 +2,6 @@ import bpy
 import copy
 import json
 import os
-import re
 import shutil
 
 from ..re9.batch_export import _do_export_mesh, _do_export_mdf2, _do_export_chain2, _do_export_clsp
@@ -166,6 +165,8 @@ def bound_physics(scene, armor_id, variant, armor_set=None):
         if not (mask & (1 << (int(part_id) - 1))):
             continue
         fts = _resolve_part_file_types(armor_set, part_id) if armor_set else DEFAULT_FILE_TYPES
+        if ignore_slot_limits(scene):
+            fts = list(fts) + ["chain2", "clsp"]
 
         def col(ft):
             if ft not in fts:
@@ -225,21 +226,47 @@ def _resolve_part_file_types(armor_set, part_id):
     return armor_set.get("file_types", DEFAULT_FILE_TYPES)
 
 
-def part_file_types(armor_set, part_id):
-    """The slots a part shows and exports, in canonical order: the armor set's
-    own (gpuc included, where the vanilla part has one), plus every optional
-    editor slot (core/optional_editors) whose editor is installed."""
-    fts = _resolve_part_file_types(armor_set, part_id) if armor_set else DEFAULT_FILE_TYPES
-    extra = [ft for ft in optional_editors.available_slots() if ft not in fts]
-    return _canonical_order_file_types(list(fts) + extra)
+def ignore_slot_limits(scene):
+    """The batch exporter's "Ignore Slot Limits" toggle: every part gets every
+    slot, for a mod whose .pfb was edited to load files the vanilla part has none of."""
+    settings = getattr(scene, "mhw_suite_settings", None)
+    return bool(getattr(settings, "mhws_ignore_slot_limits", False))
 
 
-def _jcns_suffix(collection_name):
-    """What follows the model id in a JCNS collection's file name -- ``_HJ`` for
-    ``ch03_001_0012_HJ.jcns`` -- so the file written replaces the one of the same
-    kind.  Vanilla parts carry jcns under several such names; most have none."""
-    m = re.match(r"ch\d\d_\d{3}_\d{4}(\w*?)\.jcns", collection_name, re.I)
-    return m.group(1) if m else ""
+def vanilla_slots(armor_set, variant, part_id):
+    """The slots a variant's vanilla part ships, the files its prefab loads.
+
+    The armor set's table gives mesh / mdf2 / chain2 / clsp.  gpuc and jcns come
+    from the variant's own lists (scripts/build_mhws_vanilla_slots.py, read off the
+    vanilla file list): male and female models differ there.  A variant the list
+    did not know keeps the table's gpuc, and has no jcns."""
+    fts = list(_resolve_part_file_types(armor_set, part_id) if armor_set else DEFAULT_FILE_TYPES)
+    vd = (armor_set or {}).get("variants", {}).get(variant) or {}
+    if "gpuc" in vd:
+        fts = [ft for ft in fts if ft != "gpuc"] + (["gpuc"] if part_id in vd["gpuc"] else [])
+    fts += [optional_editors.jcns_slot(s) for s in vd.get("jcns", {}).get(part_id, [])]
+    return fts
+
+
+def part_slots(armor_set, variant, part_id, unlocked=False, optional=None):
+    """The slots a part shows and exports, in canonical order.
+
+    Its vanilla slots, of which jcns only while its editor is there (gpuc shows
+    either way: without the editor it is the blank copy).  *unlocked* adds every
+    other one -- chain2, clsp, a gpuc, and a plain "jcns" under the mesh's own
+    name.  *optional*: the editor slots usable, default those that can export."""
+    if optional is None:
+        optional = optional_editors.available_slots()
+    slots = [s for s in vanilla_slots(armor_set, variant, part_id)
+             if optional_editors.slot_type(s) != "jcns" or "jcns" in optional]
+    if unlocked:
+        slots += [ft for ft in ("chain2", "clsp") if ft not in slots]
+        if "gpuc" in optional and "gpuc" not in slots:
+            slots.append("gpuc")
+        if "jcns" in optional and "jcns" not in slots:
+            slots.append("jcns")
+    return sorted(slots, key=lambda s: _CANONICAL_FILE_TYPE_INDEX.get(
+        optional_editors.slot_type(s), len(_CANONICAL_FILE_TYPE_ORDER)))
 
 
 def _make_filepath(natives_root, base_path, part_id, armor_id, filetype, suffix=""):
@@ -610,28 +637,34 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
         fail_count = 0
         skip_count = 0
         use_blank = settings.mhws_use_blank_export
+        unlocked = ignore_slot_limits(scene)
 
         for part_id, part_name in MHWS_PARTS:
             if not (parts_mask & (1 << (int(part_id) - 1))):
                 continue
-            own_fts = _resolve_part_file_types(armor_set, part_id)
-            for filetype in part_file_types(armor_set, part_id):
+            vanilla = vanilla_slots(armor_set, variant, part_id)
+            for slot in part_slots(armor_set, variant, part_id, unlocked):
+                filetype = optional_editors.slot_type(slot)
                 filepath = _make_filepath(natives_root, base_path, part_id, variant_armor_id, filetype)
-                label = f"{part_name} {filetype.upper()}"
+                label = f"{part_name} {slot.upper()}"
 
                 # jcns / gpuc: bindable only while their editor is installed.  An
                 # unbound one is not counted at all, so with nothing bound the
                 # summary reads as it did before these slots existed.
                 if filetype in optional_editors.EDITORS:
-                    col = (get_binding(scene, armor_id, variant, part_id, filetype)
+                    col = (get_binding(scene, armor_id, variant, part_id, slot)
                            if optional_editors.available(filetype) else "")
                     if col and col not in bpy.data.collections:
                         print(f"[MHWs] SKIP {label}: collection '{col}' not found")
                         col = ""
                     if col:
                         if filetype == "jcns":
+                            # A vanilla slot replaces that vanilla file; the free one
+                            # the unlock adds (no vanilla jcns of that name) takes
+                            # the mesh's own name.
+                            suffix = optional_editors.slot_suffix(slot)
                             filepath = _make_filepath(natives_root, base_path, part_id, variant_armor_id,
-                                                      filetype, _jcns_suffix(col))
+                                                      filetype, suffix)
                         try:
                             print(f"[MHWs] {label}: {col} -> {os.path.basename(filepath)}")
                             optional_editors.export(filetype, filepath, col,
@@ -641,8 +674,11 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
                             print(f"[MHWs] FAILED {label}: {err}")
                             fail_count += 1
                         continue
-                    if filetype not in own_fts:
+                    if slot not in vanilla:
                         continue
+                elif slot not in vanilla and not get_binding(scene, armor_id, variant, part_id, slot):
+                    # A chain2 / clsp slot only the unlock opened: nothing to blank.
+                    continue
 
                 # gpuc: always copy blank, unconditionally (no collection binding)
                 # gpuc files break mods when other files are edited, so must be replaced with blank

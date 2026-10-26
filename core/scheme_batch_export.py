@@ -33,9 +33,12 @@ from .export_verify import checked
 from . import poll_msg
 from . import json_cache
 from . import shapekey_export
+from . import optional_editors
 
 #: Slots a part can carry besides its mesh.  ``gpuc`` (Onimusha's cloth-sim cache)
-#: has no Blender-side editor, so it is only ever written as a blank file.
+#: is written as a blank file, or -- with RE GPUC Editor installed -- from a bound
+#: collection; ``.jcns`` likewise needs REE JCNS Editor.  Neither is in the scheme
+#: files: which parts ship one is core/optional_editors.entry_slots' table.
 SLOTS = ("mesh", "mdf2", "sfur", "chain2", "clsp")
 
 MESH_SETTINGS = {
@@ -547,7 +550,7 @@ class SchemeExporter:
                             # RE Mesh Editor 的 Dimcirui 分支导入 RE9 骨架时默认换轴（每根骨存
                             # 自己的 C，导出时乘回）。原生骨架和用户骨架各自换没换轴不一定一致，
                             # 而且 C 由各自的静止姿态算出：直接照抄朝向会把用户的朝向配上原生
-                            # 骨架的 C。所以两边都先回到文件轴向再对齐，结果与换轴之前逐字节相同。
+                            # 骨架的 C。所以两边都先回到文件轴向再对齐，结果与换轴之前一致（实测 0°）。
                             from .mesh_port_ops import file_axes_copy, revert_reme_axes
                             if native_copy.data.get("REMeshBoneAxes") == "RE9":
                                 revert_reme_axes(native_copy)
@@ -593,6 +596,11 @@ class SchemeExporter:
                 # part's mesh is being replaced, since a vanilla cache built for
                 # the vanilla mesh's vertices must not drive a different mesh.
                 def blank_gpuc():
+                    # A cloth bound per entry is exported in its place (below).
+                    if (not use_simplified and optional_editors.available("gpuc")
+                            and self.get_binding(scene, character_id, entry_id, "gpuc")
+                            and self.get_enabled(scene, character_id, entry_id, "gpuc")):
+                        return
                     for g in _as_list(entry["gpuc"]):
                         try_blank("gpuc", make_full(g, grp_bp), f"GPUC {entry_id}")
 
@@ -747,6 +755,17 @@ class SchemeExporter:
                             for c in _as_list(entry["clsp"]):
                                 try_blank("clsp", make_full(c, grp_bp), f"CLSP {entry_id}")
 
+                    # jcns / gpuc the vanilla part ships, while their editor is
+                    # installed.  Per entry only: each file belongs to one part.
+                    # An unbound one is left alone (a vanilla gpuc is blanked
+                    # with the mesh, above).
+                    for slot, path in optional_editors.entry_slots(spec.scheme_dir, entry.get("mesh")):
+                        col = self.get_binding(scene, character_id, entry_id, slot)
+                        if col and self.get_enabled(scene, character_id, entry_id, slot):
+                            try_export(optional_editors.EXPORTERS[optional_editors.slot_type(slot)],
+                                       os.path.join(natives_root, "natives", path.replace("/", os.sep)),
+                                       col, f"{optional_editors.slot_label(slot)} {entry_id}")
+
         if fail_count > 0:
             op.report({'WARNING'}, T("core.export.done_with_fail").format(
                 exported=export_count, failed=fail_count, skipped=skip_count))
@@ -765,8 +784,10 @@ EXPORTER_WINDOW_WIDTH = 600
 
 def _get_filtered_collections(suffix):
     result = []
-    type_map = {"mesh": "RE_MESH_COLLECTION", "mdf2": "RE_MDF_COLLECTION", "sfur": "RE_SFUR_COLLECTION", "chain2": "RE_CHAIN_COLLECTION"}
-    name_sfx_map = {"mesh": ".mesh", "mdf2": ".mdf2", "sfur": ".sfur", "chain2": ".chain", "clsp": ".clsp"}
+    type_map = {"mesh": "RE_MESH_COLLECTION", "mdf2": "RE_MDF_COLLECTION", "sfur": "RE_SFUR_COLLECTION", "chain2": "RE_CHAIN_COLLECTION",
+                **{ft: optional_editors.collection_type(ft) for ft in optional_editors.EDITORS}}
+    name_sfx_map = {"mesh": ".mesh", "mdf2": ".mdf2", "sfur": ".sfur", "chain2": ".chain", "clsp": ".clsp",
+                    "jcns": ".jcns", "gpuc": ".gpuc"}
     target_type = type_map.get(suffix, "")
     name_sfx = name_sfx_map.get(suffix, "")
     for c in bpy.data.collections:
@@ -902,7 +923,7 @@ def build_classes(exp):
         group_name: StringProperty()
         collection_name: bpy.props.EnumProperty(
             name="Collection",
-            items=lambda self, ctx: _get_filtered_collections(self.slot)
+            items=lambda self, ctx: _get_filtered_collections(optional_editors.slot_type(self.slot))
         )
 
         def invoke(self, context, event):
@@ -1062,6 +1083,9 @@ def build_classes(exp):
                     exp.set_group_binding(scene, char_id, group["name"], sfx, "")
                 for entry in group["entries"]:
                     for sfx in SLOTS:
+                        exp.set_binding(scene, char_id, entry["id"], sfx, "")
+                    for sfx, _path in optional_editors.entry_slots(spec.scheme_dir, entry.get("mesh"),
+                                                                   list(optional_editors.EDITORS)):
                         exp.set_binding(scene, char_id, entry["id"], sfx, "")
             for sfx in SLOTS:
                 exp.set_empty_binding(scene, char_id, sfx, "")
@@ -1313,7 +1337,24 @@ def build_classes(exp):
                     if cur:
                         op_c = row.operator(OPS.clear_normal_binding, text="", icon='X')
                         op_c.character_id = character_id; op_c.entry_id = entry_id; op_c.suffix = slot
-                if entry.get("gpuc"):
+                optional = list(dict.fromkeys(
+                    slot for slot, _p in optional_editors.entry_slots(spec.scheme_dir, entry.get("mesh"))))
+                for slot in optional:
+                    cur = exp.get_binding(scene, character_id, entry_id, slot)
+                    entry_box.label(text=optional_editors.slot_label(slot),
+                                    icon='CONSTRAINT_BONE' if slot != "gpuc" else 'MOD_CLOTH')
+                    row = entry_box.row(align=True)
+                    # An unbound vanilla gpuc still goes out blank with the mesh.
+                    unbound = ("GPUC: " + T("core.scheme_batch_export.gpuc_blank")
+                               if slot == "gpuc" and entry.get("gpuc") else "Select...")
+                    op_p = row.operator(OPS.pick_binding, text=cur if cur else unbound, icon='DOWNARROW_HLT')
+                    op_p.scope = "ENTRY"
+                    op_p.slot = slot
+                    op_p.character_id = character_id; op_p.entry_id = entry_id
+                    if cur:
+                        op_c = row.operator(OPS.clear_normal_binding, text="", icon='X')
+                        op_c.character_id = character_id; op_c.entry_id = entry_id; op_c.suffix = slot
+                if entry.get("gpuc") and "gpuc" not in optional:
                     entry_box.label(text="GPUC: " + T("core.scheme_batch_export.gpuc_blank"),
                                     icon='FILE_BLANK')
 

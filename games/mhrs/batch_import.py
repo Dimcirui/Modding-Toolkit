@@ -13,7 +13,10 @@ Two things differ from MHWS, both because MHRS is the simpler game:
   on the export panel.
 * **Three importable types.**  ``user.2`` has no importer and is never authored
   by hand -- the export panel shows it as AUTO and copies a template -- so it
-  cannot round-trip and is not offered.
+  cannot round-trip and is not offered.  A ``.jcns.21`` is a fourth while REE JCNS
+  Editor is installed: the parts that ship one are listed per gender in the pack
+  (``"jcns"``, scripts/build_vanilla_slots.py).  The exporter has no jcns slot
+  yet, so its binding only waits for one.
 
 Like MHWS this walks the armour pack rather than the disk: the pack is the list
 of armour ids worth looking for, and every path is derived from an id the same
@@ -29,6 +32,7 @@ from collections import defaultdict
 from ...core.i18n import T
 from ...core import mod_root
 from ...core.re_mesh_compat import call_re_mesh_op, re_mesh_op_available
+from ...core import optional_editors
 from .batch_export import (
     MHRS_PARTS,
     _load_scheme, _resolve_part_file_types, _canonical_order_file_types,
@@ -36,8 +40,8 @@ from .batch_export import (
 )
 
 #: ``user`` is absent on purpose -- see the module docstring.
-IMPORT_FILE_TYPES = ["mesh", "mdf2", "chain"]
-FT_ORDER = ["mesh", "mdf2", "chain"]
+IMPORT_FILE_TYPES = ["mesh", "mdf2", "chain", "jcns"]
+FT_ORDER = ["mesh", "mdf2", "chain", "jcns"]
 
 
 # ── CollectionProperty 数据结构 ────────────────────────────────────
@@ -48,7 +52,7 @@ class MHRS_ImportItem(bpy.types.PropertyGroup):
     armor_id: bpy.props.StringProperty()   # 装备包中的套装 id，如 "279"
     gender:   bpy.props.StringProperty()   # "f"/"m"
     part:     bpy.props.StringProperty()   # "body"/"helm"/"arm"/"wst"/"leg"
-    filetype: bpy.props.StringProperty()   # "mesh"/"mdf2"/"chain"
+    filetype: bpy.props.StringProperty()   # "mesh"/"mdf2"/"chain"/"jcns[:suffix]"
     enabled:  bpy.props.BoolProperty(default=True)
 
 
@@ -79,6 +83,7 @@ def scan_mhrs_catalog(natives_root, scheme_filename, scene):
 
     genders = [code for code, _label, *_ in get_mhrs_genders()]
     seen_groups = set()
+    with_jcns = optional_editors.import_available("jcns")
 
     for armor_set in scheme.get("armor_sets", []):
         armor_id   = armor_set["id"]
@@ -91,9 +96,15 @@ def scan_mhrs_catalog(natives_root, scheme_filename, scene):
 
                 part_fts = [ft for ft in _resolve_part_file_types(armor_set, part_id)
                             if ft in IMPORT_FILE_TYPES]
+                slots = list(_canonical_order_file_types(part_fts))
+                if with_jcns:
+                    slots += [optional_editors.jcns_slot(s) for s in
+                              armor_set.get("jcns", {}).get(gender, {}).get(part_id, [])]
 
-                for filetype in _canonical_order_file_types(part_fts):
-                    filepath = _make_filepath(natives_root, gender, armor_id, part_id, filetype)
+                for slot in slots:
+                    filepath = _make_filepath(natives_root, gender, armor_id, part_id,
+                                              optional_editors.slot_type(slot),
+                                              optional_editors.slot_suffix(slot))
                     if not os.path.isfile(filepath):
                         continue
 
@@ -107,7 +118,7 @@ def scan_mhrs_catalog(natives_root, scheme_filename, scene):
                     item.armor_id = armor_id
                     item.gender   = gender
                     item.part     = part_id
-                    item.filetype = filetype
+                    item.filetype = slot
                     item.enabled  = True
 
     if len(groups) == 1:
@@ -375,6 +386,25 @@ class MHRS_OT_BatchImport(bpy.types.Operator):
                     except Exception as e:
                         print(f"[MHRS] chain import FAILED {chain_item.filepath}: {e}")
                         fail += 1
+
+            # jcns 跟着骨架走（解析骨骼哈希），所以排在 mesh 之后
+            for slot in sorted(sl for sl in ft_map if optional_editors.slot_type(sl) == "jcns"):
+                jcns_item = ft_map[slot]
+                if not armature_name:
+                    print(f"[MHRS] SKIP {jcns_item.filepath}: no armature imported for this part")
+                    skip += 1
+                    continue
+                try:
+                    arm = next((o.name for o in scene.objects
+                                if o.type == 'ARMATURE' and o.data.name == armature_name), None)
+                    name = optional_editors.import_file("jcns", jcns_item.filepath, armature=arm)
+                    set_binding(scene, armor_id, gender, part_id, slot, name)
+                    ok += 1
+                    succeeded[(armor_id, gender)] = None
+                    print(f"[MHRS] Imported: {os.path.basename(jcns_item.filepath)} -> {name}")
+                except Exception as e:
+                    print(f"[MHRS] jcns import FAILED {jcns_item.filepath}: {e}")
+                    fail += 1
 
         # 最后一套成功导入的装备/性别，设为批量导出面板的当前选中项
         if succeeded:

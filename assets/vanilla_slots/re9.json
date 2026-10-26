@@ -1,0 +1,747 @@
+{
+  "ch0100_09_00": {
+    "jcns": [
+      "stm/character/ch/ch01/0100/09/00/ch0100_09_00.jcns.35"
+    ]
+  },
+  "ch0100_09_01": {
+    "jcns": [
+      "stm/character/ch/ch01/0100/09/01/ch0100_09_01.jcns.35"
+    ]
+  },
+  "ch0100_40_00": {
+    "jcns": [
+      "stm/character/ch/ch01/0100/40/00/ch0100_40_00.jcns.35"
+    ]
+  },
+  "ch0100_40_01": {
+    "jcns": [
+      "stm/character/ch/ch01/0100/40/01/ch0100_40_01.jcns.35"
+    ]
+  },
+  "ch0100_43_00": {
+    "jcns": [
+      "stm/character/ch/ch01/0100/43/00/ch0100_43_00.jcns.35",
+      "stm/character/ch/ch01/0100/43/00/ch0100_43_00_secondary.jcns.35"
+    ]
+  },
+  "ch0100_45_00": {
+    "gpuc": [
+      "stm/character/ch/ch01/0100/45/00/ch0100_45_00.gpuc.250925365",
+      "stm/character/ch/ch01/0100/45/00/ch0100_45_00_bike.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch01/0100/45/00/ch0100_45_00.jcns.35",
+      "stm/character/ch/ch01/0100/45/00/ch0100_45_00_secondary.jcns.35"
+    ]
+  },
+  "ch0100_45_01": {
+    "gpuc": [
+      "stm/character/ch/ch01/0100/45/01/ch0100_45_01.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch01/0100/45/01/ch0100_45_01.jcns.35",
+      "stm/character/ch/ch01/0100/45/01/ch0100_45_01_secondary.jcns.35"
+    ]
+  },
+  "ch0100_50_00": {
+    "jcns": [
+      "stm/character/ch/ch01/0100/50/00/ch0100_50_00.jcns.35"
+    ]
+  },
+  "ch0100_50_01": {
+    "jcns": [
+      "stm/character/ch/ch01/0100/50/01/ch0100_50_01.jcns.35"
+    ]
+  },
+  "ch0150_45_00": {
+    "gpuc": [
+      "stm/character/ch/ch01/0150/45/00/ch0150_45_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch01/0150/45/00/ch0150_45_00.jcns.35",
+      "stm/character/ch/ch01/0150/45/00/ch0150_45_00_secondary.jcns.35"
+    ]
+  },
+  "ch0150_45_02": {
+    "gpuc": [
+      "stm/character/ch/ch01/0150/45/02/ch0150_45_02.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch01/0150/45/02/ch0150_45_02.jcns.35",
+      "stm/character/ch/ch01/0150/45/02/ch0150_45_02_secondary.jcns.35"
+    ]
+  },
+  "ch0151_50_00": {
+    "jcns": [
+      "stm/character/ch/ch01/0151/50/00/ch0151_50_00.jcns.35"
+    ]
+  },
+  "ch0152_45_00": {
+    "gpuc": [
+      "stm/character/ch/ch01/0152/45/00/ch0152_45_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch01/0152/45/00/ch0152_45_00.jcns.35",
+      "stm/character/ch/ch01/0152/45/00/ch0152_45_00_secondary.jcns.35"
+    ]
+  },
+  "ch0152_45_02": {
+    "gpuc": [
+      "stm/character/ch/ch01/0152/45/02/ch0152_45_02.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch01/0152/45/02/ch0152_45_02.jcns.35",
+      "stm/character/ch/ch01/0152/45/02/ch0152_45_02_secondary.jcns.35"
+    ]
+  },
+  "ch0200_01_00": {
+    "jcns": [
+      "stm/character/ch/ch02/0200/01/00/ch0200_01_00.jcns.35"
+    ]
+  },
+  "ch0200_01_01": {
+    "jcns": [
+      "stm/character/ch/ch02/0200/01/01/ch0200_01_01.jcns.35"
+    ]
+  },
+  "ch0200_02_00": {
+    "jcns": [
+      "stm/character/ch/ch02/0200/02/00/ch0200_02_00.jcns.35"
+    ]
+  },
+  "ch0200_02_01": {
+    "jcns": [
+      "stm/character/ch/ch02/0200/02/01/ch0200_02_01.jcns.35"
+    ]
+  },
+  "ch0200_09_00": {
+    "jcns": [
+      "stm/character/ch/ch02/0200/09/00/ch0200_09_00.jcns.35"
+    ]
+  },
+  "ch0200_40_01": {
+    "jcns": [
+      "stm/character/ch/ch02/0200/40/01/ch0200_40_01.jcns.35"
+    ]
+  },
+  "ch0200_40_02": {
+    "gpuc": [
+      "stm/character/ch/ch02/0200/40/02/ch0200_40_02.gpuc.250925365"
+    ]
+  },
+  "ch0200_45_00": {
+    "gpuc": [
+      "stm/character/ch/ch02/0200/45/00/ch0200_45_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch02/0200/45/00/ch0200_45_00.jcns.35"
+    ]
+  },
+  "ch0200_45_01": {
+    "gpuc": [
+      "stm/character/ch/ch02/0200/45/01/ch0200_45_01.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch02/0200/45/01/ch0200_45_01.jcns.35"
+    ]
+  },
+  "ch0200_45_60": {
+    "gpuc": [
+      "stm/character/ch/ch02/0200/45/60/ch0200_45_60.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch02/0200/45/60/ch0200_45_60.jcns.35"
+    ]
+  },
+  "ch0200_48_00": {
+    "gpuc": [
+      "stm/character/ch/ch02/0200/48/00/ch0200_48_00.gpuc.250925365"
+    ]
+  },
+  "ch0250_01_00": {
+    "jcns": [
+      "stm/character/ch/ch02/0250/01/00/ch0250_01_00.jcns.35"
+    ]
+  },
+  "ch0250_02_00": {
+    "jcns": [
+      "stm/character/ch/ch02/0250/02/00/ch0250_02_00.jcns.35"
+    ]
+  },
+  "ch0250_45_00": {
+    "gpuc": [
+      "stm/character/ch/ch02/0250/45/00/ch0250_45_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch02/0250/45/00/ch0250_45_00.jcns.35"
+    ]
+  },
+  "ch0251_40_00": {
+    "gpuc": [
+      "stm/character/ch/ch02/0251/40/00/ch0251_40_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch02/0251/40/00/ch0251_40_00.jcns.35"
+    ]
+  },
+  "ch0251_55_00": {
+    "gpuc": [
+      "stm/character/ch/ch02/0251/55/00/ch0251_55_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch02/0251/55/00/ch0251_55_00.jcns.35"
+    ]
+  },
+  "ch0252_42_00": {
+    "jcns": [
+      "stm/character/ch/ch02/0252/42/00/ch0252_42_00.jcns.35"
+    ]
+  },
+  "ch0253_45_00": {
+    "gpuc": [
+      "stm/character/ch/ch02/0253/45/00/ch0253_45_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch02/0253/45/00/ch0253_45_00.jcns.35"
+    ]
+  },
+  "ch0253_45_50": {
+    "gpuc": [
+      "stm/character/ch/ch02/0253/45/50/ch0253_45_50.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch02/0253/45/50/ch0253_45_50.jcns.35"
+    ]
+  },
+  "ch0253_45_60": {
+    "gpuc": [
+      "stm/character/ch/ch02/0253/45/60/ch0253_45_60.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch02/0253/45/60/ch0253_45_60.jcns.35"
+    ]
+  },
+  "ch0253_45_70": {
+    "gpuc": [
+      "stm/character/ch/ch02/0253/45/70/ch0253_45_70.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch02/0253/45/70/ch0253_45_70.jcns.35"
+    ]
+  },
+  "ch0253_45_80": {
+    "gpuc": [
+      "stm/character/ch/ch02/0253/45/80/ch0253_45_80.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch02/0253/45/80/ch0253_45_80.jcns.35"
+    ]
+  },
+  "ch0300_55_00": {
+    "gpuc": [
+      "stm/character/ch/ch03/0300/55/00/ch0300_55_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch03/0300/55/00/ch0300_55_00.jcns.35"
+    ]
+  },
+  "ch0600_50_00": {
+    "gpuc": [
+      "stm/character/ch/ch06/0600/50/00/ch0600_50_00.gpuc.250925365"
+    ]
+  },
+  "ch0600_50_10": {
+    "gpuc": [
+      "stm/character/ch/ch06/0600/50/10/ch0600_50_10.gpuc.250925365"
+    ]
+  },
+  "ch1210_55_01": {
+    "gpuc": [
+      "stm/character/ch/ch12/1210/55/01/ch1210_55_01.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch12/1210/55/01/ch1210_55_01.jcns.35",
+      "stm/character/ch/ch12/1210/55/01/ch1210_55_01_extra.jcns.35",
+      "stm/character/ch/ch12/1210/55/01/ch1210_55_01_secondary.jcns.35"
+    ]
+  },
+  "ch1300_55_00": {
+    "gpuc": [
+      "stm/character/ch/ch13/1300/55/00/ch1300_55_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch13/1300/55/00/ch1300_55_00.jcns.35"
+    ]
+  },
+  "ch1300_55_01": {
+    "gpuc": [
+      "stm/character/ch/ch13/1300/55/01/ch1300_55_01.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch13/1300/55/01/ch1300_55_01.jcns.35"
+    ]
+  },
+  "ch1500_45_00": {
+    "gpuc": [
+      "stm/character/ch/ch15/1500/45/00/ch1500_45_00.gpuc.250925365"
+    ]
+  },
+  "ch1510_01_00": {
+    "jcns": [
+      "stm/character/ch/ch15/1510/01/00/ch1510_01_00.jcns.35"
+    ]
+  },
+  "ch1800_10_00": {
+    "jcns": [
+      "stm/character/ch/ch18/1800/10/00/ch1800_10_00.jcns.35",
+      "stm/character/ch/ch18/1800/10/00/ch1800_10_00_secondary.jcns.35"
+    ]
+  },
+  "ch1800_42_00": {
+    "jcns": [
+      "stm/character/ch/ch18/1800/42/00/ch1800_42_00.jcns.35"
+    ]
+  },
+  "ch1800_45_00": {
+    "gpuc": [
+      "stm/character/ch/ch18/1800/45/00/ch1800_45_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch18/1800/45/00/ch1800_45_00.jcns.35",
+      "stm/character/ch/ch18/1800/45/00/ch1800_45_00_secondary.jcns.35"
+    ]
+  },
+  "ch2030_45_51": {
+    "gpuc": [
+      "stm/character/ch/ch20/2030/45/51/ch2030_45_51.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch20/2030/45/51/ch2030_45_51.jcns.35"
+    ]
+  },
+  "ch4005_45_00": {
+    "gpuc": [
+      "stm/character/ch/ch40/4005/45/00/ch4005_45_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch40/4005/45/00/ch4005_45_00.jcns.35"
+    ]
+  },
+  "ch4005_45_60": {
+    "gpuc": [
+      "stm/character/ch/ch40/4005/45/60/ch4005_45_60.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch40/4005/45/60/ch4005_45_60.jcns.35"
+    ]
+  },
+  "ch4010_45_02": {
+    "gpuc": [
+      "stm/character/ch/ch40/4010/45/02/ch4010_45_02.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch40/4010/45/02/ch4010_45_02.jcns.35"
+    ]
+  },
+  "ch4010_45_03": {
+    "gpuc": [
+      "stm/character/ch/ch40/4010/45/03/ch4010_45_03.gpuc.250925365"
+    ]
+  },
+  "ch4010_45_04": {
+    "gpuc": [
+      "stm/character/ch/ch40/4010/45/04/ch4010_45_04.gpuc.250925365"
+    ]
+  },
+  "ch4010_45_05": {
+    "gpuc": [
+      "stm/character/ch/ch40/4010/45/05/ch4010_45_05.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch40/4010/45/05/ch4010_45_05.jcns.35"
+    ]
+  },
+  "ch4010_45_06": {
+    "gpuc": [
+      "stm/character/ch/ch40/4010/45/06/ch4010_45_06.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch40/4010/45/06/ch4010_45_06.jcns.35"
+    ]
+  },
+  "ch4010_45_07": {
+    "gpuc": [
+      "stm/character/ch/ch40/4010/45/07/ch4010_45_07.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch40/4010/45/07/ch4010_45_07.jcns.35"
+    ]
+  },
+  "ch4010_45_08": {
+    "gpuc": [
+      "stm/character/ch/ch40/4010/45/08/ch4010_45_08.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch40/4010/45/08/ch4010_45_08.jcns.35"
+    ]
+  },
+  "ch4010_45_09": {
+    "gpuc": [
+      "stm/character/ch/ch40/4010/45/09/ch4010_45_09.gpuc.250925365"
+    ]
+  },
+  "ch4030_45_60": {
+    "gpuc": [
+      "stm/character/ch/ch40/4030/45/60/ch4030_45_60.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch40/4030/45/60/ch4030_45_60.jcns.35",
+      "stm/character/ch/ch40/4030/45/60/ch4030_45_60_extra.jcns.35",
+      "stm/character/ch/ch40/4030/45/60/ch4030_45_60_secondary.jcns.35"
+    ]
+  },
+  "ch4050_45_00": {
+    "gpuc": [
+      "stm/character/ch/ch40/4050/45/00/ch4050_45_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch40/4050/45/00/ch4050_45_00.jcns.35"
+    ]
+  },
+  "ch4050_45_01": {
+    "gpuc": [
+      "stm/character/ch/ch40/4050/45/01/ch4050_45_01.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch40/4050/45/01/ch4050_45_01.jcns.35"
+    ]
+  },
+  "ch4050_45_02": {
+    "gpuc": [
+      "stm/character/ch/ch40/4050/45/02/ch4050_45_02.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch40/4050/45/02/ch4050_45_02.jcns.35"
+    ]
+  },
+  "ch4070_45_10": {
+    "gpuc": [
+      "stm/character/ch/ch40/4070/45/10/ch4070_45_10.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch40/4070/45/10/ch4070_45_10.jcns.35"
+    ]
+  },
+  "ch4070_45_11": {
+    "gpuc": [
+      "stm/character/ch/ch40/4070/45/11/ch4070_45_11.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch40/4070/45/11/ch4070_45_11.jcns.35"
+    ]
+  },
+  "ch4070_45_12": {
+    "gpuc": [
+      "stm/character/ch/ch40/4070/45/12/ch4070_45_12.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch40/4070/45/12/ch4070_45_12.jcns.35"
+    ]
+  },
+  "ch4070_45_13": {
+    "gpuc": [
+      "stm/character/ch/ch40/4070/45/13/ch4070_45_13.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch40/4070/45/13/ch4070_45_13.jcns.35"
+    ]
+  },
+  "ch4110_45_01": {
+    "gpuc": [
+      "stm/character/ch/ch41/4110/45/01/ch4110_45_01.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch41/4110/45/01/ch4110_45_01.jcns.35"
+    ]
+  },
+  "ch4110_45_02": {
+    "gpuc": [
+      "stm/character/ch/ch41/4110/45/02/ch4110_45_02.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch41/4110/45/02/ch4110_45_02.jcns.35"
+    ]
+  },
+  "ch4110_45_03": {
+    "gpuc": [
+      "stm/character/ch/ch41/4110/45/03/ch4110_45_03.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch41/4110/45/03/ch4110_45_03.jcns.35"
+    ]
+  },
+  "ch4110_45_04": {
+    "gpuc": [
+      "stm/character/ch/ch41/4110/45/04/ch4110_45_04.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch41/4110/45/04/ch4110_45_04.jcns.35"
+    ]
+  },
+  "ch4110_45_05": {
+    "gpuc": [
+      "stm/character/ch/ch41/4110/45/05/ch4110_45_05.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch41/4110/45/05/ch4110_45_05.jcns.35"
+    ]
+  },
+  "ch4110_55_00": {
+    "gpuc": [
+      "stm/character/ch/ch41/4110/55/00/ch4110_55_00.gpuc.250925365"
+    ]
+  },
+  "ch4110_55_01": {
+    "gpuc": [
+      "stm/character/ch/ch41/4110/55/01/ch4110_55_01.gpuc.250925365"
+    ]
+  },
+  "ch4110_55_02": {
+    "gpuc": [
+      "stm/character/ch/ch41/4110/55/02/ch4110_55_02.gpuc.250925365"
+    ]
+  },
+  "ch4110_55_03": {
+    "gpuc": [
+      "stm/character/ch/ch41/4110/55/03/ch4110_55_03.gpuc.250925365"
+    ]
+  },
+  "ch4115_45_00": {
+    "gpuc": [
+      "stm/character/ch/ch41/4115/45/00/ch4115_45_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch41/4115/45/00/ch4115_45_00.jcns.35"
+    ]
+  },
+  "ch4125_55_00": {
+    "gpuc": [
+      "stm/character/ch/ch41/4125/55/00/ch4125_55_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch41/4125/55/00/ch4125_55_00.jcns.35"
+    ]
+  },
+  "ch4155_45_00": {
+    "gpuc": [
+      "stm/character/ch/ch41/4155/45/00/ch4155_45_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch41/4155/45/00/ch4155_45_00.jcns.35"
+    ]
+  },
+  "ch4155_45_60": {
+    "gpuc": [
+      "stm/character/ch/ch41/4155/45/60/ch4155_45_60.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch41/4155/45/60/ch4155_45_60.jcns.35"
+    ]
+  },
+  "ch4155_55_00": {
+    "gpuc": [
+      "stm/character/ch/ch41/4155/55/00/ch4155_55_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch41/4155/55/00/ch4155_55_00.jcns.35"
+    ]
+  },
+  "ch4155_55_01": {
+    "gpuc": [
+      "stm/character/ch/ch41/4155/55/01/ch4155_55_01.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch41/4155/55/01/ch4155_55_01.jcns.35"
+    ]
+  },
+  "ch4155_55_60": {
+    "jcns": [
+      "stm/character/ch/ch41/4155/55/60/ch4155_55_60.jcns.35"
+    ]
+  },
+  "ch4170_45_10": {
+    "gpuc": [
+      "stm/character/ch/ch41/4170/45/10/ch4170_45_10.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch41/4170/45/10/ch4170_45_10.jcns.35"
+    ]
+  },
+  "ch4210_45_00": {
+    "gpuc": [
+      "stm/character/ch/ch42/4210/45/00/ch4210_45_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch42/4210/45/00/ch4210_45_00.jcns.35"
+    ]
+  },
+  "ch4210_45_01": {
+    "gpuc": [
+      "stm/character/ch/ch42/4210/45/01/ch4210_45_01.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch42/4210/45/01/ch4210_45_01.jcns.35"
+    ]
+  },
+  "ch4210_45_60": {
+    "gpuc": [
+      "stm/character/ch/ch42/4210/45/60/ch4210_45_60.gpuc.250925365"
+    ]
+  },
+  "ch4310_55_00": {
+    "gpuc": [
+      "stm/character/ch/ch43/4310/55/00/ch4310_55_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch43/4310/55/00/ch4310_55_00.jcns.35"
+    ]
+  },
+  "ch4400_00_00": {
+    "gpuc": [
+      "stm/character/ch/ch44/4400/00/00/ch4400_00_00.gpuc.250925365"
+    ]
+  },
+  "ch5100_01_00": {
+    "jcns": [
+      "stm/character/ch/ch51/5100/01/00/ch5100_01_00.jcns.35"
+    ]
+  },
+  "ch5100_10_00": {
+    "jcns": [
+      "stm/character/ch/ch51/5100/10/00/ch5100_10_00.jcns.35"
+    ]
+  },
+  "ch5100_45_00": {
+    "gpuc": [
+      "stm/character/ch/ch51/5100/45/00/ch5100_45_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch51/5100/45/00/ch5100_45_00.jcns.35"
+    ]
+  },
+  "ch5100_45_01": {
+    "gpuc": [
+      "stm/character/ch/ch51/5100/45/01/ch5100_45_01.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch51/5100/45/01/ch5100_45_01.jcns.35"
+    ]
+  },
+  "ch5100_45_02": {
+    "gpuc": [
+      "stm/character/ch/ch51/5100/45/02/ch5100_45_02.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch51/5100/45/02/ch5100_45_02.jcns.35"
+    ]
+  },
+  "ch5100_45_03": {
+    "gpuc": [
+      "stm/character/ch/ch51/5100/45/03/ch5100_45_03.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch51/5100/45/03/ch5100_45_03.jcns.35"
+    ]
+  },
+  "ch5100_45_12": {
+    "gpuc": [
+      "stm/character/ch/ch51/5100/45/12/ch5100_45_12.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch51/5100/45/12/ch5100_45_12.jcns.35"
+    ]
+  },
+  "ch5110_10_00": {
+    "jcns": [
+      "stm/character/ch/ch51/5110/10/00/ch5110_10_00.jcns.35"
+    ]
+  },
+  "ch5110_10_01": {
+    "jcns": [
+      "stm/character/ch/ch51/5110/10/01/ch5110_10_01.jcns.35"
+    ]
+  },
+  "ch5110_45_00": {
+    "gpuc": [
+      "stm/character/ch/ch51/5110/45/00/ch5110_45_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch51/5110/45/00/ch5110_45_00.jcns.35"
+    ]
+  },
+  "ch5205_40_85": {
+    "gpuc": [
+      "stm/character/ch/ch52/5205/40/85/ch5205_40_85.gpuc.250925365"
+    ]
+  },
+  "ch5205_45_15": {
+    "gpuc": [
+      "stm/character/ch/ch52/5205/45/15/ch5205_45_15.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch52/5205/45/15/ch5205_45_15.jcns.35"
+    ]
+  },
+  "ch8000_10_00": {
+    "jcns": [
+      "stm/character/ch/ch80/8000/10/00/ch8000_10_00.jcns.35",
+      "stm/character/ch/ch80/8000/10/00/ch8000_10_00_extra.jcns.35",
+      "stm/character/ch/ch80/8000/10/10/ch8000_10_00_extra.jcns.35"
+    ]
+  },
+  "ch8000_10_10": {
+    "jcns": [
+      "stm/character/ch/ch80/8000/10/10/ch8000_10_10.jcns.35"
+    ]
+  },
+  "ch8000_45_00": {
+    "gpuc": [
+      "stm/character/ch/ch80/8000/45/00/ch8000_45_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch80/8000/45/00/ch8000_45_00.jcns.35"
+    ]
+  },
+  "ch8000_46_00": {
+    "gpuc": [
+      "stm/character/ch/ch80/8000/46/00/ch8000_46_00.gpuc.250925365"
+    ]
+  },
+  "ch8000_46_60": {
+    "gpuc": [
+      "stm/character/ch/ch80/8000/46/60/ch8000_46_60.gpuc.250925365"
+    ]
+  },
+  "ch8610_45_00": {
+    "gpuc": [
+      "stm/character/ch/ch86/8610/45/00/ch8610_45_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch86/8610/45/00/ch8610_45_00.jcns.35"
+    ]
+  },
+  "ch8620_00_00": {
+    "jcns": [
+      "stm/character/ch/ch86/8620/00/00/ch8620_00_00.jcns.35"
+    ]
+  },
+  "ch8620_55_00": {
+    "gpuc": [
+      "stm/character/ch/ch86/8620/55/00/ch8620_55_00.gpuc.250925365"
+    ],
+    "jcns": [
+      "stm/character/ch/ch86/8620/55/00/ch8620_55_00.jcns.35"
+    ]
+  }
+}

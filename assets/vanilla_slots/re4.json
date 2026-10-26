@@ -1,0 +1,415 @@
+{
+  "cha000_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/cha0/cha000_00.jcns.22"
+    ]
+  },
+  "cha002_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/cha0/cha002_00.jcns.22"
+    ]
+  },
+  "cha002_01": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/cha0/cha002_01.gpuc.221108868"
+    ]
+  },
+  "cha003_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/cha0/cha003/cha003_00.jcns.22"
+    ]
+  },
+  "cha004_00_tu1": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/cha0/cha004/cha004_00_tu1.jcns.22"
+    ]
+  },
+  "cha005_00_tu1": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/cha0/cha005/cha005_00_tu1.jcns.22"
+    ]
+  },
+  "cha006_00_tu1": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/cha0/cha006/cha006_00_tu1.jcns.22"
+    ]
+  },
+  "cha007_00_tu1": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/cha0/cha007/cha007_00_tu1.jcns.22"
+    ]
+  },
+  "cha008_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/cha0/cha008/cha008_00.jcns.22"
+    ]
+  },
+  "cha100_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/cha1/cha100_00.jcns.22"
+    ]
+  },
+  "cha100_01": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/cha1/cha100_01.gpuc.221108868"
+    ]
+  },
+  "cha101_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/cha1/cha101_00.jcns.22"
+    ]
+  },
+  "cha101_01": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/cha1/cha101_01.gpuc.221108868"
+    ]
+  },
+  "cha102_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/cha1/cha102/cha102_00.jcns.22"
+    ]
+  },
+  "cha103_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/cha1/cha103/cha103_00.jcns.22"
+    ]
+  },
+  "cha104_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/cha1/cha104/cha104_00.jcns.22"
+    ]
+  },
+  "cha104_01": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/cha1/cha104/cha104_01.gpuc.221108868"
+    ]
+  },
+  "cha200_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/cha2/cha200_00.jcns.22"
+    ]
+  },
+  "cha300_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/cha3/cha300_00.jcns.22"
+    ]
+  },
+  "cha600_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/cha6/cha600_00.jcns.22"
+    ]
+  },
+  "cha700_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/cha7/cha700_00.jcns.22"
+    ]
+  },
+  "chb000_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chb0/chb000_00.jcns.22"
+    ]
+  },
+  "chb100_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chb1/chb100_00.jcns.22"
+    ]
+  },
+  "chb200_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chb2/chb200_00.jcns.22"
+    ]
+  },
+  "chb200_01": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chb2/chb200_01.gpuc.221108868"
+    ]
+  },
+  "chb300_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chb3/chb300_00.jcns.22"
+    ]
+  },
+  "chb400_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chb4/chb400_00.jcns.22"
+    ]
+  },
+  "chb500_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chb5/chb500_00_joint.jcns.22"
+    ]
+  },
+  "chb500_01": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chb5/chb500_01.gpuc.221108868"
+    ]
+  },
+  "chb600_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chb6/chb600_00.jcns.22"
+    ]
+  },
+  "chb600_01": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chb6/chb600_01.gpuc.221108868"
+    ]
+  },
+  "chb700_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chb7/chb700_00.jcns.22"
+    ]
+  },
+  "chb800_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chb8/chb800_00.jcns.22"
+    ]
+  },
+  "chb900_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chb9/chb900_00.jcns.22"
+    ]
+  },
+  "chba00_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chba/chba00_00.jcns.22"
+    ]
+  },
+  "chbc00_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chbc/chbc00_00_joint.jcns.22"
+    ]
+  },
+  "chc000_40_00": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chc0/chc000/40/00/chc000_40_00.gpuc.221108868",
+      "stm/_chainsaw/character/ch/chc0/chc000/40/00/chc000_40_00_ingame.gpuc.221108868"
+    ],
+    "jcns": [
+      "stm/_chainsaw/character/ch/chc0/chc000/40/00/chc000_40_00.jcns.22",
+      "stm/_chainsaw/character/ch/chc0/chc000/40/00/chc000_40_00_cloth.jcns.22"
+    ]
+  },
+  "chc000_40_01": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chc0/chc000/40/01/chc000_40_01.gpuc.221108868"
+    ],
+    "jcns": [
+      "stm/_chainsaw/character/ch/chc0/chc000/40/01/chc000_40_01.jcns.22"
+    ]
+  },
+  "chc000_40_02": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chc0/chc000/40/02/chc000_40_02.gpuc.221108868"
+    ]
+  },
+  "chc000_40_03": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chc0/chc000/40/03/chc000_40_03.gpuc.221108868"
+    ],
+    "jcns": [
+      "stm/_chainsaw/character/ch/chc0/chc000/40/03/chc000_40_03.jcns.22"
+    ]
+  },
+  "chc000_40_72": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chc0/chc000/40/72/chc000_40_72.gpuc.221108868"
+    ]
+  },
+  "chc001_30_00": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chc0/chc001/30/00/chc001_30_00.gpuc.221108868"
+    ],
+    "jcns": [
+      "stm/_chainsaw/character/ch/chc0/chc001/30/00/chc001_30_00.jcns.22"
+    ]
+  },
+  "chc001_30_01": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chc0/chc001/30/01/chc001_30_01.gpuc.221108868"
+    ],
+    "jcns": [
+      "stm/_chainsaw/character/ch/chc0/chc001/30/01/chc001_30_01.jcns.22"
+    ]
+  },
+  "chc001_40_00": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chc0/chc001/40/00/chc001_40_00.gpuc.221108868"
+    ]
+  },
+  "chc001_40_02": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chc0/chc001/40/02/chc001_40_02.gpuc.221108868"
+    ]
+  },
+  "chc001_40_03": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chc0/chc001/40/03/chc001_40_03.gpuc.221108868",
+      "stm/_chainsaw/character/ch/chc0/chc001/40/03/chc001_40_03_00.gpuc.221108868"
+    ],
+    "jcns": [
+      "stm/_chainsaw/character/ch/chc0/chc001/40/03/chc001_40_03.jcns.22"
+    ]
+  },
+  "chc001_40_70": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chc0/chc001/40/70/chc001_40_70.gpuc.221108868"
+    ]
+  },
+  "chc001_50_00": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chc0/chc001/50/00/chc001_50_00.gpuc.221108868"
+    ]
+  },
+  "chc001_50_01": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chc0/chc001/50/01/chc001_50_01.gpuc.221108868"
+    ]
+  },
+  "chc002_40_70": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chc0/chc002/40/70/chc002_40_70.gpuc.221108868"
+    ]
+  },
+  "chc002_50_10": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chc0/chc002/50/10/chc002_50_10.jcns.22"
+    ]
+  },
+  "chc002_50_70": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chc0/chc002/50/70/chc002_50_70.gpuc.221108868"
+    ]
+  },
+  "chc003_30_70": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chc0/chc003/30/70/chc003_30_70.gpuc.221108868"
+    ]
+  },
+  "chc004_40_00": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chc0/chc004/40/00/chc004_40_00.gpuc.221108868"
+    ],
+    "jcns": [
+      "stm/_chainsaw/character/ch/chc0/chc004/40/00/chc004_40_00.jcns.22"
+    ]
+  },
+  "chc004_40_01": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chc0/chc004/40/01/chc004_40_01.gpuc.221108868"
+    ],
+    "jcns": [
+      "stm/_chainsaw/character/ch/chc0/chc004/40/01/chc004_40_01.jcns.22"
+    ]
+  },
+  "chc004_50_09": {
+    "gpuc": [
+      "stm/_chainsaw/character/ch/chc0/chc004/50/09/chc004_50_09.gpuc.221108868"
+    ]
+  },
+  "chd000_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chd0/chd000_00.jcns.22"
+    ]
+  },
+  "chd001_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chd0/chd001/chd001_00.jcns.22"
+    ]
+  },
+  "chd200_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chd2/chd200/chd200_00.jcns.22"
+    ]
+  },
+  "chd300_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chd3/chd300/chd300_00.jcns.22"
+    ]
+  },
+  "chd400_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chd4/chd400/chd400_00.jcns.22",
+      "stm/_chainsaw/character/ch/chd4/chd400_00.jcns.22"
+    ]
+  },
+  "chd600_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chd6/chd600_00.jcns.22"
+    ]
+  },
+  "chd601_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chd6/chd601_00.jcns.22"
+    ]
+  },
+  "chd602_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chd6/chd602_00.jcns.22"
+    ]
+  },
+  "chd603_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chd6/chd603_00.jcns.22"
+    ]
+  },
+  "chf000_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chf0/chf000/chf000_00.jcns.22"
+    ]
+  },
+  "chf001_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chf0/chf001/chf001_00.jcns.22"
+    ]
+  },
+  "chf200_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chf2/chf200_00.jcns.22"
+    ]
+  },
+  "chf400_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chf4/chf400_00.jcns.22"
+    ]
+  },
+  "chf400_30": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chf4/chf400_30.jcns.22"
+    ]
+  },
+  "chf500_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chf5/chf500_00.jcns.22"
+    ]
+  },
+  "chf600_40": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chf6/chf600_40.jcns.22"
+    ]
+  },
+  "chf700_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chf7/chf700/chf700_00_joint.jcns.22"
+    ]
+  },
+  "chf700_10": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chf7/chf700/chf700_10_joint.jcns.22"
+    ]
+  },
+  "chf800_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chf8/chf800_00.jcns.22"
+    ]
+  },
+  "chf800_10": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chf8/chf800_10.jcns.22"
+    ]
+  },
+  "chg200_00": {
+    "jcns": [
+      "stm/_chainsaw/character/ch/chg2/chg200/00/chg200_00.jcns.22"
+    ]
+  }
+}

@@ -6,6 +6,7 @@ from ...core import mod_root
 from .batch_import import FT_ORDER
 from .batch_export import _load_scheme, get_mhrs_genders, MHRS_PARTS, MHRS_PART_LABEL_KEYS
 from .batch_export_ui import _FILETYPE_ICONS
+from ...core import optional_editors
 
 IMPORTER_WINDOW_WIDTH = 560
 
@@ -49,8 +50,9 @@ def _build_group_map(items):
     result = {}
     for gkey, gp_map in raw.items():
         result[gkey] = {
-            gp: sorted(its, key=lambda x: FT_ORDER.index(x.filetype)
-                       if x.filetype in FT_ORDER else 99)
+            gp: sorted(its, key=lambda x: (FT_ORDER.index(optional_editors.slot_type(x.filetype))
+                                           if optional_editors.slot_type(x.filetype) in FT_ORDER else 99,
+                                           x.filetype))
             for gp, its in gp_map.items()
         }
     return result
@@ -160,7 +162,8 @@ class MHRS_OT_BatchImportDialog(bpy.types.Operator):
                 row.label(text=f"{T(MHRS_PART_LABEL_KEYS.get(part, part))}  ({_gender_label(gender)})")
                 for it in part_items:
                     row.prop(it, "enabled", text=it.filetype.upper(),
-                             icon=_FILETYPE_ICONS.get(it.filetype, 'FILE'), toggle=True)
+                             icon=_FILETYPE_ICONS.get(optional_editors.slot_type(it.filetype),
+                                                      'CONSTRAINT_BONE'), toggle=True)
 
     def execute(self, context):
         bpy.ops.mhrs.batch_import()

@@ -13,6 +13,7 @@ from ...core import lua_bone_system
 from ...core.export_verify import checked
 from ...core import json_cache
 from ...core import shapekey_export
+from ...core import optional_editors
 
 # MHRS 游戏级文件后缀常量
 MHRS_EXTS = {
@@ -20,6 +21,7 @@ MHRS_EXTS = {
     "mdf2":  "mdf2.23",
     "chain": "chain.48",
     "user":  "user.2",
+    "jcns":  "jcns.21",
 }
 
 # 5个固定部位（part id 直接用于文件名，如 f_body279）
@@ -198,9 +200,18 @@ def _resolve_part_file_types(armor_set, part_id):
     return fts
 
 
-def _make_filepath(natives_root, gender, code, part_id, filetype):
+def jcns_slots(armor_set, gender, part_id):
+    """The part's vanilla .jcns slots for this gender (the pack's "jcns", read off the
+    game's pak list), while REE JCNS Editor is installed; [] otherwise."""
+    if not armor_set or not optional_editors.available("jcns"):
+        return []
+    return [optional_editors.jcns_slot(s)
+            for s in armor_set.get("jcns", {}).get(gender, {}).get(part_id, [])]
+
+
+def _make_filepath(natives_root, gender, code, part_id, filetype, suffix=""):
     ext = MHRS_EXTS[filetype]
-    filename = f"{gender}_{part_id}{code}.{ext}"
+    filename = f"{gender}_{part_id}{code}{suffix}.{ext}"
     return os.path.join(natives_root, "natives", "STM", "player", "mod", gender, f"pl{code}", filename)
 
 
@@ -463,6 +474,27 @@ class MHRS_OT_BatchExport(bpy.types.Operator):
                 try:
                     print(f"[MHRS] {label}: {col} -> {os.path.basename(filepath)}")
                     _EXPORT_FUNCS[filetype](filepath, col)
+                    export_count += 1
+                except Exception as err:
+                    print(f"[MHRS] FAILED {label}: {err}")
+                    fail_count += 1
+
+            # A jcns writes over the vanilla file of its slot; an unbound one is
+            # left alone and not counted.
+            for slot in jcns_slots(armor_set, gender, part_id):
+                col = get_binding(scene, armor_id, gender, part_id, slot)
+                if not col:
+                    continue
+                label = f"{part_name} {optional_editors.slot_label(slot)}"
+                if col not in bpy.data.collections:
+                    print(f"[MHRS] SKIP {label}: collection '{col}' not found")
+                    skip_count += 1
+                    continue
+                filepath = _make_filepath(natives_root, gender, armor_id, part_id, "jcns",
+                                          optional_editors.slot_suffix(slot))
+                try:
+                    print(f"[MHRS] {label}: {col} -> {os.path.basename(filepath)}")
+                    optional_editors.do_export_jcns(filepath, col)
                     export_count += 1
                 except Exception as err:
                     print(f"[MHRS] FAILED {label}: {err}")

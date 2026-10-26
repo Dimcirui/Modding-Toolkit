@@ -1,0 +1,2607 @@
+{
+  "ch001_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch001_00/00/ch001_00_00_ac.jcns.36",
+      "stm/art/model/character/ch0/ch001_00/00/ch001_00_00_body.jcns.36",
+      "stm/art/model/character/ch0/ch001_00/00/ch001_00_00_bs.jcns.36",
+      "stm/art/model/character/ch0/ch001_00/00/ch001_00_00_kimono_bs.jcns.36",
+      "stm/art/model/character/ch0/ch001_00/00/ch001_00_00_sc.jcns.36"
+    ]
+  },
+  "ch001_00_01": {
+    "gpuc": [
+      "stm/art/model/character/ch0/ch001_00/01/ch001_00_01.gpuc.260209505"
+    ],
+    "jcns": [
+      "stm/art/model/character/ch0/ch001_00/01/ch001_00_01_body.jcns.36",
+      "stm/art/model/character/ch0/ch001_00/01/ch001_00_01_btmant_bs.jcns.36",
+      "stm/art/model/character/ch0/ch001_00/01/ch001_00_01_mantchange.jcns.36",
+      "stm/art/model/character/ch0/ch001_00/01/ch001_00_01_mantshoulder.jcns.36",
+      "stm/art/model/character/ch0/ch001_00/01/ch001_00_01_other_bs.jcns.36"
+    ]
+  },
+  "ch001_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch001_00/10/ch001_00_10_body_00.jcns.36",
+      "stm/art/model/character/ch0/ch001_00/10/ch001_00_10_eye_01.jcns.36",
+      "stm/art/model/character/ch0/ch001_00/10/ch001_00_10_eyelid_02.jcns.36",
+      "stm/art/model/character/ch0/ch001_00/10/ch001_00_10_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch001_00_60": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch001_00/60/ch001_00_60.jcns.36"
+    ]
+  },
+  "ch001_01_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch001_01/00/ch001_01_00_body.jcns.36",
+      "stm/art/model/character/ch0/ch001_01/00/ch001_01_00_bs.jcns.36",
+      "stm/art/model/character/ch0/ch001_01/00/ch001_01_00_sc.jcns.36"
+    ]
+  },
+  "ch001_10_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch001_10/00/ch001_10_00.jcns.36"
+    ]
+  },
+  "ch001_20_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch001_20/00/ch001_20_00.jcns.36",
+      "stm/art/model/character/ch0/ch001_20/00/ch001_20_00_head.jcns.36"
+    ]
+  },
+  "ch001_20_01": {
+    "gpuc": [
+      "stm/art/model/character/ch0/ch001_20/01/ch001_20_01.gpuc.260209505"
+    ],
+    "jcns": [
+      "stm/art/model/character/ch0/ch001_20/01/ch001_20_01.jcns.36"
+    ]
+  },
+  "ch001_20_60": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch001_20/60/ch001_20_60.jcns.36"
+    ]
+  },
+  "ch001_21_00": {
+    "gpuc": [
+      "stm/art/model/character/ch0/ch001_21/00/ch001_21_00.gpuc.260209505"
+    ],
+    "jcns": [
+      "stm/art/model/character/ch0/ch001_21/00/ch001_21_00.jcns.36"
+    ]
+  },
+  "ch001_22_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch001_22/00/ch001_22_00.jcns.36",
+      "stm/art/model/character/ch0/ch001_22/00/ch001_22_00_ac.jcns.36",
+      "stm/art/model/character/ch0/ch001_22/00/ch001_22_00_bs.jcns.36",
+      "stm/art/model/character/ch0/ch001_22/00/ch001_22_00_kimono_bs.jcns.36",
+      "stm/art/model/character/ch0/ch001_22/00/ch001_22_00_sc.jcns.36"
+    ]
+  },
+  "ch001_23_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch001_23/00/ch001_23_00.jcns.36",
+      "stm/art/model/character/ch0/ch001_23/00/ch001_23_00_mb.jcns.36"
+    ]
+  },
+  "ch001_23_60": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch001_23/60/ch001_23_60.jcns.36"
+    ]
+  },
+  "ch001_30_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch001_30/00/ch001_30_00.jcns.36",
+      "stm/art/model/character/ch0/ch001_30/00/ch001_30_00_ac.jcns.36",
+      "stm/art/model/character/ch0/ch001_30/00/ch001_30_00_bs.jcns.36",
+      "stm/art/model/character/ch0/ch001_30/00/ch001_30_00_sc.jcns.36"
+    ]
+  },
+  "ch001_30_01": {
+    "gpuc": [
+      "stm/art/model/character/ch0/ch001_30/01/ch001_30_01.gpuc.260209505"
+    ]
+  },
+  "ch001_32_60": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch001_32/60/ch001_32_60.jcns.36",
+      "stm/art/model/character/ch0/ch001_32/60/ch001_32_60_mb.jcns.36"
+    ]
+  },
+  "ch001_50_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch001_50/00/ch001_50_00.jcns.36",
+      "stm/art/model/character/ch0/ch001_50/00/ch001_50_00_ac.jcns.36"
+    ]
+  },
+  "ch001_50_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch001_50/10/ch001_50_10_body_00.jcns.36",
+      "stm/art/model/character/ch0/ch001_50/10/ch001_50_10_eye_01.jcns.36",
+      "stm/art/model/character/ch0/ch001_50/10/ch001_50_10_eyelid_02.jcns.36"
+    ]
+  },
+  "ch002_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch002_00/00/ch002_00_00.jcns.36"
+    ]
+  },
+  "ch002_00_01": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch002_00/01/ch002_00_01.jcns.36"
+    ]
+  },
+  "ch002_00_02": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch002_00/02/ch002_00_02.jcns.36"
+    ]
+  },
+  "ch002_00_03": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch002_00/03/ch002_00_03.jcns.36"
+    ]
+  },
+  "ch002_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch002_00/10/ch002_00_10_body_00.jcns.36",
+      "stm/art/model/character/ch0/ch002_00/10/ch002_00_10_eye_01.jcns.36",
+      "stm/art/model/character/ch0/ch002_00/10/ch002_00_10_eyelid_02.jcns.36",
+      "stm/art/model/character/ch0/ch002_00/10/ch002_00_10_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch002_30_00": {
+    "gpuc": [
+      "stm/art/model/character/ch0/ch002_30/00/ch002_30_00.gpuc.260209505"
+    ],
+    "jcns": [
+      "stm/art/model/character/ch0/ch002_30/00/ch002_30_00.jcns.36"
+    ]
+  },
+  "ch002_30_02": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch002_30/02/ch002_30_02.jcns.36"
+    ]
+  },
+  "ch002_31_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch002_31/00/ch002_31_00.jcns.36"
+    ]
+  },
+  "ch002_31_01": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch002_31/01/ch002_31_01.jcns.36"
+    ]
+  },
+  "ch002_31_02": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch002_31/02/ch002_31_02.jcns.36"
+    ]
+  },
+  "ch002_31_03": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch002_31/03/ch002_31_03.jcns.36"
+    ]
+  },
+  "ch002_32_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch002_32/00/ch002_32_00.jcns.36"
+    ]
+  },
+  "ch002_32_01": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch002_32/01/ch002_32_01.jcns.36"
+    ]
+  },
+  "ch002_32_02": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch002_32/02/ch002_32_02.jcns.36"
+    ]
+  },
+  "ch002_32_03": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch002_32/03/ch002_32_03.jcns.36"
+    ]
+  },
+  "ch002_33_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch002_33/00/ch002_33_00.jcns.36"
+    ]
+  },
+  "ch002_33_01": {
+    "gpuc": [
+      "stm/art/model/character/ch0/ch002_33/01/ch002_33_01.gpuc.260209505"
+    ],
+    "jcns": [
+      "stm/art/model/character/ch0/ch002_33/01/ch002_33_01.jcns.36"
+    ]
+  },
+  "ch002_33_02": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch002_33/02/ch002_33_02.jcns.36"
+    ]
+  },
+  "ch002_33_03": {
+    "gpuc": [
+      "stm/art/model/character/ch0/ch002_33/03/ch002_33_03.gpuc.260209505"
+    ],
+    "jcns": [
+      "stm/art/model/character/ch0/ch002_33/03/ch002_33_03.jcns.36"
+    ]
+  },
+  "ch003_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch003_00/00/ch003_00_00.jcns.36",
+      "stm/art/model/character/ch0/ch003_00/00/ch003_00_00_sc.jcns.36"
+    ]
+  },
+  "ch003_00_01": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch003_00/01/ch003_00_01.jcns.36",
+      "stm/art/model/character/ch0/ch003_00/01/ch003_00_01_sc.jcns.36"
+    ]
+  },
+  "ch003_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch003_00/10/ch003_00_10_body_00.jcns.36",
+      "stm/art/model/character/ch0/ch003_00/10/ch003_00_10_eye_01.jcns.36",
+      "stm/art/model/character/ch0/ch003_00/10/ch003_00_10_eyelid_02.jcns.36",
+      "stm/art/model/character/ch0/ch003_00/10/ch003_00_10_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch003_00_60": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch003_00/60/ch003_00_60.jcns.36"
+    ]
+  },
+  "ch004_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch004_00/00/ch004_00_00.jcns.36",
+      "stm/art/model/character/ch0/ch004_00/00/ch004_00_00_sc.jcns.36"
+    ]
+  },
+  "ch004_00_01": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch004_00/01/ch004_00_01.jcns.36",
+      "stm/art/model/character/ch0/ch004_00/01/ch004_00_01_sc.jcns.36"
+    ]
+  },
+  "ch004_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch004_00/10/ch004_00_10_body_00.jcns.36",
+      "stm/art/model/character/ch0/ch004_00/10/ch004_00_10_eye_01.jcns.36",
+      "stm/art/model/character/ch0/ch004_00/10/ch004_00_10_eyelid_02.jcns.36",
+      "stm/art/model/character/ch0/ch004_00/10/ch004_00_10_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch004_00_20": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch004_00/20/ch004_00_20.jcns.36"
+    ]
+  },
+  "ch004_00_60": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch004_00/60/ch004_00_60.jcns.36"
+    ]
+  },
+  "ch004_30_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch004_30/00/ch004_30_00.jcns.36",
+      "stm/art/model/character/ch0/ch004_30/00/ch004_30_00_1.jcns.36",
+      "stm/art/model/character/ch0/ch004_30/00/ch004_30_00_dd.jcns.36",
+      "stm/art/model/character/ch0/ch004_30/00/ch004_30_00_mb.jcns.36"
+    ]
+  },
+  "ch004_30_20": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch004_30/20/ch004_30_20.jcns.36"
+    ]
+  },
+  "ch004_31_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch004_31/00/ch004_31_00.jcns.36",
+      "stm/art/model/character/ch0/ch004_31/00/ch004_31_00_sc.jcns.36"
+    ]
+  },
+  "ch004_31_01": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch004_31/01/ch004_31_01.jcns.36",
+      "stm/art/model/character/ch0/ch004_31/01/ch004_31_01_sc.jcns.36"
+    ]
+  },
+  "ch004_31_20": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch004_31/20/ch004_31_20.jcns.36"
+    ]
+  },
+  "ch004_32_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch004_32/00/ch004_32_00.jcns.36",
+      "stm/art/model/character/ch0/ch004_32/00/ch004_32_00_sc.jcns.36"
+    ]
+  },
+  "ch004_32_01": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch004_32/01/ch004_32_01.jcns.36",
+      "stm/art/model/character/ch0/ch004_32/01/ch004_32_01_sc.jcns.36"
+    ]
+  },
+  "ch004_32_20": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch004_32/20/ch004_32_20.jcns.36"
+    ]
+  },
+  "ch004_33_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch004_33/00/ch004_33_00.jcns.36",
+      "stm/art/model/character/ch0/ch004_33/00/ch004_33_00_sc.jcns.36"
+    ]
+  },
+  "ch004_33_01": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch004_33/01/ch004_33_01.jcns.36",
+      "stm/art/model/character/ch0/ch004_33/01/ch004_33_01_sc.jcns.36"
+    ]
+  },
+  "ch004_33_20": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch004_33/20/ch004_33_20.jcns.36"
+    ]
+  },
+  "ch010_00_00": {
+    "gpuc": [
+      "stm/art/model/character/ch0/ch010_00/00/ch010_00_00.gpuc.260209505"
+    ],
+    "jcns": [
+      "stm/art/model/character/ch0/ch010_00/00/ch010_00_00.jcns.36",
+      "stm/art/model/character/ch0/ch010_00/00/ch010_00_00_ac.jcns.36",
+      "stm/art/model/character/ch0/ch010_00/00/ch010_00_00_bs.jcns.36",
+      "stm/art/model/character/ch0/ch010_00/00/ch010_00_00_dd.jcns.36"
+    ]
+  },
+  "ch010_00_05": {
+    "gpuc": [
+      "stm/art/model/character/ch0/ch010_00/05/ch010_00_05.gpuc.260209505"
+    ],
+    "jcns": [
+      "stm/art/model/character/ch0/ch010_00/05/ch010_00_05.jcns.36",
+      "stm/art/model/character/ch0/ch010_00/05/ch010_00_05_ac.jcns.36",
+      "stm/art/model/character/ch0/ch010_00/05/ch010_00_05_bs.jcns.36",
+      "stm/art/model/character/ch0/ch010_00/05/ch010_00_05_dd.jcns.36"
+    ]
+  },
+  "ch010_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch010_00/10/ch010_00_10_body_00.jcns.36",
+      "stm/art/model/character/ch0/ch010_00/10/ch010_00_10_eye_01.jcns.36",
+      "stm/art/model/character/ch0/ch010_00/10/ch010_00_10_eyelid_02.jcns.36",
+      "stm/art/model/character/ch0/ch010_00/10/ch010_00_10_wrinkledriver_03.jcns.36",
+      "stm/art/model/character/ch0/ch010_00/10/ch010_00_10_yang_bs.jcns.36"
+    ]
+  },
+  "ch010_10_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch010_10/00/ch010_10_00.jcns.36"
+    ]
+  },
+  "ch010_10_60": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch010_10/60/ch010_10_60.jcns.36"
+    ]
+  },
+  "ch010_50_00": {
+    "gpuc": [
+      "stm/art/model/character/ch0/ch010_50/00/ch010_50_00.gpuc.260209505"
+    ],
+    "jcns": [
+      "stm/art/model/character/ch0/ch010_50/00/ch010_50_00.jcns.36",
+      "stm/art/model/character/ch0/ch010_50/00/ch010_50_00_bs.jcns.36"
+    ]
+  },
+  "ch010_50_01": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch010_50/01/ch010_50_01.jcns.36"
+    ]
+  },
+  "ch010_50_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch010_50/10/ch010_50_10_body_00.jcns.36",
+      "stm/art/model/character/ch0/ch010_50/10/ch010_50_10_eye_01.jcns.36",
+      "stm/art/model/character/ch0/ch010_50/10/ch010_50_10_eyelid_02.jcns.36",
+      "stm/art/model/character/ch0/ch010_50/10/ch010_50_10_menpoo_04.jcns.36",
+      "stm/art/model/character/ch0/ch010_50/10/ch010_50_10_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch010_50_60": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch010_50/60/ch010_50_60.jcns.36"
+    ]
+  },
+  "ch011_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch011_00/00/ch011_00_00.jcns.36",
+      "stm/art/model/character/ch0/ch011_00/00/ch011_00_00_ac.jcns.36"
+    ]
+  },
+  "ch011_00_01": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch011_00/01/ch011_00_01.jcns.36"
+    ]
+  },
+  "ch011_00_07": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch011_00/07/ch011_00_07.jcns.36"
+    ]
+  },
+  "ch011_00_08": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch011_00/08/ch011_00_08.jcns.36"
+    ]
+  },
+  "ch011_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch011_00/10/ch011_00_10.jcns.36"
+    ]
+  },
+  "ch011_00_11": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch011_00/11/ch011_00_11.jcns.36"
+    ]
+  },
+  "ch011_00_12": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch011_00/12/ch011_00_12.jcns.36"
+    ]
+  },
+  "ch011_00_40": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch011_00/40/ch011_00_40.jcns.36",
+      "stm/art/model/character/ch0/ch011_00/40/ch011_00_40_bs.jcns.36"
+    ]
+  },
+  "ch012_00_00": {
+    "gpuc": [
+      "stm/art/model/character/ch0/ch012_00/00/ch012_00_00.gpuc.260209505"
+    ],
+    "jcns": [
+      "stm/art/model/character/ch0/ch012_00/00/ch012_00_00.jcns.36",
+      "stm/art/model/character/ch0/ch012_00/00/ch012_00_00_ac.jcns.36",
+      "stm/art/model/character/ch0/ch012_00/00/ch012_00_00_dd.jcns.36",
+      "stm/art/model/character/ch0/ch012_00/00/ch012_00_00_mb.jcns.36"
+    ]
+  },
+  "ch012_00_01": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch012_00/01/ch012_00_01.jcns.36",
+      "stm/art/model/character/ch0/ch012_00/01/ch012_00_01_mb.jcns.36",
+      "stm/art/model/character/ch0/ch012_00/01/ch012_00_01_mb_hand.jcns.36"
+    ]
+  },
+  "ch012_00_02": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch012_00/02/ch012_00_02.jcns.36",
+      "stm/art/model/character/ch0/ch012_00/02/ch012_00_02_ac.jcns.36",
+      "stm/art/model/character/ch0/ch012_00/02/ch012_00_02_mb.jcns.36"
+    ]
+  },
+  "ch012_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch012_00/10/ch012_00_10.jcns.36",
+      "stm/art/model/character/ch0/ch012_00/10/ch012_00_10_mb.jcns.36"
+    ]
+  },
+  "ch020_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch020_00/00/ch020_00_00.jcns.36",
+      "stm/art/model/character/ch0/ch020_00/00/ch020_00_00_sc.jcns.36"
+    ]
+  },
+  "ch020_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch020_00/10/ch020_00_10_body_00.jcns.36",
+      "stm/art/model/character/ch0/ch020_00/10/ch020_00_10_eye_01.jcns.36",
+      "stm/art/model/character/ch0/ch020_00/10/ch020_00_10_eyelid_02.jcns.36",
+      "stm/art/model/character/ch0/ch020_00/10/ch020_00_10_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch020_00_20": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch020_00/20/ch020_00_20.jcns.36"
+    ]
+  },
+  "ch021_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch021_00/00/ch021_00_00.jcns.36"
+    ]
+  },
+  "ch021_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch021_00/10/ch021_00_10_body_00.jcns.36",
+      "stm/art/model/character/ch0/ch021_00/10/ch021_00_10_eye_01.jcns.36",
+      "stm/art/model/character/ch0/ch021_00/10/ch021_00_10_eyelid_02.jcns.36",
+      "stm/art/model/character/ch0/ch021_00/10/ch021_00_10_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch023_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch023_00/00/ch023_00_00.jcns.36"
+    ]
+  },
+  "ch023_00_01": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch023_00/01/ch023_00_01.jcns.36"
+    ]
+  },
+  "ch023_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch023_00/10/ch023_00_10_body_00.jcns.36",
+      "stm/art/model/character/ch0/ch023_00/10/ch023_00_10_eye_01.jcns.36",
+      "stm/art/model/character/ch0/ch023_00/10/ch023_00_10_eyelid_02.jcns.36",
+      "stm/art/model/character/ch0/ch023_00/10/ch023_00_10_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch023_00_21": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch023_00/21/ch023_00_21.jcns.36"
+    ]
+  },
+  "ch024_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch024_00/00/ch024_00_00.jcns.36"
+    ]
+  },
+  "ch024_00_01": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch024_00/01/ch024_00_01.jcns.36"
+    ]
+  },
+  "ch024_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch024_00/10/ch024_00_10_body_00.jcns.36",
+      "stm/art/model/character/ch0/ch024_00/10/ch024_00_10_common_01.jcns.36",
+      "stm/art/model/character/ch0/ch024_00/10/ch024_00_10_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch031_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch031_00/00/ch031_00_00.jcns.36",
+      "stm/art/model/character/ch0/ch031_00/00/ch031_00_00_mb.jcns.36"
+    ]
+  },
+  "ch031_00_01": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch031_00/01/ch031_00_01.jcns.36"
+    ]
+  },
+  "ch031_00_02": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch031_00/02/ch031_00_02.jcns.36"
+    ]
+  },
+  "ch031_00_31": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch031_00/31/ch031_00_31.jcns.36"
+    ]
+  },
+  "ch031_00_32": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch031_00/32/ch031_00_32.jcns.36"
+    ]
+  },
+  "ch031_00_33": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch031_00/33/ch031_00_33.jcns.36"
+    ]
+  },
+  "ch031_00_34": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch031_00/34/ch031_00_34.jcns.36"
+    ]
+  },
+  "ch031_00_39": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch031_00/39/ch031_00_39.jcns.36",
+      "stm/art/model/character/ch0/ch031_00/39/ch031_00_39_mb.jcns.36"
+    ]
+  },
+  "ch033_00_00": {
+    "gpuc": [
+      "stm/art/model/character/ch0/ch033_00/00/ch033_00_00.gpuc.260209505"
+    ],
+    "jcns": [
+      "stm/art/model/character/ch0/ch033_00/00/ch033_00_00_body.jcns.36",
+      "stm/art/model/character/ch0/ch033_00/00/ch033_00_00_bs.jcns.36",
+      "stm/art/model/character/ch0/ch033_00/00/ch033_00_00_sc.jcns.36"
+    ]
+  },
+  "ch033_00_05": {
+    "gpuc": [
+      "stm/art/model/character/ch0/ch033_00/05/ch033_00_05.gpuc.260209505"
+    ],
+    "jcns": [
+      "stm/art/model/character/ch0/ch033_00/05/ch033_00_05_body.jcns.36",
+      "stm/art/model/character/ch0/ch033_00/05/ch033_00_05_bs.jcns.36",
+      "stm/art/model/character/ch0/ch033_00/05/ch033_00_05_sc.jcns.36"
+    ]
+  },
+  "ch033_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch033_00/10/ch033_00_10_eye_01.jcns.36",
+      "stm/art/model/character/ch0/ch033_00/10/ch033_00_10_eyelid_02.jcns.36",
+      "stm/art/model/character/ch0/ch033_00/10/ch033_00_10_head_00.jcns.36",
+      "stm/art/model/character/ch0/ch033_00/10/ch033_00_10_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch033_00_20": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch033_00/20/ch033_00_20_hair.jcns.36",
+      "stm/art/model/character/ch0/ch033_00/20/ch033_00_20_sc.jcns.36"
+    ]
+  },
+  "ch033_00_21": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch033_00/21/ch033_00_21_hair.jcns.36",
+      "stm/art/model/character/ch0/ch033_00/21/ch033_00_21_sc.jcns.36"
+    ]
+  },
+  "ch033_00_22": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch033_00/22/ch033_00_22_hair.jcns.36",
+      "stm/art/model/character/ch0/ch033_00/22/ch033_00_22_sc.jcns.36"
+    ]
+  },
+  "ch033_00_40": {
+    "gpuc": [
+      "stm/art/model/character/ch0/ch033_00/40/ch033_00_40.gpuc.260209505",
+      "stm/art/model/character/ch0/ch033_00/40/ch033_00_40_event_00.gpuc.260209505"
+    ],
+    "jcns": [
+      "stm/art/model/character/ch0/ch033_00/40/ch033_00_40.jcns.36",
+      "stm/art/model/character/ch0/ch033_00/40/ch033_00_40_sc.jcns.36"
+    ]
+  },
+  "ch033_00_41": {
+    "gpuc": [
+      "stm/art/model/character/ch0/ch033_00/41/ch033_00_41.gpuc.260209505"
+    ]
+  },
+  "ch033_00_42": {
+    "gpuc": [
+      "stm/art/model/character/ch0/ch033_00/42/ch033_00_42_event_00.gpuc.260209505"
+    ],
+    "jcns": [
+      "stm/art/model/character/ch0/ch033_00/42/ch033_00_42.jcns.36",
+      "stm/art/model/character/ch0/ch033_00/42/ch033_00_42_sc.jcns.36"
+    ]
+  },
+  "ch033_00_60": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch033_00/60/ch033_00_60.jcns.36"
+    ]
+  },
+  "ch033_50_00": {
+    "gpuc": [
+      "stm/art/model/character/ch0/ch033_50/00/ch033_50_00.gpuc.260209505"
+    ],
+    "jcns": [
+      "stm/art/model/character/ch0/ch033_50/00/ch033_50_00_body.jcns.36",
+      "stm/art/model/character/ch0/ch033_50/00/ch033_50_00_bs.jcns.36",
+      "stm/art/model/character/ch0/ch033_50/00/ch033_50_00_sc.jcns.36"
+    ]
+  },
+  "ch033_50_05": {
+    "gpuc": [
+      "stm/art/model/character/ch0/ch033_50/05/ch033_50_05.gpuc.260209505"
+    ],
+    "jcns": [
+      "stm/art/model/character/ch0/ch033_50/05/ch033_50_05_body.jcns.36",
+      "stm/art/model/character/ch0/ch033_50/05/ch033_50_05_bs.jcns.36",
+      "stm/art/model/character/ch0/ch033_50/05/ch033_50_05_sc.jcns.36"
+    ]
+  },
+  "ch033_50_30": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch033_50/30/ch033_50_30.jcns.36"
+    ]
+  },
+  "ch033_50_31": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch033_50/31/ch033_50_31.jcns.36"
+    ]
+  },
+  "ch033_50_65": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch033_50/65/ch033_50_65.jcns.36"
+    ]
+  },
+  "ch034_00_00": {
+    "gpuc": [
+      "stm/art/model/character/ch0/ch034_00/00/ch034_00_00.gpuc.260209505"
+    ],
+    "jcns": [
+      "stm/art/model/character/ch0/ch034_00/00/ch034_00_00.jcns.36",
+      "stm/art/model/character/ch0/ch034_00/00/ch034_00_00_dd.jcns.36"
+    ]
+  },
+  "ch034_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch034_00/10/ch034_00_10_body_00.jcns.36",
+      "stm/art/model/character/ch0/ch034_00/10/ch034_00_10_eye_01.jcns.36",
+      "stm/art/model/character/ch0/ch034_00/10/ch034_00_10_eyelid_02.jcns.36",
+      "stm/art/model/character/ch0/ch034_00/10/ch034_00_10_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch034_00_20": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch034_00/20/ch034_00_20.jcns.36"
+    ]
+  },
+  "ch035_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch035_00/00/ch035_00_00.jcns.36",
+      "stm/art/model/character/ch0/ch035_00/00/ch035_00_00_mb.jcns.36"
+    ]
+  },
+  "ch035_00_01": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch035_00/01/ch035_00_01.jcns.36"
+    ]
+  },
+  "ch035_00_02": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch035_00/02/ch035_00_02.jcns.36",
+      "stm/art/model/character/ch0/ch035_00/02/ch035_00_02_bs.jcns.36",
+      "stm/art/model/character/ch0/ch035_00/02/ch035_00_02_mb.jcns.36"
+    ]
+  },
+  "ch035_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch035_00/10/ch035_00_10.jcns.36",
+      "stm/art/model/character/ch0/ch035_00/10/ch035_00_10_eye.jcns.36"
+    ]
+  },
+  "ch035_00_75": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch035_00/75/ch035_00_75.jcns.36"
+    ]
+  },
+  "ch037_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch037_00/00/ch037_00_00.jcns.36",
+      "stm/art/model/character/ch0/ch037_00/00/ch037_00_00_mb.jcns.36"
+    ]
+  },
+  "ch037_00_03": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch037_00/03/ch037_00_03.jcns.36",
+      "stm/art/model/character/ch0/ch037_00/03/ch037_00_03_mb.jcns.36"
+    ]
+  },
+  "ch037_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch037_00/10/ch037_00_10.jcns.36",
+      "stm/art/model/character/ch0/ch037_00/10/ch037_00_10_mb.jcns.36"
+    ]
+  },
+  "ch037_00_15": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch037_00/15/ch037_00_15.jcns.36",
+      "stm/art/model/character/ch0/ch037_00/15/ch037_00_15_mb.jcns.36"
+    ]
+  },
+  "ch037_00_16": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch037_00/16/ch037_00_16_mb.jcns.36"
+    ]
+  },
+  "ch037_00_40": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch037_00/40/ch037_00_40.jcns.36"
+    ]
+  },
+  "ch038_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch038_00/00/ch038_00_00.jcns.36",
+      "stm/art/model/character/ch0/ch038_00/00/ch038_00_00_mb.jcns.36"
+    ]
+  },
+  "ch038_00_01": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch038_00/01/ch038_00_01.jcns.36"
+    ]
+  },
+  "ch038_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch038_00/10/ch038_00_10.jcns.36"
+    ]
+  },
+  "ch039_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch039_00/00/ch039_00_00.jcns.36",
+      "stm/art/model/character/ch0/ch039_00/00/ch039_00_00_bs.jcns.36"
+    ]
+  },
+  "ch039_00_01": {
+    "gpuc": [
+      "stm/art/model/character/ch0/ch039_00/01/ch039_00_01.gpuc.260209505"
+    ],
+    "jcns": [
+      "stm/art/model/character/ch0/ch039_00/01/ch039_00_01.jcns.36",
+      "stm/art/model/character/ch0/ch039_00/01/ch039_00_01_bs.jcns.36"
+    ]
+  },
+  "ch039_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch039_00/10/ch039_00_10.jcns.36"
+    ]
+  },
+  "ch039_00_11": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch039_00/11/ch039_00_11_bs.jcns.36"
+    ]
+  },
+  "ch040_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch040_00/00/ch040_00_00.jcns.36"
+    ]
+  },
+  "ch040_00_01": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch040_00/01/ch040_00_01.jcns.36"
+    ]
+  },
+  "ch040_00_02": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch040_00/02/ch040_00_02.jcns.36"
+    ]
+  },
+  "ch040_00_03": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch040_00/03/ch040_00_03.jcns.36"
+    ]
+  },
+  "ch040_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch040_00/10/ch040_00_10_eye_01.jcns.36",
+      "stm/art/model/character/ch0/ch040_00/10/ch040_00_10_eyelid_02.jcns.36"
+    ]
+  },
+  "ch040_50_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch040_50/00/ch040_50_00_bs.jcns.36"
+    ]
+  },
+  "ch040_50_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch040_50/10/ch040_50_10_eye_01.jcns.36",
+      "stm/art/model/character/ch0/ch040_50/10/ch040_50_10_eyelid_02.jcns.36"
+    ]
+  },
+  "ch051_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch051_00/00/ch051_00_00.jcns.36"
+    ]
+  },
+  "ch051_00_03": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch051_00/03/ch051_00_03.jcns.36"
+    ]
+  },
+  "ch051_00_05": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch051_00/05/ch051_00_05.jcns.36"
+    ]
+  },
+  "ch051_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch051_00/10/ch051_00_10.jcns.36"
+    ]
+  },
+  "ch051_00_33": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch051_00/33/ch051_00_33.jcns.36"
+    ]
+  },
+  "ch051_00_35": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch051_00/35/ch051_00_35.jcns.36"
+    ]
+  },
+  "ch051_00_43": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch051_00/43/ch051_00_43.jcns.36"
+    ]
+  },
+  "ch051_00_45": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch051_00/45/ch051_00_45.jcns.36"
+    ]
+  },
+  "ch052_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch052_00/00/ch052_00_00.jcns.36",
+      "stm/art/model/character/ch0/ch052_00/00/ch052_00_00_mb.jcns.36"
+    ]
+  },
+  "ch052_00_03": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch052_00/03/ch052_00_03.jcns.36",
+      "stm/art/model/character/ch0/ch052_00/03/ch052_00_03_mb.jcns.36"
+    ]
+  },
+  "ch052_00_05": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch052_00/05/ch052_00_05.jcns.36",
+      "stm/art/model/character/ch0/ch052_00/05/ch052_00_05_mb.jcns.36"
+    ]
+  },
+  "ch052_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch052_00/10/ch052_00_10.jcns.36",
+      "stm/art/model/character/ch0/ch052_00/10/ch052_00_10_mb.jcns.36"
+    ]
+  },
+  "ch052_00_20": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch052_00/20/ch052_00_20_mb.jcns.36"
+    ]
+  },
+  "ch053_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch053_00/00/ch053_00_00.jcns.36"
+    ]
+  },
+  "ch053_00_03": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch053_00/03/ch053_00_03.jcns.36"
+    ]
+  },
+  "ch053_00_05": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch053_00/05/ch053_00_05.jcns.36"
+    ]
+  },
+  "ch053_00_07": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch053_00/07/ch053_00_07.jcns.36"
+    ]
+  },
+  "ch053_00_08": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch053_00/08/ch053_00_08.jcns.36"
+    ]
+  },
+  "ch053_00_40": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch053_00/40/ch053_00_40.jcns.36"
+    ]
+  },
+  "ch053_00_42": {
+    "jcns": [
+      "stm/art/model/character/ch0/ch053_00/42/ch053_00_42.jcns.36"
+    ]
+  },
+  "ch100_10_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch100/10/00/ch100_10_00.jcns.36"
+    ]
+  },
+  "ch100_10_01": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch100/10/01/ch100_10_01.jcns.36"
+    ]
+  },
+  "ch100_10_02": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch100/10/02/ch100_10_02.jcns.36"
+    ]
+  },
+  "ch100_11_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch100/11/00/ch100_11_00.jcns.36"
+    ]
+  },
+  "ch100_11_01": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch100/11/01/ch100_11_01.jcns.36"
+    ]
+  },
+  "ch100_11_02": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch100/11/02/ch100_11_02.jcns.36"
+    ]
+  },
+  "ch100_12_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch100/12/00/ch100_12_00.jcns.36"
+    ]
+  },
+  "ch101_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch101/00/00/ch101_00_00_0.jcns.36"
+    ]
+  },
+  "ch101_00_03": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch101/00/03/ch101_00_03_0.jcns.36"
+    ]
+  },
+  "ch101_00_05": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch101/00/05/ch101_00_05_0.jcns.36"
+    ]
+  },
+  "ch101_01_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch101/01/00/ch101_01_00_0.jcns.36"
+    ]
+  },
+  "ch101_01_01": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch101/01/01/ch101_01_01_0.jcns.36"
+    ]
+  },
+  "ch101_20_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch101/20/00/ch101_20_00_0.jcns.36"
+    ]
+  },
+  "ch101_50_10": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch101_50/10/ch101_50_10_0.jcns.36"
+    ]
+  },
+  "ch101_80_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch101_80/00/ch101_80_00_0.jcns.36"
+    ]
+  },
+  "ch101_80_01": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch101_80/01/ch101_80_01_0.jcns.36"
+    ]
+  },
+  "ch101_80_02": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch101_80/02/ch101_80_02_0.jcns.36"
+    ]
+  },
+  "ch101_80_10": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch101_80/10/ch101_80_10_0.jcns.36"
+    ]
+  },
+  "ch101_80_11": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch101_80/11/ch101_80_11_0.jcns.36"
+    ]
+  },
+  "ch101_80_12": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch101_80/12/ch101_80_12_0.jcns.36"
+    ]
+  },
+  "ch101_80_20": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch101_80/20/ch101_80_20_0.jcns.36"
+    ]
+  },
+  "ch101_80_21": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch101_80/21/ch101_80_21_0.jcns.36"
+    ]
+  },
+  "ch101_80_22": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch101_80/22/ch101_80_22_0.jcns.36"
+    ]
+  },
+  "ch102_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch102/00/00/ch102_00_00_0.jcns.36"
+    ]
+  },
+  "ch102_00_03": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch102/00/03/ch102_00_03_0.jcns.36"
+    ]
+  },
+  "ch102_00_05": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch102/00/05/ch102_00_05_0.jcns.36"
+    ]
+  },
+  "ch102_01_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch102/01/00/ch102_01_00_0.jcns.36"
+    ]
+  },
+  "ch102_01_10": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch102/01/10/ch102_01_10_0.jcns.36"
+    ]
+  },
+  "ch102_20_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch102/20/00/ch102_20_00_0.jcns.36"
+    ]
+  },
+  "ch102_50_10": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch102_50/10/ch102_50_10_0.jcns.36"
+    ]
+  },
+  "ch105_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/00/00/ch105_00_00_0.jcns.36"
+    ]
+  },
+  "ch105_00_03": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/00/03/ch105_00_03_0.jcns.36"
+    ]
+  },
+  "ch105_00_05": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/00/05/ch105_00_05_0.jcns.36"
+    ]
+  },
+  "ch105_00_19": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/00/19/ch105_00_19_0.jcns.36"
+    ]
+  },
+  "ch105_01_01": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/01/01/ch105_01_01_0.jcns.36"
+    ]
+  },
+  "ch105_01_07": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/01/07/ch105_01_07_0.jcns.36"
+    ]
+  },
+  "ch105_01_13": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/01/13/ch105_01_13_0.jcns.36"
+    ]
+  },
+  "ch105_01_20": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/01/20/ch105_01_20_0.jcns.36"
+    ]
+  },
+  "ch105_07_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/07/00/ch105_07_00_0.jcns.36"
+    ]
+  },
+  "ch105_07_01": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/07/01/ch105_07_01_0.jcns.36"
+    ]
+  },
+  "ch105_07_20": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/07/20/ch105_07_20.jcns.36"
+    ]
+  },
+  "ch105_09_30": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/09/30/ch105_09_30.jcns.36"
+    ]
+  },
+  "ch105_09_40": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/09/40/ch105_09_40.jcns.36"
+    ]
+  },
+  "ch105_10_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/10/00/ch105_10_00.jcns.36"
+    ]
+  },
+  "ch105_10_40": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/10/40/ch105_10_40_0.jcns.36"
+    ]
+  },
+  "ch105_11_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/11/00/ch105_11_00_0.jcns.36"
+    ]
+  },
+  "ch105_11_01": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/11/01/ch105_11_01_0.jcns.36"
+    ]
+  },
+  "ch105_11_20": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/11/20/ch105_11_20.jcns.36"
+    ]
+  },
+  "ch105_11_40": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/11/40/ch105_11_40.jcns.36"
+    ]
+  },
+  "ch105_20_30": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/20/30/ch105_20_30.jcns.36"
+    ]
+  },
+  "ch105_20_40": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/20/40/ch105_20_40.jcns.36"
+    ]
+  },
+  "ch105_20_71": {
+    "gpuc": [
+      "stm/art/model/character/ch1/ch105/20/71/ch105_20_71.gpuc.260209505"
+    ],
+    "jcns": [
+      "stm/art/model/character/ch1/ch105/20/71/ch105_20_71.jcns.36"
+    ]
+  },
+  "ch106_00_01": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch106/00/01/ch106_00_01_0.jcns.36"
+    ]
+  },
+  "ch106_00_03": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch106/00/03/ch106_00_03_0.jcns.36"
+    ]
+  },
+  "ch106_00_05": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch106/00/05/ch106_00_05_0.jcns.36"
+    ]
+  },
+  "ch106_00_50": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch106/00/50/ch106_00_50_0.jcns.36"
+    ]
+  },
+  "ch106_00_60": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch106/00/60/ch106_00_60_0.jcns.36"
+    ]
+  },
+  "ch106_07_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch106/07/00/ch106_07_00_0.jcns.36"
+    ]
+  },
+  "ch106_07_10": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch106/07/10/ch106_07_10_0.jcns.36"
+    ]
+  },
+  "ch106_07_50": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch106/07/50/ch106_07_50_0.jcns.36"
+    ]
+  },
+  "ch106_07_60": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch106/07/60/ch106_07_60_0.jcns.36"
+    ]
+  },
+  "ch106_10_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch106/10/00/ch106_10_00_0.jcns.36"
+    ]
+  },
+  "ch106_10_01": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch106/10/01/ch106_10_01_0.jcns.36"
+    ]
+  },
+  "ch106_10_20": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch106/10/20/ch106_10_20_0.jcns.36"
+    ]
+  },
+  "ch106_10_21": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch106/10/21/ch106_10_21_0.jcns.36"
+    ]
+  },
+  "ch106_10_40": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch106/10/40/ch106_10_40_0.jcns.36"
+    ]
+  },
+  "ch106_10_41": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch106/10/41/ch106_10_41_0.jcns.36"
+    ]
+  },
+  "ch108_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch108/00/00/ch108_00_00.jcns.36",
+      "stm/art/model/character/ch1/ch108/00/00/ch108_00_00_1.jcns.36",
+      "stm/art/model/character/ch1/ch108/00/00/ch108_00_00_2.jcns.36"
+    ]
+  },
+  "ch108_00_03": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch108/00/03/ch108_00_03_0.jcns.36"
+    ]
+  },
+  "ch108_00_05": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch108/00/05/ch108_00_05_0.jcns.36"
+    ]
+  },
+  "ch108_01_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch108/01/00/ch108_01_00.jcns.36"
+    ]
+  },
+  "ch108_09_40": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch108/09/40/ch108_09_40.jcns.36"
+    ]
+  },
+  "ch108_20_40": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch108/20/40/ch108_20_40_0.jcns.36"
+    ]
+  },
+  "ch111_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch111_00/00/ch111_00_00.jcns.36",
+      "stm/art/model/character/ch1/ch111_00/00/ch111_00_00_bs.jcns.36",
+      "stm/art/model/character/ch1/ch111_00/00/ch111_00_00_mb.jcns.36"
+    ]
+  },
+  "ch111_00_20": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch111_00/20/ch111_00_20.jcns.36"
+    ]
+  },
+  "ch111_00_21": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch111_00/21/ch111_00_21.jcns.36"
+    ]
+  },
+  "ch111_50_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch111_50/00/ch111_50_00_bs.jcns.36",
+      "stm/art/model/character/ch1/ch111_50/00/ch111_50_00_mb.jcns.36"
+    ]
+  },
+  "ch112_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch112_00/00/ch112_00_00.jcns.36"
+    ]
+  },
+  "ch112_00_03": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch112_00/03/ch112_00_03.jcns.36"
+    ]
+  },
+  "ch112_00_05": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch112_00/05/ch112_00_05.jcns.36"
+    ]
+  },
+  "ch112_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch112_00/10/ch112_00_10.jcns.36"
+    ]
+  },
+  "ch112_00_30": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch112_00/30/ch112_00_30.jcns.36"
+    ]
+  },
+  "ch113_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch113_00/00/ch113_00_00_0.jcns.36"
+    ]
+  },
+  "ch113_00_03": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch113_00/03/ch113_00_03_0.jcns.36"
+    ]
+  },
+  "ch113_00_05": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch113_00/05/ch113_00_05_0.jcns.36"
+    ]
+  },
+  "ch113_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch113_00/10/ch113_00_10_0.jcns.36"
+    ]
+  },
+  "ch113_00_40": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch113_00/40/ch113_00_40_0.jcns.36"
+    ]
+  },
+  "ch113_50_10": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch113_50/10/ch113_50_10_0.jcns.36"
+    ]
+  },
+  "ch113_80_21": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch113_80/21/ch113_80_21.jcns.36"
+    ]
+  },
+  "ch113_80_22": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch113_80/22/ch113_80_22.jcns.36"
+    ]
+  },
+  "ch114_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch114_00/00/ch114_00_00.jcns.36",
+      "stm/art/model/character/ch1/ch114_00/00/ch114_00_00_bs.jcns.36"
+    ]
+  },
+  "ch114_20_10": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch114_20/10/ch114_20_10_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch115_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch115_00/00/ch115_00_00.jcns.36"
+    ]
+  },
+  "ch115_00_03": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch115_00/03/ch115_00_03.jcns.36"
+    ]
+  },
+  "ch115_00_05": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch115_00/05/ch115_00_05.jcns.36"
+    ]
+  },
+  "ch115_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch1/ch115_00/10/ch115_00_10.jcns.36",
+      "stm/art/model/character/ch1/ch115_00/10/ch115_00_10_bs.jcns.36"
+    ]
+  },
+  "ch200_01_01": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/01/ch200_01_01_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/01/ch200_01_01_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/01/ch200_01_01_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_02": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/02/ch200_01_02_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/02/ch200_01_02_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/02/ch200_01_02_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_03": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/03/ch200_01_03_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/03/ch200_01_03_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/03/ch200_01_03_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_04": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/04/ch200_01_04_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/04/ch200_01_04_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/04/ch200_01_04_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_05": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/05/ch200_01_05_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/05/ch200_01_05_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/05/ch200_01_05_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_06": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/06/ch200_01_06_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/06/ch200_01_06_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/06/ch200_01_06_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_07": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/07/ch200_01_07_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/07/ch200_01_07_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/07/ch200_01_07_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_08": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/08/ch200_01_08_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/08/ch200_01_08_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/08/ch200_01_08_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_09": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/09/ch200_01_09_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/09/ch200_01_09_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/09/ch200_01_09_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_10": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/10/ch200_01_10_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/10/ch200_01_10_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/10/ch200_01_10_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_11": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/11/ch200_01_11_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/11/ch200_01_11_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/11/ch200_01_11_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_12": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/12/ch200_01_12_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/12/ch200_01_12_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/12/ch200_01_12_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_13": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/13/ch200_01_13_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/13/ch200_01_13_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/13/ch200_01_13_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_14": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/14/ch200_01_14_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/14/ch200_01_14_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/14/ch200_01_14_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_15": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/15/ch200_01_15_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/15/ch200_01_15_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/15/ch200_01_15_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_16": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/16/ch200_01_16_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/16/ch200_01_16_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/16/ch200_01_16_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_17": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/17/ch200_01_17_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/17/ch200_01_17_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/17/ch200_01_17_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_18": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/18/ch200_01_18_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/18/ch200_01_18_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/18/ch200_01_18_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_19": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/19/ch200_01_19_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/19/ch200_01_19_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/19/ch200_01_19_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_20": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/20/ch200_01_20_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/20/ch200_01_20_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/20/ch200_01_20_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_21": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/21/ch200_01_21_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/21/ch200_01_21_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/21/ch200_01_21_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_22": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/22/ch200_01_22_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/22/ch200_01_22_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/22/ch200_01_22_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_23": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/23/ch200_01_23_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/23/ch200_01_23_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/23/ch200_01_23_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_24": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/24/ch200_01_24_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/24/ch200_01_24_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/24/ch200_01_24_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_25": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/25/ch200_01_25_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/25/ch200_01_25_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/25/ch200_01_25_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_26": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/26/ch200_01_26_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/26/ch200_01_26_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/26/ch200_01_26_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_27": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/27/ch200_01_27_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/27/ch200_01_27_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/27/ch200_01_27_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_28": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/28/ch200_01_28_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/28/ch200_01_28_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/28/ch200_01_28_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_29": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/29/ch200_01_29_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/29/ch200_01_29_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/29/ch200_01_29_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/30/ch200_01_30_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/30/ch200_01_30_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/30/ch200_01_30_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_31": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/31/ch200_01_31_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/31/ch200_01_31_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/31/ch200_01_31_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_32": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/32/ch200_01_32_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/32/ch200_01_32_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/32/ch200_01_32_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_33": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/33/ch200_01_33_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/33/ch200_01_33_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/33/ch200_01_33_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_35": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/35/ch200_01_35_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/35/ch200_01_35_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/35/ch200_01_35_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_36": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/36/ch200_01_36_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/36/ch200_01_36_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/36/ch200_01_36_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_37": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/37/ch200_01_37_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/37/ch200_01_37_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/37/ch200_01_37_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_38": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/38/ch200_01_38_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/38/ch200_01_38_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/38/ch200_01_38_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_39": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/39/ch200_01_39_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/39/ch200_01_39_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/39/ch200_01_39_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_40": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/40/ch200_01_40_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/40/ch200_01_40_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/40/ch200_01_40_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_41": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/41/ch200_01_41_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/41/ch200_01_41_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/41/ch200_01_41_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_42": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/42/ch200_01_42_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/42/ch200_01_42_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/42/ch200_01_42_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_43": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/43/ch200_01_43_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/43/ch200_01_43_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/43/ch200_01_43_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_44": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/44/ch200_01_44_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/44/ch200_01_44_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/44/ch200_01_44_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_45": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/45/ch200_01_45_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/45/ch200_01_45_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/45/ch200_01_45_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_46": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/46/ch200_01_46_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/46/ch200_01_46_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/46/ch200_01_46_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_47": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/47/ch200_01_47_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/47/ch200_01_47_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/47/ch200_01_47_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_49": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/49/ch200_01_49_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/49/ch200_01_49_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/49/ch200_01_49_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_50": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/50/ch200_01_50_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/50/ch200_01_50_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/50/ch200_01_50_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_51": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/51/ch200_01_51_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/51/ch200_01_51_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/51/ch200_01_51_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_52": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/52/ch200_01_52_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/52/ch200_01_52_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/52/ch200_01_52_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_53": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/53/ch200_01_53_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/53/ch200_01_53_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/53/ch200_01_53_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_54": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/54/ch200_01_54_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/54/ch200_01_54_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/54/ch200_01_54_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_55": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/55/ch200_01_55_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/55/ch200_01_55_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/55/ch200_01_55_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_01_56": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/01/56/ch200_01_56_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/56/ch200_01_56_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/01/56/ch200_01_56_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_02_00": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/02/00/ch200_02_00_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/02/00/ch200_02_00_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/02/00/ch200_02_00_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_02_01": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/02/01/ch200_02_01_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/02/01/ch200_02_01_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/02/01/ch200_02_01_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_02_02": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/02/02/ch200_02_02_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/02/02/ch200_02_02_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/02/02/ch200_02_02_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_02_03": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/02/03/ch200_02_03_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/02/03/ch200_02_03_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/02/03/ch200_02_03_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_02_04": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/02/04/ch200_02_04_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/02/04/ch200_02_04_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/02/04/ch200_02_04_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_02_05": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/02/05/ch200_02_05_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/02/05/ch200_02_05_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/02/05/ch200_02_05_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_03_01": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/03/01/ch200_03_01_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch200/03/01/ch200_03_01_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch200/03/01/ch200_03_01_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch200_03_02": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/03/02/ch200_03_02_body_00.jcns.36"
+    ]
+  },
+  "ch200_05_00": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/05/00/ch200_05_00_body_00.jcns.36"
+    ]
+  },
+  "ch200_06_01": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/06/01/ch200_06_01_00.jcns.36"
+    ]
+  },
+  "ch200_10_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/10/30/ch200_10_30_0.jcns.36"
+    ]
+  },
+  "ch200_10_40": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/10/40/ch200_10_40_0.jcns.36"
+    ]
+  },
+  "ch200_10_50": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/10/50/ch200_10_50_0.jcns.36"
+    ]
+  },
+  "ch200_10_60": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/10/60/ch200_10_60_0.jcns.36"
+    ]
+  },
+  "ch200_10_61": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/10/61/ch200_10_61_0.jcns.36"
+    ]
+  },
+  "ch200_11_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/11/30/ch200_11_30_0.jcns.36"
+    ]
+  },
+  "ch200_11_40": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/11/40/ch200_11_40_0.jcns.36"
+    ]
+  },
+  "ch200_11_41": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/11/41/ch200_11_41_0.jcns.36"
+    ]
+  },
+  "ch200_11_50": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/11/50/ch200_11_50_0.jcns.36"
+    ]
+  },
+  "ch200_12_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/12/30/ch200_12_30.jcns.36"
+    ]
+  },
+  "ch200_12_40": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/12/40/ch200_12_40.jcns.36"
+    ]
+  },
+  "ch200_12_41": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/12/41/ch200_12_41.jcns.36"
+    ]
+  },
+  "ch200_13_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/13/30/ch200_13_30.jcns.36"
+    ]
+  },
+  "ch200_13_40": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/13/40/ch200_13_40.jcns.36"
+    ]
+  },
+  "ch200_14_31": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/14/31/ch200_14_31.jcns.36"
+    ]
+  },
+  "ch200_14_32": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/14/32/ch200_14_32.jcns.36"
+    ]
+  },
+  "ch200_19_00": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/19/00/ch200_19_00.jcns.36"
+    ]
+  },
+  "ch200_19_40": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/19/40/ch200_19_40.jcns.36"
+    ]
+  },
+  "ch200_20_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/20/30/ch200_20_30.jcns.36"
+    ]
+  },
+  "ch200_20_40": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/20/40/ch200_20_40.jcns.36"
+    ]
+  },
+  "ch200_20_50": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/20/50/ch200_20_50.jcns.36"
+    ]
+  },
+  "ch200_21_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/21/30/ch200_21_30.jcns.36"
+    ]
+  },
+  "ch200_21_40": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/21/40/ch200_21_40_0.jcns.36"
+    ]
+  },
+  "ch200_21_60": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/21/60/ch200_21_60_0.jcns.36"
+    ]
+  },
+  "ch200_22_20": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/22/20/ch200_22_20_0.jcns.36"
+    ]
+  },
+  "ch200_22_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/22/30/ch200_22_30_0.jcns.36"
+    ]
+  },
+  "ch200_22_40": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/22/40/ch200_22_40_0.jcns.36",
+      "stm/art/model/character/ch2/ch200/22/40/ch200_22_40_1.jcns.36"
+    ]
+  },
+  "ch200_23_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/23/30/ch200_23_30.jcns.36"
+    ]
+  },
+  "ch200_23_40": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/23/40/ch200_23_40.jcns.36"
+    ]
+  },
+  "ch200_23_50": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/23/50/ch200_23_50.jcns.36"
+    ]
+  },
+  "ch200_28_00": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/28/00/ch200_28_00.jcns.36"
+    ]
+  },
+  "ch200_29_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/29/30/ch200_29_30.jcns.36"
+    ]
+  },
+  "ch200_29_31": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/29/31/ch200_29_31_0.jcns.36"
+    ]
+  },
+  "ch200_29_40": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/29/40/ch200_29_40.jcns.36"
+    ]
+  },
+  "ch200_29_50": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/29/50/ch200_29_50.jcns.36"
+    ]
+  },
+  "ch200_30_20": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/30/20/ch200_30_20.jcns.36"
+    ]
+  },
+  "ch200_30_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/30/30/ch200_30_30.jcns.36"
+    ]
+  },
+  "ch200_30_40": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/30/40/ch200_30_40.jcns.36"
+    ]
+  },
+  "ch200_31_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/31/30/ch200_31_30_0.jcns.36"
+    ]
+  },
+  "ch200_31_40": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/31/40/ch200_31_40_0.jcns.36"
+    ]
+  },
+  "ch200_31_60": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/31/60/ch200_31_60_0.jcns.36"
+    ]
+  },
+  "ch200_32_00": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/32/00/ch200_32_00.jcns.36"
+    ]
+  },
+  "ch200_40_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/40/30/ch200_40_30.jcns.36"
+    ]
+  },
+  "ch200_40_41": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/40/41/ch200_40_41.jcns.36"
+    ]
+  },
+  "ch200_40_50": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/40/50/ch200_40_50.jcns.36"
+    ]
+  },
+  "ch200_80_00": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch200/80/00/ch200_80_00.jcns.36"
+    ]
+  },
+  "ch210_01_00": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/00/ch210_01_00_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/00/ch210_01_00_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/00/ch210_01_00_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_01_01": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/01/ch210_01_01_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/01/ch210_01_01_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/01/ch210_01_01_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_01_02": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/02/ch210_01_02_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/02/ch210_01_02_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/02/ch210_01_02_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_01_03": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/03/ch210_01_03_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/03/ch210_01_03_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/03/ch210_01_03_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_01_04": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/04/ch210_01_04_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/04/ch210_01_04_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/04/ch210_01_04_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_01_05": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/05/ch210_01_05_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/05/ch210_01_05_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/05/ch210_01_05_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_01_06": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/06/ch210_01_06_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/06/ch210_01_06_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/06/ch210_01_06_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_01_08": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/08/ch210_01_08_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/08/ch210_01_08_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/08/ch210_01_08_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_01_09": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/09/ch210_01_09_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/09/ch210_01_09_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/09/ch210_01_09_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_01_10": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/10/ch210_01_10_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/10/ch210_01_10_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/10/ch210_01_10_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_01_11": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/11/ch210_01_11_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/11/ch210_01_11_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/11/ch210_01_11_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_01_12": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/12/ch210_01_12_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/12/ch210_01_12_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/12/ch210_01_12_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_01_13": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/13/ch210_01_13_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/13/ch210_01_13_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/13/ch210_01_13_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_01_14": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/14/ch210_01_14_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/14/ch210_01_14_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/14/ch210_01_14_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_01_15": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/15/ch210_01_15_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/15/ch210_01_15_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/15/ch210_01_15_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_01_18": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/18/ch210_01_18_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/18/ch210_01_18_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/18/ch210_01_18_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_01_19": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/19/ch210_01_19_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/19/ch210_01_19_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/19/ch210_01_19_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_01_20": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/20/ch210_01_20_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/20/ch210_01_20_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/20/ch210_01_20_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_01_21": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/21/ch210_01_21_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/21/ch210_01_21_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/21/ch210_01_21_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_01_22": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/22/ch210_01_22_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/22/ch210_01_22_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/22/ch210_01_22_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_01_80": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/80/ch210_01_80_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/80/ch210_01_80_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/80/ch210_01_80_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_01_81": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/01/81/ch210_01_81_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/81/ch210_01_81_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/01/81/ch210_01_81_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_02_00": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/02/00/ch210_02_00_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/02/00/ch210_02_00_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/02/00/ch210_02_00_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_02_01": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/02/01/ch210_02_01_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/02/01/ch210_02_01_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/02/01/ch210_02_01_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_02_02": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/02/02/ch210_02_02_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/02/02/ch210_02_02_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/02/02/ch210_02_02_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_03_00": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/03/00/ch210_03_00_body_02.jcns.36",
+      "stm/art/model/character/ch2/ch210/03/00/ch210_03_00_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/03/00/ch210_03_00_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_03_02": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/03/02/ch210_03_02_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch210/03/02/ch210_03_02_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch210/03/02/ch210_03_02_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch210_10_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/10/30/ch210_10_30.jcns.36"
+    ]
+  },
+  "ch210_10_40": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/10/40/ch210_10_40.jcns.36"
+    ]
+  },
+  "ch210_10_50": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/10/50/ch210_10_50.jcns.36"
+    ]
+  },
+  "ch210_10_60": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/10/60/ch210_10_60.jcns.36"
+    ]
+  },
+  "ch210_11_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/11/30/ch210_11_30.jcns.36"
+    ]
+  },
+  "ch210_11_40": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/11/40/ch210_11_40.jcns.36"
+    ]
+  },
+  "ch210_14_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/14/30/ch210_14_30.jcns.36"
+    ]
+  },
+  "ch210_20_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/20/30/ch210_20_30.jcns.36"
+    ]
+  },
+  "ch210_20_40": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/20/40/ch210_20_40.jcns.36"
+    ]
+  },
+  "ch210_20_60": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/20/60/ch210_20_60.jcns.36"
+    ]
+  },
+  "ch210_21_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/21/30/ch210_21_30.jcns.36"
+    ]
+  },
+  "ch210_21_40": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/21/40/ch210_21_40.jcns.36"
+    ]
+  },
+  "ch210_21_60": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/21/60/ch210_21_60.jcns.36"
+    ]
+  },
+  "ch210_28_00": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/28/00/ch210_28_00.jcns.36"
+    ]
+  },
+  "ch210_29_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/29/30/ch210_29_30.jcns.36"
+    ]
+  },
+  "ch210_29_31": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/29/31/ch210_29_31.jcns.36"
+    ]
+  },
+  "ch210_50_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/50/30/ch210_50_30_1.jcns.36",
+      "stm/art/model/character/ch2/ch210/50/30/ch210_50_30_sc_0.jcns.36"
+    ]
+  },
+  "ch210_50_40": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch210/50/40/ch210_50_40_0.jcns.36"
+    ]
+  },
+  "ch220_01_00": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch220/01/00/ch220_01_00_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch220/01/00/ch220_01_00_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch220/01/00/ch220_01_00_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch220_01_01": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch220/01/01/ch220_01_01_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch220/01/01/ch220_01_01_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch220/01/01/ch220_01_01_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch220_01_02": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch220/01/02/ch220_01_02_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch220/01/02/ch220_01_02_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch220/01/02/ch220_01_02_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch220_02_00": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch220/02/00/ch220_02_00_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch220/02/00/ch220_02_00_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch220/02/00/ch220_02_00_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch220_02_01": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch220/02/01/ch220_02_01_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch220/02/01/ch220_02_01_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch220/02/01/ch220_02_01_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch220_02_02": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch220/02/02/ch220_02_02_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch220/02/02/ch220_02_02_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch220/02/02/ch220_02_02_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch220_10_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch220/10/30/ch220_10_30.jcns.36"
+    ]
+  },
+  "ch220_10_40": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch220/10/40/ch220_10_40.jcns.36"
+    ]
+  },
+  "ch220_10_60": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch220/10/60/ch220_10_60.jcns.36"
+    ]
+  },
+  "ch220_20_30": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch220/20/30/ch220_20_30.jcns.36"
+    ]
+  },
+  "ch220_20_40": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch220/20/40/ch220_20_40.jcns.36"
+    ]
+  },
+  "ch230_01_00": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch230/01/00/ch230_01_00_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch230/01/00/ch230_01_00_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch230/01/00/ch230_01_00_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch230_01_01": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch230/01/01/ch230_01_01_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch230/01/01/ch230_01_01_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch230/01/01/ch230_01_01_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch230_01_02": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch230/01/02/ch230_01_02_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch230/01/02/ch230_01_02_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch230/01/02/ch230_01_02_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch230_01_03": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch230/01/03/ch230_01_03_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch230/01/03/ch230_01_03_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch230/01/03/ch230_01_03_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch230_01_04": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch230/01/04/ch230_01_04_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch230/01/04/ch230_01_04_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch230/01/04/ch230_01_04_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch230_10_00": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch230/10/00/ch230_10_00_0.jcns.36",
+      "stm/art/model/character/ch2/ch230/10/00/ch230_10_00_1.jcns.36",
+      "stm/art/model/character/ch2/ch230/10/00/ch230_10_00_2.jcns.36"
+    ]
+  },
+  "ch251_00_10": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch251_00/10/ch251_00_10_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch251_00/10/ch251_00_10_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch251_00/10/ch251_00_10_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch251_00_11": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch251_00/11/ch251_00_11_body_00.jcns.36",
+      "stm/art/model/character/ch2/ch251_00/11/ch251_00_11_common_01.jcns.36",
+      "stm/art/model/character/ch2/ch251_00/11/ch251_00_11_wrinkledriver_03.jcns.36"
+    ]
+  },
+  "ch290_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch2/ch290_00/00/ch290_00_00.jcns.36"
+    ]
+  },
+  "ch701_10_00": {
+    "jcns": [
+      "stm/art/model/character/ch7/ch701_10/00/ch701_10_00.jcns.36"
+    ]
+  },
+  "ch704_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch7/ch704_00/00/ch704_00_00.jcns.36"
+    ]
+  },
+  "ch712_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch7/ch712_00/00/ch712_00_00.jcns.36"
+    ]
+  },
+  "ch731_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch7/ch731_00/00/ch731_00_00.jcns.36"
+    ]
+  },
+  "ch741_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch7/ch741_00/00/ch741_00_00.jcns.36"
+    ]
+  },
+  "ch743_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch7/ch743_00/00/ch743_00_00.jcns.36"
+    ]
+  },
+  "ch744_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch7/ch744_00/00/ch744_00_00.jcns.36"
+    ]
+  },
+  "ch780_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch7/ch780_00/00/ch780_00_00.jcns.36"
+    ]
+  },
+  "ch781_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch7/ch781_00/00/ch781_00_00.jcns.36"
+    ]
+  },
+  "ch790_00_00": {
+    "jcns": [
+      "stm/art/model/character/ch7/ch790_00/00/ch790_00_00.jcns.36"
+    ]
+  }
+}

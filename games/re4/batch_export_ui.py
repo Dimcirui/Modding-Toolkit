@@ -1,6 +1,7 @@
 import bpy
 from bpy.props import BoolProperty, CollectionProperty, IntProperty, StringProperty
 from ...core.i18n import T
+from ...core import optional_editors
 from ...core import poll_msg
 from ...core import pre_export_check_ops as pec
 from ...core import export_autofix
@@ -19,8 +20,9 @@ EXPORTER_WINDOW_WIDTH = 600
 
 def _get_filtered_collections(suffix):
     result = []
-    type_map = {"mesh": "RE_MESH_COLLECTION", "mdf2": "RE_MDF_COLLECTION", "chain": "RE_CHAIN_COLLECTION"}
-    name_sfx_map = {"mesh": ".mesh", "mdf2": ".mdf2", "chain": ".chain"}
+    type_map = {"mesh": "RE_MESH_COLLECTION", "mdf2": "RE_MDF_COLLECTION", "chain": "RE_CHAIN_COLLECTION",
+                **{ft: optional_editors.collection_type(ft) for ft in optional_editors.EDITORS}}
+    name_sfx_map = {"mesh": ".mesh", "mdf2": ".mdf2", "chain": ".chain", "jcns": ".jcns", "gpuc": ".gpuc"}
     target_type = type_map.get(suffix, "")
     name_sfx = name_sfx_map.get(suffix, "")
     for c in bpy.data.collections:
@@ -100,7 +102,7 @@ class RE4_OT_PickBinding(bpy.types.Operator):
     group_name: bpy.props.StringProperty()
     collection_name: bpy.props.EnumProperty(
         name="Collection",
-        items=lambda self, ctx: _get_filtered_collections(self.slot)
+        items=lambda self, ctx: _get_filtered_collections(optional_editors.slot_type(self.slot))
     )
 
     def invoke(self, context, event):
@@ -614,6 +616,22 @@ class RE4_OT_BatchExportDialog(bpy.types.Operator):
                 op_p = row.operator("re4.pick_binding",
                                     text=cur if cur else "Select...", icon='DOWNARROW_HLT')
                 op_p.scope = "ENTRY"; op_p.slot = "chain"
+                op_p.character_id = character_id; op_p.entry_id = entry_id
+
+            # jcns / gpuc the vanilla part ships, while their editor is installed.
+            for slot in dict.fromkeys(s for s, _p in optional_editors.entry_slots("re4", entry.get("mesh"))):
+                head = entry_box.row(align=True)
+                en = _get_enabled(scene, character_id, entry_id, slot)
+                op = head.operator("re4.toggle_entry", text="",
+                                   icon='CHECKBOX_HLT' if en else 'CHECKBOX_DEHLT', emboss=False)
+                op.character_id = character_id; op.entry_id = entry_id; op.suffix = slot
+                cur = _get_binding(scene, character_id, entry_id, slot)
+                head.label(text=optional_editors.slot_label(slot),
+                           icon='CONSTRAINT_BONE' if slot != "gpuc" else 'MOD_CLOTH')
+                row = entry_box.row(align=True)
+                op_p = row.operator("re4.pick_binding",
+                                    text=cur if cur else "Select...", icon='DOWNARROW_HLT')
+                op_p.scope = "ENTRY"; op_p.slot = slot
                 op_p.character_id = character_id; op_p.entry_id = entry_id
 
     def execute(self, context):

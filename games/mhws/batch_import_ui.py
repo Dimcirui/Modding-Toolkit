@@ -6,6 +6,7 @@ from ...core import mod_root
 from .batch_import import FT_ORDER
 from .batch_export import _load_scheme, get_mhws_variants, _PART_LABEL_KEYS
 from .batch_export_ui import _FILETYPE_ICONS
+from ...core import optional_editors
 
 IMPORTER_WINDOW_WIDTH = 560
 
@@ -47,8 +48,9 @@ def _build_group_map(items):
     result = {}
     for gkey, vp_map in raw.items():
         result[gkey] = {
-            vp: sorted(its, key=lambda x: FT_ORDER.index(x.filetype)
-                        if x.filetype in FT_ORDER else 99)
+            vp: sorted(its, key=lambda x: (FT_ORDER.index(optional_editors.slot_type(x.filetype))
+                                           if optional_editors.slot_type(x.filetype) in FT_ORDER else 99,
+                                           x.filetype))
             for vp, its in vp_map.items()
         }
     return result
@@ -91,7 +93,10 @@ class MHWS_OT_BatchImportDialog(bpy.types.Operator):
             row.label(text=T("core.export_prep.not_set"), icon='ERROR')
 
         # ── 解析按钮 ──
-        layout.operator("mhws.scan_import_files", text=T("mhws.batch_import_ui.scan_btn"), icon='FILE_REFRESH')
+        row = layout.row(align=True)
+        row.operator("mhws.scan_import_files", text=T("mhws.batch_import_ui.scan_btn"), icon='FILE_REFRESH')
+        row.prop(settings, "mhws_ignore_slot_limits", text=T("mhws.batch_export_ui.ignore_slot_limits"),
+                 icon='UNLOCKED')
 
         items  = scene.mhws_import_items
         groups = scene.mhws_import_groups
@@ -153,7 +158,7 @@ class MHWS_OT_BatchImportDialog(bpy.types.Operator):
                 part_label = f"{T(_PART_LABEL_KEYS.get(part, part))}  ({_variant_label(variant)})"
                 row.label(text=part_label)
                 for it in part_items:
-                    ft_icon = _FILETYPE_ICONS.get(it.filetype, 'FILE')
+                    ft_icon = _FILETYPE_ICONS.get(optional_editors.slot_type(it.filetype), 'FILE')
                     row.prop(it, "enabled", text=it.filetype.upper(),
                              icon=ft_icon, toggle=True)
 

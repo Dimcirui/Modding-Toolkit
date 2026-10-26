@@ -6,19 +6,69 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_001_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/001/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/001/000",
+                    "gpuc": [
+                        "2",
+                        "3"
+                    ],
+                    "jcns": {
+                        "2": [
+                            "_BS",
+                            "_HJ",
+                            "_SC"
+                        ],
+                        "3": [
+                            "_BS",
+                            "_HJ"
+                        ],
+                        "5": [
+                            "_1_HJ",
+                            "_Aim",
+                            "_HJ"
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_001_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/001/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/001/001",
+                    "gpuc": [
+                        "2"
+                    ]
                 },
                 "fm": {
                     "armor_id": "ch03_001_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/001/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/001/000",
+                    "gpuc": [
+                        "2"
+                    ],
+                    "jcns": {
+                        "2": [
+                            "_SC"
+                        ],
+                        "4": [
+                            "_wrinkle_DP"
+                        ]
+                    }
                 },
                 "ff": {
                     "armor_id": "ch03_001_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/001/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/001/001",
+                    "gpuc": [
+                        "2"
+                    ],
+                    "jcns": {
+                        "2": [
+                            "_HJ",
+                            "_MB"
+                        ],
+                        "4": [
+                            "_wrinkle_DP"
+                        ],
+                        "5": [
+                            "_Aim",
+                            "_HJ"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -59,19 +109,47 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_003_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/003/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/003/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "1": [
+                            "_RS"
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_003_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/003/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/003/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "4": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_003_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/003/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/003/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_003_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/003/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/003/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "1": [
+                            ""
+                        ],
+                        "4": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -113,19 +191,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_003_500",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/003/500"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/003/500",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_003_501",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/003/501"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/003/501",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_003_500",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/003/500"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/003/500",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_003_501",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/003/501"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/003/501",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -157,19 +239,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_004_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/004/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/004/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_004_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/004/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/004/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_004_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/004/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/004/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_004_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/004/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/004/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -211,19 +297,29 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_005_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/005/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/005/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_005_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/005/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/005/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_005_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/005/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/005/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_005_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/005/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/005/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "1": [
+                            "_Mblend",
+                            "R_Mblend"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -261,19 +357,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_006_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/006/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/006/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_006_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/006/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/006/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_006_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/006/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/006/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_006_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/006/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/006/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -314,19 +414,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_007_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/007/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/007/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_007_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/007/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/007/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_007_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/007/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/007/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_007_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/007/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/007/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -359,19 +463,33 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_008_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/008/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/008/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "4": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_008_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/008/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/008/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_008_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/008/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/008/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "4": [
+                            ""
+                        ]
+                    }
                 },
                 "ff": {
                     "armor_id": "ch03_008_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/008/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/008/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -413,19 +531,36 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_009_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/009/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/009/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "_RS"
+                        ],
+                        "5": [
+                            "_RS"
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_009_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/009/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/009/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_009_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/009/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/009/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_009_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/009/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/009/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            "_RS"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -466,19 +601,39 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_010_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/010/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/010/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_010_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/010/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/010/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_010_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/010/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/010/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "ff": {
                     "armor_id": "ch03_010_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/010/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/010/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "1": [
+                            "L_Mblend",
+                            "R_Mblend"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -519,19 +674,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_011_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/011/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/011/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_011_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/011/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/011/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_011_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/011/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/011/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_011_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/011/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/011/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -565,19 +724,40 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_012_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/012/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/012/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "1": [
+                            "",
+                            "_SC"
+                        ],
+                        "2": [
+                            "_SC"
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_012_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/012/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/012/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_012_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/012/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/012/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_012_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/012/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/012/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "4": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -619,19 +799,31 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_013_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/013/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/013/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "4": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_013_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/013/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/013/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_013_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/013/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/013/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_013_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/013/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/013/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -672,19 +864,44 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_014_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/014/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/014/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            "_SC"
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_014_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/014/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/014/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "4": [
+                            "_SC"
+                        ],
+                        "5": [
+                            "_RS"
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_014_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/014/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/014/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_014_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/014/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/014/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "4": [
+                            "_SC"
+                        ],
+                        "5": [
+                            "_RS"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -724,19 +941,47 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_015_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/015/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/015/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            "",
+                            "_second"
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_015_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/015/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/015/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            "",
+                            "_second"
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_015_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/015/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/015/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            "",
+                            "_second"
+                        ]
+                    }
                 },
                 "ff": {
                     "armor_id": "ch03_015_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/015/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/015/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            "",
+                            "_second"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -777,19 +1022,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_016_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/016/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/016/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_016_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/016/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/016/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_016_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/016/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/016/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_016_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/016/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/016/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -822,19 +1071,62 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_017_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/017/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/017/000",
+                    "gpuc": [
+                        "5"
+                    ],
+                    "jcns": {
+                        "1": [
+                            ""
+                        ],
+                        "3": [
+                            ""
+                        ],
+                        "5": [
+                            "_cloth",
+                            "_RS",
+                            "_SC"
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_017_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/017/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/017/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "4": [
+                            "_SC"
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_017_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/017/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/017/000",
+                    "gpuc": [
+                        "5"
+                    ]
                 },
                 "ff": {
                     "armor_id": "ch03_017_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/017/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/017/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "1": [
+                            ""
+                        ],
+                        "2": [
+                            "_RS1",
+                            "_RS2",
+                            "_SC"
+                        ],
+                        "4": [
+                            "",
+                            "_SC"
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -876,19 +1168,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_017_300",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/017/300"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/017/300",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_017_301",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/017/301"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/017/301",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_017_300",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/017/300"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/017/300",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_017_301",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/017/301"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/017/301",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -920,19 +1216,59 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_018_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/018/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/018/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "1": [
+                            ""
+                        ],
+                        "2": [
+                            ""
+                        ],
+                        "3": [
+                            ""
+                        ],
+                        "4": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_018_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/018/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/018/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "3": [
+                            ""
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_018_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/018/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/018/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_018_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/018/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/018/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "1": [
+                            ""
+                        ],
+                        "2": [
+                            ""
+                        ],
+                        "3": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -973,19 +1309,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_019_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/019/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/019/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_019_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/019/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/019/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_019_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/019/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/019/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_019_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/019/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/019/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -1028,19 +1368,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_020_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/020/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/020/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_020_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/020/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/020/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_020_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/020/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/020/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_020_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/020/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/020/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -1073,19 +1417,45 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_021_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/021/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/021/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "_SC"
+                        ],
+                        "3": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_021_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/021/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/021/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_021_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/021/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/021/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_021_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/021/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/021/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "_DP",
+                            "_MB",
+                            "_RS",
+                            "_SC"
+                        ],
+                        "5": [
+                            "_RS"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -1125,19 +1495,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_021_300",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/021/300"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/021/300",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_021_301",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/021/301"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/021/301",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_021_300",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/021/300"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/021/300",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_021_301",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/021/301"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/021/301",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -1174,19 +1548,34 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_022_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/022/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/022/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_022_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/022/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/022/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_022_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/022/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/022/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_022_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/022/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/022/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "3": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -1224,19 +1613,49 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_023_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/023/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/023/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_023_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/023/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/023/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_023_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/023/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/023/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "ff": {
                     "armor_id": "ch03_023_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/023/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/023/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -1276,19 +1695,43 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_024_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/024/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/024/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_024_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/024/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/024/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_024_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/024/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/024/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ]
+                    }
                 },
                 "ff": {
                     "armor_id": "ch03_024_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/024/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/024/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -1328,19 +1771,33 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_025_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/025/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/025/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            "_RS"
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_025_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/025/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/025/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_025_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/025/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/025/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_025_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/025/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/025/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            "_RS"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -1380,19 +1837,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_026_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/026/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/026/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_026_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/026/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/026/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_026_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/026/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/026/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_026_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/026/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/026/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -1426,19 +1887,55 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_027_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/027/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/027/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "3": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_027_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/027/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/027/001",
+                    "gpuc": [
+                        "5"
+                    ],
+                    "jcns": {
+                        "5": [
+                            "",
+                            "_cloth"
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_027_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/027/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/027/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "3": [
+                            ""
+                        ]
+                    }
                 },
                 "ff": {
                     "armor_id": "ch03_027_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/027/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/027/001",
+                    "gpuc": [
+                        "5"
+                    ],
+                    "jcns": {
+                        "5": [
+                            "_",
+                            "_cloth"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -1476,19 +1973,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_027_300",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/027/300"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/027/300",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_027_301",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/027/301"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/027/301",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_027_300",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/027/300"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/027/300",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_027_301",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/027/301"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/027/301",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -1525,19 +2026,43 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_028_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/028/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/028/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_028_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/028/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/028/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_028_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/028/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/028/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "ff": {
                     "armor_id": "ch03_028_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/028/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/028/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -1574,19 +2099,43 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_029_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/029/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/029/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "3": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_029_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/029/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/029/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_029_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/029/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/029/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "3": [
+                            ""
+                        ]
+                    }
                 },
                 "ff": {
                     "armor_id": "ch03_029_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/029/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/029/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -1625,19 +2174,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_029_300",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/029/300"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/029/300",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_029_301",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/029/301"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/029/301",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_029_300",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/029/300"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/029/300",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_029_301",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/029/301"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/029/301",
+                    "gpuc": []
                 }
             }
         },
@@ -1647,19 +2200,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_030_600",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/030/600"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/030/600",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_030_601",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/030/601"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/030/601",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_030_600",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/030/600"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/030/600",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_030_601",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/030/601"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/030/601",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -1701,19 +2258,43 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_031_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/031/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/031/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_031_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/031/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/031/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_031_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/031/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/031/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "ff": {
                     "armor_id": "ch03_031_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/031/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/031/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -1753,19 +2334,33 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_032_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/032/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/032/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_032_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/032/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/032/001",
+                    "gpuc": [
+                        "5"
+                    ]
                 },
                 "fm": {
                     "armor_id": "ch03_032_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/032/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/032/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_032_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/032/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/032/001",
+                    "gpuc": [
+                        "5"
+                    ],
+                    "jcns": {
+                        "5": [
+                            "_skirt",
+                            "_skirt_armor"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -1805,19 +2400,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_032_300",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/032/300"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/032/300",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_032_301",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/032/301"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/032/301",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_032_300",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/032/300"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/032/300",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_032_301",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/032/301"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/032/301",
+                    "gpuc": []
                 }
             }
         },
@@ -1827,19 +2426,27 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_032_500",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/032/500"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/032/500",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_032_501",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/032/501"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/032/501",
+                    "gpuc": [
+                        "5"
+                    ]
                 },
                 "fm": {
                     "armor_id": "ch03_032_500",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/032/500"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/032/500",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_032_501",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/032/501"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/032/501",
+                    "gpuc": [
+                        "5"
+                    ]
                 }
             },
             "parts_file_types": {
@@ -1880,19 +2487,33 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_033_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/033/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/033/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_033_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/033/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/033/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_033_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/033/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/033/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_033_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/033/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/033/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -1926,19 +2547,54 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_034_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/034/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/034/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "_SC"
+                        ],
+                        "3": [
+                            ""
+                        ],
+                        "4": [
+                            ""
+                        ],
+                        "5": [
+                            "_RS"
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_034_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/034/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/034/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "_SC"
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_034_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/034/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/034/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_034_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/034/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/034/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "",
+                            "_SC"
+                        ],
+                        "4": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -1980,19 +2636,36 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_035_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/035/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/035/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_035_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/035/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/035/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_035_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/035/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/035/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_035_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/035/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/035/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -2032,19 +2705,36 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_036_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/036/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/036/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "3": [
+                            "_RS"
+                        ],
+                        "5": [
+                            "_RS"
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_036_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/036/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/036/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_036_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/036/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/036/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_036_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/036/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/036/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            "_RS"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -2084,19 +2774,36 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_036_500",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/036/500"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/036/500",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "_RS"
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_036_501",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/036/501"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/036/501",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_036_500",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/036/500"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/036/500",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_036_501",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/036/501"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/036/501",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "_RS"
+                        ],
+                        "5": [
+                            "_RS"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -2135,19 +2842,45 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_037_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/037/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/037/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "_RS"
+                        ],
+                        "5": [
+                            "_RS"
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_037_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/037/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/037/001",
+                    "gpuc": [
+                        "5"
+                    ]
                 },
                 "fm": {
                     "armor_id": "ch03_037_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/037/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/037/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_037_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/037/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/037/001",
+                    "gpuc": [
+                        "5"
+                    ],
+                    "jcns": {
+                        "5": [
+                            "",
+                            "_1",
+                            "_2",
+                            "_skirt",
+                            "_skirt_armor",
+                            "_skirtF"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -2187,19 +2920,33 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_038_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/038/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/038/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_038_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/038/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/038/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_038_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/038/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/038/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_038_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/038/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/038/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -2238,19 +2985,44 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_039_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/039/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/039/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_039_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/039/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/039/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_039_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/039/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/039/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "3": [
+                            ""
+                        ]
+                    }
                 },
                 "ff": {
                     "armor_id": "ch03_039_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/039/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/039/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -2290,19 +3062,49 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_040_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/040/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/040/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_040_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/040/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/040/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_040_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/040/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/040/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "ff": {
                     "armor_id": "ch03_040_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/040/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/040/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -2342,19 +3144,53 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_041_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/041/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/041/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "_SC"
+                        ],
+                        "4": [
+                            ""
+                        ],
+                        "5": [
+                            "",
+                            "_BS"
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_041_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/041/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/041/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_041_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/041/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/041/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_041_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/041/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/041/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "1": [
+                            ""
+                        ],
+                        "2": [
+                            "_SC"
+                        ],
+                        "3": [
+                            ""
+                        ],
+                        "4": [
+                            ""
+                        ],
+                        "5": [
+                            "",
+                            "_BS"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -2396,19 +3232,34 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_042_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/042/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/042/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_042_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/042/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/042/001",
+                    "gpuc": [
+                        "5"
+                    ]
                 },
                 "fm": {
                     "armor_id": "ch03_042_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/042/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/042/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_042_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/042/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/042/001",
+                    "gpuc": [
+                        "5"
+                    ],
+                    "jcns": {
+                        "5": [
+                            "",
+                            "_skirt",
+                            "_skirt_armor"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -2448,19 +3299,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_043_600",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/043/600"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/043/600",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_043_601",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/043/601"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/043/601",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_043_600",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/043/600"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/043/600",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_043_601",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/043/601"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/043/601",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -2502,19 +3357,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_044_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/044/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/044/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_044_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/044/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/044/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_044_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/044/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/044/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_044_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/044/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/044/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -2548,19 +3407,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_045_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/045/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/045/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_045_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/045/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/045/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_045_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/045/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/045/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_045_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/045/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/045/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -2594,11 +3457,13 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_046_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/046/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/046/000",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_046_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/046/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/046/000",
+                    "gpuc": []
                 }
             }
         },
@@ -2609,11 +3474,13 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_047_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/047/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/047/000",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_047_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/047/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/047/000",
+                    "gpuc": []
                 }
             }
         },
@@ -2624,11 +3491,21 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_048_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/048/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/048/000",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_048_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/048/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/048/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "3": [
+                            ""
+                        ]
+                    }
                 }
             }
         },
@@ -2639,11 +3516,13 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_049_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/049/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/049/000",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_049_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/049/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/049/000",
+                    "gpuc": []
                 }
             }
         },
@@ -2653,19 +3532,33 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_050_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/050/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/050/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_050_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/050/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/050/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_050_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/050/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/050/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_050_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/050/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/050/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -2705,19 +3598,107 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_051_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/051/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/051/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "1": [
+                            "",
+                            "_UVT"
+                        ],
+                        "2": [
+                            "",
+                            "_UVT"
+                        ],
+                        "3": [
+                            "",
+                            "_UVT"
+                        ],
+                        "4": [
+                            "",
+                            "_UVT"
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_051_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/051/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/051/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "1": [
+                            "",
+                            "_UVT"
+                        ],
+                        "2": [
+                            "_",
+                            "_UVT"
+                        ],
+                        "3": [
+                            "",
+                            "_UVT"
+                        ],
+                        "4": [
+                            "",
+                            "_UVT"
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_051_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/051/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/051/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "1": [
+                            "",
+                            "_UVT"
+                        ],
+                        "2": [
+                            "",
+                            "_UVT"
+                        ],
+                        "3": [
+                            "",
+                            "_UVT"
+                        ],
+                        "4": [
+                            "",
+                            "_UVT"
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "ff": {
                     "armor_id": "ch03_051_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/051/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/051/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "1": [
+                            "",
+                            "_UVT"
+                        ],
+                        "2": [
+                            "",
+                            "_UVT"
+                        ],
+                        "3": [
+                            "",
+                            "_UVT"
+                        ],
+                        "4": [
+                            "",
+                            "_UVT"
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -2760,19 +3741,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_052_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/052/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/052/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_052_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/052/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/052/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_052_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/052/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/052/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_052_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/052/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/052/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -2805,19 +3790,63 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_053_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/053/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/053/000",
+                    "gpuc": [
+                        "3",
+                        "5"
+                    ],
+                    "jcns": {
+                        "2": [
+                            "_MB",
+                            "_RS",
+                            "_SC"
+                        ],
+                        "3": [
+                            "_MB",
+                            "_RS"
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_053_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/053/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/053/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "_MB"
+                        ],
+                        "4": [
+                            "_MB"
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_053_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/053/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/053/000",
+                    "gpuc": [
+                        "3",
+                        "5"
+                    ]
                 },
                 "ff": {
                     "armor_id": "ch03_053_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/053/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/053/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "",
+                            "_MB"
+                        ],
+                        "3": [
+                            ""
+                        ],
+                        "4": [
+                            "_MB"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -2858,19 +3887,31 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_054_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/054/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/054/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "3": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_054_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/054/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/054/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_054_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/054/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/054/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_054_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/054/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/054/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -2911,19 +3952,36 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_055_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/055/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/055/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_055_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/055/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/055/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_055_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/055/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/055/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_055_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/055/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/055/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "3": [
+                            "_RS"
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -2962,19 +4020,61 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_056_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/056/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/056/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_056_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/056/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/056/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "1": [
+                            ""
+                        ],
+                        "2": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_056_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/056/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/056/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "ff": {
                     "armor_id": "ch03_056_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/056/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/056/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "1": [
+                            ""
+                        ],
+                        "2": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -3014,19 +4114,66 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_057_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/057/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/057/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_057_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/057/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/057/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "1": [
+                            ""
+                        ],
+                        "2": [
+                            ""
+                        ],
+                        "3": [
+                            ""
+                        ],
+                        "4": [
+                            "",
+                            "_BS"
+                        ],
+                        "5": [
+                            "",
+                            "_Aim"
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_057_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/057/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/057/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_057_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/057/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/057/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "1": [
+                            ""
+                        ],
+                        "2": [
+                            ""
+                        ],
+                        "3": [
+                            ""
+                        ],
+                        "4": [
+                            "",
+                            "_BS"
+                        ],
+                        "5": [
+                            "",
+                            "_Aim"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -3068,19 +4215,36 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_058_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/058/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/058/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_058_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/058/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/058/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_058_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/058/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/058/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_058_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/058/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/058/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -3120,19 +4284,71 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_059_010",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/059/010"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/059/010",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "4": [
+                            ""
+                        ],
+                        "5": [
+                            "_skirt",
+                            "_skirt_armor"
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_059_011",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/059/011"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/059/011",
+                    "gpuc": [
+                        "5"
+                    ],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "3": [
+                            "",
+                            "_BS"
+                        ],
+                        "4": [
+                            "_BS"
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_059_010",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/059/010"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/059/010",
+                    "gpuc": [],
+                    "jcns": {
+                        "4": [
+                            ""
+                        ]
+                    }
                 },
                 "ff": {
                     "armor_id": "ch03_059_011",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/059/011"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/059/011",
+                    "gpuc": [
+                        "5"
+                    ],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "3": [
+                            "",
+                            "_BS"
+                        ],
+                        "4": [
+                            "_BS"
+                        ],
+                        "5": [
+                            "_skirt"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -3173,11 +4389,45 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_060_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/060/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/060/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "1": [
+                            ""
+                        ],
+                        "2": [
+                            "",
+                            "_BS"
+                        ],
+                        "4": [
+                            "",
+                            "_BS"
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_060_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/060/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/060/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "1": [
+                            ""
+                        ],
+                        "2": [
+                            "",
+                            "_BS"
+                        ],
+                        "4": [
+                            "",
+                            "_BS"
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             }
         },
@@ -3187,11 +4437,29 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_061_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/061/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/061/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "4": [
+                            ""
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_061_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/061/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/061/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "4": [
+                            ""
+                        ]
+                    }
                 }
             }
         },
@@ -3201,11 +4469,35 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_062_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/062/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/062/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "1": [
+                            ""
+                        ],
+                        "2": [
+                            ""
+                        ],
+                        "4": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_062_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/062/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/062/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             }
         },
@@ -3216,11 +4508,18 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_063_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/063/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/063/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "3": [
+                            ""
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_063_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/063/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/063/000",
+                    "gpuc": []
                 }
             }
         },
@@ -3230,11 +4529,13 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_064_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/064/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/064/000",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_064_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/064/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/064/000",
+                    "gpuc": []
                 }
             }
         },
@@ -3244,19 +4545,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_065_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/065/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/065/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_065_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/065/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/065/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_065_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/065/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/065/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_065_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/065/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/065/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -3289,19 +4594,72 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_066_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/066/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/066/000",
+                    "gpuc": [
+                        "4",
+                        "5"
+                    ],
+                    "jcns": {
+                        "1": [
+                            "_RS"
+                        ],
+                        "4": [
+                            "_RS00",
+                            "_RS01"
+                        ],
+                        "5": [
+                            "_skirt",
+                            "_skirt_armor"
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_066_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/066/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/066/001",
+                    "gpuc": [
+                        "5"
+                    ],
+                    "jcns": {
+                        "3": [
+                            ""
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_066_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/066/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/066/000",
+                    "gpuc": [
+                        "4",
+                        "5"
+                    ],
+                    "jcns": {
+                        "1": [
+                            "_RS"
+                        ]
+                    }
                 },
                 "ff": {
                     "armor_id": "ch03_066_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/066/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/066/001",
+                    "gpuc": [
+                        "5"
+                    ],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "3": [
+                            ""
+                        ],
+                        "4": [
+                            "_RS"
+                        ],
+                        "5": [
+                            "_DD",
+                            "_skirt",
+                            "_skirt_armor"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -3342,11 +4700,22 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_067_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/067/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/067/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "4": [
+                            "_MB"
+                        ],
+                        "5": [
+                            "_skirt",
+                            "_skirt_armor"
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_067_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/067/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/067/000",
+                    "gpuc": []
                 }
             }
         },
@@ -3356,11 +4725,13 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_068_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/068/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/068/000",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_068_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/068/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/068/000",
+                    "gpuc": []
                 }
             }
         },
@@ -3370,19 +4741,41 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_069_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/069/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/069/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "4": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_069_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/069/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/069/001",
+                    "gpuc": [
+                        "4"
+                    ]
                 },
                 "fm": {
                     "armor_id": "ch03_069_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/069/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/069/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_069_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/069/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/069/001",
+                    "gpuc": [
+                        "4"
+                    ],
+                    "jcns": {
+                        "4": [
+                            "_RS00",
+                            "_RS01"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -3422,7 +4815,14 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_070_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/070/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/070/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "_HJ",
+                            "_RotExpression"
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_070_000",
@@ -3436,19 +4836,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_071_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/071/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/071/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_071_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/071/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/071/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_071_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/071/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/071/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_071_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/071/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/071/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -3486,19 +4890,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_072_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/072/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/072/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_072_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/072/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/072/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_072_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/072/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/072/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_072_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/072/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/072/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -3531,11 +4939,18 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_073_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/073/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/073/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            "_"
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_073_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/073/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/073/000",
+                    "gpuc": []
                 }
             }
         },
@@ -3545,19 +4960,32 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_074_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/074/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/074/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_074_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/074/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/074/001",
+                    "gpuc": [
+                        "5"
+                    ]
                 },
                 "fm": {
                     "armor_id": "ch03_074_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/074/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/074/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_074_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/074/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/074/001",
+                    "gpuc": [
+                        "5"
+                    ],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -3597,19 +5025,33 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_075_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/075/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/075/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_075_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/075/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/075/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_075_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/075/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/075/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_075_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/075/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/075/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -3651,19 +5093,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_076_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/076/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/076/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_076_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/076/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/076/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_076_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/076/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/076/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_076_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/076/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/076/001",
+                    "gpuc": []
                 }
             }
         },
@@ -3674,19 +5120,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_076_100",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/076/100"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/076/100",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_076_101",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/076/101"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/076/101",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_076_100",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/076/100"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/076/100",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_076_101",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/076/101"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/076/101",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -3721,19 +5171,28 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_077_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/077/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/077/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "3": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_077_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/077/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/077/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_077_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/077/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/077/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_077_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/077/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/077/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -3766,11 +5225,18 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_078_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/078/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/078/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "3": [
+                            ""
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_078_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/078/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/078/000",
+                    "gpuc": []
                 }
             }
         },
@@ -3780,11 +5246,13 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_079_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/079/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/079/000",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_079_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/079/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/079/000",
+                    "gpuc": []
                 }
             }
         },
@@ -3794,19 +5262,43 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_080_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/080/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/080/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_080_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/080/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/080/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_080_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/080/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/080/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "4": [
+                            "",
+                            "_BS"
+                        ]
+                    }
                 },
                 "ff": {
                     "armor_id": "ch03_080_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/080/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/080/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "_RE00",
+                            "_RE01",
+                            "_RE02",
+                            "_RS00"
+                        ],
+                        "3": [
+                            ""
+                        ],
+                        "4": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -3846,19 +5338,50 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_081_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/081/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/081/000",
+                    "gpuc": [
+                        "5"
+                    ],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "3": [
+                            ""
+                        ],
+                        "4": [
+                            "_BS",
+                            "_MB",
+                            "_RS"
+                        ],
+                        "5": [
+                            "_RS",
+                            "_SC",
+                            "_skirt"
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_081_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/081/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/081/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_081_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/081/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/081/000",
+                    "gpuc": [
+                        "5"
+                    ]
                 },
                 "ff": {
                     "armor_id": "ch03_081_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/081/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/081/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "_RS"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -3900,11 +5423,13 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_083_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/083/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/083/000",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_083_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/083/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/083/000",
+                    "gpuc": []
                 }
             }
         },
@@ -3914,11 +5439,13 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_084_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/084/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/084/000",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_084_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/084/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/084/000",
+                    "gpuc": []
                 }
             }
         },
@@ -3928,19 +5455,43 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_085_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/085/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/085/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "_RS",
+                            "_SC"
+                        ],
+                        "3": [
+                            "_RS"
+                        ],
+                        "5": [
+                            "_RS"
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_085_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/085/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/085/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_085_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/085/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/085/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_085_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/085/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/085/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "_RS"
+                        ],
+                        "5": [
+                            "_RS"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -3982,19 +5533,28 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_086_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/086/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/086/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_086_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/086/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/086/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_086_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/086/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/086/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_086_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/086/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/086/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -4037,19 +5597,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_087_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/087/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/087/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_087_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/087/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/087/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_087_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/087/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/087/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_087_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/087/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/087/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -4082,7 +5646,8 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_088_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/088/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/088/000",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_088_000",
@@ -4097,7 +5662,8 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_088_100",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/088/100"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/088/100",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_088_100",
@@ -4112,7 +5678,8 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_088_200",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/088/200"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/088/200",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_088_200",
@@ -4127,7 +5694,8 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_088_300",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/088/300"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/088/300",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_088_300",
@@ -4142,7 +5710,8 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_088_400",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/088/400"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/088/400",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_088_400",
@@ -4157,7 +5726,8 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_088_500",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/088/500"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/088/500",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_088_500",
@@ -4172,7 +5742,8 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_088_600",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/088/600"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/088/600",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_088_600",
@@ -4187,7 +5758,8 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_088_700",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/088/700"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/088/700",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_088_700",
@@ -4202,7 +5774,8 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_088_800",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/088/800"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/088/800",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_088_800",
@@ -4217,7 +5790,8 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_088_900",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/088/900"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/088/900",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_088_900",
@@ -4232,11 +5806,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_089_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/089/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/089/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_089_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/089/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/089/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ]
+                    }
                 }
             }
         },
@@ -4247,19 +5833,48 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_090_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/090/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/090/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "_HJ",
+                            "_Jacket_BS"
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_090_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/090/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/090/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "_Eri_HJ",
+                            "_HJ",
+                            "_Jacket_BS"
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_090_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/090/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/090/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "_HJ",
+                            "_Jacket_BS"
+                        ]
+                    }
                 },
                 "ff": {
                     "armor_id": "ch03_090_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/090/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/090/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "_HJ",
+                            "_Jacket_BS"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -4293,11 +5908,13 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_091_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/091/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/091/000",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_091_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/091/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/091/000",
+                    "gpuc": []
                 }
             }
         },
@@ -4307,19 +5924,33 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_092_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/092/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/092/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_092_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/092/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/092/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_092_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/092/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/092/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_092_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/092/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/092/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             }
         },
@@ -4329,19 +5960,45 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_093_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/093/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/093/000",
+                    "gpuc": [
+                        "5"
+                    ],
+                    "jcns": {
+                        "2": [
+                            "_SC"
+                        ],
+                        "5": [
+                            "_RS",
+                            "_skirt"
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_093_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/093/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/093/001",
+                    "gpuc": [
+                        "5"
+                    ]
                 },
                 "fm": {
                     "armor_id": "ch03_093_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/093/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/093/000",
+                    "gpuc": [
+                        "5"
+                    ]
                 },
                 "ff": {
                     "armor_id": "ch03_093_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/093/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/093/001",
+                    "gpuc": [
+                        "5"
+                    ],
+                    "jcns": {
+                        "5": [
+                            "_skirt"
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -4380,11 +6037,40 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_094_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/094/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/094/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "",
+                            "_BS"
+                        ],
+                        "4": [
+                            "_BS"
+                        ],
+                        "5": [
+                            "",
+                            "_BS"
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_094_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/094/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/094/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "",
+                            "_BS"
+                        ],
+                        "4": [
+                            "",
+                            "_BS"
+                        ],
+                        "5": [
+                            "",
+                            "_BS"
+                        ]
+                    }
                 }
             }
         },
@@ -4395,19 +6081,45 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_095_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/095/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/095/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "3": [
+                            "",
+                            "_Face",
+                            "_nose"
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_095_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/095/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/095/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "3": [
+                            ""
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_095_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/095/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/095/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "3": [
+                            ""
+                        ]
+                    }
                 },
                 "ff": {
                     "armor_id": "ch03_095_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/095/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/095/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "3": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -4442,11 +6154,18 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_096_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/096/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/096/000",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_096_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/096/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/096/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "3": [
+                            ""
+                        ]
+                    }
                 }
             }
         },
@@ -4457,11 +6176,18 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_097_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/097/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/097/000",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_097_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/097/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/097/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "1": [
+                            ""
+                        ]
+                    }
                 }
             }
         },
@@ -4472,11 +6198,18 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_098_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/098/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/098/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "3": [
+                            ""
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_098_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/098/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/098/000",
+                    "gpuc": []
                 }
             }
         },
@@ -4486,19 +6219,33 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_099_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/099/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/099/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_099_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/099/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/099/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_099_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/099/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/099/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_099_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/099/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/099/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -4539,19 +6286,41 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_100_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/100/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/100/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            "_HJ"
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_100_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/100/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/100/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_100_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/100/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/100/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_100_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/100/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/100/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "2": [
+                            ""
+                        ],
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -4592,11 +6361,17 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_100_100",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/100/100"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/100/100",
+                    "gpuc": [
+                        "5"
+                    ]
                 },
                 "fm": {
                     "armor_id": "ch03_100_100",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/100/100"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/100/100",
+                    "gpuc": [
+                        "5"
+                    ]
                 }
             }
         },
@@ -4607,19 +6382,33 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_101_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/101/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/101/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "3": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_101_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/101/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/101/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "3": [
+                            ""
+                        ]
+                    }
                 },
                 "fm": {
                     "armor_id": "ch03_101_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/101/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/101/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_101_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/101/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/101/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -4653,19 +6442,33 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_102_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/102/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/102/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_102_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/102/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/102/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_102_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/102/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/102/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_102_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/102/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/102/001",
+                    "gpuc": [],
+                    "jcns": {
+                        "5": [
+                            ""
+                        ]
+                    }
                 }
             },
             "parts_file_types": {
@@ -4699,11 +6502,13 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_103_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/103/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/103/000",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_103_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/103/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/103/000",
+                    "gpuc": []
                 }
             }
         },
@@ -4713,19 +6518,23 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_104_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/104/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/104/000",
+                    "gpuc": []
                 },
                 "mf": {
                     "armor_id": "ch02_104_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/104/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/104/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_104_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/104/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/104/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_104_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/104/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/104/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
@@ -4762,19 +6571,28 @@
             "variants": {
                 "mm": {
                     "armor_id": "ch02_105_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/105/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/105/000",
+                    "gpuc": [],
+                    "jcns": {
+                        "3": [
+                            ""
+                        ]
+                    }
                 },
                 "mf": {
                     "armor_id": "ch02_105_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch02/105/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch02/105/001",
+                    "gpuc": []
                 },
                 "fm": {
                     "armor_id": "ch03_105_000",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/105/000"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/105/000",
+                    "gpuc": []
                 },
                 "ff": {
                     "armor_id": "ch03_105_001",
-                    "base_path": "natives/STM/Art/Model/Character/ch03/105/001"
+                    "base_path": "natives/STM/Art/Model/Character/ch03/105/001",
+                    "gpuc": []
                 }
             },
             "parts_file_types": {
