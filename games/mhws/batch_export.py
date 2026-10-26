@@ -2,6 +2,7 @@ import bpy
 import copy
 import json
 import os
+import re
 import shutil
 
 from ..re9.batch_export import _do_export_mesh, _do_export_mdf2, _do_export_chain2, _do_export_clsp
@@ -14,6 +15,7 @@ from ...core import lua_bone_system
 from ...core.i18n import T
 from ...core import json_cache
 from ...core import shapekey_export
+from ...core import optional_editors
 
 # MHWs 游戏级文件后缀常量
 MHWS_EXTS = {
@@ -22,6 +24,7 @@ MHWS_EXTS = {
     "chain2": "chain2.14",
     "clsp":   "clsp.3",
     "gpuc":   "gpuc.241111760",
+    "jcns":   "jcns.102",
 }
 
 # 5个固定部位（内部/日志用英文名；UI 绘制处按 id 通过 _PART_LABEL_KEYS 查表动态翻译）
@@ -58,7 +61,7 @@ def get_mhws_variants(self=None, context=None):
 DEFAULT_FILE_TYPES = ["mesh", "mdf2", "chain2", "clsp"]
 
 # 规范导出顺序，确保不管 JSON 数据怎么存都按此顺序处理
-_CANONICAL_FILE_TYPE_ORDER = ["mesh", "mdf2", "chain2", "clsp", "gpuc"]
+_CANONICAL_FILE_TYPE_ORDER = ["mesh", "mdf2", "chain2", "clsp", "jcns", "gpuc"]
 _CANONICAL_FILE_TYPE_INDEX = {ft: i for i, ft in enumerate(_CANONICAL_FILE_TYPE_ORDER)}
 
 
@@ -222,9 +225,26 @@ def _resolve_part_file_types(armor_set, part_id):
     return armor_set.get("file_types", DEFAULT_FILE_TYPES)
 
 
-def _make_filepath(natives_root, base_path, part_id, armor_id, filetype):
+def part_file_types(armor_set, part_id):
+    """The slots a part shows and exports, in canonical order: the armor set's
+    own (gpuc included, where the vanilla part has one), plus every optional
+    editor slot (core/optional_editors) whose editor is installed."""
+    fts = _resolve_part_file_types(armor_set, part_id) if armor_set else DEFAULT_FILE_TYPES
+    extra = [ft for ft in optional_editors.available_slots() if ft not in fts]
+    return _canonical_order_file_types(list(fts) + extra)
+
+
+def _jcns_suffix(collection_name):
+    """What follows the model id in a JCNS collection's file name -- ``_HJ`` for
+    ``ch03_001_0012_HJ.jcns`` -- so the file written replaces the one of the same
+    kind.  Vanilla parts carry jcns under several such names; most have none."""
+    m = re.match(r"ch\d\d_\d{3}_\d{4}(\w*?)\.jcns", collection_name, re.I)
+    return m.group(1) if m else ""
+
+
+def _make_filepath(natives_root, base_path, part_id, armor_id, filetype, suffix=""):
     ext = MHWS_EXTS[filetype]
-    filename = f"{armor_id}{part_id}.{ext}"
+    filename = f"{armor_id}{part_id}{suffix}.{ext}"
     bp = base_path.replace("/", os.sep)
     return os.path.join(natives_root, bp, part_id, filename)
 
@@ -594,11 +614,35 @@ class MHWS_OT_BatchExport(bpy.types.Operator):
         for part_id, part_name in MHWS_PARTS:
             if not (parts_mask & (1 << (int(part_id) - 1))):
                 continue
-            part_fts = _canonical_order_file_types(
-                _resolve_part_file_types(armor_set, part_id))
-            for filetype in part_fts:
+            own_fts = _resolve_part_file_types(armor_set, part_id)
+            for filetype in part_file_types(armor_set, part_id):
                 filepath = _make_filepath(natives_root, base_path, part_id, variant_armor_id, filetype)
                 label = f"{part_name} {filetype.upper()}"
+
+                # jcns / gpuc: bindable only while their editor is installed.  An
+                # unbound one is not counted at all, so with nothing bound the
+                # summary reads as it did before these slots existed.
+                if filetype in optional_editors.EDITORS:
+                    col = (get_binding(scene, armor_id, variant, part_id, filetype)
+                           if optional_editors.available(filetype) else "")
+                    if col and col not in bpy.data.collections:
+                        print(f"[MHWs] SKIP {label}: collection '{col}' not found")
+                        col = ""
+                    if col:
+                        if filetype == "jcns":
+                            filepath = _make_filepath(natives_root, base_path, part_id, variant_armor_id,
+                                                      filetype, _jcns_suffix(col))
+                        try:
+                            print(f"[MHWs] {label}: {col} -> {os.path.basename(filepath)}")
+                            optional_editors.export(filetype, filepath, col,
+                                                    int(MHWS_EXTS[filetype].rsplit(".", 1)[1]))
+                            export_count += 1
+                        except Exception as err:
+                            print(f"[MHWs] FAILED {label}: {err}")
+                            fail_count += 1
+                        continue
+                    if filetype not in own_fts:
+                        continue
 
                 # gpuc: always copy blank, unconditionally (no collection binding)
                 # gpuc files break mods when other files are edited, so must be replaced with blank

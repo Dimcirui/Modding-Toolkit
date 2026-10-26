@@ -1,24 +1,29 @@
 import bpy
 from .batch_export import (
-    MHWS_PARTS, DEFAULT_FILE_TYPES,
+    MHWS_PARTS,
     _load_scheme, _resolve_part_file_types, _canonical_order_file_types,
     _PART_LABEL_KEYS,
     get_binding, set_binding, bound_pairs, physics_context,
-    get_mhws_armor_callback,
+    get_mhws_armor_callback, part_file_types,
 )
 from ...core.i18n import T
 from ...core import pre_export_check_ops as pec
 from ...core import export_autofix
 from ...core import shapekey_export
 from ...core import mod_root
+from ...core import optional_editors
 
 EXPORTER_WINDOW_WIDTH = 580
+#: Added per optional editor slot (jcns / gpuc) shown as an extra column.
+OPTIONAL_COLUMN_WIDTH = 110
 
 _FILETYPE_ICONS = {
     "mesh":   'OUTLINER_OB_MESH',
     "mdf2":   'MATERIAL',
     "chain2": 'LINKED',
     "clsp":   'PHYSICS',
+    "jcns":   'CONSTRAINT_BONE',
+    "gpuc":   'MOD_CLOTH',
 }
 
 _FILETYPE_LABELS = {
@@ -27,14 +32,17 @@ _FILETYPE_LABELS = {
     "chain2": "CHAIN2",
     "clsp":   "CLSP",
     "gpuc":   "GPUC",
+    "jcns":   "JCNS",
 }
 
 
 def _get_filtered_collections(filetype):
     result = []
     type_map  = {"mesh": "RE_MESH_COLLECTION", "mdf2": "RE_MDF_COLLECTION",
-                 "chain2": "RE_CHAIN_COLLECTION", "clsp": "RE_CHAIN_COLLECTION"}
-    sfx_map   = {"mesh": ".mesh", "mdf2": ".mdf2", "chain2": ".chain2", "clsp": ".clsp"}
+                 "chain2": "RE_CHAIN_COLLECTION", "clsp": "RE_CHAIN_COLLECTION",
+                 **{ft: optional_editors.collection_type(ft) for ft in optional_editors.EDITORS}}
+    sfx_map   = {"mesh": ".mesh", "mdf2": ".mdf2", "chain2": ".chain2", "clsp": ".clsp",
+                 "jcns": ".jcns", "gpuc": ".gpuc"}
     col_type  = type_map.get(filetype, "")
     name_sfx  = sfx_map.get(filetype, "")
     for c in bpy.data.collections:
@@ -164,7 +172,8 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
         return T("mhws.batch_export_ui.batch_export_dialog_desc")
 
     def invoke(self, context, event):
-        return context.window_manager.invoke_props_dialog(self, width=EXPORTER_WINDOW_WIDTH)
+        width = EXPORTER_WINDOW_WIDTH + OPTIONAL_COLUMN_WIDTH * len(optional_editors.available_slots())
+        return context.window_manager.invoke_props_dialog(self, width=width)
 
     def draw(self, context):
         layout = self.layout
@@ -217,8 +226,7 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
         per_part_fts = {}
         all_file_types = []
         for part_id, part_name in active_parts:
-            fts = _canonical_order_file_types(
-                _resolve_part_file_types(armor_set, part_id)) if armor_set else DEFAULT_FILE_TYPES
+            fts = part_file_types(armor_set, part_id)
             per_part_fts[part_id] = fts
             for ft in fts:
                 if ft not in all_file_types:
@@ -245,15 +253,19 @@ class MHWS_OT_BatchExportDialog(bpy.types.Operator):
                     sub.label(text="")
                     continue
 
-                if ft == "gpuc":
+                if ft == "gpuc" and not optional_editors.available("gpuc"):
                     # gpuc is always blank-copied, no collection binding
                     sub.label(text="AUTO", icon='FILE_BLANK')
                     continue
 
                 cur = get_binding(scene, armor_id, variant, part_id, ft)
+                # An unbound gpuc on a part whose vanilla model has one is still
+                # blank-copied, as without the editor.
+                unbound = "AUTO" if ft == "gpuc" and armor_set and \
+                    ft in _resolve_part_file_types(armor_set, part_id) else "—"
                 op = sub.operator(
                     "mhws.pick_collection",
-                    text=cur if cur else "—",
+                    text=cur if cur else unbound,
                     icon='DOWNARROW_HLT' if not cur else _FILETYPE_ICONS[ft]
                 )
                 op.armor_id = armor_id
