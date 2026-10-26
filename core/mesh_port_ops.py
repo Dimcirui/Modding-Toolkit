@@ -25,6 +25,9 @@ silently replaced by identity, which would leave that bone in the source game's
 convention with nothing to show for it until an animation twists it in-game.
 """
 
+import importlib
+import sys
+
 import bpy
 from mathutils import Matrix, Vector
 
@@ -157,6 +160,110 @@ def duplicate_mesh_collection(col, arm_obj, suffix):
             c.objects.unlink(obj)
         new_col.objects.link(obj)
     return new_arm
+
+
+def reme_re9_axes_module():
+    """RE Mesh Editor's ``re9_bone_axes`` module, or None.
+
+    Only the Dimcirui fork has it, announced as ``REME_FEATURES["re9_bone_axes"]``.
+    Upstream / older REME exports bones as they stand in Blender, so a rig marked for
+    it would go out in the wrong axes -- there, ports into RE9 stay unmarked.
+    """
+    for name in bpy.context.preferences.addons.keys():
+        feats = getattr(sys.modules.get(name), "REME_FEATURES", None)
+        if not isinstance(feats, dict) or feats.get("re9_bone_axes", 0) < 1:
+            continue
+        try:
+            mod = importlib.import_module(name + ".modules.mesh.re9_bone_axes")
+        except Exception:
+            return None
+        return mod if hasattr(mod, "computeCorrections") else None
+    return None
+
+
+_ROT_NEG90_X = Matrix(((1.0, 0.0, 0.0), (0.0, 0.0, 1.0), (0.0, -1.0, 0.0)))
+
+
+def convert_to_reme_axes(arm_obj, axes_mod):
+    """Turn a rig in RE9 file axes into one RE Mesh Editor shows converted.
+
+    Does what REME's importer does to a fresh RE9 import, so the result is
+    indistinguishable from one: *axes_mod*.computeCorrections picks each bone's C from
+    its file rotation, the rest becomes ``file @ C^-1`` and C is stored for the
+    exporter to multiply back.  The file axes therefore come out exactly as they were
+    before this ran -- the port's own (validated) correction still decides them.
+
+    File rotations are taken in REME's export space, ``Rx(-90) @ matrix_world @
+    matrix_local``; C is bone-local and right-multiplied, so the rest edit itself is
+    the same in Blender's armature space.  Rest-only, as in ``apply_corrections``:
+    the mesh does not move.  Returns the number of bones converted.
+    """
+    if bpy.context.mode != 'OBJECT':
+        bpy.ops.object.mode_set(mode='OBJECT')
+    bones = list(arm_obj.data.bones)
+    index = {b.name: i for i, b in enumerate(bones)}
+    world = _ROT_NEG90_X @ arm_obj.matrix_world.to_3x3().normalized()
+    parents = [index[b.parent.name] if b.parent else -1 for b in bones]
+    rotations = [(world @ b.matrix_local.to_3x3()).normalized() for b in bones]
+    corrections = axes_mod.computeCorrections([b.name for b in bones], parents, rotations)
+    return _set_reme_axes(arm_obj, {b.name: Matrix(corrections[i])
+                                    for i, b in enumerate(bones)})
+
+
+def _rest_times(arm_obj, mats):
+    """Right-multiply each named bone's rest rotation by its matrix in *mats*.
+
+    Heads stay put and the pose is not touched, so this is a rest-only relabel that
+    moves no vertex (see ``apply_corrections``).
+    """
+    if bpy.context.mode != 'OBJECT':
+        bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.context.view_layer.objects.active = arm_obj
+    bpy.ops.object.mode_set(mode='EDIT')
+    try:
+        eb = arm_obj.data.edit_bones
+        for name, mat in mats.items():
+            e = eb.get(name)
+            if e is None:
+                continue
+            m = (e.matrix.to_3x3().normalized() @ mat).to_4x4()
+            m.translation = e.head
+            e.matrix = m
+    finally:
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+
+def _set_reme_axes(arm_obj, corrections):
+    """Show *arm_obj* in REME's converted axes: rest ``@ C^-1``, C stored, flag set."""
+    _rest_times(arm_obj, {n: c.inverted() for n, c in corrections.items()})
+    data = arm_obj.data
+    for name, c in corrections.items():
+        if name in data.bones:
+            data.bones[name]["reAxisCorrection"] = [v for row in c for v in row]
+    data["REMeshBoneAxes"] = "RE9"
+    return len(corrections)
+
+
+def revert_reme_axes(arm_obj):
+    """Put a REME-converted RE9 rig back into RE9's file axes; returns the C removed.
+
+    Rest becomes ``rest @ C`` -- exactly the matrices REME's exporter would write --
+    and the markers go, so what is left is an ordinary unconverted RE9 rig.  The
+    returned ``{bone: C}`` lets ``_set_reme_axes`` restore it as it was.
+    """
+    corrections = {}
+    for b in arm_obj.data.bones:
+        v = b.get("reAxisCorrection")
+        if v is not None and len(v) == 9:
+            corrections[b.name] = Matrix((v[0:3], v[3:6], v[6:9]))
+    _rest_times(arm_obj, corrections)
+    data = arm_obj.data
+    for b in data.bones:
+        if "reAxisCorrection" in b:
+            del b["reAxisCorrection"]
+    if "REMeshBoneAxes" in data:
+        del data["REMeshBoneAxes"]
+    return corrections
 
 
 def _fallback_table(source_game, target_game, cross):
@@ -952,14 +1059,28 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
         unbacked splits) used to leave the user's own rig moved by the origin
         offset (1.0468 m for an MHRS pair) -- with global undo off for the run, so
         nothing took it back.  A copy needs no such care: it is discarded whole.
+
+        An RE9 rig RE Mesh Editor showed in converted axes goes back to RE9's file
+        axes first, so everything below sees an ordinary RE9 rig and applies RE9's C
+        exactly once.  Treating it as family A instead was measured and rejected: a
+        bone REME left upright (no table entry, not coaxial -- ``L_Wep`` on the RE9
+        reference) has no RE9 orientation left to derive from, and came out 79.8
+        degrees off the unconverted rig's port.  Undone on a refusal, like the shift.
         """
+        from .pose_ops import _has_reme_re9_axes
+
         dz = origin_shift(self.source_game, self.target_game)
+        converted = (revert_reme_axes(arm)
+                     if self.source_game == "RE9" and _has_reme_re9_axes(arm) else None)
         result = {'CANCELLED'}
         try:
             result = self._port_steps(context, arm)
         finally:
-            if 'CANCELLED' in result and dz and self.replace_original:
-                _translate_rig(arm, -dz)
+            if 'CANCELLED' in result and self.replace_original:
+                if dz:
+                    _translate_rig(arm, -dz)
+                if converted:
+                    _set_reme_axes(arm, converted)
         return result
 
     def _port_steps(self, context, arm):
@@ -1042,6 +1163,13 @@ class MODDER_OT_PortMeshCrossGame(bpy.types.Operator):
 
             base_names = set(cross.mapping.values()) | {n for n, _r, _a in plan.inserts}
             counts = execute_port(arm, plan, ref_arm, correction_set, base_names)
+            if self.target_game == "RE9":
+                # The port above put the rig in RE9's file axes, as it always has.
+                # Where the installed REME can convert them back on export, show it
+                # the way that REME imports RE9 -- the file comes out the same.
+                axes_mod = reme_re9_axes_module()
+                if axes_mod is not None:
+                    convert_to_reme_axes(arm, axes_mod)
         finally:
             if ref_arm is not None:
                 bpy.data.objects.remove(ref_arm, do_unlink=True)

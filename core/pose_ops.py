@@ -388,6 +388,20 @@ def _detect_ree_game(arm_obj):
     return best_code if best_ratio >= _REE_MIN_COVERAGE else None
 
 
+def _has_reme_re9_axes(arm_obj):
+    """RE Mesh Editor 已经把这具 RE9 骨架的轴向换成了 family A 约定。
+
+    REME（Dimcirui fork, 1c30d7a 起）导入 RE9 时默认这么做，导出时再换回去，并在骨架
+    数据上留 ``REMeshBoneAxes = "RE9"``，每根骨骼上留 ``reAxisCorrection``（行主序 3×3
+    的 C，文件旋转 = Blender 旋转 @ C）。身体骨的 C 与 _build_re9_correction /
+    _build_re9_c_supplement 完全一致，所以对这种骨架再乘一次自己的 C 就是重复修正。
+    只看数据上的标记，不看 REME 当前是否启用：标记随 .blend 保存，跟插件在不在无关。
+    没有标记的 RE9 骨架（旧导入、或关掉了导入选项）仍是文件轴向，照旧走修正表。
+    """
+    data = getattr(arm_obj, "data", None)
+    return data is not None and data.get("REMeshBoneAxes") == "RE9"
+
+
 def _bone_depth(bone):
     depth, parent = 0, bone.parent
     while parent is not None:
@@ -500,7 +514,10 @@ class MODDER_OT_ReeToTPose(bpy.types.Operator):
 
         bones = arm_obj.data.bones
         bone_names = [name for name in _REE_TPOSE_BONES[game_code] if name in bones]
-        corrections = _REE_BONE_CORRECTION.get(game_code)
+        # REME 换过轴的 RE9 骨架已经是 family A 约定：骨骼名单照旧用 RE9 的，但直接归零到
+        # _REE_ZERO_BASIS，辅助骨也就不带 C。
+        corrections = (None if _has_reme_re9_axes(arm_obj)
+                       else _REE_BONE_CORRECTION.get(game_code))
 
         extra_names, extra_corrections = _expand_inchain_helpers(arm_obj, bone_names, corrections)
         bone_names += extra_names
