@@ -2093,7 +2093,7 @@ STRINGS = {
         "EN": "Group \"{grp}\" — none of its bones carries mesh weights; physics moves nothing",
         "ZH": "Group「{grp}」— 这些骨骼都没带网格权重，物理带不动模型"},
     "core.pre_export_physics.item_duplicate": {
-        "EN": "\"{b}\" drives the same bones as \"{a}\"", "ZH": "「{b}」与「{a}」是同一段骨骼"},
+        "EN": "\"{b}\" duplicates \"{a}\"", "ZH": "「{b}」重复「{a}」"},
     "core.pre_export_physics.item_contained": {
         "EN": "\"{a}\" lies inside \"{b}\"; those bones are driven twice",
         "ZH": "「{a}」在「{b}」里面，同一段骨骼被驱动两次"},
@@ -2525,6 +2525,13 @@ STRINGS = {
     "core.pre_export_check_ops.item_used_by": {
         "EN": " — used by {parts}", "ZH": " — {parts}在用"},
     "core.pre_export_check_ops.part_joiner": {"EN": ", ", "ZH": "、"},
+    # ── Report paging (one group's PAGE_SIZE slice) ────────────────────────
+    "core.pre_export_check_ops.page_range": {
+        "EN": "{a}–{b} of {n}", "ZH": "第 {a}–{b} 条，共 {n} 条"},
+    "core.pre_export_check_ops.page_prev_desc": {
+        "EN": "Show the previous page of this group", "ZH": "显示这一组的上一页"},
+    "core.pre_export_check_ops.page_next_desc": {
+        "EN": "Show the next page of this group", "ZH": "显示这一组的下一页"},
 
     # ── Reason codes from core/pre_export_check.py ────────────────────────
     "core.pre_export_check_ops.reason_space": {

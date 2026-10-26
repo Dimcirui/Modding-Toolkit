@@ -66,10 +66,19 @@ from . import weight_utils
 
 _K = "core.pre_export_check_ops."
 
-#: Same geometry MHWME's error window uses -- wide enough that a full texture
-#: path fits on one wrapped line, split so the category list stays narrow.
-WINDOW_SIZE = 750
-SPLIT_FACTOR = 0.35
+#: Started from MHWME's error window geometry (750 / 0.35), widened so a
+#: duplicate-chain line -- two full chain group names -- usually fits on one row;
+#: the category list only ever holds a word and a count, so it gave up the room.
+WINDOW_SIZE = 960
+SPLIT_FACTOR = 0.27
+
+#: Items drawn per group page.  A props dialog does not scroll and Blender clips
+#: whatever runs past the window, so a 116-item group has to be paged rather
+#: than listed (the old flat list was cut off half-way down).
+PAGE_SIZE = 10
+#: Item rows the detail of one category starts out showing.  Groups past it open
+#: collapsed -- their header and count stay visible, a click expands them.
+OPEN_BUDGET = 24
 
 #: Sentinel for "no mesh collection", which is a legal choice: the user may only
 #: want the texture check.
@@ -180,6 +189,10 @@ class PEC_ReportGroup(bpy.types.PropertyGroup):
     sub: StringProperty(name="")
     severity: StringProperty(name="")
     items: CollectionProperty(type=PEC_ReportItem)
+    #: Draw state, reset on every store: whether the group's items show, and
+    #: which PAGE_SIZE slice of them.
+    expanded: BoolProperty(name="", default=True)
+    page: IntProperty(name="", default=0, min=0)
 
 
 class PEC_ReportEntry(bpy.types.PropertyGroup):
@@ -1217,6 +1230,19 @@ class MODDER_OT_PreExportCheckView(bpy.types.Operator):
         return {'FINISHED'}
 
 
+def _initial_expansion(entry):
+    """Open groups in order until OPEN_BUDGET item rows are used, then collapse
+    the rest.  The first group always opens, so the detail is never empty."""
+    used = 0
+    overflow = False
+    for g in entry.groups:
+        shown = min(len(g.items), PAGE_SIZE)
+        overflow = overflow or bool(used and used + shown > OPEN_BUDGET)
+        g.expanded = not overflow
+        g.page = 0
+        used += shown
+
+
 def _store(context, report, skipped):
     scene = context.scene
     scene.mtk_pec_report.clear()
@@ -1236,6 +1262,7 @@ def _store(context, report, skipped):
                 row = g.items.add()
                 row.text = pr.item_line(it, used_by=used_by, joiner=joiner)
                 row.severity = it['severity']
+        _initial_expansion(entry)
     scene.mtk_pec_report_index = 0
     _LAST_RUN['skipped'] = skipped
 
@@ -1401,6 +1428,23 @@ def _wrap_width(context):
     return max(10, int((box_px - padding_px) / (px_per_unit * ui_scale)))
 
 
+def _shared_prefix(texts, sep=" · "):
+    """The leading ``a · b · `` segments every line starts with, or "".
+
+    Lines of one group mostly repeat the same part and file type
+    (「手臂 · chain2 · ...」 116 times); drawing that once above the list instead
+    of on every line is what lets most lines fit on a single row.  The last
+    segment is never taken, so no line is left empty."""
+    if len(texts) < 2:
+        return ""
+    split = [t.split(sep) for t in texts]
+    n = min(len(p) for p in split) - 1
+    common = 0
+    while common < n and all(p[common] == split[0][common] for p in split):
+        common += 1
+    return sep.join(split[0][:common]) + sep if common else ""
+
+
 def _has_group(report, sub):
     return any(g.sub == sub for e in report for g in e.groups)
 
@@ -1494,7 +1538,7 @@ class MODDER_OT_PreExportCheckReport(bpy.types.Operator):
         return T(_K + "report_desc")
 
     def invoke(self, context, event):
-        # Centre the popup on the window instead of at the mouse -- at 750px it
+        # Centre the popup on the window instead of at the mouse -- at 960px it
         # otherwise opens half off-screen when the click was near an edge.
         window = context.window
         window.cursor_warp(window.width // 2, window.height // 2)
@@ -1502,7 +1546,7 @@ class MODDER_OT_PreExportCheckReport(bpy.types.Operator):
             self, width=WINDOW_SIZE,
             **_dialog_kwargs(_K + "report_title", _K + "confirm_done"))
 
-    def _draw_detail(self, box, entry, width):
+    def _draw_detail(self, box, entry, entry_index, width):
         """Consequence, what to do, then each group. Returns rows drawn, so the
         category list can be made as tall as the detail beside it."""
         rows = 0
@@ -1512,16 +1556,42 @@ class MODDER_OT_PreExportCheckReport(bpy.types.Operator):
                 for chunk in _wrap_line(T(key), width):
                     box.label(text=chunk)
                     rows += 1
-        for grp in entry.groups:
+        for gi, grp in enumerate(entry.groups):
             box.separator()
             title = T(_SUB_KEYS.get(grp.sub, grp.sub))
-            box.label(text=f"{title} ({len(grp.items)})",
+            row = box.row(align=True)
+            row.prop(grp, "expanded", text="", emboss=False,
+                     icon='DISCLOSURE_TRI_DOWN' if grp.expanded else 'DISCLOSURE_TRI_RIGHT')
+            row.label(text=f"{title} ({len(grp.items)})",
                       icon='ERROR' if grp.severity == pr.ERROR else 'INFO')
             rows += 2
-            for it in grp.items:
-                for chunk in _wrap_line(it.text, width - 2):
-                    box.label(text="    " + chunk)
+            if not grp.expanded:
+                continue
+            texts = [it.text for it in grp.items]
+            prefix = _shared_prefix(texts)
+            if prefix:
+                box.label(text="    " + prefix.rstrip(" ·") + ":")
+                rows += 1
+            n = len(texts)
+            pages = (n + PAGE_SIZE - 1) // PAGE_SIZE
+            page = min(grp.page, pages - 1)
+            start = page * PAGE_SIZE
+            for text in texts[start:start + PAGE_SIZE]:
+                for chunk in _wrap_line(text[len(prefix):], width - 3):
+                    box.label(text="      " + chunk)
                     rows += 1
+            if pages > 1:
+                row = box.row(align=True)
+                row.alignment = 'CENTER'
+                for delta, icon in ((-1, 'TRIA_LEFT'), (1, 'TRIA_RIGHT')):
+                    sub = row.row(align=True)
+                    sub.enabled = 0 <= page + delta < pages
+                    op = sub.operator("modder.pec_page", text="", icon=icon)
+                    op.entry, op.group, op.delta = entry_index, gi, delta
+                    if delta < 0:
+                        row.label(text=T(_K + "page_range").format(
+                            a=start + 1, b=min(start + PAGE_SIZE, n), n=n))
+                rows += 1
         return rows
 
     def draw(self, context):
@@ -1542,7 +1612,7 @@ class MODDER_OT_PreExportCheckReport(bpy.types.Operator):
         col1, col2 = split.column(), split.column()
 
         idx = min(context.scene.mtk_pec_report_index, len(report) - 1)
-        rows = 2 + self._draw_detail(col2.box(), report[idx], _wrap_width(context))
+        rows = 2 + self._draw_detail(col2.box(), report[idx], idx, _wrap_width(context))
 
         # rows follows the detail length so the list never ends up a stub next
         # to a tall box -- and because it scrolls, nothing has to be truncated.
@@ -1579,6 +1649,32 @@ class MODDER_OT_PreExportCheckReport(bpy.types.Operator):
 # ── Fix ──────────────────────────────────────────────────────────────────────
 
 _fix_pair = export_autofix.fix_names
+
+
+class MODDER_OT_PECPage(bpy.types.Operator):
+    """Turn one group of the open report to its previous / next page.  Like the
+    fix buttons, it relies on the props dialog staying open and redrawing."""
+    bl_idname = "modder.pec_page"
+    bl_label = "Page"
+    bl_options = {'INTERNAL'}
+
+    entry: IntProperty(options={'HIDDEN'})
+    group: IntProperty(options={'HIDDEN'})
+    delta: IntProperty(options={'HIDDEN'})
+
+    @classmethod
+    def description(cls, context, properties):
+        return T(_K + ("page_prev_desc" if properties.delta < 0 else "page_next_desc"))
+
+    def execute(self, context):
+        report = context.scene.mtk_pec_report
+        try:
+            grp = report[self.entry].groups[self.group]
+        except IndexError:
+            return {'CANCELLED'}
+        pages = max(1, (len(grp.items) + PAGE_SIZE - 1) // PAGE_SIZE)
+        grp.page = max(0, min(grp.page + self.delta, pages - 1))
+        return {'FINISHED'}
 
 
 class MODDER_OT_PreExportCheckFix(bpy.types.Operator):
@@ -1637,7 +1733,7 @@ class MODDER_OT_PreExportAutofixNow(bpy.types.Operator):
 
 classes = [PEC_ReportItem, PEC_ReportGroup, PEC_ReportEntry, MODDER_UL_PreExportCheck,
            MODDER_OT_PreExportCheck, MODDER_OT_PreExportCheckReport,
-           MODDER_OT_PreExportCheckView, MODDER_OT_PreExportCheckFix,
+           MODDER_OT_PreExportCheckView, MODDER_OT_PECPage, MODDER_OT_PreExportCheckFix,
            MODDER_OT_PreExportAutofixNow]
 
 
