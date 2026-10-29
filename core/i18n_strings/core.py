@@ -337,6 +337,11 @@ STRINGS = {
         "EN": "Could not recognize a supported RE Engine game from this armature's bone names "
               "(supports Wilds / RE4R / RE9 / SF6 / MHRS / DMC5)",
         "ZH": "未能从骨骼名识别出受支持的 RE Engine 游戏（支持荒野/生化4重制/生化9/街霸6/崛起/鬼泣5）"},
+    "core.pose_ops.ree_to_tpose_nothing": {
+        "EN": "This is a partial RE Engine skeleton (face / hair / accessory) with none of the limb "
+              "bones the T-pose conversion adjusts - nothing to convert, left unchanged",
+        "ZH": "这是残缺的 RE Engine 部件骨架（脸/头发/饰品），不含任何需要转 T-pose 的四肢骨，"
+              "无需转换，已保持原样"},
     "core.pose_ops.record_name_label": {"EN": "Name", "ZH": "名称"},
     "core.pose_ops.record_name_desc": {
         "EN": "Filename for the saved transform record (e.g. MMD A-Pose to T-Pose)",

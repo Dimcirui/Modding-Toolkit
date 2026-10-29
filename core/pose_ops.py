@@ -373,19 +373,54 @@ _REE_SIGNATURE_BONES = {
 _REE_MIN_COVERAGE = 0.3
 
 
+#: 躯干核心骨：只用来回答"这是不是一具 REE 骨架"，不参与识别是哪个游戏，也不参与归零。
+#: 给残缺骨架（只有脸/头发/饰品，一根四肢骨都没有）用——名单里一根都对不上时，
+#: 它们仍然带着 root/Hip/Spine_0 这一串。
+_REE_CORE_BONES = ("root", "COG", "Hip", "Spine_0", "Spine_1", "Spine_2",
+                   "Neck_0", "Neck_1", "Head", "Head_0")
+_REE_CORE_MIN = 4
+
+
 def _detect_ree_game(arm_obj):
-    """在私有 REE 游戏名单里按骨骼名覆盖率找最匹配的游戏，返回 game_code 或 None。
-    在 _REE_SIGNATURE_BONES 里登记过特征骨的游戏，特征骨缺一根就不参与竞争。"""
+    """在私有 REE 游戏名单里找最匹配的游戏，返回 game_code 或 None。
+    在 _REE_SIGNATURE_BONES 里登记过特征骨的游戏，特征骨缺一根就不参与竞争。
+
+    先按覆盖率（完整骨架走这条，行为与以往逐位相同）；覆盖率不够的残缺骨架——游戏里
+    脸、头发、饰品是单独的骨架，只带了躯干和几根手臂辅助骨——退到按**命中根数**选。
+    不能把门槛直接调低：ch001_00_10 这种骨架上 SF6 名单命中 2/40 = 0.05，荒野只命中
+    6/148 = 0.04，按比例会认成 SF6；按根数是 6 对 2，荒野胜出。
+    平手无害：family A 各游戏共用同一个归零基、没有修正矩阵，选哪份名单只影响"哪些骨
+    在场"，而在场的骨本来就只会被它自己那份名单命中。RE9 的骨名与其他游戏没有交集，
+    不会平手。"""
     existing = arm_obj.data.bones.keys()
-    best_code, best_ratio = None, 0.0
+    candidates = []
     for code, bone_list in _REE_TPOSE_BONES.items():
         signature = _REE_SIGNATURE_BONES.get(code)
         if signature and not all(name in existing for name in signature):
             continue
-        ratio = sum(1 for name in bone_list if name in existing) / len(bone_list)
-        if ratio > best_ratio:
-            best_code, best_ratio = code, ratio
-    return best_code if best_ratio >= _REE_MIN_COVERAGE else None
+        candidates.append((code, sum(1 for name in bone_list if name in existing), len(bone_list)))
+
+    best_code, best_ratio = None, 0.0
+    for code, hit, total in candidates:
+        if hit / total > best_ratio:
+            best_code, best_ratio = code, hit / total
+    if best_ratio >= _REE_MIN_COVERAGE:
+        return best_code
+
+    if not _looks_like_ree_skeleton(arm_obj):
+        # 按根数选没有覆盖率那道门槛，一具无关骨架碰巧有 L_Hand 之类的同名骨就会被掰动
+        return None
+    best_code, best_hit = None, 0
+    for code, hit, _total in candidates:      # 字典序即优先级，严格大于才换
+        if hit > best_hit:
+            best_code, best_hit = code, hit
+    return best_code
+
+
+def _looks_like_ree_skeleton(arm_obj):
+    """名单里一根都对不上时的兜底：看躯干核心骨在不在，免得把别的骨架误当成 REE。"""
+    existing = arm_obj.data.bones.keys()
+    return sum(1 for name in _REE_CORE_BONES if name in existing) >= _REE_CORE_MIN
 
 
 def _has_reme_re9_axes(arm_obj):
@@ -509,6 +544,11 @@ class MODDER_OT_ReeToTPose(bpy.types.Operator):
 
         game_code = _detect_ree_game(arm_obj)
         if game_code is None:
+            if _looks_like_ree_skeleton(arm_obj):
+                # 残缺部件骨架（脸/头发/饰品）：没有任何会被归零的四肢骨，转换本来就是
+                # 空操作。不烘焙姿态——没有骨骼被改动，烘焙只会把用户手摆的姿态固化。
+                self.report({'INFO'}, T("core.pose_ops.ree_to_tpose_nothing"))
+                return {'FINISHED'}
             self.report({'ERROR'}, T("core.pose_ops.ree_game_not_recognized"))
             return {'CANCELLED'}
 
