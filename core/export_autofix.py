@@ -654,7 +654,9 @@ def _fill_normal_vcolor(obj, name):
     from mathutils import Matrix
     from . import normal_utils
     me = obj.data
-    layer = me.vertex_colors.new(name=name)
+    # Not ``vertex_colors.new``: on 5.1 it returns None for a mesh with no active
+    # colour attribute (measured), which is exactly the mesh this fill targets.
+    layer = me.color_attributes.new(name, 'BYTE_COLOR', 'CORNER')
     m3 = np.array((Matrix.Rotation(radians(-90.0), 4, 'X') @ obj.matrix_world).to_3x3(), np.float64)
     n = normal_utils.corner_normals(me) @ m3.T
     n /= np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-12)
