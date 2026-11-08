@@ -479,22 +479,38 @@ def channel_names(names):
     return out
 
 
-def write_names(mod_root, file_id, names):
+def write_names(mod_root, file_id, names, sections=None):
     """Write the names table ``mods/names/<file_id>.json`` (NameHash.lua): on
     engines that keep only channel-name hashes SKS can name a channel only when
-    it knows the name, so a mod's own key names have to ship with it.  Names
-    already in the table stay (a part-at-a-time export adds to it).  Returns
-    the paths written."""
+    it knows the name, so a mod's own key names have to ship with it.
+
+    *sections* (``{key: title}``) go into its ``sections`` list (Labels.lua):
+    a grey title shown before that sculpt key.  SKS reads them on every
+    engine, so a table may hold sections alone.
+
+    Names and sections already in the table stay (a part-at-a-time export adds
+    to it; this run's title wins for the same key).  Returns the paths written."""
     names = channel_names(names)
+    sections = {k: t for k, t in (sections or {}).items() if k and t}
     fid = safe_id(file_id)
-    if not names or not fid:
+    if not (names or sections) or not fid:
         return []
     path = os.path.join(sks_data_dir(mod_root), "mods", "names", fid + ".json")
     old = _load_json(path)
-    old = old.get("names") if isinstance(old, dict) else None
-    if isinstance(old, list):
-        names = channel_names([str(n) for n in old] + names)
-    _dump(path, {"schema": NAMES_SCHEMA, "names": names})
+    old = old if isinstance(old, dict) else {}
+    if isinstance(old.get("names"), list):
+        names = channel_names([str(n) for n in old["names"]] + names)
+    merged = {}
+    for sec in old.get("sections") if isinstance(old.get("sections"), list) else ():
+        if isinstance(sec, dict) and sec.get("before") and sec.get("title"):
+            merged[str(sec["before"])] = str(sec["title"])
+    merged.update(sections)
+    data = {"schema": NAMES_SCHEMA}
+    if names:
+        data["names"] = names
+    if merged:
+        data["sections"] = [{"title": t, "before": k} for k, t in merged.items()]
+    _dump(path, data)
     return [path]
 
 

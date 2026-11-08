@@ -29,6 +29,7 @@ import sys
 from contextlib import contextmanager
 
 import bpy
+import numpy as np
 from bpy.props import BoolProperty, EnumProperty, StringProperty
 
 from .i18n import T
@@ -70,6 +71,10 @@ DUMMY_PREFIX = "DUMMY_"
 ZERO = 1e-6
 #: SKS clamps sculpt values to its slider cap, which goes up to 5 (Sculpt.lua).
 SCULPT_MAX = 5.0
+#: A key that moves no vertex further than this has no effect: the fork's
+#: EDIT_DELTA_THRESHOLD, below which it drops the channel itself (MHWS, ONI, RE9,
+#: RE4; MHRS keeps empty channels so later indices don't shift).
+EMPTY_DELTA = 1e-5
 
 
 # ── What the installed REME can do ───────────────────────────────────────────
@@ -181,6 +186,12 @@ class MT_ShapeKeyExportSettings(bpy.types.PropertyGroup):
         description="On: the key option applies only to meshes with an expression key; the others "
                     "export as ticked / locked.  Off: it applies to every mesh",
         default=True)
+    empty_as_sections: BoolProperty(
+        name="Empty Keys as Sections",
+        description="Shape keys that move nothing on every object of a mesh (separators such as "
+                    "=====EYE=====) are left out of the mesh and written as section titles in the "
+                    "SKS names table, before the next exported key",
+        default=True)
     preset_name: StringProperty(
         name="Preset Name",
         description="Name of the sculpt preset; empty = the Bonesystem FBXSkel name when that "
@@ -212,6 +223,39 @@ def is_active(k):
     """Ticked and unlocked: what the fork exports as a blendshape (it bakes
     locked keys into the base instead)."""
     return not k.mute and not k.lock_shape
+
+
+def _moves(k):
+    """Whether key *k* moves any vertex away from its relative key."""
+    rel = k.relative_key
+    n = len(k.data)
+    if rel is None or rel == k or n == 0:
+        return False
+    a = np.empty(n * 3, dtype=np.float32)
+    b = np.empty(n * 3, dtype=np.float32)
+    k.data.foreach_get("co", a)
+    rel.data.foreach_get("co", b)
+    return float(np.max(np.abs(a - b))) > EMPTY_DELTA
+
+
+def moving_names(collection):
+    """Names of the candidate keys that move something on at least one object
+    of *collection* (= one exported mesh).  A name empty on one object and
+    moving on another is a real key, as in the fork's own empty-channel test."""
+    out = set()
+    for obj in _mesh_objects(collection):
+        for k in candidate_keys(obj):
+            if k.name not in out and _moves(k):
+                out.add(k.name)
+    return out
+
+
+def section_title(name):
+    """A section title from an empty key's name: ``=====EYE=====`` -> ``EYE``
+    (SKS Labels.separator_title), any other name as it is."""
+    if name.startswith("="):
+        return name.strip("= \t") or name
+    return name
 
 
 def part_names(collection):
@@ -335,8 +379,11 @@ def effective_mode(pg, modes):
 # ── The export run ───────────────────────────────────────────────────────────
 
 class _Session:
-    def __init__(self, game, pg, mode, key_filter, profile_id, lib, scoped=False):
+    def __init__(self, game, pg, mode, key_filter, profile_id, lib, scoped=False,
+                 empty_sections=False):
         self.game = game
+        self.empty_sections = empty_sections    # empty sculpt keys -> section titles
+        self.sections = {}              # SKS key the section goes before -> title
         self.scoped = scoped            # filter only meshes with expression keys
         self.pg = pg
         self.mode = mode                # None = pass nothing (REME default)
@@ -362,14 +409,15 @@ def session(context, game, collections=(), mod_root=None):
     modes = available_modes(game) if pg is not None else []
     if modes:
         mode = effective_mode(pg, modes)
-        key_filter, profile_id, lib, scoped = "FOLLOW", None, None, False
+        key_filter, profile_id, lib, scoped, empty = "FOLLOW", None, None, False, False
         if is_sks_game(game) and pg.use_sks and mode != NO_MODE:
             lib = library(game, mod_root)
             profile_id = pick_profile(pg, lib.rank(
                 [n for c in collections for n in part_names(c)]))
             scoped = pg.only_expression_meshes
             key_filter = effective_filter(pg.key_filter, profile_id, scoped)
-        s = _Session(game, pg, mode, key_filter, profile_id, lib, scoped)
+            empty = pg.empty_as_sections
+        s = _Session(game, pg, mode, key_filter, profile_id, lib, scoped, empty)
         print(f"[{game}] shape keys: mode={mode or 'REME default'} filter={key_filter} "
               f"profile={profile_id or '-'}")
     prev, _ACTIVE = _ACTIVE, s
@@ -389,16 +437,34 @@ def export_kwargs():
 def filtered(collection_name):
     """For the length of this mesh's export, mute the keys the session's filter
     leaves out and unmute / unlock the expression keys it forces out; note the
-    sculpt values it exports.  Every flag goes back afterwards."""
+    sculpt values it exports.  Every flag goes back afterwards.
+
+    With the session's ``empty_sections``, a ticked, unlocked sculpt key that
+    moves nothing on any object of the mesh is left out too and becomes the
+    section title of the next key that goes out after it on the same object
+    (the last of several in a row wins, as with SKS's separator channels)."""
     s = _ACTIVE
     col = bpy.data.collections.get(collection_name) if collection_name else None
     if s is None or col is None or s.mode == NO_MODE:
         yield
         return
     changed = []        # (key, mute, lock_shape) as they were
-    left_out = forced = 0
+    left_out = forced = n_sections = 0
+    moving = moving_names(col) if s.empty_sections else None
     try:
-        for _obj, k, is_expr, out in plan(s.lib, s.profile_id, col, s.key_filter, s.scoped):
+        cur_obj, title = None, None
+        for obj, k, is_expr, out in plan(s.lib, s.profile_id, col, s.key_filter, s.scoped):
+            if obj != cur_obj:
+                cur_obj, title = obj, None
+            if moving is not None and not is_expr and is_active(k) and k.name not in moving:
+                changed.append((k, k.mute, k.lock_shape))
+                k.mute = True
+                title = section_title(k.name)
+                n_sections += 1
+                continue
+            if out and title is not None:
+                s.sections.setdefault(sks_profiles.key_of(k.name), title)
+                title = None
             if not out:
                 if is_active(k):        # inactive keys are already left out (or baked)
                     changed.append((k, k.mute, k.lock_shape))
@@ -419,9 +485,9 @@ def filtered(collection_name):
                 key = sks_profiles.key_of(k.name)
                 v = min(max(float(k.value), 0.0), SCULPT_MAX)
                 s.values[key] = max(v, s.values.get(key, 0.0))
-        if left_out or forced:
+        if left_out or forced or n_sections:
             print(f"[{s.game}] {collection_name}: {left_out} shape keys left out, "
-                  f"{forced} forced out ({s.key_filter})")
+                  f"{forced} forced out ({s.key_filter}), {n_sections} empty -> sections")
         yield
     finally:
         for k, mute, lock in reversed(changed):
@@ -432,7 +498,8 @@ def filtered(collection_name):
 def writes_sks_files(s):
     """Whether the session writes anything for SKS (a preset or a names table)."""
     return (s is not None and is_sks_game(s.game) and s.mode not in (None, NO_MODE)
-            and s.pg.use_sks and (s.pg.write_preset or GAMES[s.game].get("hash_names", False)))
+            and s.pg.use_sks and (s.pg.write_preset or GAMES[s.game].get("hash_names", False)
+                                  or bool(s.sections)))
 
 
 def write_presets(s, mod_root, model, rep_part, default_name, target_part=None):
@@ -457,9 +524,12 @@ def write_presets(s, mod_root, model, rep_part, default_name, target_part=None):
         for p in paths:
             print(f"[{s.game}] SKS preset -> {p}")
     names = []
-    if GAMES[s.game].get("hash_names"):
-        # one table per preset, so two mods for the same model don't overwrite each other's
-        names = sks_profiles.write_names(mod_root, f"{model}_{name}", s.names)
+    hash_names = GAMES[s.game].get("hash_names", False)
+    if hash_names or s.sections:
+        # one table per preset, so two mods for the same model don't overwrite each other's;
+        # where the engine keeps channel names (MHWS) it carries only the sections
+        names = sks_profiles.write_names(mod_root, f"{model}_{name}",
+                                         s.names if hash_names else [], s.sections)
         for p in names:
             print(f"[{s.game}] SKS names -> {p}")
     if paths:
@@ -544,6 +614,7 @@ def draw(layout, scene, game, collections, mod_root=None):
     if key_filter != pg.key_filter:
         box.label(text=T("core.shapekey_export.filter_needs_profile"), icon='ERROR')
 
+    box.prop(pg, "empty_as_sections", text=T("core.shapekey_export.empty_as_sections"))
     row = box.row(align=True)
     row.prop(pg, "write_preset", text=T("core.shapekey_export.write_preset"))
     sub = row.row(align=True)

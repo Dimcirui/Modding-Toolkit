@@ -2817,6 +2817,8 @@ STRINGS = {
         "EN": "No expression profile matches, so keys are exported as ticked / locked",
         "ZH": "没有匹配的表情方案，将按勾选和锁定导出"},
     "core.shapekey_export.write_preset": {"EN": "Write SKS Preset", "ZH": "写入 SKS 预设"},
+    "core.shapekey_export.empty_as_sections": {
+        "EN": "Empty Keys as Section Titles", "ZH": "无效果的键写成分段标题"},
     "core.shapekey_export.preset_name": {"EN": "Preset Name", "ZH": "预设名称"},
     "core.shapekey_export.preset_written": {
         "EN": "SKS preset written ({n} files)", "ZH": "已写入 SKS 预设（{n} 个文件）"},
